@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r704 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r704%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200701102356.l0ANulvV011075%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000224.html">
+   <LINK REL="Next"  HREF="000226.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r704 - in trunk: . lib lib/plugins/movie</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r704%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200701102356.l0ANulvV011075%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r704 - in trunk: . lib lib/plugins/movie">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 11 00:56:47 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000224.html">[Griffith-svn] r703 - tags
+</A></li>
+        <LI>Next message: <A HREF="000226.html">[Griffith-svn] r705 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-01-11 00:56:42 +0100 (Thu, 11 Jan 2007)
+New Revision: 704
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+   trunk/lib/version.py
+Log:
+PTGate movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-10 00:24:29 UTC (rev 703)
++++ trunk/ChangeLog	2007-01-10 23:56:42 UTC (rev 704)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-01-10  Vasco Nunes
++	* PTGate movie plugin updated
++
+ ---- 0.9-rc3 ---
+ 
+ 2007-01-09  Piotr O&#380;arowski
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-01-10 00:24:29 UTC (rev 703)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-01-10 23:56:42 UTC (rev 704)
+@@ -32,7 +32,7 @@
+ plugin_language = _(&quot;Portuguese&quot;)
+ plugin_author = &quot;Vasco Nunes&quot;
+ plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.2&quot;
++plugin_version = &quot;0.3&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -92,12 +92,19 @@
+ 		self.country = gutils.trim(self.page,&quot;s&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;g&quot;)
+ 
+ 	def get_rating(self):
+-		self.rating = &quot;&quot;
++		tmp=gutils.trim(self.page,&quot;img src='Images/ustar&quot;,&quot;.gif&quot;)
++		if(tmp):
++			self.rating = float(tmp)
++			if (self.rating&gt;10):
++				self.rating = int(self.rating/10)
++				self.rating = self.rating*2
++		else:
++			self.rating=&quot;&quot;
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search	= &quot;<A HREF="http://cinema.ptgate.pt/pesquisa.php?pesquisa=">http://cinema.ptgate.pt/pesquisa.php?pesquisa=</A>&quot;
+-		self.translated_url_search	= &quot;<A HREF="http://cinema.ptgate.pt/pesquisa.php?pesquisa=">http://cinema.ptgate.pt/pesquisa.php?pesquisa=</A>&quot;
++		self.original_url_search	= &quot;<A HREF="http://cinema.ptgate.pt/pesquisa-filme.php?titulo=">http://cinema.ptgate.pt/pesquisa-filme.php?titulo=</A>&quot;
++		self.translated_url_search	= &quot;<A HREF="http://cinema.ptgate.pt/pesquisa-filme.php?titulo=">http://cinema.ptgate.pt/pesquisa-filme.php?titulo=</A>&quot;
+ 		self.encode='iso-8859-1'
+ 
+ 	def search(self,parent_window):
+@@ -106,10 +113,10 @@
+ 		return self.page
+ 
+ 	def sub_search(self):
+-		self.page = gutils.trim(self.page,&quot;class=group&gt;pesquisa por filme&lt;/b&gt;&quot;, &quot;class=group&gt;pesquisa por int&quot;)
++		self.page = gutils.trim(self.page,&quot;&lt;!-- DISPLAY RESULTS --&gt;&quot;, &quot;&lt;!-- /DISPLAY RESULTS --&gt;&quot;)
+ 
+ 	def get_searches(self):
+-		elements = string.split(self.page,&quot;&lt;br&gt;&lt;/td&gt;&quot;)
++		elements = string.split(self.page,&quot;&lt;/td&gt;&lt;td&gt;&quot;)
+ 		self.number_results = elements[-1]
+ 
+ 		if (len(elements[0])):
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-01-10 00:24:29 UTC (rev 703)
++++ trunk/lib/version.py	2007-01-10 23:56:42 UTC (rev 704)
+@@ -23,7 +23,7 @@
+ 
+ from gettext import gettext as _
+ pname        = &quot;Griffith&quot;
+-pversion     = &quot;0.9-rc3&quot;
++pversion     = &quot;0.9-rc3+svn&quot;
+ pauthor      = &quot;Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;&quot;
+ pyear        = &quot;2005-2007&quot;
+ pwebsite     = &quot;<A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000224.html">[Griffith-svn] r703 - tags
+</A></li>
+	<LI>Next message: <A HREF="000226.html">[Griffith-svn] r705 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

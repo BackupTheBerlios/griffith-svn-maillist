@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r732 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r732%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702131414.l1DEE9aT017583%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000251.html">
+   <LINK REL="Next"  HREF="000253.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r732 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r732%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702131414.l1DEE9aT017583%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r732 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 13 15:14:09 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000251.html">[Griffith-svn] r731 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000253.html">[Griffith-svn] r733 - tags
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#252">[ date ]</a>
+              <a href="thread.html#252">[ thread ]</a>
+              <a href="subject.html#252">[ subject ]</a>
+              <a href="author.html#252">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-02-13 15:14:09 +0100 (Tue, 13 Feb 2007)
+New Revision: 732
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+KinoDe movie plugin updated (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-12 22:53:28 UTC (rev 731)
++++ trunk/ChangeLog	2007-02-13 14:14:09 UTC (rev 732)
+@@ -6,6 +6,9 @@
+ 
+ ---- 0.9.1 ---
+ 
++2007-02-13  Piotr O&#380;arowski
++	* KinoDe movie plugin updated (thanks to Michael Jahn)
++
+ 2007-02-12  Piotr O&#380;arowski
+ 	* Fix broken databases automatically (return date will be set to 2007-01-01) - redo the upgrade process if you don't like it
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-12 22:53:28 UTC (rev 731)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-13 14:14:09 UTC (rev 732)
+@@ -32,7 +32,7 @@
+ plugin_language = _(&quot;German&quot;)
+ plugin_author = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.3&quot;
++plugin_version = &quot;1.4&quot;
+ 
+ class Plugin(movie.Movie):
+ 	url_to_use = &quot;<A HREF="http://www.kino.de/kinofilm.php4?">http://www.kino.de/kinofilm.php4?</A>&quot;
+@@ -57,14 +57,11 @@
+ 		self.tmp_page = gutils.trim(self.page, &quot;&lt;!-- PRINT-CONTENT-START--&gt;&quot;, &quot;&lt;!-- PRINT-CONTENT-ENDE--&gt;&quot;)
+ 	
+ 	def get_image(self):
+-		if (self.url_type == &quot;V&quot;):
+-			self.image_url = &quot;<A HREF="http://www.kino.de/pix/MBBILDER/VIDEO/">http://www.kino.de/pix/MBBILDER/VIDEO/</A>&quot; + gutils.trim(self.tmp_page,&quot;IMG SRC=\&quot;/pix/MBBILDER/VIDEO/&quot;, &quot;\&quot;&quot;)
+-		else:
+-			self.image_url = gutils.trim(self.tmp_page,&quot;IMG SRC=\&quot;/pix/MBBILDER/KINOPLAK/&quot;, &quot;\&quot;&quot;)
+-			if self.image_url &lt;&gt; '':
+-				self.image_url = &quot;<A HREF="http://www.kino.de/pix/MBBILDER/KINOPLAK/">http://www.kino.de/pix/MBBILDER/KINOPLAK/</A>&quot; + self.image_url
+-			else:
+-				self.image_url = &quot;<A HREF="http://www.kino.de/pix/MBBILDER/KINO/">http://www.kino.de/pix/MBBILDER/KINO/</A>&quot; + gutils.trim(self.tmp_page,&quot;IMG SRC=\&quot;/pix/MBBILDER/KINO/&quot;, &quot;\&quot;&quot;)
++		# first, try to get the second picture before the JavaScript block (it should be the original poster)
++		# if there is no second picture, use the first picture (it should be a picture from the film)
++		self.image_url = &quot;<A HREF="http://images.kino.de/flbilder/">http://images.kino.de/flbilder/</A>&quot; + gutils.trim(gutils.after(gutils.before(self.tmp_page, &quot;&lt;script language=&quot;), &quot;img src=\&quot;<A HREF="http://images.kino.de/flbilder/">http://images.kino.de/flbilder/</A>&quot;),&quot;img src=\&quot;<A HREF="http://images.kino.de/flbilder/">http://images.kino.de/flbilder/</A>&quot;, &quot;\&quot;&quot;)
++		if (self.image_url == &quot;<A HREF="http://images.kino.de/flbilder/">http://images.kino.de/flbilder/</A>&quot;):
++			self.image_url = &quot;<A HREF="http://images.kino.de/flbilder/">http://images.kino.de/flbilder/</A>&quot; + gutils.trim(self.tmp_page,&quot;img src=\&quot;<A HREF="http://images.kino.de/flbilder/">http://images.kino.de/flbilder/</A>&quot;, &quot;\&quot;&quot;)
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page,&quot;span CLASS=\&quot;standardsmall\&quot;&gt;&lt;br&gt;(&quot;,&quot;)&lt;&quot;)
+@@ -88,14 +85,8 @@
+ 			self.url = self.url_to_use + &quot;typ=film&amp;nr=&quot; + str(self.movie_id)
+ 			self.open_page(self.parent_window)
+ 		self.tmp_page = gutils.trim(self.page, &quot;&lt;!-- PRINT-CONTENT-START--&gt;&quot;, &quot;&lt;!-- PRINT-CONTENT-ENDE--&gt;&quot;)
+-		if (self.url_type == &quot;V&quot;):
+-			self.plot = gutils.after(self.tmp_page,&quot;IMG SRC=\&quot;/pix/MBBILDER/VIDEO&quot;)
+-			self.plot = gutils.trim(self.plot,&quot;&lt;/TABLE&gt;&quot;, &quot;&lt;/TD&gt;&quot;)
+-		else:
+-			self.plot = gutils.after(self.tmp_page,&quot;IMG SRC=\&quot;/pix/MBBILDER/KINOPLAK&quot;)
+-			self.plot = gutils.trim(self.plot,&quot;&lt;/TABLE&gt;&quot;, &quot;&lt;/TD&gt;&quot;)
+-			if self.plot == '':
+-				self.plot = gutils.trim(self.tmp_page, &quot;BORDER=\&quot;0\&quot; align=\&quot;left\&quot; &gt;&lt;TR&gt;&lt;TD&gt;&quot;, &quot;&lt;/TD&gt;&quot;)
++		self.plot = gutils.after(self.tmp_page,&quot;&lt;TABLE width=\&quot;100%\&quot; CELLPADDING=\&quot;0\&quot; CELLSPACING=\&quot;0\&quot; BORDER=\&quot;0\&quot; align=\&quot;left\&quot; &gt;&lt;TR&gt;&lt;TD&gt;&quot;)
++		self.plot = gutils.before(self.plot, &quot;&lt;TR&gt;&lt;TD  valign=\&quot;top\&quot;&quot;)
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,&quot;class=\&quot;standardsmall\&quot;&gt;&lt;br&gt;&lt;b&gt;DVD&lt;/b&gt; - &lt;b&gt;&quot;,&quot;&lt;BR&gt;&quot;)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000251.html">[Griffith-svn] r731 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000253.html">[Griffith-svn] r733 - tags
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#252">[ date ]</a>
+              <a href="thread.html#252">[ thread ]</a>
+              <a href="subject.html#252">[ subject ]</a>
+              <a href="author.html#252">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

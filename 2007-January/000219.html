@@ -1,0 +1,341 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r696 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r696%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701091701.l09H1Q0G016332%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000218.html">
+   <LINK REL="Next"  HREF="000220.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r696 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r696%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701091701.l09H1Q0G016332%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r696 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 18:01:26 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000218.html">[Griffith-svn] r695 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000220.html">[Griffith-svn] r697 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-09 18:01:26 +0100 (Tue, 09 Jan 2007)
+New Revision: 696
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+Log:
+Fix upgrading vol/col loan data
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-09 01:50:14 UTC (rev 695)
++++ trunk/ChangeLog	2007-01-09 17:01:26 UTC (rev 696)
+@@ -7,6 +7,7 @@
+ 2007-01-09  Piotr O&#197;&#188;arowski
+ 	* Catch some more bad cases while upgrading database
+ 	* Switch to sqlite if psycopg2 or MySQLdb module are not available
++	* Fix upgrading vol/col loan data
+ 
+ 2007-01-08  Piotr O&#197;&#188;arowski
+ 	* Ignore bad entries in loans table
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-01-09 01:50:14 UTC (rev 695)
++++ trunk/lib/dbupgrade.py	2007-01-09 17:01:26 UTC (rev 696)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2006 Vasco Nunes, Piotr O&#191;arowski
++# Copyright (c) 2005-2006 Vasco Nunes, Piotr O&#197;&#188;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -112,7 +112,6 @@
+ # ---------------------------------------------------
+ 
+ def convert_from_old_db(self, source_file, destination_file):	#{{{
+-	# TODO: table.insert().execute({'number':1, 'o_title':'test1'}, {'number':2, 'title: 'test2'}) is faster!
+ 	print 'Converting old database - it can take several minutes...'
+ 	gutils.info(self,_(&quot;Griffith will now convert your database to the new format. This can take several minutes if you have a large database.&quot;))
+ 	from sqlalchemy.orm import clear_mappers
+@@ -183,17 +182,15 @@
+ 	old_cursor.execute(&quot;UPDATE movies SET layers=NULL WHERE layers&lt;0 OR layers='' OR layers&gt;3&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET region=NULL WHERE region='' OR region=2 OR region&lt;0 OR region&gt;8&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET year=NULL WHERE year&lt;1900 or year&gt;2007&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET rating=0 WHERE rating&lt;0&quot;)		# FIXME?
+-	old_cursor.execute(&quot;UPDATE movies SET rating=10 WHERE rating&gt;10&quot;)	# FIXME?
+ 	old_cursor.execute(&quot;UPDATE loans SET return_date=NULL WHERE return_date=''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE date='' OR date ISNULL&quot;)
+-	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id=0&quot;)
+-	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id NOT IN (SELECT id FROM movies)&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = ''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = 'None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM collections WHERE name = ''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM collections WHERE name = 'None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM languages WHERE name = ''&quot;)
++	
++	#old_cursor.execute('SELECT number FROM movies WHERE (movies.id IN (SELECT movie_id FROM loans) OR movies.volume_id IN (SELECT volume_id FROM loans) OR movies.collection_id IN (SELECT collection_id FROM loans)); ' # wszystkie z histori&#196;&#133; wyp.
+ 
+ 	self.config['db_type'] = 'sqlite'
+ 	self.config['default_db'] = 'griffith.db'
+@@ -209,26 +206,38 @@
+ 
+ 	# collections
+ 	collection_mapper = {0:None, u'':None}
+-	old_cursor.execute(&quot;SELECT id, name, loaned FROM collections;&quot;)
++	old_cursor.execute(&quot;SELECT id, name FROM collections;&quot;) # loaned status will be set later - buggy databases :-(
+ 	for i in old_cursor.fetchall():
+-		o = new_db.Collection(name=i[1], loaned=bool(i[2]))
+-		o.save(); o.flush()
++		o = new_db.Collection(name=i[1])
++		try:
++			o.save(); o.flush()
++		except Exception, e:
++			self.debug.show(str(e))
++			continue
+ 		collection_mapper[i[0]] = o.collection_id
+ 	
+ 	# volumes
+ 	volume_mapper = {0:None, u'':None}
+-	old_cursor.execute(&quot;SELECT id, name, loaned FROM volumes;&quot;)
++	old_cursor.execute(&quot;SELECT id, name FROM volumes;&quot;) # loaned status will be set later - buggy databases :-(
+ 	for i in old_cursor.fetchall():
+-		o = new_db.Volume(name=i[1], loaned=bool(i[2]))
+-		o.save(); o.flush()
++		o = new_db.Volume(name=i[1])
++		try:
++			o.save(); o.flush()
++		except Exception, e:
++			self.debug.show(str(e))
++			continue
+ 		volume_mapper[i[0]] = o.volume_id
+-	
++
+ 	# people
+ 	person_mapper = {}
+ 	old_cursor.execute(&quot;SELECT id, name, email, phone FROM people;&quot;)
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.Person(name=i[1], email=i[2], phone=i[3])
+-		o.save(); o.flush()
++		try:
++			o.save(); o.flush()
++		except Exception, e:
++			self.debug.show(str(e))
++			continue
+ 		person_mapper[i[0]] = o.person_id
+ 	
+ 	# languages
+@@ -240,7 +249,11 @@
+ 			language_mapper[i[0]] = o.lang_id
+ 		else:
+ 			o = new_db.Lang(name=i[1])
+-			o.save(); o.flush()
++			try:
++				o.save(); o.flush()
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
+ 			language_mapper[i[0]] = o.lang_id
+ 
+ 	# media
+@@ -252,7 +265,11 @@
+ 			medium_mapper[i[0]] = o.medium_id
+ 		else:
+ 			o = new_db.Medium(name=i[1])
+-			o.save(); o.flush()
++			try:
++				o.save(); o.flush()
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
+ 			medium_mapper[i[0]] = o.medium_id
+ 	
+ 	# tags
+@@ -264,7 +281,11 @@
+ 			tag_mapper[i[0]] = o.tag_id
+ 		else:
+ 			o = new_db.Tag(name=i[1])
+-			o.save(); o.flush()
++			try:
++				o.save(); o.flush()
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
+ 			tag_mapper[i[0]] = o.tag_id
+ 	
+ 	# movies
+@@ -296,7 +317,7 @@
+ 		o.cast = i[17]
+ 		o.trailer = i[18][:255]
+ 		o.rating = digits_only(i[19])
+-		o.loaned = bool(i[20])
++		#o.loaned = bool(i[20]) # updated later
+ 		o.medium_id = medium_mapper[int(i[21])]
+ 		o.media_num = digits_only(i[22])
+ 		o.notes = i[23]
+@@ -306,11 +327,15 @@
+ 		o.color = digits_only(i[27], 3)
+ 		o.layers = digits_only(i[28], 4)
+ 		
+-		o.save(); o.flush()
++		try:
++			o.save(); o.flush()
++		except Exception, e:
++			self.debug.show(str(e))
++			continue
+ 		movie_mapper[i[0]] = o.movie_id
+ 
+ 	# movie tag
+-	old_cursor.execute(&quot;SELECT movie_id, tag_id FROM movie_tag;&quot;)
++	old_cursor.execute(&quot;SELECT movie_id, tag_id FROM movie_tag WHERE movie_id IN (SELECT id FROM movies);&quot;)
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.MovieTag.get_by(movie_id=movie_mapper[i[0]], tag_id=tag_mapper[i[1]])
+ 		if o is None:
+@@ -318,10 +343,14 @@
+ 			t = new_db.Tag.get_by(tag_id=tag_mapper[i[1]])
+ 			t.save()
+ 			m.tags.append(t)
+-			m.save(); m.flush()
++			try:
++				m.save(); m.flush()
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
+ 	
+ 	# movie lang
+-	old_cursor.execute(&quot;SELECT movie_id, lang_id, type FROM movie_lang;&quot;)
++	old_cursor.execute(&quot;SELECT movie_id, lang_id, type FROM movie_lang WHERE movie_id IN (SELECT id FROM movies);&quot;)
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.MovieLang.get_by(movie_id=movie_mapper[i[0]], lang_id=language_mapper[i[1]], type=i[2])
+ 		if o is None:
+@@ -329,24 +358,71 @@
+ 			l = new_db.MovieLang(lang_id=language_mapper[i[1]], type=i[2])
+ 			l.save()
+ 			m.languages.append(l)
+-			m.save(); m.flush()
++			try:
++				m.save(); m.flush()
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
+ 
+ 	# loans
+ 	old_cursor.execute(&quot;SELECT person_id, movie_id, volume_id, collection_id, date, return_date FROM loans;&quot;)
+ 	for i in old_cursor.fetchall():
+-		m = new_db.Movie.get_by(movie_id=movie_mapper[i[1]])
+-		o = new_db.Loan()
+-		o.person_id = person_mapper[i[0]]
+-		o.volume_id = volume_mapper[i[2]]
+-		o.collection_id = collection_mapper[i[3]]
+-		o.date = str(i[4])[:10]
+-		if i[5] is not None:
+-			o.return_date = str(i[5])[:10]
++		vol = col = None
++		not_returned = i[5] is not None
++
++		if int(i[2]) &gt; 0:
++			try:
++				vol = new_db.Volume.get_by(volume_id=volume_mapper[i[2]])
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
++		if int(i[3]) &gt; 0:
++			try:
++				col = new_db.Collection.get_by(collection_id=collection_mapper[i[3]])
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
++		if int(i[1]) == 0:
++			if vol is not None and len(vol.movies)&gt;0:
++				m = vol.movies[0]
++			elif col is not None and len(col.movies)&gt;0:
++				m = col.movies[0]
++			else:
++				self.debug.show(&quot;Cannot find associated movie for this loan (%s)&quot; % i)
++				continue
+ 		else:
++			try:
++				m = new_db.Movie.get_by(movie_id=movie_mapper[i[1]])
++			except Exception, e:
++				self.debug.show(str(e))
++				continue
++		
++		l = new_db.Loan()
++		l.person_id = person_mapper[i[0]]
++		l.date = str(i[4])[:10]
++		if not_returned:
+ 			m.loaned = True
+-		o.save();
+-		m.loans.append(o)
+-		m.flush()
++		else:
++			l.return_date = str(i[5])[:10]
++		
++		# update volume / collection status
++		if int(i[2]) &gt; 0:
++			l.volume_id = volume_mapper[i[2]]
++			if not_returned:
++				vol.loaned = True
++				vol.save()
++		if int(i[3]) &gt; 0:
++			l.collection_id = collection_mapper[i[3]]
++			if not_returned:
++				col.loaned = True
++				col.save()
++		l.save();
++		m.loans.append(l)
++		try:
++			m.flush()
++		except Exception, e:
++			self.debug.show(str(e))
++			continue
+ 	clear_mappers()
+ 	return True
+ #}}}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000218.html">[Griffith-svn] r695 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000220.html">[Griffith-svn] r697 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

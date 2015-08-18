@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r795 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r795%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200706301745.l5UHjutY017714%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000309.html">
+   <LINK REL="Next"  HREF="000311.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r795 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r795%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200706301745.l5UHjutY017714%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r795 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Jun 30 19:45:56 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000309.html">[Griffith-svn] r794 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000311.html">[Griffith-svn] r797 - in extra_artwork: . debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#310">[ date ]</a>
+              <a href="thread.html#310">[ thread ]</a>
+              <a href="subject.html#310">[ subject ]</a>
+              <a href="author.html#310">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-06-30 19:45:55 +0200 (Sat, 30 Jun 2007)
+New Revision: 795
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/README
+   trunk/griffith
+   trunk/lib/plugins/movie/PluginMovieStopklatka.py
+Log:
+Stopklatka movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-30 16:28:04 UTC (rev 794)
++++ trunk/ChangeLog	2007-06-30 17:45:55 UTC (rev 795)
+@@ -8,6 +8,7 @@
+ 	* Use python2.5's sqlite3 module if available (no need to install pysqlite2)
+ 	* Check dependencies at startup
+ 	* Detect old config while restoring data
++	* Stopklatka movie plugin updated
+ 
+ 2007-06-29  Piotr O&#380;arowski
+ 	* Added Greek translation (thanka to Ioannis Koniaris)
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-06-30 16:28:04 UTC (rev 794)
++++ trunk/NEWS	2007-06-30 17:45:55 UTC (rev 795)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.3
+ ==============
+ * New configuration file format (human readable) - please note that data from old config file is not used
+-* Updated movie plugins: Filmweb, WP, FDb, IMDb, 7arte.net, Cineteka, Kino.de, DVD-Palace, E-Pipoca
++* Updated movie plugins: Filmweb, WP, FDb, IMDb, 7arte.net, Cineteka, Kino.de, DVD-Palace, E-Pipoca, Stopklatka
+ * New movie plugins: FilmDb, Zelluloid, IMDb-de
+ * New translations:
+   + Dutch (thanks to Marcel Dijkstra)
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-06-30 16:28:04 UTC (rev 794)
++++ trunk/README	2007-06-30 17:45:55 UTC (rev 795)
+@@ -1,4 +1,4 @@
+-Griffith 0.9.2 README
++Griffith 0.9.3 README
+ =====================
+ 
+ This document was last updated on Thu Jan 09 2007.
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-06-30 16:28:04 UTC (rev 794)
++++ trunk/griffith	2007-06-30 17:45:55 UTC (rev 795)
+@@ -51,7 +51,7 @@
+ 
+ # other imports
+ import gtk, gtk.glade
+-import add, config, gconsole, gdebug, initialize, main_treeview, quick_filter
++import add, config, gconsole, gutils, gdebug, initialize, main_treeview, quick_filter
+ from gettext import gettext as _
+ 
+ class Griffith:
+
+Modified: trunk/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieStopklatka.py	2007-06-30 16:28:04 UTC (rev 794)
++++ trunk/lib/plugins/movie/PluginMovieStopklatka.py	2007-06-30 17:45:55 UTC (rev 795)
+@@ -22,8 +22,8 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
+-import gutils
+-import movie,string
++import gutils, movie
++import string, re
+ 
+ plugin_name         = 'Stopklatka'
+ plugin_description  = 'Internetowy Serwis Filmowy'
+@@ -31,9 +31,11 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O&#380;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '1.7'
++plugin_version      = '1.8'
+ 
+ class Plugin(movie.Movie):
++	IMAGE_PATTERN = re.compile('(<A HREF="http://img.stopklatka.pl/film/.*?">http://img.stopklatka.pl/film/.*?</A>)&quot;')
++
+ 	def __init__(self, id):
+ 		self.movie_id = id
+ 		self.url = &quot;<A HREF="http://www.stopklatka.pl/film/film.asp?fi=%s">http://www.stopklatka.pl/film/film.asp?fi=%s</A>&quot; % str(self.movie_id)
+@@ -44,53 +46,50 @@
+ 		self.page = self.page.replace('&#353;','&#261;')
+ 
+ 	def get_image(self):
+-		self.image_url = gutils.trim(self.page,&quot;<A HREF="http://img.stopklatka.pl/film/">http://img.stopklatka.pl/film/</A>&quot;,&quot;' border=1&quot;)
+-		self.image_url = '<A HREF="http://img.stopklatka.pl/film/">http://img.stopklatka.pl/film/</A>' + self.image_url
++		image = self.IMAGE_PATTERN.findall(self.page)
++		if len(image):
++			self.image_url = image[0]
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page,&quot;&lt;h2&gt;(&quot;,&quot;)&lt;/h2&gt;&quot;)
++		self.o_title = gutils.trim(self.page, '&lt;h2&gt; (', ')&lt;/h2&gt;')
+ 		if self.o_title == '':
+ 			self.o_title = self.get_title(True)
+ 
+ 	def get_title(self, ret=False):
+-		data = gutils.trim(self.page,&quot;&lt;i&gt;&lt;h1&gt;&quot;,&quot;&lt;/h1&gt;&quot;)
++		data = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
+ 		if ret is True:
+ 			return data
+ 		else:
+ 			self.title = data
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&gt;re\xbfyseria:&lt;&quot;,&quot;&lt;/font&gt;&quot;)
+-		self.director = gutils.after(self.director,&quot;&lt;b&gt;&quot;)
+-		self.director = gutils.strip_tags(self.director)
++		self.director = gutils.trim(self.page, '&gt;re\xbfyseria:&lt;', '&lt;/td&gt;&lt;/tr&gt;')
++		self.director = gutils.after(self.director, '&gt;')
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page,&quot;class='zdjecie'&quot;,&quot;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&quot;)
+-		self.plot = gutils.after(self.plot,&quot;\&quot;text2\&quot;&gt;&quot;)
++		self.plot = gutils.trim(self.page, '&lt;p&gt;', '&lt;/p&gt;')
++		self.plot = gutils.before(self.plot, '&lt;b&gt;Wi\xEAcej ')
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,&quot;&gt;rok produkcji:&lt;&quot;,&quot;&lt;/b&gt;&quot;)
+-		self.year = gutils.after(self.year,&quot;&lt;b&gt;&quot;)
++		self.year = gutils.trim(self.page, '&gt;rok produkcji:&lt;', '&lt;/span&gt;')
++		self.year = gutils.after(self.year, '&gt;')
+ 
+ 	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page,&quot;trwania:&lt;&quot;,&quot; min&lt;/b&gt;&quot;)
+-		self.runtime = gutils.after(self.runtime,&quot;&lt;b&gt;&quot;)
++		self.runtime = gutils.trim(self.page, 'trwania:&lt;', ' min&lt;')
++		self.runtime = gutils.after(self.runtime, '&gt;')
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page,&quot;&gt;gatunek:&lt;&quot;,&quot;&lt;/b&gt;&quot;)
+-		self.genre = gutils.after(self.genre,&quot;&lt;b&gt;&quot;)
++		self.genre = gutils.trim(self.page, '&gt;gatunek:&lt;', '&lt;/span&gt;')
++		self.genre = gutils.after(self.genre, '&gt;')
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.trim(self.page,&quot;&gt;obsada:&lt;/font&gt;&quot;,&quot;&lt;/font&gt;&quot;)
+-		self.cast = gutils.after(self.cast,&quot;&lt;b&gt;&quot;)
+-		self.cast = string.replace(self.cast,&quot;, &quot;, &quot;\n&quot;)
+-		self.cast = string.strip(gutils.strip_tags(self.cast))
+-		pos = string.find(self.cast, 'Wi&#281;cej &gt;')
+-		if pos &gt; 0:
+-			self.cast = self.cast[0:pos]
++		self.cast = gutils.trim(self.page, '&gt;obsada:&lt;', '&lt;/td&gt;&lt;/tr&gt;')
++		self.cast = gutils.after(self.cast, '&gt;')
++		self.cast = string.replace(self.cast, ', ', &quot;\n&quot;)
++		self.cast = gutils.before(self.cast, '&lt;b&gt;Wi\xEAcej ')
+ 
+ 	def get_classification(self):
+-		self.classification = &quot;&quot;
++		self.classification = ''
+ 
+ 	def get_studio(self):
+ 		self.studio = &quot;&quot;
+@@ -106,11 +105,11 @@
+ 		self.trailer = &quot;<A HREF="http://www.stopklatka.pl/film/film.asp?fi=">http://www.stopklatka.pl/film/film.asp?fi=</A>&quot; + self.movie_id + &quot;&amp;sekcja=mmedia&quot;
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,&quot;&gt;kraj:&lt;&quot;,&quot;&lt;/b&gt;&quot;)
+-		self.country = gutils.after(self.country,&quot;&lt;b&gt;&quot;)
++		self.country = gutils.trim(self.page, '&gt;kraj:&lt;', '&lt;/span&gt;')
++		self.country = gutils.after(self.country, '&gt;')
+ 
+ 	def get_rating(self):
+-		self.rating = &quot;0&quot;
++		self.rating = '0'
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000309.html">[Griffith-svn] r794 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000311.html">[Griffith-svn] r797 - in extra_artwork: . debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#310">[ date ]</a>
+              <a href="thread.html#310">[ thread ]</a>
+              <a href="subject.html#310">[ subject ]</a>
+              <a href="author.html#310">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

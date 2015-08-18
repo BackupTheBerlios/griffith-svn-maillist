@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r960 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r960%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200807181238.m6ICcgnM000990%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000447.html">
+   <LINK REL="Next"  HREF="000449.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r960 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r960%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200807181238.m6ICcgnM000990%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r960 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jul 18 14:38:42 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000447.html">[Griffith-svn] r959 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000449.html">[Griffith-svn] r961 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#448">[ date ]</a>
+              <a href="thread.html#448">[ thread ]</a>
+              <a href="subject.html#448">[ subject ]</a>
+              <a href="author.html#448">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-07-18 14:38:25 +0200 (Fri, 18 Jul 2008)
+New Revision: 960
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Log:
+updated Zelluloid plugin
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-07-18 12:35:42 UTC (rev 959)
++++ branches/0.9.x/ChangeLog	2008-07-18 12:38:25 UTC (rev 960)
+@@ -6,6 +6,7 @@
+ 
+ 2008-07-18  Michael Jahn
+ 	* added User-Agent support, because some web sites doesn't like the Python urllib default
++	* updated Zelluloid plugin
+ 
+ 2008-07-17  Michael Jahn
+ 	* updated OFDb plugin
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py	2008-07-18 12:35:42 UTC (rev 959)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py	2008-07-18 12:38:25 UTC (rev 960)
+@@ -54,10 +54,10 @@
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '&lt;BR&gt;')
+ 		if self.o_title == '':
+-			self.o_title = gutils.trim(self.page, '&lt;TITLE&gt;', '|')
++			self.o_title = gutils.trim(self.page, '&lt;title&gt;', '|')
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;TITLE&gt;', '|')
++		self.title = gutils.trim(self.page, '&lt;title&gt;', '|')
+ 
+ 	def get_director(self):
+ 		self.director = gutils.trim(self.detail_page, 'Regie', '&lt;/A&gt;')
+@@ -157,9 +157,7 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		tmp = gutils.before(gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;), 'ALT=&quot;Person&quot;')
+-		if tmp == '':
+-			tmp = gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;)
++		tmp = gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;)
+ 		return tmp
+ 
+ 	def get_searches(self):
+@@ -170,7 +168,7 @@
+ 				id = gutils.trim(element, 'movie-', '-')
+ 				if id &lt;&gt; '':
+ 					self.ids.append(id)
+-					self.titles.append(gutils.strip_tags(gutils.trim(element, '&gt;', '&lt;/A&gt;')))
++					self.titles.append(gutils.strip_tags(string.replace(gutils.trim(element, '&gt;', '&lt;/A&gt;'), '&lt;BR&gt;', ' - ')))
+ 
+ #
+ # Plugin Test
+@@ -182,7 +180,7 @@
+ 	#
+ 	test_configuration = {
+ 		'Rocky Balboa'		: 1,
+-		'Die wilden H&#252;hner'	: 2
++		'Die wilden H&#252;hner'	: 3
+ 	}
+ 
+ class PluginTest:
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-07-18 12:35:42 UTC (rev 959)
++++ trunk/ChangeLog	2008-07-18 12:38:25 UTC (rev 960)
+@@ -6,6 +6,7 @@
+ 
+ 2008-07-18  Michael Jahn
+ 	* added User-Agent support, because some web sites doesn't like the Python urllib default
++	* updated Zelluloid plugin
+ 
+ 2008-07-17  Michael Jahn
+ 	* updated OFDb plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2008-07-18 12:35:42 UTC (rev 959)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2008-07-18 12:38:25 UTC (rev 960)
+@@ -54,10 +54,10 @@
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '&lt;BR&gt;')
+ 		if self.o_title == '':
+-			self.o_title = gutils.trim(self.page, '&lt;TITLE&gt;', '|')
++			self.o_title = gutils.trim(self.page, '&lt;title&gt;', '|')
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;TITLE&gt;', '|')
++		self.title = gutils.trim(self.page, '&lt;title&gt;', '|')
+ 
+ 	def get_director(self):
+ 		self.director = gutils.trim(self.detail_page, 'Regie', '&lt;/A&gt;')
+@@ -157,9 +157,7 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		tmp = gutils.before(gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;), 'ALT=&quot;Person&quot;')
+-		if tmp == '':
+-			tmp = gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;)
++		tmp = gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;)
+ 		return tmp
+ 
+ 	def get_searches(self):
+@@ -170,7 +168,7 @@
+ 				id = gutils.trim(element, 'movie-', '-')
+ 				if id &lt;&gt; '':
+ 					self.ids.append(id)
+-					self.titles.append(gutils.strip_tags(gutils.trim(element, '&gt;', '&lt;/A&gt;')))
++					self.titles.append(gutils.strip_tags(string.replace(gutils.trim(element, '&gt;', '&lt;/A&gt;'), '&lt;BR&gt;', ' - ')))
+ 
+ #
+ # Plugin Test
+@@ -182,7 +180,7 @@
+ 	#
+ 	test_configuration = {
+ 		'Rocky Balboa'		: 1,
+-		'Die wilden H&#252;hner'	: 2
++		'Die wilden H&#252;hner'	: 3
+ 	}
+ 
+ class PluginTest:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000447.html">[Griffith-svn] r959 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000449.html">[Griffith-svn] r961 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#448">[ date ]</a>
+              <a href="thread.html#448">[ thread ]</a>
+              <a href="subject.html#448">[ subject ]</a>
+              <a href="author.html#448">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

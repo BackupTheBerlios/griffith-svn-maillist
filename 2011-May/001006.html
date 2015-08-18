@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1546 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1546%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110518113157.686D2480E9F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001005.html">
+   <LINK REL="Next"  HREF="001007.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1546 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1546%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110518113157.686D2480E9F%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1546 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed May 18 13:31:57 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001005.html">[Griffith-svn] r1545 - in trunk: . lib/db
+</A></li>
+        <LI>Next message: <A HREF="001007.html">[Griffith-svn] r1547 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1006">[ date ]</a>
+              <a href="thread.html#1006">[ thread ]</a>
+              <a href="subject.html#1006">[ subject ]</a>
+              <a href="author.html#1006">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-05-18 13:31:56 +0200 (Wed, 18 May 2011)
+New Revision: 1546
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+Log:
+updated CineMovies plugin (thanks to Olivier BOURSIN)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-05-12 20:43:52 UTC (rev 1545)
++++ trunk/ChangeLog	2011-05-18 11:31:56 UTC (rev 1546)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-05-18  Michael Jahn
++	* updated CineMovies plugin (thanks to Olivier BOURSIN)
++
+ 2011-05-12  Michael Jahn
+ 	* added &quot;virtual&quot; resolutions (4:3 Fullscreen, Widescreen, Anamorphic Widescreen)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-05-12 20:43:52 UTC (rev 1545)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-05-18 11:31:56 UTC (rev 1546)
+@@ -30,7 +30,7 @@
+ plugin_language     = _(&quot;French&quot;)
+ plugin_author       = &quot;Vasco Nunes&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version      = &quot;0.3&quot;
++plugin_version      = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -42,20 +42,20 @@
+         self.page_cast = self.open_page(self.parent_window, url = '<A HREF="http://www.cinemovies.fr/fiche_cast.php?IDfilm=">http://www.cinemovies.fr/fiche_cast.php?IDfilm=</A>'+ str(self.movie_id))
+ 
+     def get_image(self):
+-        self.image_url = '<A HREF="http://www.cinemovies.fr/images/data/affiches/Paff">http://www.cinemovies.fr/images/data/affiches/Paff</A>'
+-        self.image_url = self.image_url + string.strip(gutils.trim(self.page, 'data/affiches/Paff', '.jpg')) + '.jpg'
++        self.image_url = gutils.trim(self.page, '&lt;link rel=&quot;image_src&quot; href=&quot;', '&quot;&gt;')
+ 
+     def get_o_title(self):
+         self.o_title = gutils.trim(self.page, 'Titre original :', '&lt;/tr&gt;')
+ 
+     def get_title(self):
+-        self.title = gutils.regextrim(self.page, '&lt;h1 class=&quot;h1artist&quot;[^&gt;]*&gt;', '&lt;/h1&gt;')
++        self.title = gutils.trim(self.page, '&lt;h1 class=&quot;h1artist&quot; property=&quot;v:name&quot;&gt;', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        self.director = string.strip(gutils.trim(self.page, 'par :&lt;/b&gt;&lt;/td&gt;', '&lt;/a&gt;'))
++        self.director = gutils.clean(gutils.trim(self.page_cast, u'R&#233;alis&#233; par&lt;/h2&gt; :', '&lt;div id=&quot;cast_film&quot;&gt;'))
++        self.director = re.sub('[\n|\t]+', ', ', self.director)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(gutils.after(self.page, '&gt;L\'histoire&lt;'), '&lt;div id=&quot;story_fiche&quot;&gt;', '&lt;/div&gt;')
++        self.plot = gutils.trim(gutils.after(self.page, '&gt;L\'histoire&lt;'), '&lt;div id=&quot;story_fiche&quot; property=&quot;v:summary&quot;&gt;', '&lt;/div&gt;')
+ 
+     def get_year(self):
+         self.year = gutils.trim(self.page, 'Date(s) de Sortie(s)', '&lt;/a&gt;')
+@@ -65,21 +65,27 @@
+     def get_runtime(self):
+         self.runtime = gutils.clean(gutils.trim(self.page, u'&gt;Dur&#233;e :', '&lt;/tr&gt;'))
+         if self.runtime:
+-            self.runtime = str (int(gutils.before(self.runtime,&quot;h&quot;))*60 + int(gutils.after(self.runtime,&quot;h&quot;)))
++           if self.runtime.find('h') &gt; 0:
++              self.runtime = str (int(gutils.before(self.runtime,'h'))*60 + int(gutils.after(self.runtime,'h')))
++           else:
++              self.runtime = gutils.before(self.runtime,' mn')
+ 
+     def get_genre(self):
+         self.genre = gutils.trim(self.page, 'Genre :', '&lt;/tr&gt;')
++        self.genre = re.sub('[,][^,]*$', '', self.genre)
++        self.genre = self.genre.replace(',', ', ')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page_cast, 'diens&lt;/h2&gt; :', '&lt;div id=&quot;cast_film&quot;&gt;')
++        self.cast = gutils.trim(self.page_cast, u'Com&#233;diens&lt;/h2&gt; :', '&lt;div id=&quot;cast_film&quot;&gt;')
+         self.cast = self.cast.replace('\n', '')
+         self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
+         self.cast = re.sub('&lt;/a&gt;&lt;/h5&gt;', _(' as '), self.cast)
+         self.cast = gutils.clean(self.cast)
+-        self.cast = re.sub(_(' as ') + '(\n|$)', '\n', self.cast)
++        self.cast = re.sub(_(' as ') + '[ \t]*(\n|$)', '\n', self.cast)
+         self.cast = re.sub('[ \t]*\n[ \t]+', '\n', self.cast)
+ 
+     def get_classification(self):
++        # not available on this site
+         self.classification = ''
+ 
+     def get_studio(self):
+@@ -92,16 +98,18 @@
+         self.site = self.url
+ 
+     def get_trailer(self):
+-        self.trailer = ''
++        self.trailer = '<A HREF="http://www.cinemovies.fr/fiche_multimedia.php?IDfilm=">http://www.cinemovies.fr/fiche_multimedia.php?IDfilm=</A>' + str(self.movie_id)
+ 
+     def get_country(self):
+         self.country = gutils.trim(self.page, 'Pays :', '&lt;/tr&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.clean(gutils.regextrim(gutils.regextrim(self.page, '&lt;div id=scoree[^&gt;]*&gt;', '&lt;/div&gt;'), '&lt;div class=[^&gt;]*&gt;', '$'))
++        # site's rating, not users'
++        self.rating = gutils.trim(self.page, '&lt;div class=number3&gt;', '&lt;/div&gt;')
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de&lt;/h2&gt; :', '&lt;/h5&gt;'))
++        self.screenplay = gutils.clean(gutils.trim(self.page_cast, u'Sc&#233;nario de&lt;/h2&gt; :', '&lt;div id=&quot;cast_film&quot;&gt;'))
++        self.screenplay = re.sub('[\n|\t]+', ', ', self.screenplay)
+ 
+ 
+ class SearchPlugin(movie.SearchMovie):
+@@ -179,7 +187,7 @@
+             'studio'              : 'Twentieth Century Fox France',
+             'o_site'              : '<A HREF="http://www.sonypictures.com/movies/rocky/">http://www.sonypictures.com/movies/rocky/</A>',
+             'site'                : '<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=6065">http://www.cinemovies.fr/fiche_film.php?IDfilm=6065</A>',
+-            'trailer'             : False,
++            'trailer'             : '<A HREF="http://www.cinemovies.fr/fiche_multimedia.php?IDfilm=6065">http://www.cinemovies.fr/fiche_multimedia.php?IDfilm=6065</A>',
+             'year'                : 2007,
+             'notes'               : False,
+             'runtime'             : 105,
+@@ -189,4 +197,56 @@
+             'screenplay'          : 'Sylvester Stallone',
+             'barcode'             : False
+         },
++        '18158' : { 
++            'title'               : 'Miss Mars',
++            'o_title'             : 'Miss March',
++            'director'            : 'Zach Cregger, Trevor Moore',
++            'plot'                : True,
++            'cast'                : 'Zach Cregger' + _(' as ') + 'Eugene Bell\n\
++Trevor Moore' + _(' as ') + 'Tucker Cleigh\n\
++Raquel Alessi' + _(' as ') + 'Cindi Whitehall\n\
++Molly Stanton' + _(' as ') + 'Candace\n\
++Craig Robinson' + _(' as ') + 'Horsedick.MPEG\n\
++Hugh M. Hefner' + _(' as ') + u'Lui m&#234;me\n\
++Carla Jimenez' + _(' as ') + u'Juanita / Infirmi&#232;re\n\
++Cedric Yarbrough' + _(' as ') + 'Docteur\n\
++Geoff Meed' + _(' as ') + 'Rick / Pompier\n\
++Slade Pearce' + _(' as ') + 'Eugene jeune\n\
++Remy Thorne' + _(' as ') + 'Tucker jeune\n\
++Tanjareen Martin' + _(' as ') + 'Crystal\n\
++Eve Mauro' + _(' as ') + 'Vonka\n\
++Alexis Raben' + _(' as ') + 'Katja\n\
++Windell Middlebrooks' + _(' as ') + 'Videur\n\
++Lindsay Schoneweis' + _(' as ') + 'Sheila\n\
++David Wells' + _(' as ') + 'Principal\n\
++Britten Kelley' + _(' as ') + 'Chevonne\n\
++Barry Sigismondi' + _(' as ') + 'Mr. Whitehall\n\
++Alex Donnelley' + _(' as ') + 'Mrs. Whitehall\n\
++Josh Fadem' + _(' as ') + 'Flava Flav Kid\n\
++Paul Rogan' + _(' as ') + 'Mr. Biederman\n\
++Kate Luyben' + _(' as ') + 'Mrs. Biederman\n\
++Seth Morris' + _(' as ') + 'Boss\n\
++Michael Busch' + _(' as ') + u'Employ&#233;\n\
++Ryan Kitley' + _(' as ') + 'Serveur\n\
++Anthony Jeselnik' + _(' as ') + 'Directeur\n\
++Niki J. Crawford' + _(' as ') + 'Janine\n\
++Bonita Friedericy' + _(' as ') + u'Serveuse du d&#238;ner\n\
++Carrie Keagan' + _(' as ') + u'Elle m&#234;me\n\
++Shark Firestone' + _(' as ') + u'Lui m&#234;me',
++            'country'             : 'USA',
++            'genre'               : u'Com&#233;die',
++            'classification'      : False,
++            'studio'              : 'Twentieth Century Fox France',
++            'o_site'              : '<A HREF="http://www.missmars-lefilm.com">http://www.missmars-lefilm.com</A>',
++            'site'                : '<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=18158">http://www.cinemovies.fr/fiche_film.php?IDfilm=18158</A>',
++            'trailer'             : '<A HREF="http://www.cinemovies.fr/fiche_multimedia.php?IDfilm=18158">http://www.cinemovies.fr/fiche_multimedia.php?IDfilm=18158</A>',
++            'year'                : 2009,
++            'notes'               : False,
++            'runtime'             : 90,
++            'image'               : True,
++            'rating'              : 2,
++            'cameraman'           : False,
++            'screenplay'          : 'Zach Cregger, Trevor Moore',
++            'barcode'             : False
++        },
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001005.html">[Griffith-svn] r1545 - in trunk: . lib/db
+</A></li>
+	<LI>Next message: <A HREF="001007.html">[Griffith-svn] r1547 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1006">[ date ]</a>
+              <a href="thread.html#1006">[ thread ]</a>
+              <a href="subject.html#1006">[ subject ]</a>
+              <a href="author.html#1006">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

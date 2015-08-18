@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1168 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1168%20-%20trunk/lib&In-Reply-To=%3C200902242147.n1OLlilt014349%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000639.html">
+   <LINK REL="Next"  HREF="000641.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1168 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1168%20-%20trunk/lib&In-Reply-To=%3C200902242147.n1OLlilt014349%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1168 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 24 22:47:44 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000639.html">[Griffith-svn] r1167 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000641.html">[Griffith-svn] r1169 - in trunk: . glade lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#640">[ date ]</a>
+              <a href="thread.html#640">[ thread ]</a>
+              <a href="subject.html#640">[ subject ]</a>
+              <a href="author.html#640">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-02-24 22:47:20 +0100 (Tue, 24 Feb 2009)
+New Revision: 1168
+
+Modified:
+   trunk/lib/main_treeview.py
+Log:
+selected sort column wasn't used (sorted everytime by number)
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2009-02-24 21:04:48 UTC (rev 1167)
++++ trunk/lib/main_treeview.py	2009-02-24 21:47:20 UTC (rev 1168)
+@@ -375,6 +375,13 @@
+                     cond = advfilter.get_def_conditions()
+             else:
+                 cond = advfilter.get_def_conditions()
++            # add sorting from config
++            sort_column_name = self.config.get('sortby', 'number', section='mainlist')
++            sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
++            if sort_reverse:
++                cond['sort_by'] = set((sort_column_name + ' DESC', ))
++            else:
++                cond['sort_by'] = set((sort_column_name, ))
+ 
+             # seen / loaned
+             if self.widgets['menu']['loaned_movies'].get_active():
+@@ -389,18 +396,18 @@
+                     cond[&quot;collections&quot;].add(col_id)
+ 
+             movies = advfilter.create_select_query(self, None, cond, movies)
++        else:
++            # select sort column
++            sort_column_name = self.config.get('sortby', 'number', section='mainlist')
++            sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
++            # explicit conditions, only empty dictionary needed to add the order by values
++            cond = {}
++            if sort_reverse:
++                cond['sort_by'] = set((sort_column_name + ' DESC', ))
++            else:
++                cond['sort_by'] = set((sort_column_name, ))
++            movies = sql.update_whereclause(movies, cond)
+         
+-        # select sort column
+-        sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+-        sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
+-        
+-        for i in sort_column_name.split(','):
+-            if db.movies_table.columns.has_key(i):
+-                if sort_reverse:
+-                    movies.append_order_by(desc(db.movies_table.columns[i]))
+-                else:
+-                    movies.append_order_by(db.movies_table.columns[i])
+-        
+         # additional whereclause (volume_id, collection_id, ...)
+         if where:
+             for i in where:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000639.html">[Griffith-svn] r1167 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000641.html">[Griffith-svn] r1169 - in trunk: . glade lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#640">[ date ]</a>
+              <a href="thread.html#640">[ thread ]</a>
+              <a href="subject.html#640">[ subject ]</a>
+              <a href="author.html#640">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

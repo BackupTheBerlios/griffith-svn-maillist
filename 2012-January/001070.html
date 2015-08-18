@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1614 - in trunk: . lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2012-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1614%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C20120108203847.1DDFE4815AA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001069.html">
+   <LINK REL="Next"  HREF="001071.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1614 - in trunk: . lib/plugins/imp</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1614%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C20120108203847.1DDFE4815AA%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1614 - in trunk: . lib/plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  8 21:38:46 CET 2012</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001069.html">[Griffith-svn] r1613 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001071.html">[Griffith-svn] r1615 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1070">[ date ]</a>
+              <a href="thread.html#1070">[ thread ]</a>
+              <a href="subject.html#1070">[ subject ]</a>
+              <a href="author.html#1070">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2012-01-08 21:38:46 +0100 (Sun, 08 Jan 2012)
+New Revision: 1614
+
+Added:
+   trunk/lib/plugins/imp/Tellico.py
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+Log:
+Telico import plugin added (thanks to Elan Ruusam?\195?\164e)
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2012-01-07 16:51:14 UTC (rev 1613)
++++ trunk/AUTHORS	2012-01-08 20:38:46 UTC (rev 1614)
+@@ -32,3 +32,6 @@
+ 
+ Ivo Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">netherblood at gmail.com</A>&gt;
+ * Programmer
++
++Elan Ruusam&#228;e &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">glen at delfi.ee</A>&gt;
++* Telico import plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2012-01-07 16:51:14 UTC (rev 1613)
++++ trunk/ChangeLog	2012-01-08 20:38:46 UTC (rev 1614)
+@@ -4,8 +4,12 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++
++2012-01-08  Piotr O&#380;arowski
++	* Telico import plugin added (thanks to Elan Ruusam&#228;e)
++
+ 2012-01-07  Ivo Nunes
+-    * Added a plugin for the portuguese website www.dvdpt.com
++	* Added a plugin for the portuguese website www.dvdpt.com
+ 
+ 2012-01-02  Michael Jahn
+ 	* [#909513] code errors in import plugins
+
+Added: trunk/lib/plugins/imp/Tellico.py
+===================================================================
+--- trunk/lib/plugins/imp/Tellico.py	                        (rev 0)
++++ trunk/lib/plugins/imp/Tellico.py	2012-01-08 20:38:46 UTC (rev 1614)
+@@ -0,0 +1,244 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id: $'
++
++# Copyright (c) 2011, 2012
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import os
++import gutils
++import string
++from xml.dom import minidom, Node
++import zipfile
++from shutil import rmtree
++from tempfile import mkdtemp
++
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++
++class ImportPlugin(IP):
++    description  = 'Tellico'
++    author       = 'Elan Ruusam&#228;e'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">glen at delfi.ee</A>'
++    version      = '1.1'
++    file_filters = '*.[tT][cC]'
++    mime_types   = None
++
++    fileversion  = None
++    filedom      = None
++    items        = None
++    itemindex    = 0
++    zipdir       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(_('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.filedom:
++            try:
++                collectionElement = self.filedom.getElementsByTagName('collection')[0]
++                for element in collectionElement.childNodes:
++                    if element.nodeType == Node.ELEMENT_NODE and element.nodeName == 'entry':
++                        count = count + 1
++                log.info('Tellico Import: %s movies for import' % count)
++            except:
++                log.exception('')
++        else:
++            log.error('Tellico Import: No filedom object.')
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.filedom:
++            log.error('Tellico Import: filedom not open')
++            return None
++
++        if not self.items:
++            collectionElement = self.filedom.getElementsByTagName('collection')[0]
++            self.items = collectionElement.childNodes
++            self.itemindex = 0
++        if not self.items or len(self.items) &lt; 1:
++            return None
++        if len(self.items) &lt;= self.itemindex:
++            return None
++        item = self.items[self.itemindex]
++        while not (item.nodeType == Node.ELEMENT_NODE and item.nodeName == 'entry') and len(self.items) &gt; self.itemindex + 1:
++            self.itemindex = self.itemindex + 1
++            item = self.items[self.itemindex]
++        if len(self.items) &lt;= self.itemindex:
++            return None
++        if not len(item.childNodes):
++            return None
++
++        details = {}
++        try:
++            details['number'] = item.getAttribute('id')
++            for node in item.childNodes:
++                if node.nodeType == Node.ELEMENT_NODE and len(node.childNodes) &gt; 0:
++                    if node.nodeName == 'color':
++                        value = node.childNodes[0].data.strip()
++                        if value == 'Color':
++                            details['color'] = 1
++                        elif value == 'Black &amp; White':
++                            details['color'] = 2
++                    elif node.nodeName == 'region':
++                        details['region'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'running-time':
++                        details['runtime'] = node.childNodes[0].data.strip()
++                        try:
++                            details['runtime'] = int(details['runtime'])
++                        except:
++                            details['runtime'] = 0
++                    elif node.nodeName == 'year':
++                        details['year'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'orig-title':
++                        details['o_title'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'title':
++                        details['title'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'directors':
++                        details['director'] = self._joinXmlNodes(node.getElementsByTagName('director'))
++                    elif node.nodeName == 'writers':
++                        details['screenplay'] = self._joinXmlNodes(node.getElementsByTagName('writer'))
++                    elif node.nodeName == 'o_site':
++                        details['o_site'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'url':
++                        details['site'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'nationalitys':
++                        details['country'] = self._joinXmlNodes(node.getElementsByTagName('nationality'))
++                    elif node.nodeName == 'genres':
++                        details['genre'] = self._joinXmlNodes(node.getElementsByTagName('genre'))
++                    elif node.nodeName == 'certification':
++                        details['classification'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'casts':
++                        details['cast'] = self._joinCastNodes(node.getElementsByTagName('cast'), separator = &quot;\n&quot;)
++                    elif node.nodeName == 'plot':
++                        details['plot'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'comments':
++                        details['notes'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'cover':
++                        imgfile = node.childNodes[0].data.strip()
++                        # use 'image' field, 'poster' field is buggy, bug #913283
++                        # <A HREF="https://bugs.launchpad.net/griffith/+bug/913283">https://bugs.launchpad.net/griffith/+bug/913283</A>
++                        details['image'] = os.path.join(self.zipdir, 'images', imgfile)
++        except EOFError:
++            details = None
++        except Exception, e:
++            log.exception('')
++            details = None
++
++        self.itemindex = self.itemindex + 1
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.filedom:
++            rmtree(self.zipdir)
++            self.zipdir = None
++            self.filedom.unlink()
++            self.filedom = None
++            self.fileversion = None
++            self.items = None
++            self.itemindex = 0
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            self.zipdir = self._extractZip(self.filename)
++            self.filedom = minidom.parse(os.path.join(self.zipdir, 'tellico.xml'))
++            rootElement = self.filedom.getElementsByTagName('tellico')[0]
++            version = rootElement.getAttribute('syntaxVersion')
++        except Exception, e:
++            log.error(str(e))
++            if self.filedom:
++                self.filedom.unlink()
++                self.filedom = None
++        log.info('Tellico: Found file version %s' % version)
++        return version
++
++    def _extractZip(self, filename):
++        zf = zipfile.ZipFile(filename, 'r')
++        tmpdir = mkdtemp(prefix = 'griffit2tellico')
++        zf.extractall(path = tmpdir)
++        return tmpdir
++
++    def _joinXmlNodes(self, elements, separator = ', '):
++        ret = ''
++        for element in elements:
++            if len(element.childNodes) &gt; 0:
++                ret = ret + element.childNodes[0].data.strip() + separator
++
++        # chop off last separator
++        if len(elements) &gt; 0:
++            ret = ret[:-len(separator)]
++        return ret
++
++    # join nodes for cast
++    def _joinCastNodes(self, elements, separator = ', '):
++        &quot;&quot;&quot;
++        we assume that this format:
++            &lt;cast&gt;
++            &lt;column&gt;Actor/Actress&lt;/column&gt;
++            &lt;column&gt;Role&lt;/column&gt;
++            &lt;/cast&gt;
++
++        ideally the columns likely came from header, which may differ:
++            &lt;field flags=&quot;3&quot; title=&quot;Cast&quot; category=&quot;Cast&quot; format=&quot;2&quot; type=&quot;8&quot; name=&quot;cast&quot; description=&quot;...&quot;&gt;
++                &lt;prop name=&quot;column1&quot; &gt;Actor/Actress&lt;/prop&gt;
++                &lt;prop name=&quot;column2&quot; &gt;Role&lt;/prop&gt;
++                &lt;prop name=&quot;columns&quot; &gt;2&lt;/prop&gt;
++            &lt;/field&gt;
++        &quot;&quot;&quot;
++
++        ret = ''
++        for element in elements:
++            actor = None
++            columns = element.getElementsByTagName('column')
++            actor = columns[0].childNodes[0].data.strip()
++            if len(columns) &gt; 1 and len(columns[1].childNodes) &gt; 0:
++                actor = actor + _(' as ') + columns[1].childNodes[0].data.strip()
++
++            if actor:
++                ret = ret + actor + separator
++
++        # chop off last separator
++        if len(elements) &gt; 0:
++            ret = ret[:-len(separator)]
++
++        return ret
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001069.html">[Griffith-svn] r1613 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001071.html">[Griffith-svn] r1615 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1070">[ date ]</a>
+              <a href="thread.html#1070">[ thread ]</a>
+              <a href="subject.html#1070">[ subject ]</a>
+              <a href="author.html#1070">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

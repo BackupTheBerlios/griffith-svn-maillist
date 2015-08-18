@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r942 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r942%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/export%20trunk%20trunk/lib/plugins/export&In-Reply-To=%3C200804011258.m31Cwt4P028335%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000430.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r942 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r942%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/export%20trunk%20trunk/lib/plugins/export&In-Reply-To=%3C200804011258.m31Cwt4P028335%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r942 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr  1 14:58:55 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000430.html">[Griffith-svn] r944 - branches/griffith_wxpython
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-04-01 14:58:25 +0200 (Tue, 01 Apr 2008)
+New Revision: 942
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/export/PluginExportHTML.py
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+fixed html export if sorted by collection, media, video codec or volume
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-03-22 14:45:49 UTC (rev 941)
++++ branches/0.9.x/ChangeLog	2008-04-01 12:58:25 UTC (rev 942)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-04-01  Michael Jahn
++	* fixed html export if sorted by collection, media, video codec or volume
++
+ 2008-03-15  Michael Jahn
+ 	* quick filter for loaned-to
+ 
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportHTML.py	2008-03-22 14:45:49 UTC (rev 941)
++++ branches/0.9.x/lib/plugins/export/PluginExportHTML.py	2008-04-01 12:58:25 UTC (rev 942)
+@@ -588,12 +588,13 @@
+ 		
+ 		# sort order	TODO: more than one sort column
+ 		sort_columns = []
++		sorting_parts = config['sorting'].split('_')
+ 		if config['sorting2'] == 'ASC':
+ 			from sqlalchemy import asc
+-			sort_columns.append(asc(self.db.Movie.c[self.fields_as_columns[config['sorting']]]))
++			sort_columns.append(asc(self.db.metadata.tables[sorting_parts[0]].c[sorting_parts[1]]))
+ 		elif config['sorting2'] == 'DESC':
+ 			from sqlalchemy import desc
+-			sort_columns.append(desc(self.db.Movie.c[self.fields_as_columns[config['sorting']]]))
++			sort_columns.append(desc(self.db.metadata.tables[sorting_parts[0]].c[sorting_parts[1]]))
+ 
+ 		statement = select(columns=columns, order_by=sort_columns, from_obj=[media_join, collection_join, volume_join, vcodec_join], use_labels = True)
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-03-22 14:45:49 UTC (rev 941)
++++ trunk/ChangeLog	2008-04-01 12:58:25 UTC (rev 942)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-04-01  Michael Jahn
++	* fixed html export if sorted by collection, media, video codec or volume
++
+ 2008-03-22  Piotr O&#380;arowski
+ 	* Python&gt;=2.4's xml module compatibility added
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2008-03-22 14:45:49 UTC (rev 941)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2008-04-01 12:58:25 UTC (rev 942)
+@@ -588,12 +588,13 @@
+ 		
+ 		# sort order	TODO: more than one sort column
+ 		sort_columns = []
++		sorting_parts = config['sorting'].split('_')
+ 		if config['sorting2'] == 'ASC':
+ 			from sqlalchemy import asc
+-			sort_columns.append(asc(self.db.Movie.c[self.fields_as_columns[config['sorting']]]))
++			sort_columns.append(asc(self.db.metadata.tables[sorting_parts[0]].c[sorting_parts[1]]))
+ 		elif config['sorting2'] == 'DESC':
+ 			from sqlalchemy import desc
+-			sort_columns.append(desc(self.db.Movie.c[self.fields_as_columns[config['sorting']]]))
++			sort_columns.append(desc(self.db.metadata.tables[sorting_parts[0]].c[sorting_parts[1]]))
+ 
+ 		statement = select(columns=columns, order_by=sort_columns, from_obj=[media_join, collection_join, volume_join, vcodec_join], use_labels = True)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000430.html">[Griffith-svn] r944 - branches/griffith_wxpython
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

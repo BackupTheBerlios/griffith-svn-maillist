@@ -1,0 +1,1473 @@
+From piotrek at mail.berlios.de  Sun Mar 11 14:26:56 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 11 Mar 2007 14:26:56 +0100
+Subject: [Griffith-svn] r745 - in trunk: . lib lib/plugins/movie
+Message-ID: <200703111326.l2BDQuAn010025@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-11 14:26:55 +0100 (Sun, 11 Mar 2007)
+New Revision: 745
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+   trunk/lib/version.py
+Log:
+* Filmweb movie plugin updated (no more hangs if no movie info found - closes #10601)
+* Version changed to 0.9.2+svn
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-25 16:41:28 UTC (rev 744)
++++ trunk/ChangeLog	2007-03-11 13:26:55 UTC (rev 745)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-03-11  Piotr O?arowski
++	* Filmweb movie plugin updated (no more hangs if no movie info found - closes #10601)
++	* Version changed to 0.9.2+svn
++
+ ---- 0.9.2 ---
+ 
+ 2007-02-20  Piotr O?arowski
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-02-25 16:41:28 UTC (rev 744)
++++ trunk/NEWS	2007-03-11 13:26:55 UTC (rev 745)
+@@ -1,3 +1,8 @@
++Griffith 0.9.3 - UNRELEASED
++===========================
++* Updated movie plugins: Filmweb
++
++
+ Griffith 0.9.2
+ ==============
+ * Updated movie plugins: IMDB, CSFD, KinoDE, FilmeVonAZ
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2007-02-25 16:41:28 UTC (rev 744)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2007-03-11 13:26:55 UTC (rev 745)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O?arowski'
+ plugin_author_email	= '<ozarow+griffith at gmail.com>'
+-plugin_version		= '1.9'
++plugin_version		= '1.10'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -138,19 +138,25 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		pos = string.find(self.page, 'szukana fraza')
+-		if pos == -1:	# only one match!
++		pos = string.find(self.page, 'Znaleziono <b>')
++		if pos == -1:	# movie page
+ 			self.page = None
+-		else:		# multiple matches
+-			self.page = gutils.before(self.page[pos:], 'id="sitemap"');
+-			self.page = gutils.after(self.page, '<li ')
++		else:		# search results
++			items = gutils.trim(self.page[pos:], '<b>', '</b>')
++			if items == '0':
++				self.page = False
++			else:
++				self.page = gutils.before(self.page[pos:], 'id="sitemap"')
++				self.page = gutils.after(self.page, '<li ')
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		if self.page is None:	# immidietly redirection to movie page
++		if self.page is None:	# movie page
+ 			self.number_results = 1
+ 			self.ids.append(self.url)
+ 			self.titles.append(gutils.convert_entities(self.title))
++		elif self.page is False: # no movie found
++			self.number_results = 0
+ 		else:			# multiple matches
+ 			elements = string.split(self.page, '<li ')
+ 			self.number_results = elements[-1]
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-02-25 16:41:28 UTC (rev 744)
++++ trunk/lib/version.py	2007-03-11 13:26:55 UTC (rev 745)
+@@ -23,7 +23,7 @@
+ 
+ from gettext import gettext as _
+ pname        = "Griffith"
+-pversion     = "0.9.2"
++pversion     = "0.9.2+svn"
+ pauthor      = "Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>"
+ pyear        = "2005-2007"
+ pwebsite     = "http://griffith.berlios.de/"
+
+
+
+From piotrek at mail.berlios.de  Sun Mar 11 21:06:00 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 11 Mar 2007 21:06:00 +0100
+Subject: [Griffith-svn] r746 - in trunk: . lib
+Message-ID: <200703112006.l2BK6012013133@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-11 21:05:59 +0100 (Sun, 11 Mar 2007)
+New Revision: 746
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/griffith
+   trunk/lib/config.py
+   trunk/lib/gemail.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/preferences.py
+Log:
+New configuration file format (human readable)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/ChangeLog	2007-03-11 20:05:59 UTC (rev 746)
+@@ -7,6 +7,7 @@
+ 2007-03-11  Piotr O?arowski
+ 	* Filmweb movie plugin updated (no more hangs if no movie info found - closes #10601)
+ 	* Version changed to 0.9.2+svn
++	* New configuration file format (human readable) - please delete old one manually
+ 
+ ---- 0.9.2 ---
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/NEWS	2007-03-11 20:05:59 UTC (rev 746)
+@@ -1,6 +1,7 @@
+ Griffith 0.9.3 - UNRELEASED
+ ===========================
+ * Updated movie plugins: Filmweb
++* New configuration file format (human readable)
+ 
+ 
+ Griffith 0.9.2
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/griffith	2007-03-11 20:05:59 UTC (rev 746)
+@@ -875,7 +875,7 @@
+ 
+ 	def restore_state(self):
+ 		"""Restores main window state"""
+-		if self.config.get("left") == "None":
++		if self.config.get("left") == None:
+ 			pass
+ 		else:
+ 			self.widgets['window'].move(int(self.config.get("left")), \
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/config.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -23,114 +23,126 @@
+ 
+ import os
+ import os.path
+-import cPickle as pickle
++import ConfigParser
++#import cPickle as pickle
+ 
+ class Config:
+ 	def __init__ (self, file):
+ 		"""A basic class for handling preferences with pickle"""
+ 		self.file = file
+-		self.config = {}
+ 		if not self.load():
+ 			self.make_defaults()
+-		self.set_hooks = []
++		#self.set_hooks = []
+ 
+-	def get (self, key, default=None):
++	def get (self, key, default=None, section='main'):
+ 		"""Return a key's value, or default if the key isn't set."""
+-		if not self.config.has_key(key):
++		if not self.cfg.has_option(section,key):
+ 			return default
+ 		else:
+-			return self.config[key]
++			tmp = self.cfg.get(section, key)
++			if tmp == 'True':
++				tmp = True
++			elif tmp == 'False':
++				tmp = False
++			elif tmp == 'None':
++				tmp = None
++			return tmp
+ 
+-	def has_key (self, k):
+-		return self.config.has_key(k)
++	def has_key (self, key, section='main'):
++		return self.cfg.has_option(section,key)
+ 
+ 	def __setitem__ (self, k, v):
+-		self.config[k] = v
+-		for hook in self.set_hooks: hook(k, v)
++		if not isinstance(v, str):
++			v = str(v)
++		self.cfg.set('main', k, v)
++		#for hook in self.set_hooks: hook(k, v)
+ 
+-	def __getitem__ (self, k):
+-		if not self.config.has_key(k):
+-			return None
+-		else:
+-			return self.config[k]
++	def __getitem__ (self, key):
++		return self.get(key)
+ 
+ 	def keys (self):
+-		return self.config.keys()
++		return [ i[0] for i in self.cfg.items('main') ]
+ 	def values (self):
+-		return self.config.values()
++		return [ i[1] for i in self.cfg.items('main') ]
+ 	def items (self):
+-		return self.config.items()
++		return self.cfg.items('main')
+ 
+ 	def save (self):
+ 		if not os.path.exists(os.path.split(self.file)[0]):
+ 			os.makedirs(os.path.split(self.file)[0])
+-		ofi=open(self.file, 'w')
+-		pickle.dump(self.config, ofi)
+-		ofi.close()
++		self.cfg.write(open(self.file, 'w'))
+ 
+ 	def load (self):
+ 		if os.path.isfile(self.file):
+-			ifi=open(self.file, 'r')
+-			self.config=pickle.load(ifi)
+-			ifi.close()
++			self.cfg = ConfigParser.SafeConfigParser()
++			try:
++				self.cfg.read(self.file)
++			except:
++				print 'Cannot parse config file'
++				return False
++			for i in self.cfg.items('main'):
++				self[i[0]] = i[1]
+ 			return True
+ 		else:
+ 			return False
+ 			
+ 	def make_defaults(self):
+-		self.config['pdf_reader']           = "xpdf"
+-		self.config['default_db']           = "griffith.db"
+-		self.config['height']               = "None"
+-		self.config['width']                = "None"
+-		self.config['top']                  = "None"
+-		self.config['left']                 = "None"
+-		self.config['view_director']        = "True"
+-		self.config['view_number']          = "True"
+-		self.config['view_otitle']          = "True"
+-		self.config['view_title']           = "True"
+-		self.config['view_image']           = "True"
+-		self.config['view_toolbar']         = "True"
+-		self.config['use_gtkspell']         = "True"
+-		self.config['spell_plot']           = "True"
+-		self.config['spell_notes']          = "True"
+-		self.config['spell_lang']           = "en"
+-		self.config['default_movie_plugin'] = "IMDB"
+-		self.config['rating']               = "0" # 0       = meter; 1 = stars
+-		self.config['color']                = 0
+-		self.config['condition']            = 0
+-		self.config['layers']               = 0
+-		self.config['media']                = 0
+-		self.config['region']               = 0
+-		self.config['vcodec']               = 0
+-		self.config['mail_smtp_server']     = "localhost"
+-		self.config['mail_use_auth']        = "False"
+-		self.config['mail_username']        = ""
+-		self.config['mail_password']        = ""
+-		self.config['mail_email']           = "griffith"
+-		self.config['posters']              = "posters"
+-		self.config['font']                 = ""
+-		self.config['db_type']              = "sqlite"
+-		self.config['db_host']              = "localhost"
+-		self.config['db_port']              = "5432"
+-		self.config['db_name']              = "griffith"
+-		self.config['db_user']              = "griffith"
+-		self.config['db_passwd']            = "gRiFiTh"
+-		self.config['s_classification']     = True
+-		self.config['s_country']            = True
+-		self.config['s_director']           = True
+-		self.config['s_genre']              = True
+-		self.config['s_image']              = True
+-		self.config['s_notes']              = True
+-		self.config['s_o_site']             = True
+-		self.config['s_o_title']            = True
+-		self.config['s_plot']               = True
+-		self.config['s_rating']             = True
+-		self.config['s_runtime']            = True
+-		self.config['s_site']               = True
+-		self.config['s_studio']             = True
+-		self.config['s_title']              = True
+-		self.config['s_trailer']            = True
+-		self.config['s_cast']               = True
+-		self.config['s_year']               = True
+-		self.config['s_limit']              = '0' # limit search results to x items (0 -> no limits)
++		self.cfg = ConfigParser.SafeConfigParser()
++		self.cfg.read(self.file)
++		self.cfg.add_section('main')
++		self.cfg.set('main', 'pdf_reader', 'xpdf')
++		self.cfg.set('main', 'default_db', 'griffith.db')
++		self.cfg.set('main', 'height', 'None')
++		self.cfg.set('main', 'width', 'None')
++		self.cfg.set('main', 'top', 'None')
++		self.cfg.set('main', 'left', 'None')
++		self.cfg.set('main', 'view_director', 'True')
++		self.cfg.set('main', 'view_number', 'True')
++		self.cfg.set('main', 'view_otitle', 'True')
++		self.cfg.set('main', 'view_title', 'True')
++		self.cfg.set('main', 'view_image', 'True')
++		self.cfg.set('main', 'view_toolbar', 'True')
++		self.cfg.set('main', 'use_gtkspell', 'True')
++		self.cfg.set('main', 'spell_plot', 'True')
++		self.cfg.set('main', 'spell_notes', 'True')
++		self.cfg.set('main', 'spell_lang', 'en')
++		self.cfg.set('main', 'default_movie_plugin', 'IMDB')
++		self.cfg.set('main', 'rating', '0') # 0       = meter; 1 = stars
++		self.cfg.set('main', 'color', '0')
++		self.cfg.set('main', 'condition', '0')
++		self.cfg.set('main', 'layers', '0')
++		self.cfg.set('main', 'media', '0')
++		self.cfg.set('main', 'region', '0')
++		self.cfg.set('main', 'vcodec', '0')
++		self.cfg.set('main', 'mail_smtp_server', 'localhost')
++		self.cfg.set('main', 'mail_use_auth', 'False')
++		self.cfg.set('main', 'mail_username', '')
++		self.cfg.set('main', 'mail_password', '')
++		self.cfg.set('main', 'mail_email', 'griffith')
++		self.cfg.set('main', 'posters', 'posters')
++		self.cfg.set('main', 'font', '')
++		self.cfg.set('main', 'db_type', 'sqlite')
++		self.cfg.set('main', 'db_host', 'localhost')
++		self.cfg.set('main', 'db_port', '5432')
++		self.cfg.set('main', 'db_name', 'griffith')
++		self.cfg.set('main', 'db_user', 'griffith')
++		self.cfg.set('main', 'db_passwd', 'gRiFiTh')
++		self.cfg.set('main', 's_classification', 'True')
++		self.cfg.set('main', 's_country', 'True')
++		self.cfg.set('main', 's_director', 'True')
++		self.cfg.set('main', 's_genre', 'True')
++		self.cfg.set('main', 's_image', 'True')
++		self.cfg.set('main', 's_notes', 'True')
++		self.cfg.set('main', 's_o_site', 'True')
++		self.cfg.set('main', 's_o_title', 'True')
++		self.cfg.set('main', 's_plot', 'True')
++		self.cfg.set('main', 's_rating', 'True')
++		self.cfg.set('main', 's_runtime', 'True')
++		self.cfg.set('main', 's_site', 'True')
++		self.cfg.set('main', 's_studio', 'True')
++		self.cfg.set('main', 's_title', 'True')
++		self.cfg.set('main', 's_trailer', 'True')
++		self.cfg.set('main', 's_cast', 'True')
++		self.cfg.set('main', 's_year', 'True')
++		self.cfg.set('main', 's_limit', '0') # limit search results to x items (0 -> no limits)
+ 		self.save()
+
+Modified: trunk/lib/gemail.py
+===================================================================
+--- trunk/lib/gemail.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/gemail.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -49,7 +49,7 @@
+ 
+ def send_email(self):
+ 	if len(self.person_email):
+-		if self.config.get('mail_use_auth', "False") == "True":
++		if self.config.get('mail_use_auth', False) == True:
+ 			use_auth = 1
+ 		else:
+ 			use_auth = 0
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/initialize.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -312,12 +312,13 @@
+ 	self.plugins.sort()
+ 	self.d_plugin = 0
+ 	mcounter = 0
++	default_plugin = self.config.get('default_movie_plugin')
+ 	for p in self.plugins:
+ 		plugin_module = os.path.basename(p).replace('.py','')
+ 		plugin_name = plugin_module.replace('PluginMovie','')
+ 		self.widgets['add']['source'].append_text(plugin_name)
+ 		self.widgets['preferences']['default_plugin'].append_text(plugin_name)
+-		if self.config.get('default_movie_plugin') == plugin_name:
++		if plugin_name == default_plugin:
+ 			self.widgets['preferences']['default_plugin'].set_active(mcounter)
+ 			self.d_plugin = mcounter
+ 		mcounter = mcounter + 1
+@@ -552,15 +553,13 @@
+ 	global spell_support
+ 	spell_error = False
+ 	if self.posix and spell_support:
+-		if self.config.get('use_gtkspell', False) == 'True':
+-			if self.config.get('spell_notes', True) == 'True' and \
+-				self.config.get('spell_lang')!='':
++		if self.config.get('use_gtkspell', False) == True:
++			if self.config.get('spell_notes', True) == True and self.config.get('spell_lang') != '':
+ 				try:
+ 					self.notes_spell = gtkspell.Spell(self.widgets['add']['cast'], self.config.get('spell_lang'))
+ 				except:
+ 					spell_error = True
+-			if self.config.get('spell_plot', True)=='True' and \
+-				self.config.get('spell_lang')!='':
++			if self.config.get('spell_plot', True)==True and self.config.get('spell_lang') != '':
+ 				try:
+ 					self.plot_spell = gtkspell.Spell(self.widgets['add']['plot'], self.config.get('spell_lang'))
+ 				except:
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/main_treeview.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -192,10 +192,7 @@
+ 		w['picture_button'].set_sensitive(False)
+ 	w['picture'].set_from_file(image_path)
+ 	# ratig
+-	try:
+-		rimage = int(str(self.config.get('rating_image')))
+-	except:
+-		rimage = 0
++	rimage = int(self.config.get('rating_image', 0))
+ 	if rimage:
+ 		prefix = ''
+ 	else:
+@@ -372,23 +369,23 @@
+ 	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str)
+ 
+ 	# check preferences to hide or show columns
+-	if self.config.get('view_number', 'True') == 'True':
++	if self.config.get('view_number', True) == True:
+ 		self.number_column.set_visible(True)
+ 	else:
+ 		self.number_column.set_visible(False)
+-	if self.config.get('view_otitle', 'True') == 'True':
++	if self.config.get('view_otitle', True) == True:
+ 		self.otitle_column.set_visible(True)
+ 	else:
+ 		self.otitle_column.set_visible(False)
+-	if self.config.get('view_title', 'True') == 'True':
++	if self.config.get('view_title', True) == True:
+ 		self.title_column.set_visible(True)
+ 	else:
+ 		self.title_column.set_visible(False)
+-	if self.config.get('view_director', 'True') == 'True':
++	if self.config.get('view_director', True) == True:
+ 		self.director_column.set_visible(True)
+ 	else:
+ 		self.director_column.set_visible(False)
+-	if self.config.get('view_image', 'True') == 'True':
++	if self.config.get('view_image', True) == True:
+ 		self.image_column.set_visible(True)
+ 	else:
+ 		self.image_column.set_visible(False)
+@@ -398,7 +395,7 @@
+ 		
+ 		self.treemodel.set_value(myiter,0,'%004d' % int(movie.number))
+ 
+-		if self.config.get('view_image', 'True') == 'True':
++		if self.config.get('view_image', True) == True:
+ 			tmp_dest = self.locations['posters']
+ 			tmp_img = os.path.join(tmp_dest, "t_%s.jpg" % str(movie.image))
+ 			if movie.image and os.path.isfile(tmp_img):
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/preferences.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -35,33 +35,33 @@
+ def show_preferences(self):
+ 	w = self.widgets['preferences']
+ 	# number
+-	if self.config.get('view_number', 'True')=='False':
++	if self.config.get('view_number', True) == False:
+ 		w['view_number'].set_active(False)
+ 	else:
+ 		w['view_number'].set_active(True)
+ 	# image
+-	if self.config.get('view_image', 'True')=='False':
++	if self.config.get('view_image', True) == False:
+ 		w['view_image'].set_active(False)
+ 	else:
+ 		w['view_image'].set_active(True)
+ 	# original title
+-	if self.config.get('view_otitle', 'True')=='False':
++	if self.config.get('view_otitle', True) == False:
+ 		w['view_o_title'].set_active(False)
+ 	else:
+ 		w['view_o_title'].set_active(True)
+ 	# title
+-	if self.config.get('view_title', 'True')=='False':
++	if self.config.get('view_title', True) == False:
+ 		w['view_title'].set_active(False)
+ 	else:
+ 		w['view_title'].set_active(True)
+ 	# director
+-	if self.config.get('view_director', 'True')=='False':
++	if self.config.get('view_director', True) == False:
+ 		w['view_director'].set_active(False)
+ 	else:
+ 		w['view_director'].set_active(True)
+ 
+ 	# email reminder
+-	if self.config.get('mail_use_auth', 'False') == 'False':
++	if self.config.get('mail_use_auth', False) == False:
+ 		w['mail_use_auth'].set_active(False)
+ 	else:
+ 		w['mail_use_auth'].set_active(True)
+@@ -83,14 +83,14 @@
+ 	w['region'].set_active( gutils.digits_only(self.config.get('region', 0), 8) )
+ 	w['layers'].set_active( gutils.digits_only(self.config.get('layers', 0), 4) )
+ 	w['color'].set_active( gutils.digits_only(self.config.get('color', 0), 3 ))
+-	if self.config.get('media', 0) in self.media_ids:
+-		if self.config.get('media', 0) > 0:
+-			w['media'].set_active( gutils.findKey(self.config.get('media', 0), self.media_ids) )
++	if int(self.config.get('media', 0)) in self.media_ids:
++		if int(self.config.get('media', 0)) > 0:
++			w['media'].set_active( gutils.findKey(int(self.config.get('media', 0)), self.media_ids) )
+ 		else:
+ 			w['media'].set_active(0)
+-	if self.config.get('vcodec', 0) in self.vcodecs_ids >- 1:
+-		if self.config.get('vcodec', 0) > 0:
+-			w['vcodec'].set_active(	int(gutils.findKey(self.config.get('vcodec', 0), self.vcodecs_ids)) )
++	if int(self.config.get('vcodec', 0)) in self.vcodecs_ids:
++		if int(self.config.get('vcodec', 0)) > 0:
++			w['vcodec'].set_active(	int(gutils.findKey(int(self.config.get('vcodec', 0)), self.vcodecs_ids)) )
+ 		else:
+ 			w['vcodec'].set_active(0)
+ 	
+@@ -124,40 +124,41 @@
+ 		self.locations['movie_plugins'])
+ 	plugins.sort()
+ 	mcounter = 0
++	default_movie_plugin = self.config.get('default_movie_plugin')
+ 	for p in plugins:
+ 		plugin_module = os.path.basename(p).replace('.py','')
+ 		plugin_name = plugin_module.replace('PluginMovie','')
+-		if self.config.get('default_movie_plugin') == plugin_name:
++		if plugin_name == default_movie_plugin:
+ 			w['default_plugin'].set_active(mcounter)
+ 			self.d_plugin = mcounter
+ 		mcounter = mcounter + 1
+ 
+ 	# rating image
+ 	try:
+-		rimage = int(str(self.config.get('rating_image', '0')))
++		rimage = int(self.config.get('rating_image', 0))
+ 	except:
+ 		rimage = 0
+ 	w['rating_image'].set_active(rimage)
+ 
+ 	# spellchecker
+-	if self.config.get('use_gtkspell', 'False')=='False':
++	if self.config.get('use_gtkspell', False) == False:
+ 		w['spellchecker'].set_active(False)
+ 	else:
+ 		w['spellchecker'].set_active(True)
+ 
+-	if self.config.get('spell_notes', 'True')=='False':
++	if self.config.get('spell_notes', True) == False:
+ 		w['spell_notes'].set_active(False)
+ 	else:
+ 		w['spell_notes'].set_active(True)
+ 
+-	if self.config.get('spell_plot', 'True')=='False':
++	if self.config.get('spell_plot', True) == False:
+ 		w['spell_plot'].set_active(False)
+ 	else:
+ 		w['spell_plot'].set_active(True)
+ 
+ 	w['spell_lang'].set_text(str(self.config.get('spell_lang', 'en')))
+ 
+-	w['amazon_locale'].set_active(self.config.get('amazon_locale', 0))
++	w['amazon_locale'].set_active(int(self.config.get('amazon_locale', 0)))
+ 
+ 	w['window'].show()
+ 
+
+
+
+From piotrek at mail.berlios.de  Tue Mar 20 23:30:51 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 20 Mar 2007 23:30:51 +0100
+Subject: [Griffith-svn] r747 - in trunk: . lib/plugins/movie
+Message-ID: <200703202230.l2KMUpKv027289@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-20 23:30:50 +0100 (Tue, 20 Mar 2007)
+New Revision: 747
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/NEWS
+Log:
+FilmDb and Zelluloid movie plugins added (thanks to Michael Jahn!)
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-03-11 20:05:59 UTC (rev 746)
++++ trunk/AUTHORS	2007-03-20 22:30:50 UTC (rev 747)
+@@ -20,9 +20,7 @@
+ * CSFD movie plugin
+ 
+ Michael Jahn <mikej06 at hotmail.com>
+-* DVDEmpire movie plugin
+-* FilmeVonAZ movie plugin
+-* Kino.de movie plugin
++* Movie plugins: DVDEmpire, FilmDb,FilmeVonAZ, Kino.de, Zelluloid
+ 
+ Jessica Katharina Parth <Jessica.K.P at women-at-work.org>
+ * OFDb movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-03-11 20:05:59 UTC (rev 746)
++++ trunk/ChangeLog	2007-03-20 22:30:50 UTC (rev 747)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O??arowski
+ 
++2007-03-20  Piotr O??arowski
++	* FilmDb and Zelluloid movie plugins added (thanks to Michael Jahn)
++
+ 2007-03-11  Piotr O??arowski
+ 	* Filmweb movie plugin updated (no more hangs if no movie info found - closes #10601)
+ 	* Version changed to 0.9.2+svn
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-03-11 20:05:59 UTC (rev 746)
++++ trunk/NEWS	2007-03-20 22:30:50 UTC (rev 747)
+@@ -2,6 +2,7 @@
+ ===========================
+ * Updated movie plugins: Filmweb
+ * New configuration file format (human readable)
++* New movie plugins: FilmDb, Zelluloid
+ 
+ 
+ Griffith 0.9.2
+
+Added: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2007-03-11 20:05:59 UTC (rev 746)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2007-03-20 22:30:50 UTC (rev 747)
+@@ -0,0 +1,145 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++
++plugin_name		= 'FilmDb.de'
++plugin_description	= 'FILMDB.DE'
++plugin_url		= 'www.filmdb.de'
++plugin_language		= _('German')
++plugin_author		= 'Michael Jahn'
++plugin_author_email	= '<mikej06 at hotmail.com>'
++plugin_version		= '1.0'
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = "http://www.filmdb.de/filmanzeige.php?alle=1&filmid=" + self.movie_id
++
++	def initialize(self):
++		self.tmp_page = gutils.trim(self.page, "<h1>Filmdatenbank - ", "Kommentare</a>")
++	
++	def get_image(self):
++		self.image_url = gutils.trim(self.tmp_page, '<td background="', '"');
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, '<h1>Filmdatenbank - ', '</h1>')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<h1>Filmdatenbank - ', '</h1>')
++
++	def get_director(self):
++		self.director = gutils.after(gutils.trim(self.tmp_page, 'regisseursuche.php', '</a>'), '>')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.tmp_page, '>Inhalt</strong>', '<td width="150" valign="top">')
++		self.plot = self.plot.replace('\t', '')
++		self.plot = self.plot.replace('\n', '')
++		self.plot = self.plot.replace('?', '"')
++		self.plot = self.plot.replace('?', '"')
++
++	def get_year(self):
++		elements = string.split(self.tmp_page, 'landjahrsuche.php')
++		self.year = gutils.trim(elements[2], '>', '</a>') + '\n'
++
++	def get_runtime(self):
++		self.runtime = ""
++		tmp = gutils.trim(self.tmp_page, '</a>  ? ', ' Stunden')
++		if tmp <> '':
++			elements = string.split(tmp, ':')
++			try:
++				hours = int(elements[0])
++				mins = int(elements[1])
++				self.runtime = str(hours * 60 + mins)
++			except:
++				self.runtime = ""
++
++	def get_genre(self):
++		self.genre = gutils.after(gutils.trim(self.tmp_page, 'genresuche.php', '</a>'), '>')
++
++	def get_cast(self):
++		self.cast = ""
++		elements = string.split(self.tmp_page, 'schauspielersuche.php')
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				self.cast = self.cast + gutils.trim(element, '>', '</a>') + '\n'
++
++	def get_classification(self):
++		self.classification = ""
++
++	def get_studio(self):
++		self.studio = ""
++
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = "http://www.filmdb.de/filmanzeige.php?filmid=" + self.movie_id
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		elements = string.split(self.tmp_page, 'landjahrsuche.php')
++		self.country = gutils.trim(elements[1], '>', '</a>') + '\n'
++
++	def get_rating(self):
++		self.rating = gutils.trim(self.tmp_page, 'Unsere User haben diesen Film mit ', ' bewertet.')
++		self.rating = self.rating.replace('%', '')
++		self.rating = gutils.strip_tags(self.rating)
++		elements = self.rating.split('.')
++		try:
++			tmprating = int(elements[0])
++			self.rating = str(tmprating / 10)
++		except:
++			self.rating = '0'
++
++	def get_notes(self):
++		self.notes = ""
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = "http://www.filmdb.de/globalsuche.php?name="
++		self.translated_url_search = "http://www.filmdb.de/globalsuche.php?name="
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		return gutils.trim(self.page, "<span class=font_normal>", "<table width=590")
++
++	def get_searches(self):
++		elements = string.split(self.page, "<!--")
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				self.ids.append(gutils.trim(element, "filmid=", ">"))
++				self.titles.append(gutils.trim(
++					gutils.after(element, "filmid="), ">", "<") + " - " +
++					gutils.trim(gutils.after(element, "</a>"), "<td>", "</td>") + " - " +
++					gutils.trim(gutils.after(gutils.after(element, "<td>"), "<td>"), "<td>", "</td>"))
+
+Added: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2007-03-11 20:05:59 UTC (rev 746)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2007-03-20 22:30:50 UTC (rev 747)
+@@ -0,0 +1,168 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = 'Zelluloid.de'
++plugin_description  = 'ZELLULOID.DE'
++plugin_url          = 'www.zelluloid.de'
++plugin_language     = _('German')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = '<mikej06 at hotmail.com>'
++plugin_version      = '1.0'
++
++class Plugin(movie.Movie):
++	index_url = 'http://www.zelluloid.de/filme/index.php3?id='
++	
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
++
++	def initialize(self):
++		self.detail_page = self.page
++		self.url = self.index_url + self.movie_id
++		self.page = self.open_page(url=self.url)
++
++	def get_image(self):
++		self.image_url = 'http://www.zelluloid.de/images/poster/' + gutils.trim(self.page, '<IMG SRC="/images/poster/', '"');
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '<BR>')
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, '<TITLE>', '|')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<TITLE>', '|')
++
++	def get_director(self):
++		self.director = gutils.trim(self.detail_page, 'Regie', '</A>')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, '<DIV CLASS=bigtext>', '</DIV>')
++		
++	def get_year(self):
++		self.year = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?j')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.year = self.year + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_runtime(self):
++		self.runtime = gutils.trim(self.detail_page, 'ca.&nbsp;', '&nbsp;min');
++
++	def get_genre(self):
++		self.genre = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?g')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.genre = self.genre + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.detail_page, '<B>Besetzung</B>', '<TD COLSPAN=')
++		self.cast = self.cast.replace('<A HREF=', '--flip--' + '<A HREF=')
++		self.cast = gutils.strip_tags(self.cast)
++		elements = self.cast.split('\n')
++		self.cast = ''
++		for element in elements:
++			elements2 = element.split("--flip--")
++			if len(elements2) > 1:
++				self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
++			else:
++				self.cast += element + '\n'
++		self.cast = string.replace(self.cast, '--flip--', _(' as '))
++
++	def get_classification(self):
++		self.classification = gutils.trim(self.detail_page, 'FSK: ', '</TD>')
++		self.classification = re.sub(',.*', '', self.classification)
++
++	def get_studio(self):
++		self.studio = gutils.strip_tags(gutils.trim(self.detail_page, '<B>Produktion</B>', '&nbsp;'))
++		if self.studio == '':
++			self.studio = gutils.trim(self.detail_page, '<B>Produktion</B>', '</TABLE>')
++		self.studio = self.studio.replace('\n', ', ')
++		self.studio = re.sub('((^, )|(, $))', '', self.studio)
++		
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		self.country = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?l')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.country = self.country + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_rating(self):
++		self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '</TABLE>'))
++		self.rating = self.rating.replace('%', '')
++		self.rating = self.rating.replace('&nbsp;', '')
++		try:
++			ratingint = int(self.rating) / 10
++		except:
++			ratingint = 0
++		self.rating = str(ratingint)
++
++	def get_notes(self):
++		self.notes = ""
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = "http://www.zelluloid.de/suche/index.php3?qstring="
++		self.translated_url_search = "http://www.zelluloid.de/suche/index.php3?qstring="
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		tmp = gutils.before(gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>"), 'ALT="Person"')
++		if tmp == '':
++			tmp = gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>")
++		return tmp
++
++	def get_searches(self):
++		elements = string.split(self.page, "hit.php3?hit=")
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				self.ids.append(gutils.trim(element, 'movie-', '-'))
++				self.titles.append(gutils.strip_tags(gutils.trim(element, '>', '</A>')))
+
+
+
+From piotrek at mail.berlios.de  Fri Mar 23 22:14:17 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Fri, 23 Mar 2007 22:14:17 +0100
+Subject: [Griffith-svn] r748 - trunk/lib
+Message-ID: <200703232114.l2NLEHAc001264@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-23 22:14:16 +0100 (Fri, 23 Mar 2007)
+New Revision: 748
+
+Modified:
+   trunk/lib/movie.py
+Log:
+add missed get_rating() function
+
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2007-03-20 22:30:50 UTC (rev 747)
++++ trunk/lib/movie.py	2007-03-23 21:14:16 UTC (rev 748)
+@@ -90,6 +90,8 @@
+ 		pass
+ 	def get_plot(self):
+ 		pass
++	def get_rating(self):
++		pass
+ 	def get_runtime(self):
+ 		pass
+ 	def get_site(self):
+
+
+
+From piotrek at mail.berlios.de  Fri Mar 23 22:15:32 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Fri, 23 Mar 2007 22:15:32 +0100
+Subject: [Griffith-svn] r749 - / extra_plugins extra_plugins/movie
+Message-ID: <200703232115.l2NLFWpS001508@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-23 22:15:32 +0100 (Fri, 23 Mar 2007)
+New Revision: 749
+
+Added:
+   extra_plugins/
+   extra_plugins/movie/
+   extra_plugins/movie/PluginMovieAdultFilmDatabase.py
+Log:
+* new extra_plugins repository
+* new AdultFilmDatabase movie plugin (thanks to Michael Jahn)
+
+
+Added: extra_plugins/movie/PluginMovieAdultFilmDatabase.py
+===================================================================
+--- extra_plugins/movie/PluginMovieAdultFilmDatabase.py	2007-03-23 21:14:16 UTC (rev 748)
++++ extra_plugins/movie/PluginMovieAdultFilmDatabase.py	2007-03-23 21:15:32 UTC (rev 749)
+@@ -0,0 +1,119 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++
++plugin_name		= 'AdultFilmDatabase.com'
++plugin_description	= 'ADULTFILMDATABASE.COM'
++plugin_url		= 'www.adultfilmdatabase.com'
++plugin_language		= _('English')
++plugin_author		= 'Michael Jahn'
++plugin_author_email	= '<mikej06 at hotmail.com>'
++plugin_version		= '1.0'
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = "http://www.adultfilmdatabase.com/video.cfm?videoid=" + self.movie_id
++
++	def get_image(self):
++		self.image_url = 'http://www.adultfilmdatabase.com/Graphics/Boxes/200' + gutils.trim(self.page, '/Graphics/Boxes/200', '"')
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, '<h2>', '</h2>')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<h2>', '</h2>')
++
++	def get_director(self):
++		self.director = ''
++		delimiter = ''
++		elements = string.split(self.page, '<a HREF="/director.cfm')
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				self.director = self.director + gutils.trim(element, '>', '<') + delimiter
++				delimiter = ', '
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, 'COLSPAN="2"><BR>', '</td>')
++
++	def get_year(self):
++		self.year = gutils.strip_tags(gutils.trim(self.page, 'Year:', '<tr>'))
++
++	def get_runtime(self):
++		self.runtime = gutils.strip_tags(gutils.trim(self.page, 'Length:', '<tr>'))
++
++	def get_genre(self):
++		self.genre = gutils.trim(self.page, 'Genres:</td>', '</td>')
++		if self.genre == '':
++			self.genre = gutils.trim(self.page, 'Genre:</td>', '</td>')
++		self.genre = self.genre.replace('\t', '')
++		self.genre = self.genre.replace('\n', '')
++		self.genre = self.genre.replace('\r', '')
++		
++	def get_cast(self):
++		self.cast = ''
++		elements = string.split(self.page, '<a HREF="/actor.cfm')
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				self.cast = self.cast + gutils.trim(element, '<U>', '</U>') + '\n'
++
++	def get_studio(self):
++		self.studio = gutils.trim(self.page, 'Studio:', '<tr>')
++
++	def get_site(self):
++		self.site = 'http://www.adultfilmdatabase.com/video.cfm?videoid=' + self.movie_id
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = "http://www.adultfilmdatabase.com/lookup.cfm?searchtype=Video&find="
++		self.translated_url_search = "http://www.adultfilmdatabase.com/lookup.cfm?searchtype=Video&find="
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		return gutils.trim(self.page, "Search Results for", "	</tr>")
++
++	def get_searches(self):
++		elements = string.split(self.page, '\t\t\t\t\t\t<a HREF="/video.cfm?videoid=')
++		if len(elements) > 1:
++			elements[0] = ''
++			for element in elements:
++				if element <> '':
++					self.ids.append(gutils.before(element, '"'))
++					title = gutils.trim(element, "<U>", "</U>")
++					if title == '':
++						title = gutils.strip_tags(gutils.trim(element, '>', '</a>'))
++					self.titles.append(title)
++		else:
++			videoid = gutils.trim(self.page, 'VideoID" VALUE="', '">')
++			if videoid <> '':
++				self.ids.append(videoid)
++				self.titles.append(gutils.trim(self.page, '<h2>', '</h2>'))
+
+
+
+From piotrek at mail.berlios.de  Thu Mar 29 20:16:37 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 29 Mar 2007 20:16:37 +0200
+Subject: [Griffith-svn] r750 - in trunk: . lib/plugins/movie
+Message-ID: <200703291816.l2TIGb1r004287@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-29 20:16:36 +0200 (Thu, 29 Mar 2007)
+New Revision: 750
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDb movie plugin updated (fixes LP:97742)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-03-23 21:15:32 UTC (rev 749)
++++ trunk/ChangeLog	2007-03-29 18:16:36 UTC (rev 750)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-03-29  Piotr O?arowski
++	* IMDB movie plugin updated
++
+ 2007-03-20  Piotr O?arowski
+ 	* FilmDb and Zelluloid movie plugins added (thanks to Michael Jahn)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-03-23 21:15:32 UTC (rev 749)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-03-29 18:16:36 UTC (rev 750)
+@@ -32,7 +32,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O?arowski'
+ plugin_author_email	= 'griffith-private at lists.berlios.de'
+-plugin_version		= '1.1'
++plugin_version		= '1.1.1'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -106,6 +106,7 @@
+ 			self.rating = str(float(gutils.clean(self.rating)))
+ 
+ 	def get_notes(self):
++		self.notes = ''
+ 		language = gutils.trim(self.page, '<h5>Language:</h5>', '</div>')
+ 		language = gutils.strip_tags(language)
+ 		color = gutils.trim(self.page, '<h5>Color:</h5>', '</div>')
+
+
+
+From piotrek at mail.berlios.de  Thu Mar 29 23:55:35 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 29 Mar 2007 23:55:35 +0200
+Subject: [Griffith-svn] r751 - in trunk: . lib/plugins/movie
+Message-ID: <200703292155.l2TLtZKQ019158@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-03-29 23:55:35 +0200 (Thu, 29 Mar 2007)
+New Revision: 751
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/NEWS
+Log:
+IMDBb-de movie plugin added (thanks to Michael Jahn!)
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-03-29 18:16:36 UTC (rev 750)
++++ trunk/AUTHORS	2007-03-29 21:55:35 UTC (rev 751)
+@@ -20,7 +20,7 @@
+ * CSFD movie plugin
+ 
+ Michael Jahn <mikej06 at hotmail.com>
+-* Movie plugins: DVDEmpire, FilmDb,FilmeVonAZ, Kino.de, Zelluloid
++* Movie plugins: DVDEmpire, FilmDb,FilmeVonAZ, IMDb-de, Kino.de, Zelluloid
+ 
+ Jessica Katharina Parth <Jessica.K.P at women-at-work.org>
+ * OFDb movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-03-29 18:16:36 UTC (rev 750)
++++ trunk/ChangeLog	2007-03-29 21:55:35 UTC (rev 751)
+@@ -6,6 +6,7 @@
+ 
+ 2007-03-29  Piotr O?arowski
+ 	* IMDB movie plugin updated
++	* IMDb-de movie plugin added (thanks to Michael Jahn)
+ 
+ 2007-03-20  Piotr O?arowski
+ 	* FilmDb and Zelluloid movie plugins added (thanks to Michael Jahn)
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-03-29 18:16:36 UTC (rev 750)
++++ trunk/NEWS	2007-03-29 21:55:35 UTC (rev 751)
+@@ -2,7 +2,7 @@
+ ===========================
+ * Updated movie plugins: Filmweb
+ * New configuration file format (human readable)
+-* New movie plugins: FilmDb, Zelluloid
++* New movie plugins: FilmDb, Zelluloid, IMDb-de
+ 
+ 
+ Griffith 0.9.2
+
+Added: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-03-29 18:16:36 UTC (rev 750)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-03-29 21:55:35 UTC (rev 751)
+@@ -0,0 +1,168 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++
++plugin_name         = 'IMDb-de'
++plugin_description  = 'Internet Movie Database German'
++plugin_url          = 'german.imdb.com'
++plugin_language     = _('German')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = 'mikej06 at hotmail.com'
++plugin_version      = '1.0'
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode = 'utf-8'
++		self.movie_id = id
++		self.url = "http://german.imdb.com/title/tt%s" % str(self.movie_id)
++
++	def get_image(self):
++		tmp = string.find(self.page, 'a name="poster"')
++		if tmp == -1:		# poster not available
++			self.image_url = ''
++		else:
++			self.image_url = gutils.trim(self.page[tmp:], 'src="', '"')
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, '<h1>', ' <span')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<h1>', ' <span')
++		elements = string.split(gutils.trim(self.page, '<h5>Alternativ:', '</div>'), '<i class="transl"')
++		if len(elements) > 1:
++			for element in elements:
++				tmp = gutils.before(gutils.trim(element, '>', '[de]'), '(')
++				if tmp <> '':
++					self.title = tmp
++					break
++
++	def get_director(self):
++		self.director = gutils.trim(self.page,'<h5>Regie</h5>', '<br/>\n<br/>')
++		self.director = self.__before_more(self.director)
++		self.director = self.director.replace('<br/>', ', ')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, '<h5>Kurzbeschreibung:</h5>', '</div>')
++		self.plot = self.__before_more(self.plot)
++		plot_page = self.open_page(url="http://german.imdb.com/title/tt" + str(self.movie_id) + "/plotsummary")
++		self.plot = self.plot + '\n\n' + gutils.strip_tags(gutils.trim(plot_page, '<p class="plotpar">', '<div'))
++
++	def get_year(self):
++		self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>')
++		self.year = gutils.after(self.year, '">')
++
++	def get_runtime(self):
++		self.runtime = gutils.trim(self.page, '<h5>L&auml;nge:</h5>', ' min')
++
++	def get_genre(self):
++		self.genre = gutils.trim(self.page, '<h5>Genre:</h5>', '</div>')
++		self.genre = self.__before_more(self.genre)
++
++	def get_cast(self):
++		self.cast = ''
++		self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
++		self.cast = string.replace(self.cast, ' ... ', _(' as '))
++		self.cast = string.replace(self.cast, '</tr><tr>', "\n")
++		self.cast = string.replace(self.cast, '</tr><tr class="even">', "\n")
++		self.cast = string.replace(self.cast, '</tr><tr class="odd">', "\n")
++		self.cast = self.__before_more(self.cast)
++
++	def get_classification(self):
++		self.classification = gutils.trim(gutils.trim(self.page, 'Altersfreigabe:', '</div>'), 'Germany:', '&')
++
++	def get_studio(self):
++		self.studio = gutils.trim(self.page, '<h5>Company:</h5>', '</a>')
++
++	def get_o_site(self):
++		self.o_site = ''
++
++	def get_site(self):
++		self.site = "http://german.imdb.com/title/tt%s" % self.movie_id
++
++	def get_trailer(self):
++		self.trailer = "http://german.imdb.com/title/tt%s/trailers" % self.movie_id
++
++	def get_country(self):
++		self.country = gutils.trim(self.page, '<h5>Produktionsland:</h5>', '</div>')
++
++	def get_rating(self):
++		self.rating = gutils.trim(self.page, '<b>Ihre Bewertung:</b>', '/10')
++		if self.rating:
++			try:
++				self.rating = str(float(gutils.clean(self.rating)))
++			except:
++				self.rating = ''
++
++	def get_notes(self):
++		self.notes = ''
++		language = gutils.trim(self.page, '<h5>Language:</h5>', '</div>')
++		language = gutils.strip_tags(language)
++		color = gutils.trim(self.page, '<h5>Color:</h5>', '</div>')
++		color = gutils.strip_tags(color)
++		sound = gutils.trim(self.page, '<h5>Sound Mix:</h5>', '</div>')
++		sound = gutils.strip_tags(sound)
++		tagline = gutils.trim(self.page, '<h5>Tagline:</h5>', '</div>')
++		tagline = self.__before_more(tagline)
++		tagline = gutils.strip_tags(tagline)
++		if len(language)>0:
++			self.notes = "%s: %s\n" %(_('Language'), language)
++		if len(sound)>0:
++			self.notes += "%s: %s\n" %(gutils.strip_tags(_('<b>Audio</b>')), sound)
++		if len(color)>0:
++			self.notes += "%s: %s\n" %(_('Color'), color)
++		if len(tagline)>0:
++			self.notes += "%s: %s\n" %('Tagline', tagline)
++	
++	def __before_more(self, data):
++		tmp = string.find(data, '>mehr...<')
++		if tmp>0:
++			data = data[:tmp] + '>'
++		return data
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search	= 'http://german.imdb.com/find?more=tt&q='
++		self.translated_url_search	= 'http://german.imdb.com/find?more=tt&q='
++		self.encode = 'utf-8'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		self.sub_search()
++		return self.page
++
++	def sub_search(self):
++		self.page = gutils.trim(self.page, '</b> found the following results:', '<b>Suggestions For Improving Your Results</b>');
++		self.page = self.page.decode('iso-8859-1')
++
++	def get_searches(self):
++		elements = string.split(self.page, '<li>')
++
++		if (elements[0]<>''):
++			for element in elements:
++				self.ids.append(gutils.trim(element, '/title/tt','/?fr='))
++				self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, ';fm=1">', '</li>'))))
+
+
+

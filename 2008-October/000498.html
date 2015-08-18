@@ -1,0 +1,433 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1018 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1018%20-%20trunk/lib&In-Reply-To=%3C200810252004.m9PK491W017736%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000497.html">
+   <LINK REL="Next"  HREF="000499.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1018 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1018%20-%20trunk/lib&In-Reply-To=%3C200810252004.m9PK491W017736%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1018 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Oct 25 22:04:09 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000497.html">[Griffith-svn] r1017 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000499.html">[Griffith-svn] r1019 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#498">[ date ]</a>
+              <a href="thread.html#498">[ thread ]</a>
+              <a href="subject.html#498">[ subject ]</a>
+              <a href="author.html#498">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-10-25 22:04:08 +0200 (Sat, 25 Oct 2008)
+New Revision: 1018
+
+Modified:
+   trunk/lib/advfilter.py
+   trunk/lib/db.py
+   trunk/lib/sql.py
+Log:
+search window:
+* add negative commands
+* translate commands
+
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2008-10-25 19:58:46 UTC (rev 1017)
++++ trunk/lib/advfilter.py	2008-10-25 20:04:08 UTC (rev 1018)
+@@ -29,7 +29,7 @@
+ import db
+ import sql
+ from gutils import info
+-    
++
+ __conditions = { # default
+     'loaned'          : None,  # None, True, False
+     'seen'            : None,  # None, True, False
+@@ -44,16 +44,33 @@
+     'loan_history'    : set(), # list of person_ids	    (search for movies which were loaned by these people)
+     'sort_by'         : set((&quot;number&quot;,)), # &quot;number DESC&quot;
+     'equals'          : {}, # {column1: set(value1, value2), column2: set(value3)}
++    'equals_n'        : {}, # see above
+     'startswith'      : {}, # see above
++    'startswith_n'    : {}, # see above
+     'contains'        : {}, # see above
++    'contains_n'      : {}, # see above
+     'like'            : {}, # see above
++    'like_n'          : {}, # see above
+     'ilike'           : {}, # see above
++    'ilike_n'         : {}, # see above
+     }
+-    
++
+ QUERY_FIELDS = ('title', 'o_title', 'director', 'plot', 'cast', 'notes', 'number',
+                 'runtime', 'year', 'screenplay', 'cameraman', 'country', 'genre',
+                 'studio', 'classification', 'o_site', 'site', 'trailer')
+-QUERY_COMMANDS = ('equals', 'startswith', 'contains', 'like', 'ilike')
++QUERY_COMMANDS = ('equals', 'equals_n', 'startswith', 'startswith_n', 'contains',
++                  'contains_n', 'like', 'like_n', 'ilike', 'ilike_n')
++QUERY_COMMAND_NAMES = {
++    'equals'      : _('is equal to'),
++    'equals_n'    : _('is not equal to'),
++    'startswith'  : _('starts with'),
++    'startswith_n': _(&quot;doesn't start with&quot;),
++    'contains'    : _('contains'),
++    'contains_n'  : _(&quot;doesn't contain&quot;),
++    'like'        : _('like'),
++    'like_n'      : _('not like'),
++    'ilike'       : _('ilike'),
++    'ilike_n'     : _('not ilike')}
+ 
+ # widgets -----------------------------------------------------{{{
+ 
+@@ -98,7 +115,7 @@
+         for option in options[1:]: # create rest of the widgets, use first one as a group
+             next_widget = gtk.RadioButton(widget, label=option)
+             hbox.pack_start(next_widget, expand=False, padding=4)
+-        
++
+         label = gtk.Label()
+         label.set_text(item.name)
+         hbox.pack_start(label, padding=16, expand=False)
+@@ -125,7 +142,7 @@
+         widgets[&quot;volumes_frame&quot;].show()
+     else:
+         widgets[&quot;volumes_frame&quot;].hide()
+-    
++
+     # collections
+     items = gsql.session.query(db.Collection).all()
+     if len(items):
+@@ -150,7 +167,7 @@
+         widgets['cb_name'].append_text(filter_[0])
+     return True
+ 
+-def add_query_widget(container, field_names, sel_qf='title', sel_comm=0, text='' ):
++def add_query_widget(container, field_names, sel_qf='title', sel_comm='equals', text='' ):
+     hbox = gtk.HBox()
+ 
+     cb = gtk.combo_box_new_text()
+@@ -166,12 +183,12 @@
+     for i, command in enumerate(QUERY_COMMANDS):
+         if sel_comm == command:
+             select = i
+-        action_cb.append_text(_(command))
++        action_cb.append_text(QUERY_COMMAND_NAMES[command])
+     action_cb.set_active(select)
+ 
+     entry = gtk.Entry()
+     entry.set_text(text)
+-    
++
+     button = gtk.Button(stock=gtk.STOCK_DELETE)
+     button.connect(&quot;clicked&quot;, lambda w: hbox.destroy())
+ 
+@@ -185,7 +202,7 @@
+ 
+ def set_conditions(widgets, cond, field_names): #{{{
+     widgets['name'].set_text('')
+-    
++
+     # delete old widgets
+     for i in widgets['dynamic_vbox'].get_children():
+         i.destroy()
+@@ -196,7 +213,7 @@
+         widgets[&quot;rb_seen_only&quot;].set_active(True)
+     elif cond[&quot;seen&quot;] is False:
+         widgets[&quot;rb_seen_only_n&quot;].set_active(True)
+-    
++
+     if cond[&quot;loaned&quot;] is None:
+         widgets[&quot;rb_loaned&quot;].set_active(True)
+     elif cond[&quot;loaned&quot;] is True:
+@@ -215,7 +232,7 @@
+             hbox_items[4].set_active(True)
+         else:
+             hbox_items[1].set_active(True)
+-    
++
+     for hbox in widgets[&quot;volumes_vbox&quot;]:
+         hbox_items = hbox.get_children()
+         id_ = int(hbox_items[0].get_text())
+@@ -225,7 +242,7 @@
+             hbox_items[3].set_active(True)
+         else:
+             hbox_items[1].set_active(True)
+-    
++
+     for hbox in widgets[&quot;collections_vbox&quot;]:
+         hbox_items = hbox.get_children()
+         id_ = int(hbox_items[0].get_text())
+@@ -235,7 +252,7 @@
+             hbox_items[3].set_active(True)
+         else:
+             hbox_items[1].set_active(True)
+-    
++
+     for hbox in widgets[&quot;loans_vbox&quot;]:
+         hbox_items = hbox.get_children()
+         id_ = int(hbox_items[0].get_text())
+@@ -257,7 +274,7 @@
+                 for text in cond[rule][field]:
+                     add_query_widget(vbox, field_names, field, rule, text)
+     return True
+-    
++
+     #}}}
+ 
+ def get_conditions(widgets): #{{{
+@@ -269,7 +286,7 @@
+         cond[&quot;seen&quot;] = True
+     elif widgets[&quot;rb_seen_only_n&quot;].get_active():
+         cond[&quot;seen&quot;] = False
+-    
++
+     if widgets[&quot;rb_loaned&quot;].get_active():
+         cond[&quot;loaned&quot;] = None
+     elif widgets[&quot;rb_loaned_only&quot;].get_active():
+@@ -292,21 +309,21 @@
+             cond[&quot;volumes&quot;].add(int(hbox_items[0].get_label()))
+         elif hbox_items[3].get_active():
+             cond[&quot;no_volumes&quot;].add(int(hbox_items[0].get_label()))
+-    
++
+     for hbox in widgets[&quot;collections_vbox&quot;]:
+         hbox_items = hbox.get_children()
+         if hbox_items[2].get_active():
+             cond[&quot;collections&quot;].add(int(hbox_items[0].get_label()))
+         elif hbox_items[3].get_active():
+             cond[&quot;no_collections&quot;].add(int(hbox_items[0].get_label()))
+-    
++
+     for hbox in widgets[&quot;loans_vbox&quot;]:
+         hbox_items = hbox.get_children()
+         if hbox_items[2].get_active():
+             cond[&quot;loaned_to&quot;].add(int(hbox_items[0].get_label()))
+         elif hbox_items[3].get_active():
+             cond[&quot;loan_history&quot;].add(int(hbox_items[0].get_label()))
+-    
++
+     for hbox in widgets[&quot;dynamic_vbox&quot;]:
+         hbox_items = hbox.get_children()
+ 
+@@ -315,17 +332,17 @@
+             continue
+ 
+         field = hbox_items[0].get_active()
+-        if 0 &lt; field &gt; len(QUERY_FIELDS):
++        if 0 &gt; field or field &gt; len(QUERY_FIELDS):
+             continue
+         else:
+             field = QUERY_FIELDS[field]
+-            
++
+             command = hbox_items[1].get_active()
+-            if 0 &lt; command &gt; len(QUERY_COMMANDS):
++            if 0 &gt; command or command &gt; len(QUERY_COMMANDS):
+                 continue
+             else:
+                 command = QUERY_COMMANDS[command]
+-            
++
+         cond[command].setdefault(field, set()).add(entry)
+ 
+     return cond # }}}
+@@ -381,7 +398,7 @@
+         if not columns:
+             columns = get_select_columns(self.config)
+         query = select(columns, bind=self.db.session.bind)
+-    
++
+     self._search_conditions = conditions # save for later
+     # TODO: remove after debugging:
+     from pprint import pprint
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-10-25 19:58:46 UTC (rev 1017)
++++ trunk/lib/db.py	2008-10-25 20:04:08 UTC (rev 1018)
+@@ -301,7 +301,7 @@
+ 
+ movie_lang_table = Table('movie_lang', metadata,
+     Column('ml_id', Integer, primary_key=True),
+-    Column('type', SmallInteger), # 0: Original, 1:lector, 2:dubbing, 3:subtitle 
++    Column('type', SmallInteger), # 0: Original, 1:lector, 2:dubbing, 3:subtitle
+     Column('movie_id', Integer, ForeignKey('movies.movie_id'), nullable=False),
+     Column('lang_id', Integer, ForeignKey('languages.lang_id'), nullable=False),
+     Column('acodec_id', Integer, ForeignKey('acodecs.acodec_id')),
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-10-25 19:58:46 UTC (rev 1017)
++++ trunk/lib/sql.py	2008-10-25 20:04:08 UTC (rev 1018)
+@@ -131,7 +131,7 @@
+         self.session = session # global session
+         self.Session = Session # create new sessions using this class
+         #}}}
+-        
++
+         # check if database needs an upgrade
+         db.metadata.create_all(engine)
+         try:
+@@ -171,21 +171,21 @@
+         query.append_whereclause(db.Movie.volume_id.in_(cond[&quot;volumes&quot;]))
+     if cond[&quot;no_volumes&quot;]:
+         query.append_whereclause(~db.Movie.volume_id.in_(cond[&quot;no_volumes&quot;]))
+-    
++
+     loaned_to = []
+     for per_id in cond[&quot;loaned_to&quot;]:
+         loaned_to.append(exists([db.loans_table.c.movie_id],\
+                 and_(db.Movie.movie_id==db.loans_table.c.movie_id, db.loans_table.c.person_id==per_id, db.loans_table.c.return_date==None)))
+     if loaned_to:
+         query.append_whereclause(or_(*loaned_to))
+-    
++
+     loan_history = []
+     for per_id in cond[&quot;loan_history&quot;]:
+         loan_history.append(exists([db.loans_table.c.movie_id],\
+                 and_(db.Movie.movie_id==db.loans_table.c.movie_id, db.loans_table.c.person_id==per_id)))
+     if loan_history:
+         query.append_whereclause(or_(*loan_history))
+-    
++
+     required_tags = []
+     for tag_id in cond[&quot;required_tags&quot;]:
+         required_tags.append(exists([db.MovieTag.movie_id], \
+@@ -199,7 +199,7 @@
+             and_(db.Movie.movie_id==db.MovieTag.movie_id, db.MovieTag.tag_id==tag_id)))
+     if tags:
+         query.append_whereclause(or_(*tags))
+-    
++
+     no_tags = []
+     for tag_id in cond[&quot;no_tags&quot;]:
+         no_tags.append(~exists([db.MovieTag.movie_id], \
+@@ -207,10 +207,30 @@
+     if no_tags:
+         query.append_whereclause(and_(*no_tags))
+ 
++    for field in cond[&quot;equals_n&quot;]:
++        values = [ db.movies_table.columns[field]!=value for value in cond[&quot;equals_n&quot;][field] ]
++        query.append_whereclause(and_(*values))
++
++    for field in cond[&quot;startswith_n&quot;]:
++        values = [ not_(db.movies_table.columns[field].startswith(value)) for value in cond[&quot;startswith_n&quot;][field] ]
++        query.append_whereclause(and_(*values))
++
++    for field in cond[&quot;like_n&quot;]:
++        values = [ not_(db.movies_table.columns[field].like(value)) for value in cond[&quot;like_n&quot;][field] ]
++        query.append_whereclause(and_(*values))
++
++    for field in cond[&quot;ilike_n&quot;]:
++        values = [ not_(db.movies_table.columns[field].ilike(value)) for value in cond[&quot;ilike_n&quot;][field] ]
++        query.append_whereclause(and_(*values))
++
++    for field in cond[&quot;contains_n&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
++        values = [ not_(db.movies_table.columns[field].like('%'+value+'%')) for value in cond[&quot;contains_n&quot;][field] ]
++        query.append_whereclause(and_(*values))
++
+     for field in cond[&quot;equals&quot;]:
+         values = [ db.movies_table.columns[field]==value for value in cond[&quot;equals&quot;][field] ]
+         query.append_whereclause(or_(*values))
+-    
++
+     for field in cond[&quot;startswith&quot;]:
+         values = [ db.movies_table.columns[field].startswith(value) for value in cond[&quot;startswith&quot;][field] ]
+         query.append_whereclause(or_(*values))
+@@ -218,15 +238,15 @@
+     for field in cond[&quot;like&quot;]:
+         values = [ db.movies_table.columns[field].like(value) for value in cond[&quot;like&quot;][field] ]
+         query.append_whereclause(or_(*values))
+-    
++
+     for field in cond[&quot;ilike&quot;]:
+         values = [ db.movies_table.columns[field].ilike(value) for value in cond[&quot;ilike&quot;][field] ]
+         query.append_whereclause(or_(*values))
+-    
++
+     for field in cond[&quot;contains&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
+         values = [ db.movies_table.columns[field].like('%'+value+'%') for value in cond[&quot;contains&quot;][field] ]
+         query.append_whereclause(or_(*values))
+-    
++
+     # sorting
+     for rule in cond[&quot;sort_by&quot;]:
+         if rule.endswith(&quot; DESC&quot;):
+@@ -246,7 +266,7 @@
+ # MOVIE LOAN related functions --------------------------------{{{
+ def loan_movie(gsql, movie_id, person_id, whole_collection=False):
+     &quot;&quot;&quot;loans a movie, movie's volume and optionally movie's collection&quot;&quot;&quot;
+-            
++
+     session = gsql.Session() # create new session
+ 
+     person = session.query(db.Person).filter_by(person_id=person_id).first()
+@@ -296,7 +316,7 @@
+ 
+ def loan_return(gsql, movie_id):
+     &quot;&quot;&quot;marks movie, movie's volume and movie's collection as returned&quot;&quot;&quot;
+-    
++
+     session = gsql.Session() # create new session
+ 
+     loan = session.query(db.Loan).filter_by(movie_id=movie_id, return_date=None).first()
+@@ -350,13 +370,13 @@
+     movie = gsql.session.query(db.Movie).filter_by(movie_id=movie_id).first()
+     if movie is None:
+         return False
+-    
++
+     # fix or add volume/collection data:
+     if movie.collection_id is not None:
+         collection_id = movie.collection_id
+     if movie.volume_id is not None:
+         volume_id = movie.volume_id
+-    
++
+     if collection_id &gt; 0 and volume_id &gt; 0:
+         return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
+                                                               or_(db.Loan.collection_id==collection_id,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000497.html">[Griffith-svn] r1017 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000499.html">[Griffith-svn] r1019 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#498">[ date ]</a>
+              <a href="thread.html#498">[ thread ]</a>
+              <a href="subject.html#498">[ subject ]</a>
+              <a href="author.html#498">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

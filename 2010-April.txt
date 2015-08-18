@@ -1,0 +1,388 @@
+From mikej06 at mail.berlios.de  Sun Apr 18 21:46:33 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 18 Apr 2010 21:46:33 +0200
+Subject: [Griffith-svn] r1413 - trunk/lib/plugins/extensions
+Message-ID: <201004181946.o3IJkXt0009658@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-04-18 21:46:26 +0200 (Sun, 18 Apr 2010)
+New Revision: 1413
+
+Modified:
+   trunk/lib/plugins/extensions/ge_amazon.py
+Log:
+[#559691] Abrufen von Amazon fehlerhaft
+a better hint text
+
+Modified: trunk/lib/plugins/extensions/ge_amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_amazon.py	2010-03-28 20:18:54 UTC (rev 1412)
++++ trunk/lib/plugins/extensions/ge_amazon.py	2010-04-18 19:46:26 UTC (rev 1413)
+@@ -52,11 +52,11 @@
+                               'default': u'US',
+                               'type': (u'US', u'UK', u'DE', u'CA', u'FR', u'JP')},
+                    'accesskey': {'name': _('Access Key ID'),
+-                                 'hint': u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
++                                 'hint': _('Get your Access Key ID from ') + u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
+                                  'default': u'',
+                                  'type': unicode},
+                    'secretkey': {'name': _('Secret Key'),
+-                                 'hint': u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
++                                 'hint': _('Get your Secret Key from ') + u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
+                                  'default': u'',
+                                  'type': unicode}}
+     toolbar_icon = 'gtk-network'
+
+
+
+From mikej06 at mail.berlios.de  Wed Apr 21 21:23:26 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 21 Apr 2010 21:23:26 +0200
+Subject: [Griffith-svn] r1414 - in trunk: . lib lib/plugins/movie
+Message-ID: <201004211923.o3LJNQPu023518@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-04-21 21:23:17 +0200 (Wed, 21 Apr 2010)
+New Revision: 1414
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/lib/test_movieplugins.py
+Log:
+updated movie plugin AniDB
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-04-18 19:46:26 UTC (rev 1413)
++++ trunk/ChangeLog	2010-04-21 19:23:17 UTC (rev 1414)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-04-21  Michael Jahn
++	* updated movie plugin AniDB
++
+ 2010-03-28  Michael Jahn
+ 	* updated movie plugin WP
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2010-04-18 19:46:26 UTC (rev 1413)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2010-04-21 19:23:17 UTC (rev 1414)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = 'piotr at griffith.cc'
+-plugin_version      = '2.7'
++plugin_version      = '2.8'
+ 
+ aid_pattern = re.compile('[?&;]aid=(\d+)')
+ 
+@@ -74,11 +74,11 @@
+         self.title = gutils.trim(self.page, '<h1 class="anime">Anime: ', '</h1>')
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, '<a title="Direction (&#x76E3;&#x7763;)" href=', 'a>')
+-        self.director = gutils.trim(self.director, '>', '</')
++        self.director = gutils.trim(self.page, '>Direction (&#x76E3;&#x7763;', '</tr>')
++        self.director = gutils.after(gutils.trim(self.director, '<a ', '</a>'), '>')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, 'class="desc">', '</div>')
++        self.plot = gutils.regextrim(self.page, 'class="(g_bubble )*desc">', '</div>')
+         self.plot = self.plot.replace('<br/>', '\n')
+ 
+     def get_year(self):
+@@ -170,6 +170,10 @@
+                 airdate = gutils.clean(gutils.trim(part, 'class="date airdate">', '</td>'))
+                 self.notes += '\n' + nr + ': ' + title + ' (' + duration + ', ' + airdate + ')'
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.trim(self.page, 'Script/Screenplay (&#x811A;&#x672C;', '</tr>')
++        self.screenplay = gutils.after(gutils.trim(self.screenplay, '<a ', '</a>'), '>')
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode = 'utf-8'
+@@ -213,3 +217,83 @@
+             else:
+                 self.number_results = 0
+ 
++#
++# Plugin Test
++#
++
++
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Hellsing' : [ 8, 8 ]
++    }
++
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> dict { arribute -> value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '32' : {
++            'title'               : 'Hellsing',
++            'o_title'             : u'?????',
++            'director'            : 'Urata Yasunori',
++            'plot'                : True,
++            'cast'                : u'Characters:\n\
++---------------\n\
++\n\
++[Alucard] voiced by Nakata Jouji\n\
++male; main character in; appears in episodes: -\n\
++\n\
++[Incognito] voiced by Yamazaki Takumi\n\
++-; main character in; appears in episodes: 8-13\n\
++\n\
++[Seras Victoria] voiced by Orikasa Fumiko\n\
++female; main character in; appears in episodes: -\n\
++\n\
++[Sir Integral Fairbrook Wingates Hellsing] voiced by Sakakibara Yoshiko\n\
++22, female; main character in; appears in episodes: -\n\
++\n\
++[Alexander Anderson] voiced by Nozawa Nachi\n\
++male; secondary cast in; appears in episodes: -\n\
++\n\
++[Enrico Maxwell] voiced by Tanaka Hideyuki\n\
++male; secondary cast in; appears in episodes: -\n\
++\n\
++[Helena] voiced by Hiramatsu Akiko\n\
++female; secondary cast in; appears in episodes: 8, 11\n\
++\n\
++[Walter C. Dornez] voiced by Kiyokawa Motomu\n\
++male; secondary cast in; appears in episodes: -\n\
++\n\
++[Hellsing Organization] voiced by \n\
++Organisation; appears in; appears in episodes: -\n\
++\n\
++[Iscariot Organization] voiced by \n\
++Organisation; appears in; appears in episodes: -\n\
++\n\
++[Police Officer inside Heli (???????)] voiced by Andy Holyfield\n\
++-; appears in; appears in episodes: 8',
++            'country'             : False,
++            'genre'               : 'Action, Contemporary Fantasy, Cops, Fantasy, Gunfights, Horror, Law and Order, Seinen, Special Squads, Vampires, Violence',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : 'http://www.gonzo.co.jp/works/0102.html',
++            'site'                : 'http://anidb.net/perl-bin/animedb.pl?show=anime&aid=32',
++            'trailer'             : False,
++            'year'                : 2002,
++            'notes'               : True,
++            'runtime'             : 0,
++            'image'               : True,
++            'rating'              : 8,
++            'cameraman'           : False,
++            'screenplay'          : 'Konaka Chiaki'
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-04-18 19:46:26 UTC (rev 1413)
++++ trunk/lib/test_movieplugins.py	2010-04-21 19:23:17 UTC (rev 1414)
+@@ -71,6 +71,7 @@
+         'PluginMovieAllocine',
+         'PluginMovieAllMovie',
+         'PluginMovieAmazon',
++        'PluginMovieAniDB',
+         'PluginMovieCinematografo',
+         'PluginMovieCineMovies',
+         'PluginMovieCineteka',
+
+
+
+From mikej06 at mail.berlios.de  Wed Apr 21 21:26:14 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 21 Apr 2010 21:26:14 +0200
+Subject: [Griffith-svn] r1415 - trunk/lib/plugins/imp
+Message-ID: <201004211926.o3LJQEKA023663@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-04-21 21:25:59 +0200 (Wed, 21 Apr 2010)
+New Revision: 1415
+
+Modified:
+   trunk/lib/plugins/imp/AllMyMovies.py
+Log:
+AllMyMovies import plugin: mapping MediaLocationName to volume
+
+Modified: trunk/lib/plugins/imp/AllMyMovies.py
+===================================================================
+--- trunk/lib/plugins/imp/AllMyMovies.py	2010-04-21 19:23:17 UTC (rev 1414)
++++ trunk/lib/plugins/imp/AllMyMovies.py	2010-04-21 19:25:59 UTC (rev 1415)
+@@ -82,8 +82,11 @@
+             self.cursor = self.connection.cursor()
+             self.cursor.execute( \
+                 'SELECT MovieID, barcode, comments, description, length, mediacount, MediaTypeName, \
+-                        mpaa, Name, originaltitle, rating, seen, studio, url, year, Trailer \
+-                 FROM movies LEFT OUTER JOIN MediaType ON movies.MediaTypeID=MediaType.MediaTypeID;')
++                        mpaa, movies.Name, originaltitle, rating, seen, studio, url, year, Trailer, \
++                        MediaLocation.Name \
++                 FROM (movies \
++                      LEFT OUTER JOIN MediaType ON movies.MediaTypeID=MediaType.MediaTypeID) \
++                      LEFT OUTER JOIN MediaLocation ON movies.medialocationID=MediaLocation.MediaLocationID;')
+ 
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+@@ -122,6 +125,8 @@
+                 details['year'] = currentrow[14]
+             if currentrow[15]:
+                 details['trailer'] = currentrow[15]
++            if currentrow[16]:
++                details['volume_id'] = currentrow[16]
+             # loading other details
+             curs = self.connection.cursor()
+             curs.execute('SELECT Actors.Name, ActorsLink.Role \
+
+
+
+From mikej06 at mail.berlios.de  Wed Apr 21 22:15:05 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 21 Apr 2010 22:15:05 +0200
+Subject: [Griffith-svn] r1416 - trunk
+Message-ID: <201004212015.o3LKF5tT028021@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-04-21 22:14:48 +0200 (Wed, 21 Apr 2010)
+New Revision: 1416
+
+Modified:
+   trunk/griffith
+Log:
+fixed call of method delete_poster_from_cache
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-04-21 19:25:59 UTC (rev 1415)
++++ trunk/griffith	2010-04-21 20:14:48 UTC (rev 1416)
+@@ -1325,7 +1325,7 @@
+ 
+                 posters = self.db.session.query(db.Movie.poster_md5).all()
+                 for poster in posters:
+-                    delete_poster_from_cache(self, poster[0])
++                    delete_poster_from_cache(poster[0], posters_dir)
+ 
+                 log.debug('dropping old tables...')
+                 self.db.session.rollback() # cancel all pending operations
+
+
+
+From piotrek at mail.berlios.de  Wed Apr 28 21:58:47 2010
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 28 Apr 2010 21:58:47 +0200
+Subject: [Griffith-svn] r1417 - in trunk: . lib/db
+Message-ID: <201004281958.o3SJwlJT000316@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-04-28 21:58:46 +0200 (Wed, 28 Apr 2010)
+New Revision: 1417
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db/tables.py
+Log:
+Use 255 as maximum string length for few fields (MySQL apparently doesn't like >=256 on some configurations)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-04-21 20:14:48 UTC (rev 1416)
++++ trunk/ChangeLog	2010-04-28 19:58:46 UTC (rev 1417)
+@@ -5,6 +5,10 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-04-28  Piotr O?arowski
++	* Use 255 as maximum string length for few fields (MySQL apparently
++	  doesn't like >=256 on some configurations)
++
+ 2010-04-21  Michael Jahn
+ 	* updated movie plugin AniDB
+ 
+
+Modified: trunk/lib/db/tables.py
+===================================================================
+--- trunk/lib/db/tables.py	2010-04-21 20:14:48 UTC (rev 1416)
++++ trunk/lib/db/tables.py	2010-04-28 19:58:46 UTC (rev 1417)
+@@ -74,14 +74,14 @@
+     Column('width', SmallInteger),
+     Column('height', SmallInteger),
+     Column('barcode', Unicode(32)),
+-    Column('o_title', Unicode(256), index=True),
+-    Column('title', Unicode(256), index=True),
+-    Column('director', Unicode(256)),
+-    Column('screenplay', Unicode(256)),
+-    Column('cameraman', Unicode(256)),
+-    Column('o_site', Unicode(256)),
+-    Column('site', Unicode(256)),
+-    Column('trailer', Unicode(256)),
++    Column('o_title', Unicode(255), index=True),
++    Column('title', Unicode(255), index=True),
++    Column('director', Unicode(255)),
++    Column('screenplay', Unicode(255)),
++    Column('cameraman', Unicode(255)),
++    Column('o_site', Unicode(255)),
++    Column('site', Unicode(255)),
++    Column('trailer', Unicode(255)),
+     Column('country', Unicode(128)),
+     Column('genre', Unicode(128)),
+     Column('studio', Unicode(128)),
+@@ -94,7 +94,7 @@
+ 
+ people = Table('people', metadata,
+     Column('person_id', Integer, primary_key=True),
+-    Column('name', Unicode(256), nullable=False, unique=True),
++    Column('name', Unicode(255), nullable=False, unique=True),
+     Column('email', Unicode(128)),
+     Column('phone', Unicode(64)))
+ 
+
+
+
+From piotrek at mail.berlios.de  Wed Apr 28 21:59:16 2010
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 28 Apr 2010 21:59:16 +0200
+Subject: [Griffith-svn] r1418 - trunk/lib
+Message-ID: <201004281959.o3SJxGb1000372@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-04-28 21:59:15 +0200 (Wed, 28 Apr 2010)
+New Revision: 1418
+
+Modified:
+   trunk/lib/gutils.py
+Log:
+don't fail with beta/rc versions of SQLAlchemy
+
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-04-28 19:58:46 UTC (rev 1417)
++++ trunk/lib/gutils.py	2010-04-28 19:59:15 UTC (rev 1418)
+@@ -480,7 +480,7 @@
+         'debian_req': '2.8.6-1'})
+     try:
+         import sqlalchemy
+-        if map(int, sqlalchemy.__version__.split('.')[:2]) < [0, 5]:
++        if map(int, sqlalchemy.__version__[:3].split('.')) < (0, 5):
+             version = "-%s" % sqlalchemy.__version__
+         else:
+             version = sqlalchemy.__version__
+
+
+

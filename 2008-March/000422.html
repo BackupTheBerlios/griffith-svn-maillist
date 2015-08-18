@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r933 - in branches/griffith_wxpython: . wxglade
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r933%20-%20in%20branches/griffith_wxpython%3A%20.%20wxglade&In-Reply-To=%3C200803150512.m2F5CXWC006584%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000421.html">
+   <LINK REL="Next"  HREF="000423.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r933 - in branches/griffith_wxpython: . wxglade</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r933%20-%20in%20branches/griffith_wxpython%3A%20.%20wxglade&In-Reply-To=%3C200803150512.m2F5CXWC006584%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r933 - in branches/griffith_wxpython: . wxglade">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Sat Mar 15 06:12:33 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000421.html">[Griffith-svn] r932 - branches/griffith_wxpython
+</A></li>
+        <LI>Next message: <A HREF="000423.html">[Griffith-svn] r934 - branches/griffith_wxpython/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#422">[ date ]</a>
+              <a href="thread.html#422">[ thread ]</a>
+              <a href="subject.html#422">[ subject ]</a>
+              <a href="author.html#422">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2008-03-15 06:12:32 +0100 (Sat, 15 Mar 2008)
+New Revision: 933
+
+Modified:
+   branches/griffith_wxpython/griffith.py
+   branches/griffith_wxpython/wxglade/griffith.wxg
+Log:
+
+
+Modified: branches/griffith_wxpython/griffith.py
+===================================================================
+--- branches/griffith_wxpython/griffith.py	2008-03-15 04:01:40 UTC (rev 932)
++++ branches/griffith_wxpython/griffith.py	2008-03-15 05:12:32 UTC (rev 933)
+@@ -55,11 +55,39 @@
+ 
+ # other imports
+ import wx
+-import add, config, gconsole, gutils, gdebug, initialize, main_treeview, quick_filter
++import add, config, gconsole, gutils, gdebug, initialize, main_treeview, quick_filter, poster
+ 
+ # begin wxGlade: extracode
+ # end wxGlade
+ 
++class ViewerFrame(wx.Frame):
++    def __init__(self, *args, **kwds):
++        # begin wxGlade: ViewerFrame.__init__
++        kwds[&quot;style&quot;] = wx.CAPTION|wx.CLOSE_BOX|wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.RESIZE_BORDER|wx.FRAME_TOOL_WINDOW|wx.FRAME_FLOAT_ON_PARENT|wx.CLIP_CHILDREN
++        wx.Frame.__init__(self, *args, **kwds)
++        self.poster = wx.StaticBitmap(self, -1, wx.NullBitmap)
++
++        self.__set_properties()
++        self.__do_layout()
++        # end wxGlade
++
++    def __set_properties(self):
++        # begin wxGlade: ViewerFrame.__set_properties
++        self.SetTitle(_(&quot;Poster Viewer&quot;))
++        # end wxGlade
++
++    def __do_layout(self):
++        # begin wxGlade: ViewerFrame.__do_layout
++        sizer_6 = wx.BoxSizer(wx.VERTICAL)
++        sizer_6.Add(self.poster, 0, wx.EXPAND, 0)
++        self.SetSizer(sizer_6)
++        sizer_6.Fit(self)
++        self.Layout()
++        # end wxGlade
++
++# end of class ViewerFrame
++
++
+ class MainFrame(wx.Frame):
+     def __init__(self, *args, **kwds):
+     
+@@ -275,6 +303,7 @@
+         self.Bind(wx.EVT_LIST_DELETE_ITEM, self.OnMainListDelete, self.main_listcontrol)
+         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnMainListSelected, self.main_listcontrol)
+         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnMainLColumnClicked, self.main_listcontrol)
++        self.Bind(wx.EVT_BUTTON, self.OnPosterClick, self.poster)
+         # end wxGlade
+         
+         initialize.locations_misc(self)
+@@ -300,7 +329,7 @@
+         _icon = wx.EmptyIcon()
+         _icon.CopyFromBitmap(wx.Bitmap(&quot;images/griffith.xpm&quot;, wx.BITMAP_TYPE_ANY))
+         self.SetIcon(_icon)
+-        self.SetSize((795, 750))
++        self.SetSize((795, 796))
+         self.SetBackgroundColour(wx.Colour(255, 255, 255))
+         self.main_frame_statusbar.SetStatusWidths([-1])
+         # statusbar fields
+@@ -534,6 +563,10 @@
+     def OnMainLColumnClicked(self, event): # wxGlade: MainFrame.&lt;event_handler&gt;
+         print &quot;not implemented&quot;
+ 
++    def OnPosterClick(self, event): # wxGlade: MainFrame.&lt;event_handler&gt;
++        self.viewer_frame = ViewerFrame(None, -1, &quot;&quot;)
++        poster.display_poster_viewer(self)
++
+ # end of class MainFrame
+ 
+ class GriffithApp(wx.App):
+
+Modified: branches/griffith_wxpython/wxglade/griffith.wxg
+===================================================================
+--- branches/griffith_wxpython/wxglade/griffith.wxg	2008-03-15 04:01:40 UTC (rev 932)
++++ branches/griffith_wxpython/wxglade/griffith.wxg	2008-03-15 05:12:32 UTC (rev 933)
+@@ -1,5 +1,5 @@
+ &lt;?xml version=&quot;1.0&quot;?&gt;
+-&lt;!-- generated by wxGlade 0.6.3 on Sat Mar 15 03:57:37 2008 --&gt;
++&lt;!-- generated by wxGlade 0.6.3 on Sat Mar 15 05:11:07 2008 --&gt;
+ 
+ &lt;application path=&quot;/Users/vasco/Code/griffith_wxpython/griffith.py&quot; name=&quot;griffith&quot; class=&quot;GriffithApp&quot; option=&quot;0&quot; language=&quot;python&quot; top_window=&quot;main_frame&quot; encoding=&quot;UTF-8&quot; use_gettext=&quot;1&quot; overwrite=&quot;0&quot; use_new_namespace=&quot;1&quot; for_version=&quot;2.8&quot; is_template=&quot;0&quot;&gt;
+     &lt;object class=&quot;MainFrame&quot; name=&quot;main_frame&quot; base=&quot;EditFrame&quot;&gt;
+@@ -11,7 +11,7 @@
+         &lt;statusbar&gt;1&lt;/statusbar&gt;
+         &lt;toolbar&gt;1&lt;/toolbar&gt;
+         &lt;background&gt;#FFFFFF&lt;/background&gt;
+-        &lt;size&gt;795, 750&lt;/size&gt;
++        &lt;size&gt;795, 796&lt;/size&gt;
+         &lt;object class=&quot;wxMenuBar&quot; name=&quot;main_frame_menubar&quot; base=&quot;EditMenuBar&quot;&gt;
+             &lt;menus&gt;
+                 &lt;menu name=&quot;&quot; label=&quot;File&quot;&gt;
+@@ -561,6 +561,9 @@
+                                         &lt;option&gt;0&lt;/option&gt;
+                                         &lt;object class=&quot;wxBitmapButton&quot; name=&quot;poster&quot; base=&quot;EditBitmapButton&quot;&gt;
+                                             &lt;style&gt;wxBU_AUTODRAW&lt;/style&gt;
++                                            &lt;events&gt;
++                                                &lt;handler event=&quot;EVT_BUTTON&quot;&gt;OnPosterClick&lt;/handler&gt;
++                                            &lt;/events&gt;
+                                             &lt;size&gt;150, 200&lt;/size&gt;
+                                         &lt;/object&gt;
+                                     &lt;/object&gt;
+@@ -618,4 +621,19 @@
+             &lt;/object&gt;
+         &lt;/object&gt;
+     &lt;/object&gt;
++    &lt;object class=&quot;ViewerFrame&quot; name=&quot;viewer_frame&quot; base=&quot;EditFrame&quot;&gt;
++        &lt;style&gt;wxCAPTION|wxCLOSE_BOX|wxMINIMIZE_BOX|wxMAXIMIZE_BOX|wxSTAY_ON_TOP|wxSYSTEM_MENU|wxRESIZE_BORDER|wxFRAME_TOOL_WINDOW|wxFRAME_FLOAT_ON_PARENT|wxCLIP_CHILDREN&lt;/style&gt;
++        &lt;title&gt;Poster Viewer&lt;/title&gt;
++        &lt;object class=&quot;wxBoxSizer&quot; name=&quot;sizer_6&quot; base=&quot;EditBoxSizer&quot;&gt;
++            &lt;orient&gt;wxVERTICAL&lt;/orient&gt;
++            &lt;object class=&quot;sizeritem&quot;&gt;
++                &lt;flag&gt;wxEXPAND&lt;/flag&gt;
++                &lt;border&gt;0&lt;/border&gt;
++                &lt;option&gt;0&lt;/option&gt;
++                &lt;object class=&quot;wxStaticBitmap&quot; name=&quot;poster&quot; base=&quot;EditStaticBitmap&quot;&gt;
++                    &lt;attribute&gt;1&lt;/attribute&gt;
++                &lt;/object&gt;
++            &lt;/object&gt;
++        &lt;/object&gt;
++    &lt;/object&gt;
+ &lt;/application&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000421.html">[Griffith-svn] r932 - branches/griffith_wxpython
+</A></li>
+	<LI>Next message: <A HREF="000423.html">[Griffith-svn] r934 - branches/griffith_wxpython/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#422">[ date ]</a>
+              <a href="thread.html#422">[ thread ]</a>
+              <a href="subject.html#422">[ subject ]</a>
+              <a href="author.html#422">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

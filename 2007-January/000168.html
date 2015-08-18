@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r644 - in trunk: . glade images lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r644%20-%20in%20trunk%3A%20.%20glade%20images%20lib&In-Reply-To=%3C200701012201.l01M1Obc024432%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000167.html">
+   <LINK REL="Next"  HREF="000169.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r644 - in trunk: . glade images lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r644%20-%20in%20trunk%3A%20.%20glade%20images%20lib&In-Reply-To=%3C200701012201.l01M1Obc024432%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r644 - in trunk: . glade images lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  1 23:01:24 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000167.html">[Griffith-svn] r643 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000169.html">[Griffith-svn] r645 - in trunk: . glade images lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#168">[ date ]</a>
+              <a href="thread.html#168">[ thread ]</a>
+              <a href="subject.html#168">[ subject ]</a>
+              <a href="author.html#168">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-01 23:01:23 +0100 (Mon, 01 Jan 2007)
+New Revision: 644
+
+Added:
+   trunk/glade/seen.png
+Removed:
+   trunk/images/seen.png
+   trunk/images/unseen.png
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/cover.py
+   trunk/lib/main_treeview.py
+   trunk/lib/widgets.py
+Log:
+Seen status can be now set without opening edit window
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-01 20:09:43 UTC (rev 643)
++++ trunk/ChangeLog	2007-01-01 22:01:23 UTC (rev 644)
+@@ -10,6 +10,7 @@
+ 	* Scroll movie list when selecting first/prev/next/last movie button
+ 	* Copy video codec data when cloning movie
+ 	* Fixed displaying volume/collection loan status
++	* Seen status can be now set without opening edit window
+ 
+ 2006-12-30 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Compare lower() values while importing movies
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2007-01-01 20:09:43 UTC (rev 643)
++++ trunk/glade/griffith.glade	2007-01-01 22:01:23 UTC (rev 644)
+@@ -1108,14 +1108,17 @@
+ 			  &lt;property name=&quot;spacing&quot;&gt;0&lt;/property&gt;
+ 
+ 			  &lt;child&gt;
+-			    &lt;widget class=&quot;GtkImage&quot; id=&quot;m_seen_icon&quot;&gt;
++			    &lt;widget class=&quot;GtkToggleToolButton&quot; id=&quot;m_seen&quot;&gt;
+ 			      &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-			      &lt;property name=&quot;stock&quot;&gt;gtk-yes&lt;/property&gt;
+-			      &lt;property name=&quot;icon_size&quot;&gt;4&lt;/property&gt;
+-			      &lt;property name=&quot;xalign&quot;&gt;0.5&lt;/property&gt;
+-			      &lt;property name=&quot;yalign&quot;&gt;0.5&lt;/property&gt;
+-			      &lt;property name=&quot;xpad&quot;&gt;0&lt;/property&gt;
+-			      &lt;property name=&quot;ypad&quot;&gt;0&lt;/property&gt;
++			      &lt;property name=&quot;tooltip&quot; translatable=&quot;yes&quot;&gt;Edit movie details&lt;/property&gt;
++			      &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;&lt;/property&gt;
++			      &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++			      &lt;property name=&quot;icon&quot;&gt;seen.png&lt;/property&gt;
++			      &lt;property name=&quot;visible_horizontal&quot;&gt;True&lt;/property&gt;
++			      &lt;property name=&quot;visible_vertical&quot;&gt;True&lt;/property&gt;
++			      &lt;property name=&quot;is_important&quot;&gt;False&lt;/property&gt;
++			      &lt;property name=&quot;active&quot;&gt;False&lt;/property&gt;
++			      &lt;signal name=&quot;clicked&quot; handler=&quot;on_m_seen_clicked&quot; last_modification_time=&quot;Mon, 01 Jan 2007 21:44:20 GMT&quot;/&gt;
+ 			    &lt;/widget&gt;
+ 			    &lt;packing&gt;
+ 			      &lt;property name=&quot;padding&quot;&gt;0&lt;/property&gt;
+
+Added: trunk/glade/seen.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/glade/seen.png
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-01-01 20:09:43 UTC (rev 643)
++++ trunk/griffith	2007-01-01 22:01:23 UTC (rev 644)
+@@ -267,7 +267,15 @@
+ 		add.change_rating_from_slider(self)
+ 
+ 	def toggle_seen(self, *args):
+-		edit.toggle_seen(self)
++		m_number, m_iter = self.get_maintree_selection()
++		movie = self.db.Movie.get_by(number=m_number)
++		if movie.seen:
++			movie.seen = False
++		else:
++			movie.seen = True
++		movie.update()
++		movie.flush()
++		movie.refresh()
+ 
+ 	def sugest_movie(self, *args):
+ 		if not self.widgets['menu']['not_seen_movies'].get_active():
+@@ -710,9 +718,9 @@
+ 		self.widgets['print_cover']['window_simple'].hide()
+ 
+ 	def print_cover_simple_process(self, *args):
+-		movie_id, movie_iter = self.get_maintree_selection()
+-		if movie_id is not None:
+-			cover.cover_simple(self, movie_id)
++		movie_number, movie_iter = self.get_maintree_selection()
++		if movie_number is not None:
++			cover.cover_simple(self, movie_number)
+ 		else:
+ 			gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+ 
+@@ -722,8 +730,8 @@
+ 
+ 	def print_cover_image_process(self, *args):
+ 		self.widgets['print_cover']['window_image'].hide()
+-		movie_id, movie_iter = self.get_maintree_selection()
+-		cover.cover_image(self, movie_id)
++		movie_number, movie_iter = self.get_maintree_selection()
++		cover.cover_image(self, movie_number)
+ 
+ 	def print_cover_image_hide(self, *args):
+ 		self.widgets['print_cover']['window_image'].hide()
+
+Deleted: trunk/images/seen.png
+===================================================================
+(Binary files differ)
+
+Deleted: trunk/images/unseen.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/lib/cover.py
+===================================================================
+--- trunk/lib/cover.py	2007-01-01 20:09:43 UTC (rev 643)
++++ trunk/lib/cover.py	2007-01-01 22:01:23 UTC (rev 644)
+@@ -38,15 +38,15 @@
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+-def cover_image(self,id):
++def cover_image(self,number):
+ 	filename = gutils.file_chooser(_(&quot;Select image&quot;), \
+ 		action=gtk.FILE_CHOOSER_ACTION_OPEN, \
+ 		buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, \
+ 			gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+ 	if filename[0]:
+-		cover_image_process(self, filename[0], id)
++		cover_image_process(self, filename[0], number)
+ 
+-def cover_image_process(self, filename, id):
++def cover_image_process(self, filename, number):
+ 	size = self.widgets['print_cover']['ci_size'].get_active()
+ 	number = self.widgets['print_cover']['ci_number'].get_active()
+ 
+@@ -88,7 +88,7 @@
+ 		_(&quot;Released Under the GNU/GPL License&quot;).encode('utf-8'))
+ 
+ 	# get movie information from db
+-	movie = self.db.Movie.get_by(number=id)
++	movie = self.db.Movie.get_by(number=number)
+ 	if movie is not None:
+ 		c.drawImage(filename, pos_x, pos_y, cover_x, cover_y)
+ 		if number == True:
+@@ -96,7 +96,7 @@
+ 			c.rect((pageWidth/2)-13, 520, 26, 70, fill=1, stroke=0)
+ 			c.setFillColor(colors.black)
+ 			c.setFont(fontName, 10)
+-			c.drawCentredString(pageWidth/2, 530, id)
++			c.drawCentredString(pageWidth/2, 530, number)
+ 
+ 	# draw cover area
+ 	c.rect(pos_x, pos_y, cover_x, cover_y)
+@@ -110,7 +110,7 @@
+ 	else:
+ 		os.popen3(self.pdf_reader + &quot; &quot; + cover_file)
+ 
+-def cover_simple(self, id):
++def cover_simple(self, number):
+ 	size = self.widgets['print_cover']['cs_size'].get_active()
+ 	number = self.widgets['print_cover']['cs_include_movie_number'].get_active()
+ 	poster = self.widgets['print_cover']['cs_include_poster'].get_active()
+@@ -154,11 +154,11 @@
+ 	c.rect(pos_x, pos_y, cover_x, cover_y)
+ 
+ 	# get movie information from db
+-	movie = self.db.Movie.get_by(number=id)
++	movie = self.db.Movie.get_by(number=number)
+ 	if movie is not None:
+ 		if number == True:
+ 			c.setFont(fontName, 10)
+-			c.drawCentredString(pageWidth/2, 530, id)
++			c.drawCentredString(pageWidth/2, 530, number)
+ 
+ 		c.setFont(fontName, 16)
+ 		c.rotate(90)
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-01-01 20:09:43 UTC (rev 643)
++++ trunk/lib/main_treeview.py	2007-01-01 22:01:23 UTC (rev 644)
+@@ -137,9 +137,9 @@
+ 		self._trailer_url = None
+ 		w['go_trailer_button'].set_sensitive(False)
+ 	if item.has_key('seen') and item['seen'] == True:
+-		w['seen_icon'].set_from_file(os.path.join(self.locations['images'], 'seen.png'))
++		w['seen'].set_active(True)
+ 	else:
+-		w['seen_icon'].set_from_file(os.path.join(self.locations['images'], 'unseen.png'))
++		w['seen'].set_active(False)
+ 	if item.has_key('notes') and item['notes']:
+ 		w['notes'].set_text(str(item.notes))
+ 	else:
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2007-01-01 20:09:43 UTC (rev 643)
++++ trunk/lib/widgets.py	2007-01-01 22:01:23 UTC (rev 644)
+@@ -61,7 +61,7 @@
+ 		'plot':			get('m_plot'),
+ 		'region':		get('m_region'),
+ 		'runtime':		get('m_runtime'),
+-		'seen_icon':		get('m_seen_icon'),
++		'seen':			get('m_seen'),
+ 		'site':			get('m_site'),
+ 		'studio':		get('m_studio'),
+ 		'tags':			get('m_tags'),
+@@ -322,6 +322,7 @@
+ 		'on_get_from_web_clicked'		: self.get_from_web,
+ 		'on_update_button_clicked'		: self.update_movie,
+ 		'on_import_activate'			: self.on_import_activate,
++		'on_m_seen_clicked'			: self.toggle_seen,
+ 		# preferences
+ 		'on_preferences1_activate'		: self.show_preferences,
+ 		'on_cancel_preferences_clicked'		: self.hide_preferences,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000167.html">[Griffith-svn] r643 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000169.html">[Griffith-svn] r645 - in trunk: . glade images lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#168">[ date ]</a>
+              <a href="thread.html#168">[ thread ]</a>
+              <a href="subject.html#168">[ subject ]</a>
+              <a href="author.html#168">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

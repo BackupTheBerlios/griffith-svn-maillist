@@ -1,0 +1,1686 @@
+From piotrek at mail.berlios.de  Sun Jul  1 22:15:55 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 1 Jul 2007 22:15:55 +0200
+Subject: [Griffith-svn] r800 - in trunk: . lib
+Message-ID: <200707012015.l61KFt4l006862@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-07-01 22:15:54 +0200 (Sun, 01 Jul 2007)
+New Revision: 800
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/sql.py
+   trunk/lib/version.py
+Log:
+Fix db config data (thanks Michael)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-30 18:48:16 UTC (rev 799)
++++ trunk/ChangeLog	2007-07-01 20:15:54 UTC (rev 800)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-01  Piotr O?arowski
++	* Fix db config data (thanks Michael)
++
+ ---- 0.9.3 ---
+ 
+ 2007-06-30  Piotr O?arowski
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-06-30 18:48:16 UTC (rev 799)
++++ trunk/lib/sql.py	2007-07-01 20:15:54 UTC (rev 800)
+@@ -303,25 +303,25 @@
+ 		if config.get('type', section='database') == 'sqlite':
+ 			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database'))
+ 		elif config.get('type', section='database') == 'postgres':
+-			if config.get('db_port', 0, section='database')==0:
++			if config.get('port', 0, section='database')==0:
+ 				config.set('port', 5432, section='database')
+ 			url = "postgres://%s:%s@%s:%d/%s" % (
+-				config.get('db_user', section='database'),
+-				config.get('db_passwd', section='database'),
+-				config.get('db_host', section='database'),
+-				int(config.get('db_port', section='database')),
+-				config.get('db_name', section='database'))
++				config.get('user', section='database'),
++				config.get('passwd', section='database'),
++				config.get('host', section='database'),
++				int(config.get('port', section='database')),
++				config.get('name', section='database'))
+ 		elif config.get('type', section='database') == 'mysql':
+-			if config.get('db_port', 0, section='database')==0:
++			if config.get('port', 0, section='database')==0:
+ 				config.set('port', 3306, section='database')
+ 			url = "mysql://%s:%s@%s:%d/%s" % (
+-				config.get('db_user', section='database'),
+-				config.get('db_passwd', section='database'),
+-				config.get('db_host', section='database'),
+-				int(config.get('db_port', section='database')),
+-				config.get('db_name', section='database'))
++				config.get('user', section='database'),
++				config.get('passwd', section='database'),
++				config.get('host', section='database'),
++				int(config.get('port', section='database')),
++				config.get('name', section='database'))
+ 		elif config.get('type', section='database') == 'mssql':
+-			if config.get('db_port', 0, section='database')==0:
++			if config.get('port', 0, section='database')==0:
+ 				config.set('port', 1433, section='database')
+ 			# use_scope_identity=0 have to be set as workaround for a sqlalchemy bug
+ 			# but it is not guaranteed that the right identity value will be selected
+@@ -332,11 +332,11 @@
+ 			# (one statement !) After preparing and executing there should be a fetch
+ 			# If it is executed as two separate statements the scope is lost after insert.
+ 			url = "mssql://%s:%s@%s:%d/%s?use_scope_identity=0" % (
+-				config.get('db_user', section='database'),
+-				config.get('db_passwd', section='database'),
+-				config.get('db_host', section='database'),
+-				int(config.get('db_port', section='database')),
+-				config.get('db_name', section='database'))
++				config.get('user', section='database'),
++				config.get('passwd', section='database'),
++				config.get('host', section='database'),
++				int(config.get('port', section='database')),
++				config.get('name', section='database'))
+ 		else:
+ 			config.set('type', 'sqlite', section='database')
+ 			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database'))
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-06-30 18:48:16 UTC (rev 799)
++++ trunk/lib/version.py	2007-07-01 20:15:54 UTC (rev 800)
+@@ -23,7 +23,7 @@
+ 
+ from gettext import gettext as _
+ pname        = "Griffith"
+-pversion     = "0.9.3"
++pversion     = "0.9.3.1"
+ pauthor      = "Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>"
+ pyear        = "2005-2007"
+ pwebsite     = "http://griffith.berlios.de/"
+
+
+
+From piotrek at mail.berlios.de  Mon Jul  2 20:55:48 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 2 Jul 2007 20:55:48 +0200
+Subject: [Griffith-svn] r801 - in trunk: . debian
+Message-ID: <200707021855.l62ItmtA001423@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-07-02 20:55:47 +0200 (Mon, 02 Jul 2007)
+New Revision: 801
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/README
+   trunk/debian/changelog
+   trunk/winpackage.iss
+   trunk/winsetup.py
+Log:
+* add missing el and zh_CN languages to windows installer
+* minor docs update
+* prepare for 0.9.3.1 release
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-01 20:15:54 UTC (rev 800)
++++ trunk/ChangeLog	2007-07-02 18:55:47 UTC (rev 801)
+@@ -4,8 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++---- 0.9.3.1 ---
++
+ 2007-07-01  Piotr O?arowski
+-	* Fix db config data (thanks Michael)
++	* Problem with saving database preferences in config file fixed
+ 
+ ---- 0.9.3 ---
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-07-01 20:15:54 UTC (rev 800)
++++ trunk/NEWS	2007-07-02 18:55:47 UTC (rev 801)
+@@ -1,3 +1,8 @@
++Griffith 0.9.3.1
++================
++* Problem with saving database preferences in config file fixed
++
++
+ Griffith 0.9.3
+ ==============
+ * New configuration file format (human readable) - please note that data from old config file is not used
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-07-01 20:15:54 UTC (rev 800)
++++ trunk/README	2007-07-02 18:55:47 UTC (rev 801)
+@@ -1,5 +1,5 @@
+-Griffith 0.9.3 README
+-=====================
++Griffith 0.9.3.1 README
++=======================
+ 
+ This document was last updated on Thu Jan 09 2007.
+ Please see the file COPYING for licensing and warranty information.
+@@ -27,18 +27,18 @@
+ System Requirements
+ ===================
+ 
+-  Name			Minimum version		URL
+-  ----			---------------		---
++  Name			Minimum version		URL						NOTE
++  ----			---------------		---						----
+   * Python		2.3 or higher		http://www.python.org/
+   * GTK+		tested on 2.6.4		http://www.gtk.org/
+   * PyGTK (with glade2)	tested on 2.6.1		http://www.pygtk.org/
+   * SQLAlchemy		0.3.0			http://www.sqlalchemy.org/
+-  * pysqlite2		2			http://initd.org/tracker/pysqlite
++  * pysqlite2		2			http://initd.org/tracker/pysqlite		Python 2.5's sqlite3 module will be used if available
+   * PIL						http://www.pythonware.com/products/pil/
+   * PyXML					http://pyxml.sf.net/
+   * ReportLab		1.19			http://www.reportlab.org
+-	
+-  Other dependencies (optional):
++
++  Other (optional) dependencies:
+   ------------------------------
+   PostgreSQL support:
+   * Psycopg2		2			http://initd.org/tracker/psycopg/wiki/PsycopgTwo
+@@ -57,8 +57,8 @@
+ ----------------------
+   $ ./griffith --check-dep
+ 
+-To show detected Python modules version:
+-----------------------------------------
++To show detected Python modules versions:
++-----------------------------------------
+   $ ./griffith --show-dep
+ 
+ Windows installer includes all the needed requirements.
+@@ -105,7 +105,7 @@
+ If you want to help or report any bugs founded please visit:
+   http://griffith.berlios.de/
+ or
+-  http://developer.berlios.de/bugs/?group_id=4891
++  https://bugs.launchpad.net/griffith/
+ 
+ 
+ TODO
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-07-01 20:15:54 UTC (rev 800)
++++ trunk/debian/changelog	2007-07-02 18:55:47 UTC (rev 801)
+@@ -1,3 +1,9 @@
++griffith (0.9.3.1-1) unstable; urgency=low
++
++  * New upstream release 
++
++ -- Piotr O?arowski <piotr at debian.org>  Mon, 02 Jul 2007 19:32:15 +0200
++
+ griffith (0.9.3-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2007-07-01 20:15:54 UTC (rev 800)
++++ trunk/winpackage.iss	2007-07-02 18:55:47 UTC (rev 801)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.9.3
++AppVerName=Griffith 0.9.3.1
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://griffith.berlios.de/
+ AppSupportURL=http://griffith.berlios.de/
+@@ -14,7 +14,7 @@
+ LicenseFile=C:\griffith\COPYING
+ InfoAfterFile=C:\griffith\README
+ OutputDir=C:\griffith\installer
+-OutputBaseFilename=griffith-0.9.3-win32
++OutputBaseFilename=griffith-0.9.3.1-win32
+ SetupIconFile=C:\griffith\images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,7 +22,7 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.9.3
++AppVersion=0.9.3.1
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2007-07-01 20:15:54 UTC (rev 800)
++++ trunk/winsetup.py	2007-07-02 18:55:47 UTC (rev 801)
+@@ -54,7 +54,7 @@
+ 
+ setup(
+     name = "Griffith",
+-    version = "0.9.3",
++    version = "0.9.3.1",
+ 	description = 'Griffith - A film manager',
+     author = 'Vasco Nunes/Piotr Ozarowski',
+     author_email = 'vasco.m.nunes at gmail.com',
+@@ -87,8 +87,12 @@
+ 		glob.glob("i18n\\bg\\LC_MESSAGES\\*.mo")),
+ 		("i18n/cs/LC_MESSAGES",
+ 		glob.glob("i18n\\cs\\LC_MESSAGES\\*.mo")),
++		("i18n/da/LC_MESSAGES",
++		glob.glob("i18n\\da\\LC_MESSAGES\\*.mo")),
+ 		("i18n/de/LC_MESSAGES",
+ 		glob.glob("i18n\\de\\LC_MESSAGES\\*.mo")),
++		("i18n/el/LC_MESSAGES",
++		glob.glob("i18n\\el\\LC_MESSAGES\\*.mo")),
+ 		("i18n/es/LC_MESSAGES",
+ 		glob.glob("i18n\\es\\LC_MESSAGES\\*.mo")),
+ 		("i18n/fr/LC_MESSAGES",
+@@ -105,8 +109,8 @@
+ 		glob.glob("i18n\\sv\\LC_MESSAGES\\*.mo")),
+ 		("i18n/pt_BR/LC_MESSAGES",
+ 		glob.glob("i18n\\pt_BR\\LC_MESSAGES\\*.mo")),
+-		("i18n/da/LC_MESSAGES",
+-		glob.glob("i18n\\da\\LC_MESSAGES\\*.mo")),
++		("i18n/zh_CN/LC_MESSAGES",
++		glob.glob("i18n\\zh_CN\\LC_MESSAGES\\*.mo")),
+ 		("lib/plugins",
+ 		glob.glob("lib\\plugins\\*.*")),
+ 		("lib/plugins/export",
+
+
+
+From iznogoud at mail.berlios.de  Tue Jul  3 01:34:21 2007
+From: iznogoud at mail.berlios.de (iznogoud at mail.berlios.de)
+Date: Tue, 3 Jul 2007 01:34:21 +0200
+Subject: [Griffith-svn] r803 - trunk
+Message-ID: <200707022334.l62NYLM9004897@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-07-03 01:34:08 +0200 (Tue, 03 Jul 2007)
+New Revision: 803
+
+Modified:
+   trunk/winpackage.iss
+Log:
+added simplified chinese to innosetup script
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2007-07-02 19:21:31 UTC (rev 802)
++++ trunk/winpackage.iss	2007-07-02 23:34:08 UTC (rev 803)
+@@ -32,6 +32,8 @@
+ Name: ger; MessagesFile: compiler:German.isl
+ Name: cze; MessagesFile: compiler:Czech.isl
+ Name: fre; MessagesFile: compiler:French.isl
++Name: chi; MessagesFile: compiler:ChineseSimp-11-5.1.0.isl
++Name: gre; MessagesFile: compiler:Greek-4-5.1.11.isl
+ 
+ [LangOptions]
+ LanguageCodePage=0
+
+
+
+From mikej06 at mail.berlios.de  Tue Jul  3 10:57:16 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 3 Jul 2007 10:57:16 +0200
+Subject: [Griffith-svn] r804 - in trunk: . lib/plugins/movie
+Message-ID: <200707030857.l638vGGn024282@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-03 10:56:57 +0200 (Tue, 03 Jul 2007)
+New Revision: 804
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+Log:
+DVD-Palace movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-02 23:34:08 UTC (rev 803)
++++ trunk/ChangeLog	2007-07-03 08:56:57 UTC (rev 804)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-03 Michael Jahn
++	* DVD-Palace movie plugin updated
++
+ ---- 0.9.3.1 ---
+ 
+ 2007-07-01  Piotr O?arowski
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2007-07-02 23:34:08 UTC (rev 803)
++++ trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2007-07-03 08:56:57 UTC (rev 804)
+@@ -107,15 +107,33 @@
+ 
+ 	def get_notes(self):
+ 		self.notes = ""
+-		tmp_notes = gutils.strip_tags(string.replace(gutils.trim(self.page, 'Bildformat(e)', '</TR>'), '<br />', '\n'))
++		tmp_notes = re.sub('^[ \t]+', '',
++			gutils.strip_tags(
++			re.sub('(<br>|<br />)', '\r\n',
++			re.sub('[\r\n]+', '',
++			re.sub('[ \t][ \t\r\n]+', ' ',
++			gutils.trim(self.page, 'Bildformat(e)', '</TR>')))))
++		)
+ 		if (tmp_notes != ""):
+ 			self.notes = self.notes + "Bildformat(e):\n" + tmp_notes + "\n"
+-		tmp_notes = gutils.strip_tags(string.replace(gutils.trim(self.page, 'Untertitel', '</TR>'), '<br>', '\n'))
++		tmp_notes = re.sub('^[ \t]+', '',
++			gutils.strip_tags(
++			re.sub('(<br>|<br />)', '\r\n',
++			re.sub('[\r\n]+', '',
++			re.sub('[ \t][ \t\r\n]+', ' ',
++			gutils.trim(self.page, 'Tonformat(e)', '</TR>')))))
++		)
+ 		if (tmp_notes != ""):
++			self.notes = self.notes + "Tonformat(e):\n" + tmp_notes + "\n\n"
++		tmp_notes = re.sub('^[ \t]+', '',
++			gutils.strip_tags(
++			re.sub('(<br>|<br />)', '\r\n',
++			re.sub('[\r\n]+', '',
++			re.sub('[ \t][ \t\r\n]+', ' ',
++			gutils.trim(self.page, 'Untertitel', '</TR>')))))
++		)
++		if (tmp_notes != ""):
+ 			self.notes = self.notes + "Untertitel:" + tmp_notes + "\n\n"
+-		tmp_notes = gutils.strip_tags(string.replace(gutils.trim(self.page, 'Tonformat(e)', '</TR>'), '<br />', '\n'))
+-		if (tmp_notes != ""):
+-			self.notes = self.notes + "Tonformat(e):\n" + tmp_notes + "\n\n"
+ 			
+ 	def regextrim(self,text,key1,key2):
+ 		obj = re.search(key1, text)
+@@ -158,7 +176,7 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		elements1 = re.split('&nbsp;<a href="/dvd-datenbank/', self.page)
++		elements1 = re.split('&nbsp;<a title="[^"]+" href="/dvd-datenbank/', self.page)
+ 		elements1[0] = None
+ 		for element in elements1:
+ 			if element <> None:
+@@ -167,9 +185,12 @@
+ 					gutils.trim(element, '>', '</a>') +
+ 					gutils.strip_tags(
+ 						' (' +
++						re.sub('[ \t\n][ \t\n]+', ' ',
+ 						string.replace(
++						string.replace(
+ 							self.regextrim(element, '<div [^>]*>', '</div>'),
+-							'<br>', ' - ')
++							'<br>', ' - '),
++							'&nbsp;', ''))
+ 						+ ')'
+ 					)
+ 				)
+
+
+
+From mikej06 at mail.berlios.de  Tue Jul  3 11:13:56 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 3 Jul 2007 11:13:56 +0200
+Subject: [Griffith-svn] r805 - in trunk: . lib/plugins/movie
+Message-ID: <200707030913.l639DuIF025580@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-03 11:13:38 +0200 (Tue, 03 Jul 2007)
+New Revision: 805
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Log:
+IMDB-de movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-03 08:56:57 UTC (rev 804)
++++ trunk/ChangeLog	2007-07-03 09:13:38 UTC (rev 805)
+@@ -5,7 +5,7 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
+ 2007-07-03 Michael Jahn
+-	* DVD-Palace movie plugin updated
++	* DVD-Palace and IMDB-de movie plugin updated
+ 
+ ---- 0.9.3.1 ---
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-07-03 08:56:57 UTC (rev 804)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-07-03 09:13:38 UTC (rev 805)
+@@ -22,9 +22,8 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
+-import gutils
+-import movie
+-import string
++import gutils, movie
++import string, re
+ 
+ plugin_name         = 'IMDb-de'
+ plugin_description  = 'Internet Movie Database German'
+@@ -32,7 +31,7 @@
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = 'mikej06 at hotmail.com'
+-plugin_version      = '1.1'
++plugin_version      = '1.2'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -157,7 +156,7 @@
+ 		return data
+ 
+ class SearchPlugin(movie.SearchMovie):
+-
++	PATTERN = re.compile(r"""<a href=['"]/title/tt([0-9]+)/["']>(.*?)</td>""")
+ 	def __init__(self):
+ 		self.original_url_search	= 'http://german.imdb.com/find?more=tt&q='
+ 		self.translated_url_search	= 'http://german.imdb.com/find?more=tt&q='
+@@ -165,17 +164,17 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.sub_search()
++		self.page = gutils.trim(self.page, '(Displaying', '<b>Suggestions For Improving Your Results</b>');
++		self.page = self.page.decode('iso-8859-1')
+ 		return self.page
+ 
+-	def sub_search(self):
+-		self.page = gutils.trim(self.page, '</b> found the following results:', '<b>Suggestions For Improving Your Results</b>');
+-		self.page = self.page.decode('iso-8859-1')
+-
+ 	def get_searches(self):
+-		elements = string.split(self.page, '<li>')
++		elements = string.split(self.page, '<tr>')
+ 
+-		if (elements[0]<>''):
+-			for element in elements:
+-				self.ids.append(gutils.trim(element, '/title/tt','/?fr='))
+-				self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, ';fm=1">', '</li>'))))
++		if len(elements):
++			for element in elements[1:]:
++				match = self.PATTERN.findall(element)
++				if len(match):
++					tmp  = gutils.clean(match[0][1])
++					self.ids.append(match[0][0])
++					self.titles.append(tmp)
+
+
+
+From mikej06 at mail.berlios.de  Wed Jul  4 23:24:00 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 4 Jul 2007 23:24:00 +0200
+Subject: [Griffith-svn] r806 - in trunk: . lib/plugins/movie
+Message-ID: <200707042124.l64LO0Rt009840@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-04 23:23:47 +0200 (Wed, 04 Jul 2007)
+New Revision: 806
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+Kino.de movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-03 09:13:38 UTC (rev 805)
++++ trunk/ChangeLog	2007-07-04 21:23:47 UTC (rev 806)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-04 Michael Jahn
++	* Kino.de movie plugin updated
++	
+ 2007-07-03 Michael Jahn
+ 	* DVD-Palace and IMDB-de movie plugin updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-07-03 09:13:38 UTC (rev 805)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-07-04 21:23:47 UTC (rev 806)
+@@ -33,7 +33,7 @@
+ plugin_language = _("German")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.8"
++plugin_version = "1.9"
+ 
+ class Plugin(movie.Movie):
+ 	url_to_use = "http://www.kino.de/kinofilm/"
+@@ -61,13 +61,17 @@
+ 		self.tmp_dvdfeaturespage = gutils.before(self.page, 'kinode_navi1')
+ 
+ 	def get_image(self):
+-		self.image_url = gutils.trim(self.tmp_page, 'class="navi', '.jpg"')
+-		if self.image_url <> '':
+-			self.image_url = 'http://images.kino.de/flbilder/' + gutils.after(self.image_url, 'http://images.kino.de/flbilder/') + '.jpg'
+-		else:
+-			self.image_url = self.regextrim(self.tmp_page, 'http://images.kino.de/flbilder/', 'headline2')
+-			if self.image_url <> '':
+-				self.image_url = 'http://images.kino.de/flbilder/' + gutils.before(self.image_url, '"')
++		self.image_url = ''
++		tmpdata = self.regextrim(self.tmp_page, '(PRINT[-]CONTENT[-]START|<td class="content">)', '(Dieser Film wurde |>FOTOSHOW<|>KRITIK<)')
++		tmpdatasplit = re.split('src="http://images.kino.de/flbilder', tmpdata)
++		if len(tmpdatasplit) > 2:
++			tmpdata = gutils.before(tmpdatasplit[2], '.jpg')
++			if tmpdata <> '':
++				self.image_url = 'http://images.kino.de/flbilder' + tmpdata + '.jpg'
++		elif len(tmpdatasplit) > 1:
++			tmpdata = gutils.before(tmpdatasplit[1], '.jpg')
++			if tmpdata <> '':
++				self.image_url = 'http://images.kino.de/flbilder' + tmpdata + '.jpg'
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.tmp_page,"span class=\"standardsmall\"><br />(",")<")
+@@ -135,7 +139,10 @@
+ 			for element in elements:
+ 				elements2 = element.split("--flip--")
+ 				if len(elements2) > 1:
+-					self.cast += elements2[1] + "--flip--" + elements2[0] + "\n"
++					if elements2[0] <> '':
++						self.cast += elements2[1] + "--flip--" + elements2[0] + "\n"
++					else:
++						self.cast += elements2[1] + "\n"
+ 				else:
+ 					self.cast = element
+ 			self.cast = string.replace(self.cast, "--flip--", _(" as "))
+@@ -257,7 +264,7 @@
+ 		for element in elements1:
+ 			if element <> None:
+ 				self.ids.append("K_" + re.sub('[?].*', '', gutils.before(element,'"')))
+-				self.titles.append(string.replace(string.replace(
++				self.titles.append('Kino: ' + string.replace(string.replace(
+ 					gutils.strip_tags(
+ 						gutils.trim(element,'>','</a>') + ' (' +
+ 						string.replace(
+@@ -273,7 +280,7 @@
+ 		for element in elements2:
+ 			if element <> None:
+ 				self.ids.append("V_" + re.sub('[?].*', '', gutils.before(element,'"')))
+-				self.titles.append(string.replace(string.replace(
++				self.titles.append('Video: ' + string.replace(string.replace(
+ 					gutils.strip_tags(
+ 						gutils.trim(element,'>','</a>') + ' (' +
+ 						string.replace(
+
+
+
+From iznogoud at mail.berlios.de  Fri Jul  6 19:02:36 2007
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Fri, 6 Jul 2007 19:02:36 +0200
+Subject: [Griffith-svn] r807 - in trunk: . lib lib/plugins/export
+	lib/plugins/movie
+Message-ID: <200707061702.l66H2aXV007789@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-07-06 19:02:35 +0200 (Fri, 06 Jul 2007)
+New Revision: 807
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/cover.py
+   trunk/lib/plugins/export/PluginExportiPod.py
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+Log:
+PTGate plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-04 21:23:47 UTC (rev 806)
++++ trunk/ChangeLog	2007-07-06 17:02:35 UTC (rev 807)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O??arowski
+ 
++2007-07-06  Vasco Nunes
++	* PTGate movie plugin updated
++
+ 2007-07-04 Michael Jahn
+ 	* Kino.de movie plugin updated
+ 	
+
+Modified: trunk/lib/cover.py
+===================================================================
+--- trunk/lib/cover.py	2007-07-04 21:23:47 UTC (rev 806)
++++ trunk/lib/cover.py	2007-07-06 17:02:35 UTC (rev 807)
+@@ -84,7 +84,7 @@
+ 	c.setFont(fontName, 8)
+ 	# copyright line
+ 	c.drawString(20, 20 ,_("Cover generated by Griffith v").encode('utf-8') + \
+-		version.pversion+" (C) 2004 Vasco Nunes - "+ \
++		version.pversion+" (C) 2004-2007 Vasco Nunes/Piotr Ozarowski - "+ \
+ 		_("Released Under the GNU/GPL License").encode('utf-8'))
+ 
+ 	# get movie information from db
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2007-07-04 21:23:47 UTC (rev 806)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2007-07-06 17:02:35 UTC (rev 807)
+@@ -71,6 +71,9 @@
+         self.parent = parent_window
+         self.export_iPod()
+ 
++	def split_file(self, filename):
++		pass
++
+     def export_iPod(self):
+ 		tmp_dir = mkdtemp()
+ 		griffith_list = open(os.path.join(tmp_dir,"movies"),"w")
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-07-04 21:23:47 UTC (rev 806)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-07-06 17:02:35 UTC (rev 807)
+@@ -32,7 +32,7 @@
+ plugin_language = _("Portuguese")
+ plugin_author = "Vasco Nunes"
+ plugin_author_email="<vasco.m.nunes at gmail.com>"
+-plugin_version = "0.4"
++plugin_version = "0.4.1"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -70,6 +70,7 @@
+ 	def get_cast(self):
+ 		self.cast = ""
+ 		self.cast = gutils.trim(self.page,"pretes</b><br>","<br><br><b>data de estreia</b><br>")
++		self.cast = string.replace(self.cast,"<br> ","\n")
+ 		self.cast = string.replace(self.cast,"<br>", "\n")
+ 		self.cast = gutils.strip_tags(self.cast)
+ 
+@@ -90,9 +91,13 @@
+ 
+ 	def get_country(self):
+ 		self.country = gutils.trim(self.page,"s</b><br>","<br><br><b>g")
++		
++	def get_notes(self):
++		self.notes = gutils.trim(self.page,"pr?mios e nomea??es</b><br><b>", "<td width=6 background='Images/group_r.gif'")
++		self.notes = gutils.strip_tags(self.notes)
+ 
+ 	def get_rating(self):
+-		tmp=gutils.trim(self.page,"img src='Images/ustar",".gif")
++		tmp=gutils.trim(self.page,"'Images/mstar",".gif")
+ 		if(tmp):
+ 			self.rating = float(tmp)
+ 			if (self.rating>10):
+
+
+
+From piotrek at mail.berlios.de  Mon Jul  9 22:40:15 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 9 Jul 2007 22:40:15 +0200
+Subject: [Griffith-svn] r808 - in trunk: . lib
+Message-ID: <200707092040.l69KeFgS003482@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-07-09 22:40:15 +0200 (Mon, 09 Jul 2007)
+New Revision: 808
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+Log:
+posters directory problem fixed (thanks to Michael)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-06 17:02:35 UTC (rev 807)
++++ trunk/ChangeLog	2007-07-09 20:40:15 UTC (rev 808)
+@@ -4,13 +4,16 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-01  Piotr O?arowski
++	* posters directory problem fixed (thanks to Michael)
++
+ 2007-07-06  Vasco Nunes
+ 	* PTGate movie plugin updated
+ 
+-2007-07-04 Michael Jahn
++2007-07-04  Michael Jahn
+ 	* Kino.de movie plugin updated
+-	
+-2007-07-03 Michael Jahn
++
++2007-07-03  Michael Jahn
+ 	* DVD-Palace and IMDB-de movie plugin updated
+ 
+ ---- 0.9.3.1 ---
+@@ -27,7 +30,7 @@
+ 	* Stopklatka movie plugin updated
+ 
+ 2007-06-29  Piotr O?arowski
+-	* Added Greek translation (thanka to Ioannis Koniaris)
++	* Added Greek translation (thanks to Ioannis Koniaris)
+ 	* Added Simplified Chinese translation (thanks to kempson)
+ 	* Updated German, Spanish, French and Portuguese Brazilian translations (from Rosetta)
+ 	* Updated Polish translations
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-07-06 17:02:35 UTC (rev 807)
++++ trunk/lib/initialize.py	2007-07-09 20:40:15 UTC (rev 808)
+@@ -113,7 +113,7 @@
+ 	return locations
+ 
+ def location_posters(locations, config):
+-	if config['posters'] is not None:
++	if config.get('posters', None) is not None:
+ 		locations['posters']  = os.path.join(locations['home'], config['posters'])
+ 	elif config.get('type', 'sqlite', section='database') == 'sqlite':
+ 		config['posters'] = 'posters'
+
+
+
+From mikej06 at mail.berlios.de  Mon Jul  9 22:48:02 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 9 Jul 2007 22:48:02 +0200
+Subject: [Griffith-svn] r809 - in trunk: . glade lib
+Message-ID: <200707092048.l69Km2Oq004049@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-09 22:47:46 +0200 (Mon, 09 Jul 2007)
+New Revision: 809
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/widgets.py
+Log:
+toggle seen/unseen by double-clicking the icon
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-09 20:40:15 UTC (rev 808)
++++ trunk/ChangeLog	2007-07-09 20:47:46 UTC (rev 809)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-09  Michael Jahn
++	* toggle seen/unseen by double-clicking the icon
++
+ 2007-07-01  Piotr O?arowski
+ 	* posters directory problem fixed (thanks to Michael)
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2007-07-09 20:40:15 UTC (rev 808)
++++ trunk/glade/griffith.glade	2007-07-09 20:47:46 UTC (rev 809)
+@@ -1108,14 +1108,23 @@
+ 			  <property name="spacing">0</property>
+ 
+ 			  <child>
+-			    <widget class="GtkImage" id="m_seen_icon">
++			    <widget class="GtkEventBox" id="m_seen_icon_eventbox">
+ 			      <property name="visible">True</property>
+-			      <property name="stock">gtk-yes</property>
+-			      <property name="icon_size">4</property>
+-			      <property name="xalign">0.5</property>
+-			      <property name="yalign">0.5</property>
+-			      <property name="xpad">0</property>
+-			      <property name="ypad">0</property>
++			      <property name="visible_window">True</property>
++			      <property name="above_child">False</property>
++
++			      <child>
++				<widget class="GtkImage" id="m_seen_icon">
++				  <property name="visible">True</property>
++				  <property name="stock">gtk-yes</property>
++				  <property name="icon_size">4</property>
++				  <property name="xalign">0.5</property>
++				  <property name="yalign">0.5</property>
++				  <property name="xpad">0</property>
++				  <property name="ypad">0</property>
++				  <signal name="button_press_event" handler="on_m_seen_icon_button_press_event" last_modification_time="Sun, 08 Jul 2007 09:34:47 GMT"/>
++				</widget>
++			      </child>
+ 			    </widget>
+ 			    <packing>
+ 			      <property name="padding">0</property>
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-07-09 20:40:15 UTC (rev 808)
++++ trunk/griffith	2007-07-09 20:47:46 UTC (rev 809)
+@@ -267,6 +267,10 @@
+ 	def clone_movie(self, *args):
+ 		add.clone_movie(self)
+ 
++	def on_m_seen_icon_button_press_event(self, widget, event):
++		if event.button == 1 and event.type == gtk.gdk._2BUTTON_PRESS:
++			self.toggle_seen()
++
+ 	# poster --------------------------------------------------------------
+ 
+ 	def change_poster(self, *args):
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2007-07-09 20:40:15 UTC (rev 808)
++++ trunk/lib/widgets.py	2007-07-09 20:47:46 UTC (rev 809)
+@@ -84,6 +84,7 @@
+ 		'email_reminder_button':get('b_email_reminder'),
+ 		'image_rating':		get('m_image_rating'),
+ 	}
++	get('m_seen_icon_eventbox').connect('button_press_event', self.on_m_seen_icon_button_press_event)
+ 	#}}}
+ 
+ 	self.widgets['add'] = {#{{{
+
+
+
+From mikej06 at mail.berlios.de  Wed Jul 11 09:50:11 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 11 Jul 2007 09:50:11 +0200
+Subject: [Griffith-svn] r810 - in trunk: . lib
+Message-ID: <200707110750.l6B7oB3h026108@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-11 09:49:48 +0200 (Wed, 11 Jul 2007)
+New Revision: 810
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/backup.py
+   trunk/lib/initialize.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+support for different database names with sqlite
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/ChangeLog	2007-07-11 07:49:48 UTC (rev 810)
+@@ -6,6 +6,7 @@
+ 
+ 2007-07-09  Michael Jahn
+ 	* toggle seen/unseen by double-clicking the icon
++	* support for different database names with sqlite
+ 
+ 2007-07-01  Piotr O?arowski
+ 	* posters directory problem fixed (thanks to Michael)
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/griffith	2007-07-11 07:49:48 UTC (rev 810)
+@@ -222,22 +222,46 @@
+ 	def on_p_db_type_changed(self, widget):
+ 		active = widget.get_active()
+ 		if active == 0:
+-			self.widgets['preferences']['db_details'].set_sensitive(False)
++			# change port number if it is something useful at the moment; for clearness
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 3306 or \
++				self.widgets['preferences']['db_port'].get_value() == 5432 or \
++				self.widgets['preferences']['db_port'].get_value() == 1433:
++				self.widgets['preferences']['db_port'].set_value(0)
++			self.widgets['preferences']['db_passwd'].set_sensitive(False)
++			self.widgets['preferences']['db_user'].set_sensitive(False)
++			self.widgets['preferences']['db_port'].set_sensitive(False)
++			self.widgets['preferences']['db_host'].set_sensitive(False)
+ 		elif active == 1:
+ 			# change port number IF previous one was MySQL's or MSSQL one
+-			if self.widgets['preferences']['db_port'].get_value() == 3306 or self.widgets['preferences']['db_port'].get_value() == 1433:
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 3306 or \
++				self.widgets['preferences']['db_port'].get_value() == 1433:
+ 				self.widgets['preferences']['db_port'].set_value(5432)
+-			self.widgets['preferences']['db_details'].set_sensitive(True)
++			self.widgets['preferences']['db_passwd'].set_sensitive(True)
++			self.widgets['preferences']['db_user'].set_sensitive(True)
++			self.widgets['preferences']['db_port'].set_sensitive(True)
++			self.widgets['preferences']['db_host'].set_sensitive(True)
+ 		elif active == 2:
+ 			# change port number IF previous one was PostgreSQL's or MSSQL one
+-			if self.widgets['preferences']['db_port'].get_value() == 5432 or self.widgets['preferences']['db_port'].get_value() == 1433:
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 5432 or \
++				self.widgets['preferences']['db_port'].get_value() == 1433:
+ 				self.widgets['preferences']['db_port'].set_value(3306)
+-			self.widgets['preferences']['db_details'].set_sensitive(True)
++			self.widgets['preferences']['db_passwd'].set_sensitive(True)
++			self.widgets['preferences']['db_user'].set_sensitive(True)
++			self.widgets['preferences']['db_port'].set_sensitive(True)
++			self.widgets['preferences']['db_host'].set_sensitive(True)
+ 		elif active == 3:
+ 			# change port number IF previous one was PostgreSQL's or MySQL one
+-			if self.widgets['preferences']['db_port'].get_value() == 5432 or self.widgets['preferences']['db_port'].get_value() == 3306:
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 5432 or \
++				self.widgets['preferences']['db_port'].get_value() == 3306:
+ 				self.widgets['preferences']['db_port'].set_value(1433)
+-			self.widgets['preferences']['db_details'].set_sensitive(True)
++			self.widgets['preferences']['db_passwd'].set_sensitive(True)
++			self.widgets['preferences']['db_user'].set_sensitive(True)
++			self.widgets['preferences']['db_port'].set_sensitive(True)
++			self.widgets['preferences']['db_host'].set_sensitive(True)
+ 
+ 	# movie related operations --------------------------------------------
+ 
+@@ -1017,7 +1041,7 @@
+ 				from sqlalchemy.orm import clear_mappers
+ 				clear_mappers()
+ 				if self.config.get('type', 'sqlite', section='database') == 'sqlite':
+-					os.unlink(os.path.join(self.locations['home'],self.config.get('file', 'griffith.db', section='database')))
++					os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
+ 					if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
+ 						self.config.set('file', 'griffith.db', section='database')
+ 				# create/connect db
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/backup.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -32,7 +32,7 @@
+ 	filename = gutils.file_chooser(_("Save Griffith backup"), \
+ 		action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons= \
+ 		(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK), \
+-		name='griffith_backup.zip')
++		name=self.config.get('name','griffith', section='database') + '_backup.zip')
+ 	if filename and filename[0]:
+ 		overwrite = None
+ 		if os.path.isfile(filename[0]):
+@@ -52,7 +52,7 @@
+ 				return False
+ 			mzip.write(os.path.join(self.locations['home'],'griffith.cfg'))
+ 			if self.db.metadata.engine.name == 'sqlite':
+-				mzip.write(os.path.join(self.locations['home'], self.config.get('file','griffith.db', section='database')))
++				mzip.write(os.path.join(self.locations['home'], self.config.get('name','griffith', section='database') + '.db'))
+ 			else:
+ 				gutils.error(self, _("Backup function is available only for SQLite engine for now"), self.widgets['window'])
+ 				return False
+@@ -140,7 +140,7 @@
+ 			if old_config_raw_data.find('griffith.gri') >= -1:
+ 				self.config.set('file', 'griffith.gri', section='database')
+ 
+-		filename = os.path.join(self.locations['home'], self.config.get('file', 'griffith.db', section='database'))
++		filename = os.path.join(self.locations['home'], self.config.get('name', 'griffith', section='database') + '.db')
+ 
+ 		self.db.metadata.engine.dispose() # close DB
+ 		from sqlalchemy.orm import clear_mappers
+@@ -204,7 +204,7 @@
+ 					outfile.close()
+ 			# load stored database filename
+ 			tmp_config = config.Config(file=os.path.join(tmp_dir,'griffith.conf'))
+-			filename = os.path.join(tmp_dir, tmp_config('file', 'griffith.db', section='database'))
++			filename = os.path.join(tmp_dir, tmp_config('name', 'griffith', section='database') + '.db')
+ 			zip.close()
+ 
+ 		# check if file needs conversion
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/initialize.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -114,14 +114,18 @@
+ 
+ def location_posters(locations, config):
+ 	if config.get('posters', None) is not None:
+-		locations['posters']  = os.path.join(locations['home'], config['posters'])
++		locations['posters']  = os.path.join(locations['home'], config.get('posters'))
+ 	elif config.get('type', 'sqlite', section='database') == 'sqlite':
+-		config['posters'] = 'posters'
+-		locations['posters'] = os.path.join(locations['home'], 'posters')
++		dbname = config.get('name', 'griffith', section='database')
++		if dbname <> 'griffith':
++			config['posters'] = 'posters_sqlite_' + dbname
++		else:
++			config['posters'] = 'posters'
++		locations['posters'] = os.path.join(locations['home'], config.get('posters'))
+ 		config.save()
+ 	else:
+ 		config['posters'] = "posters_%(type)s_%(host)s_%(port)s_%(name)s_%(user)s" % config.toDict('database')
+-		locations['posters'] = os.path.join(locations['home'], config['posters'])
++		locations['posters'] = os.path.join(locations['home'], config.get('posters'))
+ 		config.save()
+ 	# check if posters dir exists
+ 	if not os.path.isdir(locations['posters']):
+@@ -596,17 +600,14 @@
+ 	self.widgets['preferences']['db_passwd'].set_text(self.config.get('passwd', '', section='database'))
+ 	self.widgets['preferences']['db_name'].set_text(self.config.get('name', '', section='database'))
+ 	db_type = self.config.get('type', 'sqlite', section='database')
+-	if db_type != 'sqlite':
+-		self.widgets['preferences']['db_details'].set_sensitive(True)
+-		if db_type == 'postgres':
+-			self.widgets['preferences']['db_type'].set_active(1)
+-		elif db_type == 'mysql':
+-			self.widgets['preferences']['db_type'].set_active(2)
+-		elif db_type == 'mssql':
+-			self.widgets['preferences']['db_type'].set_active(3)
++	if db_type == 'postgres':
++		self.widgets['preferences']['db_type'].set_active(1)
++	elif db_type == 'mysql':
++		self.widgets['preferences']['db_type'].set_active(2)
++	elif db_type == 'mssql':
++		self.widgets['preferences']['db_type'].set_active(3)
+ 	else:
+ 		self.widgets['preferences']['db_type'].set_active(0)
+-		self.widgets['preferences']['db_details'].set_sensitive(False)
+ 
+ def fill_volumes_combo(self, default=0):
+ 	self.widgets['add']['volume'].get_model().clear()
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/preferences.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -348,9 +348,9 @@
+ 	if old['type'] != c.get('type', section='database') or (old['type']!='sqlite' and (\
+ 			old['host'] != c.get('host', section='database') or \
+ 			old['port'] != c.get('port', section='database') or \
+-			old['name'] != c.get('name', section='database') or \
+ 			old['user'] != c.get('user', section='database') or \
+-			old['passwd'] != c.get('passwd', section='database'))):
++			old['passwd'] != c.get('passwd', section='database'))) or \
++			old['name'] != c.get('name', section='database'):
+ 		self.debug.show('DATABASE: connecting to new db server...')
+ 		
+ 		# new database connection
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/sql.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -301,7 +301,7 @@
+ 
+ 		# connect to database --------------------------------------{{{
+ 		if config.get('type', section='database') == 'sqlite':
+-			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database'))
++			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+ 		elif config.get('type', section='database') == 'postgres':
+ 			if config.get('port', 0, section='database')==0:
+ 				config.set('port', 5432, section='database')
+@@ -339,13 +339,13 @@
+ 				config.get('name', section='database'))
+ 		else:
+ 			config.set('type', 'sqlite', section='database')
+-			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database'))
++			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+ 		try:
+ 			self.metadata = BoundMetaData(url)
+ 		except InvalidRequestError, e:
+ 			debug.show("BoundMetaData: %s" % e)
+ 			config.set('type', 'sqlite', section='database')
+-			self.metadata = BoundMetaData("sqlite:///%s" % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database')))
++			self.metadata = BoundMetaData("sqlite:///%s" % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db'))
+ 		# try to establish a db connection
+ 		try:
+ 			self.metadata.engine.connect()
+
+
+
+From piotrek at mail.berlios.de  Sat Jul 21 16:34:59 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sat, 21 Jul 2007 16:34:59 +0200
+Subject: [Griffith-svn] r811 - in trunk: . lib
+Message-ID: <200707211434.l6LEYx6e021608@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-07-21 16:34:58 +0200 (Sat, 21 Jul 2007)
+New Revision: 811
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/sql.py
+Log:
+Warn about problems with connecting to database (f.e. missing modules)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-11 07:49:48 UTC (rev 810)
++++ trunk/ChangeLog	2007-07-21 14:34:58 UTC (rev 811)
+@@ -4,11 +4,14 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-21  Piotr O?arowski
++	* Warn about problems with connecting to database (f.e. missing modules)
++
+ 2007-07-09  Michael Jahn
+ 	* toggle seen/unseen by double-clicking the icon
+ 	* support for different database names with sqlite
+ 
+-2007-07-01  Piotr O?arowski
++2007-07-09  Piotr O?arowski
+ 	* posters directory problem fixed (thanks to Michael)
+ 
+ 2007-07-06  Vasco Nunes
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-07-11 07:49:48 UTC (rev 810)
++++ trunk/lib/sql.py	2007-07-21 14:34:58 UTC (rev 811)
+@@ -342,10 +342,12 @@
+ 			url = "sqlite:///%s" % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+ 		try:
+ 			self.metadata = BoundMetaData(url)
+-		except InvalidRequestError, e:
++		except Exception, e:	# InvalidRequestError, ImportError
+ 			debug.show("BoundMetaData: %s" % e)
+ 			config.set('type', 'sqlite', section='database')
++			gutils.warning(self, "%s\n\n%s" % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+ 			self.metadata = BoundMetaData("sqlite:///%s" % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db'))
++
+ 		# try to establish a db connection
+ 		try:
+ 			self.metadata.engine.connect()
+
+
+
+From piotrek at mail.berlios.de  Thu Jul 26 00:38:32 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 26 Jul 2007 00:38:32 +0200
+Subject: [Griffith-svn] r812 - trunk/lib
+Message-ID: <200707252238.l6PMcW4K000943@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-07-26 00:38:27 +0200 (Thu, 26 Jul 2007)
+New Revision: 812
+
+Modified:
+   trunk/lib/initialize.py
+Log:
+use default encoding to decode user's home directory (thx Michael for noticing this)
+
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-07-21 14:34:58 UTC (rev 811)
++++ trunk/lib/initialize.py	2007-07-25 22:38:27 UTC (rev 812)
+@@ -21,7 +21,6 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-from gettext import gettext as _
+ import sys
+ import os
+ import string
+@@ -30,7 +29,8 @@
+ import gobject
+ import gettext
+ import platform
+-import locale
++from gettext import gettext as _
++from locale import getdefaultlocale
+ 
+ try:
+ 	import gtkspell
+@@ -39,6 +39,7 @@
+ 	spell_support = 0
+ 
+ def locations(self):
++	defaultLang, defaultEnc = getdefaultlocale()
+ 	locations = {}
+ 	locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0])) # deprecated
+ 	locations['lib']  = os.path.dirname(__file__)
+@@ -46,7 +47,7 @@
+ 	if os.name == 'nt' or os.name == 'win32':
+ 		import winshell
+ 		mydocs = winshell.my_documents()
+-		locations['home']           = os.path.join(mydocs, 'griffith')
++		locations['home']           = os.path.join(mydocs, 'griffith').decode(defaultEnc)
+ 		#locations['home']           = os.path.join(os.path.expanduser('~'), 'griffith')
+ 		locations['movie_plugins']  = "%s\\lib\\plugins\\movie" % locations['exec']
+ 		locations['export_plugins'] = "%s\\lib\\plugins\\export" % locations['exec']
+@@ -60,14 +61,13 @@
+ 		# windows hack for locale setting
+ 		lang = os.getenv('LANG')
+ 		if lang is None:
+-			defaultLang, defaultEnc = locale.getdefaultlocale()
+ 			if defaultLang:
+ 				lang = defaultLang
+ 		if lang:
+ 			os.environ['LANG'] = lang
+ 
+ 	elif os.name == 'posix':
+-		locations['home']  = os.path.join(os.path.expanduser('~'), ".griffith")
++		locations['home']  = os.path.join(os.path.expanduser('~'), '.griffith').decode(defaultEnc)
+ 		locations['share'] = os.path.abspath(os.path.join(locations['lib'], '..'))
+ 		locations['glade'] = os.path.join(locations['share'], 'glade')
+ 		locations['i18n']  = os.path.abspath(os.path.join(locations['share'], '..', 'locale'))
+@@ -77,7 +77,7 @@
+ 		locations['movie_plugins']  = os.path.join(locations['lib'], 'plugins', 'movie')
+ 		locations['export_plugins'] = os.path.join(locations['lib'], 'plugins', 'export')
+ 		locations['images']  = os.path.join(locations['share'], 'images')
+-		locations['desktop'] = os.path.join(os.path.expanduser('~'), 'Desktop')
++		locations['desktop'] = os.path.join(os.path.expanduser('~'), 'Desktop').decode(defaultEnc)
+ 	else:
+ 		print 'Operating system not supported'
+ 		sys.exit()
+@@ -117,7 +117,7 @@
+ 		locations['posters']  = os.path.join(locations['home'], config.get('posters'))
+ 	elif config.get('type', 'sqlite', section='database') == 'sqlite':
+ 		dbname = config.get('name', 'griffith', section='database')
+-		if dbname <> 'griffith':
++		if dbname != 'griffith':
+ 			config['posters'] = 'posters_sqlite_' + dbname
+ 		else:
+ 			config['posters'] = 'posters'
+
+
+
+From mikej06 at mail.berlios.de  Tue Jul 31 22:08:24 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 31 Jul 2007 22:08:24 +0200
+Subject: [Griffith-svn] r813 - in trunk: . lib/plugins/movie
+Message-ID: <200707312008.l6VK8OTi013928@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-31 22:07:18 +0200 (Tue, 31 Jul 2007)
+New Revision: 813
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-25 22:38:27 UTC (rev 812)
++++ trunk/ChangeLog	2007-07-31 20:07:18 UTC (rev 813)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-07-31  Michael Jahn
++	* OFDb movie plugin updated
++
+ 2007-07-21  Piotr O?arowski
+ 	* Warn about problems with connecting to database (f.e. missing modules)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-07-25 22:38:27 UTC (rev 812)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-07-31 20:07:18 UTC (rev 813)
+@@ -13,7 +13,7 @@
+ plugin_language = _("German")
+ plugin_author = "Christian Sagmueller, Jessica Katharina Parth"
+ plugin_author_email = "Jessica.K.P at women-at-work.org"
+-plugin_version = "0.75"
++plugin_version = "0.8"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -21,23 +21,28 @@
+ 		self.movie_id = id
+ 		self.url = "http://www.ofdb.de/view.php?page=film&fid=%s" % str(self.movie_id)
+ 
++	def initialize(self):
++		# OFDb didn't provide the runtime, studio and classification but it provide a link to the german imdb entry
++		# lets use the imdb page, why not
++		imdb_nr = gutils.trim(self.page, 'http://german.imdb.com/Title?', '"')
++		if imdb_nr != '':
++			self.imdb_page = self.open_page(url='http://german.imdb.com/Title?' + imdb_nr)
++		else:
++			self.imdb_page = ''
++
+ 	def get_image(self):
+ 		self.image_url = "http://www.ofdb.de/images/film/" + gutils.trim( self.page, "<img src=\"images/film/", "\"" )
+ 		
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page,"""Originaltitel:</font></td>
+-            <td>&nbsp;&nbsp;</td>
+-            <td width="99%"><font face="Arial,Helvetica,sans-serif" size="2" class="Daten"><b>""","<")
++		self.o_title = gutils.trim(self.page, 'Originaltitel:', '</tr>')
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page,'size="3"><b>','<')
+ 
+ 	def get_title(self):
+ 		self.title = gutils.trim(self.page,'size="3"><b>','<')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,"""Regie: 
+-              </font></td>
+-            <td>&nbsp;&nbsp;</td>
+-            <td><font face="Arial,Helvetica,sans-serif" size="2" class="Daten"><b><a href="view.php?page=liste&Name=""","</a><br>")
+-		self.director = string.capwords(gutils.after(self.director,">"))
++		self.director = gutils.trim(self.page,"Regie: ","</a><br>")
+ 
+ 	def get_plot(self):
+ 		storyid = gutils.trim(self.page, 'sid=', '">')
+@@ -45,46 +50,36 @@
+ 		self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,"""Erscheinungsjahr: 
+-              </font></td>
+-            <td>&nbsp;&nbsp;</td>
+-            <td><font face="Arial,Helvetica,sans-serif" size="2" class="Daten"><b><a href="view.php?page=blaettern&Kat=Jahr&Text=""","</a></b></font></td>")
+-		self.year = string.capwords(gutils.after(self.year,"\">"))
++		self.year = gutils.trim(self.page,"Erscheinungsjahr: ","</a>")
++		self.year = gutils.strip_tags(self.year)
+ 
+ 	def get_runtime(self):
+-		self.runtime = string.capwords(gutils.trim(self.page,"<b class=\"ch\">Runtime:</b>"," min") )
++		# from imdb
++		self.runtime = gutils.trim(self.imdb_page, '<h5>L&auml;nge:</h5>', ' min')
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page,"""Genre(s):</font></td>
+-            <td>&nbsp;&nbsp;</td>
+-            <td nowrap><font face="Arial,Helvetica,sans-serif" size="2" class="Daten"><b>""","</b></font></td>")
++		self.genre = gutils.trim(self.page,"Genre(s):","</table>")
+ 		self.genre = string.replace( self.genre, "<br>", ", " )
++		self.genre = gutils.strip_tags(self.genre)
+ 		self.genre = string.replace( self.genre, "/", ", " )
+ 		self.genre = self.genre[0:-2]
+ 
+ 	def get_cast(self):
++		self.cast = ''
+ 		cast_page = self.open_page(url="http://www.ofdb.de/view.php?page=film_detail&fid=%s" % str(self.movie_id) )
+-		self.cast = ""
+-		self.cast = gutils.trim(cast_page,"Darsteller</i>","<td></td>\n</tr>\n</table>\n<br>")
++		self.cast = gutils.trim(cast_page, 'Darsteller</i>', '<i>')
++		self.cast = string.replace(self.cast, 'class="Daten">', '>\n')
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
+-		self.cast = string.replace(self.cast,"&nbsp;", "")
+-		self.cast = string.replace(self.cast, "  ", "")
+-		self.cast = string.replace(self.cast, "\t", "")
+-		
+-		elements = string.split(self.cast,"\n")
+-		cast = ""
+-		for element in elements:
+-			if (element != ''):
+-				cast += element + "\n"
+-		cast = string.replace( cast, "\n... ", " als ")
+-		self.cast = cast
++		self.cast = string.replace(self.cast, '... ', _(' as '))
++		self.cast = string.replace(self.cast, '&nbsp;', '')
+ 
+ 	def get_classification(self):
+-		# ofdb.de got no classification
+-		self.classification = ""
++		# from imdb
++		self.classification = gutils.trim(gutils.trim(self.imdb_page, 'Altersfreigabe:', '</div>'), 'Germany:', '&')
+ 
+ 	def get_studio(self):
+-		self.studio = ""
++		# from imdb
++		self.studio = gutils.trim(self.imdb_page, '<h5>Company:</h5>', '</a>')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ""
+@@ -96,11 +91,7 @@
+ 		self.trailer = ""
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,"""Herstellungsland: 
+-              </font></td>
+-            <td>&nbsp;&nbsp;</td>
+-            <td><font face="Arial,Helvetica,sans-serif" size="2" class="Daten"><b><a href="view.php?page=blaettern&Kat=Land&Text=""","</a>")
+-		self.country = gutils.after(self.country,"\">")
++		self.country = gutils.trim(self.page,"Herstellungsland: ","</a>")
+ 
+ 	def get_rating(self):
+ 		self.rating = gutils.trim(self.page,"<br>Note: ","&nbsp;")
+
+
+
+From mikej06 at mail.berlios.de  Tue Jul 31 23:27:07 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 31 Jul 2007 23:27:07 +0200
+Subject: [Griffith-svn] r814 - in trunk: . lib/plugins/movie
+Message-ID: <200707312127.l6VLR7dp020799@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-31 23:26:52 +0200 (Tue, 31 Jul 2007)
+New Revision: 814
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieFilmTipset.py
+Modified:
+   trunk/ChangeLog
+Log:
+FilmTipset plugin added
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-31 20:07:18 UTC (rev 813)
++++ trunk/ChangeLog	2007-07-31 21:26:52 UTC (rev 814)
+@@ -5,6 +5,7 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
+ 2007-07-31  Michael Jahn
++	* FilmTipset plugin added
+ 	* OFDb movie plugin updated
+ 
+ 2007-07-21  Piotr O?arowski
+
+Added: trunk/lib/plugins/movie/PluginMovieFilmTipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmTipset.py	2007-07-31 20:07:18 UTC (rev 813)
++++ trunk/lib/plugins/movie/PluginMovieFilmTipset.py	2007-07-31 21:26:52 UTC (rev 814)
+@@ -0,0 +1,127 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name = "FilmTipset.se"
++plugin_description = "FilmTipset.se"
++plugin_url = "www.filmtipset.se"
++plugin_language = _("Swedish")
++plugin_author = "Michael Jahn"
++plugin_author_email = "<mikej06 at hotmail.com>"
++plugin_version = "1.0"
++
++class Plugin(movie.Movie):
++
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = 'http://www.filmtipset.se/film/' + str(self.movie_id)
++
++	def get_image(self):
++		self.image_url = ''
++		tmp = gutils.trim(self.page, 'src="posters/', '"')
++		if tmp != '':
++			self.image_url = 'http://www.filmtipset.se/posters/' + tmp
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, 'Originaltitel:', '</span>')
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, '<h1>', '</h1>')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<h1>', '</h1>')
++
++	def get_director(self):
++		self.director = gutils.trim(self.page, 'Regiss&ouml;r:', '</span>')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, 'Filminfo:', '</h2>')
++
++	def get_year(self):
++		self.year = gutils.trim(self.page, 'Utgivnings&aring;r:', '</span>')
++
++	def get_runtime(self):
++		self.runtime = string.strip(gutils.trim(self.page, 'L&auml;ngd:', ' min'))
++
++	def get_genre(self):
++		self.genre = string.strip(gutils.trim(self.page, 'Nyckelord:', '</span>'))
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.page, 'Sk&aring;despelare:', '</span>')
++		self.cast = string.replace(self.cast, ', ', '\n')
++
++	def get_classification(self):
++		self.classification = ''
++
++	def get_studio(self):
++		self.studio = ''
++
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = self.url
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		self.country = string.strip(gutils.trim(self.page, 'Produktionsland:', '</span>'))
++
++	def get_rating(self):
++		self.rating = "0"
++
++	def get_notes(self):
++		self.notes = ''
++		tmp = gutils.trim(self.page, 'Alt. titel:', '</span>')
++		if tmp != '':
++			self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
++
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = "http://www.filmtipset.se/search.cgi?field=name&field=orgname&show_graded=1&search_value="
++		self.translated_url_search = "http://www.filmtipset.se/search.cgi?field=name&field=orgname&show_graded=1&search_value="
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		self.page = gutils.trim(self.page, 'Matchning', 'Hittade')
++		return self.page
++
++	def get_searches(self):
++		elements1 = re.split('href="film/', self.page)
++		elements1[0] = None
++		for element in elements1:
++			if element <> None:
++				self.ids.append(gutils.before(element,'"'))
++				self.titles.append(
++					string.replace(gutils.trim(element, 'title="', '"'), '&nbsp;', ' ')
++				)
++
+
+
+
+From mikej06 at mail.berlios.de  Tue Jul 31 23:27:56 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 31 Jul 2007 23:27:56 +0200
+Subject: [Griffith-svn] r815 - extra_artwork/images
+Message-ID: <200707312127.l6VLRur4020892@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-31 23:27:43 +0200 (Tue, 31 Jul 2007)
+New Revision: 815
+
+Added:
+   extra_artwork/images/PluginMovieFilmTipset.png
+Log:
+added FilmTipset icon
+
+Added: extra_artwork/images/PluginMovieFilmTipset.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: extra_artwork/images/PluginMovieFilmTipset.png
+___________________________________________________________________
+Name: svn:mime-type
+   + image/png
+
+
+
+From mikej06 at mail.berlios.de  Tue Jul 31 23:33:00 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 31 Jul 2007 23:33:00 +0200
+Subject: [Griffith-svn] r816 - extra_artwork
+Message-ID: <200707312133.l6VLX0Ln021206@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-07-31 23:32:42 +0200 (Tue, 31 Jul 2007)
+New Revision: 816
+
+Modified:
+   extra_artwork/ChangeLog
+Log:
+update extra artwork changelogs
+
+Modified: extra_artwork/ChangeLog
+===================================================================
+--- extra_artwork/ChangeLog	2007-07-31 21:27:43 UTC (rev 815)
++++ extra_artwork/ChangeLog	2007-07-31 21:32:42 UTC (rev 816)
+@@ -2,8 +2,11 @@
+ 
+ Griffith extra art work ChangeLog
+ ---------------------------------
+-(c) 2005-2006 Vasco Nunes
++(c) 2005-2007 Vasco Nunes
+ 
++2007-07-31  Michael Jahn
++	* Added FilmTipset icon
++
+ ---- 0.9.3 ----
+ 
+ 2007-06-27  Michael Jahn
+
+
+

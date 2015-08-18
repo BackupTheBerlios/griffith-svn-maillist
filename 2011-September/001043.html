@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1584 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1584%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C20110906185307.EDE0548122E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001042.html">
+   <LINK REL="Next"  HREF="001044.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1584 - trunk/lib/plugins/movie</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1584%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C20110906185307.EDE0548122E%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1584 - trunk/lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep  6 20:53:07 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001042.html">[Griffith-svn] r1583 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001044.html">[Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1043">[ date ]</a>
+              <a href="thread.html#1043">[ thread ]</a>
+              <a href="subject.html#1043">[ subject ]</a>
+              <a href="author.html#1043">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2011-09-06 20:53:07 +0200 (Tue, 06 Sep 2011)
+New Revision: 1584
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+check headers only once a day
+
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-05 21:27:55 UTC (rev 1583)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-06 18:53:07 UTC (rev 1584)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ import urllib2
+-from datetime import datetime
++from datetime import datetime, timedelta
+ from locale import getdefaultlocale
+ from os.path import getmtime, isfile, join
+ 
+@@ -55,6 +55,8 @@
+         self.url = REQUEST + aid
+ 
+     def initialize(self):
++        if not self.page.startswith('&lt;?xml'):
++            raise Exception('page not in XML format')
+         self._xml = etree.fromstring(self.page)
+ 
+     def get_image(self):
+@@ -148,11 +150,21 @@
+ 
+ def load_titles(fpath):
+     # animetitles.xml.gz is updated once a day
+-    remote = urllib2.urlopen(ANIME_TITLES_URL)
+-    last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
++    remote = None
++    download = True
++    if isfile(fpath):
++        cache_last_modified = datetime.fromtimestamp(getmtime(fpath))
++        if cache_last_modified &gt; datetime.now() - timedelta(days=1):
++            download = False
++        else:
++            remote = urllib2.urlopen(ANIME_TITLES_URL)
++            last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
++            if cache_last_modified &gt;= last_modified:
++                download = False
++    else:
++        remote = urllib2.urlopen(ANIME_TITLES_URL)
+ 
+-    if not isfile(fpath) or \
+-       datetime.fromtimestamp(getmtime(fpath)) &lt; last_modified:
++    if download:
+         fp = open(fpath, 'wb')
+         fp.write(remote.read())
+         fp.close()
+@@ -180,6 +192,8 @@
+         return self._search_results
+ 
+     def get_searches(self):
++        del self.ids[:]
++        del self.titles[:]
+         self.number_results = len(self._search_results)
+         for aid, title in self._search_results:
+             self.ids.append(aid)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001042.html">[Griffith-svn] r1583 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001044.html">[Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1043">[ date ]</a>
+              <a href="thread.html#1043">[ thread ]</a>
+              <a href="subject.html#1043">[ subject ]</a>
+              <a href="author.html#1043">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

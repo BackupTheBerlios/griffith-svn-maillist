@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r873 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r873%20-%20trunk/lib&In-Reply-To=%3C200710151028.l9FASVJ0006085%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000379.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r873 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r873%20-%20trunk/lib&In-Reply-To=%3C200710151028.l9FASVJ0006085%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r873 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Oct 15 12:28:31 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000379.html">[Griffith-svn] r874 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#378">[ date ]</a>
+              <a href="thread.html#378">[ thread ]</a>
+              <a href="subject.html#378">[ subject ]</a>
+              <a href="author.html#378">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-10-15 12:28:17 +0200 (Mon, 15 Oct 2007)
+New Revision: 873
+
+Modified:
+   trunk/lib/edit.py
+Log:
+Fetch from Amazon function fixed
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-09-21 16:23:22 UTC (rev 872)
++++ trunk/lib/edit.py	2007-10-15 10:28:17 UTC (rev 873)
+@@ -195,20 +195,21 @@
+ 	file_to_copy = tempfile.mktemp(suffix=self.widgets['movie']['number'].get_text(), \
+ 		dir=self.locations['temp'])
+ 	file_to_copy += &quot;.jpg&quot;
+-	try:
+-		progress = movie.Progress(self.widgets['window'],_(&quot;Fetching poster&quot;),_(&quot;Wait a moment&quot;))
+-		retriever = movie.Retriever(result[f].ImageUrlLarge, self.widgets['window'], progress, file_to_copy)
+-		retriever.start()
+-		while retriever.isAlive():
+-			progress.pulse()
+-			if progress.status:
+-				retriever.suspend()
+-			while gtk.events_pending():
+-				gtk.main_iteration()
+-		progress.close()
+-		urlcleanup()
+-	except:
+-		gutils.warning(self, _(&quot;Sorry. A connection error has occurred.&quot;))
++	if len(result[f].ImageUrlLarge):
++		try:
++			progress = movie.Progress(self.widgets['window'],_(&quot;Fetching poster&quot;),_(&quot;Wait a moment&quot;))
++			retriever = movie.Retriever(result[f].ImageUrlLarge, self.widgets['window'], progress, file_to_copy)
++			retriever.start()
++			while retriever.isAlive():
++				progress.pulse()
++				if progress.status:
++					retriever.suspend()
++				while gtk.events_pending():
++					gtk.main_iteration()
++			progress.close()
++			urlcleanup()
++		except:
++			gutils.warning(self, _(&quot;Sorry. A connection error has occurred.&quot;))
+ 
+ 	if  os.path.isfile(file_to_copy):
+ 		try:
+@@ -248,9 +249,9 @@
+ 		else:
+ 			self.debug.show(&quot;Reverting to previous poster and deleting new one from disk.&quot;)
+ 			try:
+-                            os.remove(file_to_copy)
+-                        except:
+-                            self.debug.show(&quot;no permission for %s&quot;%file_to_copy)
++				os.remove(file_to_copy)
++			except:
++				self.debug.show(&quot;no permission for %s&quot;%file_to_copy)
+ 
+ 		self.widgets['poster_window'].hide()
+ 	else:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000379.html">[Griffith-svn] r874 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#378">[ date ]</a>
+              <a href="thread.html#378">[ thread ]</a>
+              <a href="subject.html#378">[ subject ]</a>
+              <a href="author.html#378">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

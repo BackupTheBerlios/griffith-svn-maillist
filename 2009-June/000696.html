@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1225 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1225%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200906112006.n5BK66Jv015950%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000695.html">
+   <LINK REL="Next"  HREF="000697.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1225 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1225%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200906112006.n5BK66Jv015950%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1225 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 11 22:06:06 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000695.html">[Griffith-svn] r1224 - in trunk: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="000697.html">[Griffith-svn] r1226 - trunk/glade
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#696">[ date ]</a>
+              <a href="thread.html#696">[ thread ]</a>
+              <a href="subject.html#696">[ subject ]</a>
+              <a href="author.html#696">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-11 22:06:05 +0200 (Thu, 11 Jun 2009)
+New Revision: 1225
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/initialize.py
+Log:
+Add suggestions for database names (taken from .db file names)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-06-11 19:38:53 UTC (rev 1224)
++++ trunk/ChangeLog	2009-06-11 20:06:05 UTC (rev 1225)
+@@ -11,6 +11,7 @@
+ 	* Add &quot;Open search window&quot; in Tools menu
+ 	* Add &quot;Select database&quot; in File menu (shortcut to preferences page)
+ 	* Close poster viewer window if poster button clicked again
++	* Add suggestions for database names (taken from .db file names)
+ 
+ 2009-06-10  Piotr O&#380;arowski
+ 	* Restoring from backup finally works with external databases
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-06-11 19:38:53 UTC (rev 1224)
++++ trunk/glade/griffith.glade	2009-06-11 20:06:05 UTC (rev 1225)
+@@ -76,6 +76,7 @@
+                         &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Select database&lt;/property&gt;
+                         &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
+                         &lt;signal name=&quot;activate&quot; handler=&quot;on_select_db_activate&quot;/&gt;
++                        &lt;accelerator key=&quot;D&quot; modifiers=&quot;GDK_CONTROL_MASK&quot; signal=&quot;activate&quot;/&gt;
+                         &lt;child internal-child=&quot;image&quot;&gt;
+                           &lt;widget class=&quot;GtkImage&quot; id=&quot;image636&quot;&gt;
+                             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-06-11 19:38:53 UTC (rev 1224)
++++ trunk/lib/initialize.py	2009-06-11 20:06:05 UTC (rev 1225)
+@@ -21,18 +21,19 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import sys
+-import os
+-import string
+-import gtk
+ import gettext
++import gobject
+ import gutils
+-import gobject
++import logging
++import os
+ import platform
+ import re
++import sys
++from glob import glob
+ from locale import getdefaultlocale
+-import logging
+-log = logging.getLogger(&quot;Griffith&quot;)
++
++import gtk
++
+ import db
+ 
+ try:
+@@ -41,6 +42,8 @@
+ except:
+     spell_support = 0
+ 
++log = logging.getLogger(&quot;Griffith&quot;)
++
+ def locations(self, home_dir):
+     defaultLang, defaultEnc = getdefaultlocale()
+     if defaultEnc is None:
+@@ -53,7 +56,6 @@
+     if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+         import winshell
+         from win32com.shell import shellcon, shell
+-        import shutil
+         
+         locations['movie_plugins']  = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+         locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+@@ -679,6 +681,17 @@
+         self.widgets['preferences']['db_type'].set_active(3)
+     else:
+         self.widgets['preferences']['db_type'].set_active(0)
++        
++    # add completion data
++    treemodel = gtk.TreeStore(str)
++    for name in (os.path.basename(x)[:-3] for x in glob(&quot;%s/*.db&quot; % self.locations['home'])):
++        myiter = treemodel.append(None)
++        treemodel.set_value(myiter, 0, name)
++    completion = gtk.EntryCompletion()
++    completion.set_minimum_key_length(0)
++    self.widgets['preferences']['db_name'].set_completion(completion)
++    completion.set_model(treemodel)
++    completion.set_text_column(0)
+ 
+ def update_volume_combo_ids(self):
+     self.volume_combo_ids = {}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000695.html">[Griffith-svn] r1224 - in trunk: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="000697.html">[Griffith-svn] r1226 - trunk/glade
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#696">[ date ]</a>
+              <a href="thread.html#696">[ thread ]</a>
+              <a href="subject.html#696">[ subject ]</a>
+              <a href="author.html#696">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

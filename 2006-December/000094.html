@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r565 - in trunk: glade lib lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r565%20-%20in%20trunk%3A%20glade%20lib%20lib/plugins/imp&In-Reply-To=%3C200612161637.kBGGbqW8005615%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000093.html">
+   <LINK REL="Next"  HREF="000095.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r565 - in trunk: glade lib lib/plugins/imp</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r565%20-%20in%20trunk%3A%20glade%20lib%20lib/plugins/imp&In-Reply-To=%3C200612161637.kBGGbqW8005615%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r565 - in trunk: glade lib lib/plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 16 17:37:52 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000093.html">[Griffith-svn] r564 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000095.html">[Griffith-svn] r566 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#94">[ date ]</a>
+              <a href="thread.html#94">[ thread ]</a>
+              <a href="subject.html#94">[ subject ]</a>
+              <a href="author.html#94">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-16 17:37:51 +0100 (Sat, 16 Dec 2006)
+New Revision: 565
+
+Modified:
+   trunk/glade/import.glade
+   trunk/lib/initialize.py
+   trunk/lib/plugins/imp/__init__.py
+Log:
+* abort import button works now
+* speed up import process
+
+
+Modified: trunk/glade/import.glade
+===================================================================
+--- trunk/glade/import.glade	2006-12-16 15:12:57 UTC (rev 564)
++++ trunk/glade/import.glade	2006-12-16 16:37:51 UTC (rev 565)
+@@ -694,7 +694,7 @@
+ 	  &lt;property name=&quot;layout_style&quot;&gt;GTK_BUTTONBOX_END&lt;/property&gt;
+ 
+ 	  &lt;child&gt;
+-	    &lt;widget class=&quot;GtkButton&quot; id=&quot;closebutton1&quot;&gt;
++	    &lt;widget class=&quot;GtkButton&quot; id=&quot;p_abortbutton&quot;&gt;
+ 	      &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+ 	      &lt;property name=&quot;can_default&quot;&gt;True&lt;/property&gt;
+ 	      &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+@@ -703,7 +703,6 @@
+ 	      &lt;property name=&quot;relief&quot;&gt;GTK_RELIEF_NORMAL&lt;/property&gt;
+ 	      &lt;property name=&quot;focus_on_click&quot;&gt;True&lt;/property&gt;
+ 	      &lt;property name=&quot;response_id&quot;&gt;-6&lt;/property&gt;
+-	      &lt;signal name=&quot;clicked&quot; handler=&quot;on_abort_clicked&quot; last_modification_time=&quot;Wed, 13 Dec 2006 22:52:04 GMT&quot;/&gt;
+ 	    &lt;/widget&gt;
+ 	  &lt;/child&gt;
+ 	&lt;/widget&gt;
+@@ -751,7 +750,7 @@
+ 	    &lt;widget class=&quot;GtkProgressBar&quot; id=&quot;progressbar&quot;&gt;
+ 	      &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+ 	      &lt;property name=&quot;orientation&quot;&gt;GTK_PROGRESS_LEFT_TO_RIGHT&lt;/property&gt;
+-	      &lt;property name=&quot;fraction&quot;&gt;0.530000030994&lt;/property&gt;
++	      &lt;property name=&quot;fraction&quot;&gt;0&lt;/property&gt;
+ 	      &lt;property name=&quot;pulse_step&quot;&gt;0&lt;/property&gt;
+ 	      &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_NONE&lt;/property&gt;
+ 	    &lt;/widget&gt;
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2006-12-16 15:12:57 UTC (rev 564)
++++ trunk/lib/initialize.py	2006-12-16 16:37:51 UTC (rev 565)
+@@ -345,6 +345,7 @@
+ 	w = self.widgets['import'] = {
+ 		'window'	: get('dialog_import'),
+ 		'pwindow'	: get('dialog_progress'),
++		'pabort'	: get('p_abortbutton'),
+ 		'fcw'		: get('fcw'),
+ 		'plugin'	: get('combo_plugin'),
+ 		'author'	: get('l_author'),
+@@ -358,7 +359,7 @@
+ 		'progressbar'	: get('progressbar'),
+ 		'fields'	: {},
+ 	}
+-	get('cancel_button').connect('clicked', lambda x: w['window'].hide())
++	get('cancel_button').connect('clicked', plugins.imp.on_abort_button_clicked, self)
+ 	get('import_button').connect('clicked', plugins.imp.on_import_button_clicked, self)
+ 	w['plugin'].connect('changed', plugins.imp.on_import_plugin_changed, w)
+ 	w['window'].set_transient_for(self.widgets['window'])
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2006-12-16 15:12:57 UTC (rev 564)
++++ trunk/lib/plugins/imp/__init__.py	2006-12-16 16:37:51 UTC (rev 565)
+@@ -54,6 +54,7 @@
+ 		self.regions	= parent._regions
+ 		self.widgets	= parent.widgets['import']
+ 		self.fields_to_import = fields_to_import
++		self._abort	= False
+ 
+ 	def initialize(self):
+ 		&quot;&quot;&quot;
+@@ -62,6 +63,9 @@
+ 		self.imported = 0
+ 		return True
+ 
++	def abort(self, *args):
++		self._abort = True
++
+ 	def set_source(self, name):
+ 		&quot;&quot;&quot;
+ 		Prepare source (open file, etc.)
+@@ -93,7 +97,8 @@
+ 			return False
+ 		
+ 		self.widgets['pwindow'].show()
+-		gtk.main_iteration()
++		for i in range(0,40):	# give GTK some time for updates
++			gtk.main_iteration()
+ 
+ 		# progressbar
+ 		update_on = []
+@@ -111,10 +116,20 @@
+ 
+ 		statement = Select(self.db.Movie.c)
+ 
+-		while True:
++		processed = 0
++		while self._abort is False:
+ 			details = self.get_movie_details()
+ 			if details is None:
+ 				break
++
++			processed += 1
++			if processed in update_on:
++				self.widgets['progressbar'].set_fraction(float(processed)/float(count))
++				gtk.main_iteration()
++				self.widgets['progressbar'].set_text(&quot;%s (%s/%s)&quot; % (str(self.imported), str(processed), str(count)))
++				gtk.main_iteration()
++				gtk.main_iteration() # extra iteration for abort button
++
+ 			if (details.has_key('o_title') and details['o_title']) or (details.has_key('title') and details['title']):
+ 				if details.has_key('o_title') and details['o_title']:
+ 					statement.whereclause = self.db.Movie.c.o_title==details['o_title']
+@@ -147,13 +162,7 @@
+ 						self.debug.show(&quot;movie details are not unique, skipping: %s&quot; % str(e))
+ 			else:
+ 				self.debug.show('skipping movie without title or original title')
+-			self.widgets['progressbar'].set_text(&quot;%s/%s&quot; % (str(self.imported), str(count)))
+-			gtk.main_iteration()
+-			if self.imported in update_on:
+-				update_on.pop(update_on.index(self.imported))
+-				self.widgets['progressbar'].set_fraction(float(self.imported)/float(count))
+-				gtk.main_iteration()
+-		self.widgets['progressbar'].set_text(&quot;%s/%s&quot; % (str(self.imported), str(count)))
++		self.widgets['progressbar'].set_text(&quot;%s (%s/%s)&quot; % (str(self.imported), str(processed), str(count)))
+ 		self.widgets['progressbar'].set_fraction(1)
+ 		return True
+ 
+@@ -212,6 +221,9 @@
+ 	if ip.initialize():
+ 		self.widgets['window'].set_sensitive(False)
+ 		self.widgets['import']['window'].hide()
++		self.widgets['import']['pabort'].connect('clicked', ip.abort, ip)
++		self.widgets['import']['progressbar'].set_fraction(0)
++		self.widgets['import']['progressbar'].set_text('')
+ 		# for file in selected_files:
+ 		if ip.run(filename):
+ 			gutils.info(self, _(&quot;%s file has been imported. %s movies added.&quot;) \
+@@ -221,3 +233,8 @@
+ 		self.widgets['import']['pwindow'].hide()
+ 		self.widgets['window'].set_sensitive(True)
+ 
++def on_abort_button_clicked(button, self, *args):
++	self.widgets['import']['window'].hide()
++	self.widgets['import']['pwindow'].hide()
++	self.widgets['window'].set_sensitive(True)
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000093.html">[Griffith-svn] r564 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000095.html">[Griffith-svn] r566 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#94">[ date ]</a>
+              <a href="thread.html#94">[ thread ]</a>
+              <a href="subject.html#94">[ subject ]</a>
+              <a href="author.html#94">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

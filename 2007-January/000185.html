@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r663 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r663%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701041350.l04DoZ4x026599%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000184.html">
+   <LINK REL="Next"  HREF="000188.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r663 - in trunk: . lib</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r663%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701041350.l04DoZ4x026599%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r663 - in trunk: . lib">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan  4 14:50:35 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000184.html">[Griffith-svn] r662 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000188.html">[Griffith-svn] r664 - in trunk: . lib/plugins/movie po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#185">[ date ]</a>
+              <a href="thread.html#185">[ thread ]</a>
+              <a href="subject.html#185">[ subject ]</a>
+              <a href="author.html#185">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-01-04 14:50:34 +0100 (Thu, 04 Jan 2007)
+New Revision: 663
+
+Modified:
+   trunk/lib/initialize.py
+   trunk/macsetup.py
+Log:
+fixed some macosx related paths and py2app includes
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-01-04 09:01:53 UTC (rev 662)
++++ trunk/lib/initialize.py	2007-01-04 13:50:34 UTC (rev 663)
+@@ -42,6 +42,9 @@
+ 	locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0])) # deprecated
+ 	locations['lib']  = os.path.dirname(__file__)
+ 	
++	if (platform.system() == 'Darwin'):
++		locations['lib']  = os.path.join(os.path.dirname(__file__), &quot;lib&quot;)
++	
+ 	if os.name == 'nt' or os.name == 'win32':
+ 		import winshell
+ 		mydocs = winshell.my_documents()
+
+Modified: trunk/macsetup.py
+===================================================================
+--- trunk/macsetup.py	2007-01-04 09:01:53 UTC (rev 662)
++++ trunk/macsetup.py	2007-01-04 13:50:34 UTC (rev 663)
+@@ -6,4 +6,4 @@
+ 
+# Build the .app file
+setup(
+    options=dict(
+        py2app=dict(
+            iconfile='images/griffith.icns',
+             argv_emulation=1,
+             optimize=2,
+            site_packages=True,
+-includes=&quot;pygtk,cairo,pangocairo,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,platform&quot;, 
+            resources=['COPYING', 'AUTHORS', (&quot;&quot;,glob.glob(&quot;lib/*.*&quot;)), (&quot;images&quot;,glob.glob(&quot;images/*.png&quot;)), (&quot;lib/plugins/movie&quot;,glob.glob(&quot;lib/plugins/movie/*.*&quot;)), (&quot;lib/plugins/export&quot;,glob.glob(&quot;lib/plugins/export/*.*&quot;)), (&quot;glade&quot;,glob.glob(&quot;glade/*.*&quot;)), (&quot;images/export_templates/html_tables&quot;,glob.glob(&quot;data/export_templates/html_tables/*.*&quot;)), (&quot;images/export_templates/html_table&quot;,glob.glob(&quot;data/export_templates/html_table/*.*&quot;)), (&quot;images/export_templates/latex&quot;,glob.glob(&quot;data/export_templates/latex/*.*&quot;)), (&quot;images/export_templates/xml&quot;,glob.glob!
+ (&quot;data/export_templates/xml/*.*&quot;)), (&quot;images/export_templates/csv&quot;,glob.glob(&quot;data/export_templates/csv/*.*&quot;)), (&quot;images/export_templates&quot;,glob.glob(&quot;data/export_template/*.dtd&quot;)), (&quot;lib/plugins/imp&quot;,glob.glob(&quot;lib/plugins/imp/*.*&quot;)), (&quot;lib/plugins&quot;,glob.glob(&quot;lib/plugins/*.*&quot;))],
+            plist=dict(
+                CFBundleName               = &quot;Griffith&quot;,
+                CFBundleShortVersionString = &quot;0.9-rc2&quot;,     # must be in X.X.X format
+                CFBundleGetInfoString      = &quot;Griffith 0.9-rc2&quot;,
+                CFBundleExecutable         = &quot;Griffith&quot;,
+                CFBundleIdentifier         = &quot;de.berlios.griffith&quot;,
+            ),
+        ),
+    ),
+    app=[ 'griffith.py' ]
+)
++includes=&quot;cairo,pangocairo,pysqlite2,pysqlite2.*,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,platform,psycopg2,MySQLdb,pygtk&quot;, 
+            resources=['COPYING', 'AUTHORS', (&quot;&quot;,glob.glob(&quot;lib/*.*&quot;)), (&quot;images&quot;,glob.glob(&quot;images/*.png&quot;)), (&quot;lib/plugins/movie&quot;,glob.glob(&quot;lib/plugins/movie/*.*&quot;)), (&quot;lib/plugins/export&quot;,glob.glob(&quot;lib/plugins/export/*.*&quot;)), (&quot;glade&quot;,glob.glob(&quot;glade/*.*&quot;)), (&quot;images/export_templates/html_tables&quot;,glob.glob(&quot;data/export_templates/html_tables/*.*&quot;)), (&quot;images/export_templates/html_table&quot;,glob.glob(&quot;data/export_templates/html_table/*.*&quot;)), (&quot;images/export_templates/latex&quot;,glob.glob(&quot;data/export_templates/latex/*.*&quot;)), (!
+ &quot;images/export_templates/xml&quot;,glob.glob(&quot;data/export_templates/xml/*.*&quot;)), (&quot;images/export_templates/csv&quot;,glob.glob(&quot;data/export_templates/csv/*.*&quot;)), (&quot;images/export_templates&quot;,glob.glob(&quot;data/export_template/*.dtd&quot;)), (&quot;lib/plugins/imp&quot;,glob.glob(&quot;lib/plugins/imp/*.*&quot;)), (&quot;lib/plugins&quot;,glob.glob(&quot;lib/plugins/*.*&quot;))],
+            plist=dict(
+                CFBundleName               = &quot;Griffith&quot;,
+                CFBundleShortVersionString = &quot;0.9-rc2&quot;,     # must be in X.X.X format
+                CFBundleGetInfoString      = &quot;Griffith 0.9-rc2&quot;,
+                CFBundleExecutable         = &quot;Griffith&quot;,
+                CFBundleIdentifier          = &quot;de.berlios.griffith&quot;,
+            ),
+        ),
+    ),
+    app=[ 'griffith.py' ]
+)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000184.html">[Griffith-svn] r662 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000188.html">[Griffith-svn] r664 - in trunk: . lib/plugins/movie po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#185">[ date ]</a>
+              <a href="thread.html#185">[ thread ]</a>
+              <a href="subject.html#185">[ subject ]</a>
+              <a href="author.html#185">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

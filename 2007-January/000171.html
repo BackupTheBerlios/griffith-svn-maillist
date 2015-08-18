@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r647 - in trunk: . debian lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r647%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200701022053.l02Kri6h014621%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000170.html">
+   <LINK REL="Next"  HREF="000172.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r647 - in trunk: . debian lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r647%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200701022053.l02Kri6h014621%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r647 - in trunk: . debian lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  2 21:53:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000170.html">[Griffith-svn] r646 - trunk/docs/pl
+</A></li>
+        <LI>Next message: <A HREF="000172.html">[Griffith-svn] r648 - in trunk: . docs/pl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#171">[ date ]</a>
+              <a href="thread.html#171">[ thread ]</a>
+              <a href="subject.html#171">[ subject ]</a>
+              <a href="author.html#171">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-02 21:53:43 +0100 (Tue, 02 Jan 2007)
+New Revision: 647
+
+Modified:
+   trunk/ChangeLog
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/lib/add.py
+   trunk/lib/main_treeview.py
+Log:
+* Copy volume/collection data when cloning movie
+* Fix displaying loan info (cached data can be obsolete)
+* Debian: Added python-pysqlite1.1 dependency as an alternative to python-sqlite (for upgrades from SQLite3 databases)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-01 23:11:00 UTC (rev 646)
++++ trunk/ChangeLog	2007-01-02 20:53:43 UTC (rev 647)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-01-02 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
++	* Copy volume/collection data when cloning movie
++	* Fix displaying loan info (cached data can be obsolete)
++
+ 2007-01-01 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Filmweb movie plugin updated
+ 	* Added &quot;limit search results to x movies&quot; in preferences
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-01-01 23:11:00 UTC (rev 646)
++++ trunk/debian/changelog	2007-01-02 20:53:43 UTC (rev 647)
+@@ -1,3 +1,11 @@
++griffith (0.9~rc2-1) UNRELEASED; urgency=low
++
++  * New upstream release
++  * Added python-pysqlite1.1 dependency as an alternative to python-sqlite
++    (for upgrades from SQLite3 databases)
++
++ -- Piotr Ozarowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;  Tue,  2 Jan 2007 00:15:43 +0100
++
+ griffith (0.9~rc1-1) experimental; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2007-01-01 23:11:00 UTC (rev 646)
++++ trunk/debian/control	2007-01-02 20:53:43 UTC (rev 647)
+@@ -11,7 +11,7 @@
+ 
+ Package: griffith
+ Architecture: all
+-Depends: ${python:Depends}, python-gtk2 (&gt;= 2.8.6-1), python-glade2 (&gt;= 2.8.6-1), python-sqlalchemy (&gt;= 0.3.0-1), python-pysqlite2 (&gt;= 2.3.0-1), python-reportlab (&gt;= 1.20debian-6), python-imaging (&gt;= 1.1.5-6), python-sqlite
++Depends: ${python:Depends}, python-gtk2 (&gt;= 2.8.6-1), python-glade2 (&gt;= 2.8.6-1), python-sqlalchemy (&gt;= 0.3.0-1), python-pysqlite2 (&gt;= 2.3.0-1), python-reportlab (&gt;= 1.20debian-6), python-imaging (&gt;= 1.1.5-6), python-sqlite | python-pysqlite1.1
+ Recommends: python-gnome2-extras (&gt;= 2.14.0-1), python-psycopg2 (&gt;= 1.1.21-6), python-mysqldb (&gt;= 1.2.1-p2-2), python-chardet
+ Suggests: griffith-extra-artwork (&gt;= 0.8)
+ XB-Python-Version: ${python:Versions}
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2007-01-01 23:11:00 UTC (rev 646)
++++ trunk/lib/add.py	2007-01-02 20:53:43 UTC (rev 647)
+@@ -620,6 +620,8 @@
+ 	new_movie.cast = movie.cast
+ 	new_movie.classification = movie.classification
+ 	new_movie.vcodec_id = movie.vcodec_id
++	new_movie.collection_id = movie.collection_id
++	new_movie.volume_id = movie.volume_id
+ 	new_movie.color = movie.color
+ 	new_movie.cond = movie.cond
+ 	new_movie.country = movie.country
+@@ -627,6 +629,7 @@
+ 	new_movie.genre = movie.genre
+ 	new_movie.image = new_image
+ 	new_movie.site = movie.site
++	new_movie.loaned = movie.loaned
+ 	new_movie.layers = movie.layers
+ 	new_movie.medium_id = movie.medium_id
+ 	new_movie.number = next_number
+@@ -646,6 +649,7 @@
+ 	
+ 	new_movie.tags = movie.tags
+ 	new_movie.languages = movie.languages
++	new_movie.loans = movie.loans
+ 	
+ 	# save
+ 	new_movie.save()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-01-01 23:11:00 UTC (rev 646)
++++ trunk/lib/main_treeview.py	2007-01-02 20:53:43 UTC (rev 647)
+@@ -37,6 +37,7 @@
+ 			return False
+ 		number = tmp_model.get_value(tmp_iter,0)
+ 		movie = self.db.Movie.get_by(number=number)
++		movie.refresh() # loan data can be obsolete in cache
+ 		if movie is None:
+ 			self.debug.show(&quot;Treeview: movie doesn't exists (number=%s)&quot;%number)
+ 		set_details(self, movie)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000170.html">[Griffith-svn] r646 - trunk/docs/pl
+</A></li>
+	<LI>Next message: <A HREF="000172.html">[Griffith-svn] r648 - in trunk: . docs/pl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#171">[ date ]</a>
+              <a href="thread.html#171">[ thread ]</a>
+              <a href="subject.html#171">[ subject ]</a>
+              <a href="author.html#171">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

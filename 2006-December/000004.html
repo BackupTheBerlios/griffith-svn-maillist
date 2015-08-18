@@ -1,0 +1,372 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r472 - in griffith: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r472%20-%20in%20griffith%3A%20.%20lib&In-Reply-To=%3C200612041438.kB4EcL5g017467%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000003.html">
+   <LINK REL="Next"  HREF="000005.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r472 - in griffith: . lib</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r472%20-%20in%20griffith%3A%20.%20lib&In-Reply-To=%3C200612041438.kB4EcL5g017467%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r472 - in griffith: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  4 15:38:21 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000003.html">[Griffith-svn] r471 - griffith/lib
+</A></li>
+        <LI>Next message: <A HREF="000005.html">[Griffith-svn] r473 - in griffith: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-04 15:38:19 +0100 (Mon, 04 Dec 2006)
+New Revision: 472
+
+Modified:
+   griffith/ChangeLog
+   griffith/lib/gconsole.py
+   griffith/lib/gutils.py
+Log:
+Added --show-dep command line option
+
+
+Modified: griffith/ChangeLog
+===================================================================
+--- griffith/ChangeLog	2006-12-04 12:31:50 UTC (rev 471)
++++ griffith/ChangeLog	2006-12-04 14:38:19 UTC (rev 472)
+@@ -5,7 +5,7 @@
+ (c) 2005-2006 Vasco Nunes
+ 
+ 2006-12-04 Piotr Ozarowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+-	* Added --check-dep command line option
++	* Added --check-dep and --show-dep command line options
+ 
+ 2006-11-20 Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
+ 	* Added Brasilian Portuguese translation (thanks to F&#225;bio Nogueira)
+
+Modified: griffith/lib/gconsole.py
+===================================================================
+--- griffith/lib/gconsole.py	2006-12-04 12:31:50 UTC (rev 471)
++++ griffith/lib/gconsole.py	2006-12-04 14:38:19 UTC (rev 472)
+@@ -29,9 +29,9 @@
+ 	if len(sys.argv)&gt;1:
+ 		try:
+ 			opts, args = getopt.getopt(sys.argv[1:], 'hDCo:t:d:c:y:s:',
+-				('help', 'debug', 'sqlecho', 'clean', 'check-dep', 'fix-db',
+-					'original_title=', 'title=', 'director=', 'cast=', 'year=',
+-					'sort=', 'seen=', 'loaned=', 'number=', 'runtime=',
++				('help', 'debug', 'sqlecho', 'clean', 'check-dep', 'show-dep',
++					'fix-db', 'original_title=', 'title=', 'director=', 'cast=',
++					'year=', 'sort=', 'seen=', 'loaned=', 'number=', 'runtime=',
+ 					'rating='))
+ 		except getopt.GetoptError:
+ 			# print help information and exit:
+@@ -52,6 +52,9 @@
+ 			elif o == '--check-dep':
+ 				check_dependencies()
+ 				sys.exit()
++			elif o == '--show-dep':
++				show_dependencies()
++				sys.exit()
+ 			elif o == '--fix-db':
+ 				self.db.fix_old_data()
+ 			elif o == '--sqlecho':
+@@ -122,33 +125,52 @@
+ 	if sys.version.rfind('Debian'):
+ 		ostype = 'debian'
+ 
+-	(missing, extra) = gutils.missing_dependencies()
++	(missing, extra) = gutils.get_dependencies()
+ 
+ 	def __print_missing(modules):
+-		for i in missing:
+-			tmp = None
+-			if ostype is not None:
+-				if ostype == 'debian' and i.has_key('debian'):
+-					tmp = &quot;%s package is missing&quot; % i['debian']
+-					if i.has_key('debian_version') and i['debian_version'] is not None:
+-						tmp += &quot;\n\tminimum required version: %s&quot; % i['debian_version']
+-			if tmp is None:
+-				tmp = &quot;%s module is missing&quot; % i['module']
+-				if i.has_key('module_version') and i['module_version'] is not None:
+-					tmp += &quot;\n\tminimum required version: %s&quot; % i['module_version']
+-				if i.has_key('module_url'):
+-					tmp += &quot;\n\tURL: %s&quot; % i['module_url']
+-			print tmp
++		import string
++		missing = ''
++		for i in modules:
++			if i['version']==False or (not isinstance(i['version'], bool) and i['version'].startswith('-')):
++				tmp = None
++				if ostype is not None:
++					if ostype == 'debian' and i.has_key('debian'):
++						tmp = &quot;\n%s package&quot; % i['debian']
++						if i.has_key('debian_req') and i['debian_req'] is not None:
++							tmp += &quot;\n\tminimum required package version: %s&quot; % i['debian_req']
++				if tmp is None:
++					tmp = &quot;\n%s module&quot; % i['module']
++					if i.has_key('module_req') and i['module_req'] is not None:
++						tmp += &quot;\n\tminimum required module version: %s&quot; % i['module_req']
++					if i.has_key('url'):
++						tmp += &quot;\n\tURL: %s&quot; % i['url']
++				if i['version'] is not False and i['version'].startswith('-'):
++					tmp += &quot;\n\tavailable module version: %s&quot; % i['version'][1:]
++				if tmp is not None:
++					missing += tmp
++		if missing == '':
++			return None
++		else:
++			return missing
+ 
+-	if missing:
++	tmp = __print_missing(missing)
++	if tmp is not None:
+ 		print 'Dependencies missing:'
+-		print '^^^^^^^^^^^^^^^^^^^^^'
+-		__print_missing(missing)
+-	if extra:
+-		print '\nOptional dependencies missing:'
+-		print '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+-		__print_missing(extra)
++		print '===================='
++		print tmp
++	tmp = __print_missing(extra)
++	if tmp is not None:
++		print '\n\nOptional dependencies missing:'
++		print '============================='
++		print tmp, &quot;\n&quot;
+ 
++def show_dependencies():
++	(missing, extra) = gutils.get_dependencies()
++	for i in missing:
++		print &quot;%(module)s :: %(version)s&quot; % i
++	for i in extra:
++		print &quot;%(module)s :: %(version)s&quot; % i
++
+ def con_usage():
+ 	print &quot;USAGE:&quot;, sys.argv[0], &quot;[OPTIONS] [HOMEDIR]&quot;
+ 	print &quot;\nHOMEDIR is optional home directory (if different than ~/.griffith)&quot;
+@@ -157,6 +179,7 @@
+ 	print &quot;-D, --debug\trun with more debug info&quot;
+ 	print &quot;-C, --clean\tfind and delete orphan files in posters directory&quot;
+ 	print &quot;--check-dep\tcheck dependencies&quot;
++	print &quot;--show-dep\tshow dependencies&quot;
+ 	print &quot;--fix-db\tfix old database&quot;
+ 	print &quot;--sqlecho\tprint SQL queries&quot;
+ 	print &quot;\n printing movie list:&quot;
+
+Modified: griffith/lib/gutils.py
+===================================================================
+--- griffith/lib/gutils.py	2006-12-04 12:31:50 UTC (rev 471)
++++ griffith/lib/gutils.py	2006-12-04 14:38:19 UTC (rev 472)
+@@ -368,86 +368,114 @@
+ 		pass
+ 	return data
+ 
+-def missing_dependencies():
+-	missing = []
++def get_dependencies():
++	depend = []
+ 	try:
+ 		import gtk
+-		# TODO: check version
++		version	= '.'.join([str(i) for i in gtk.pygtk_version])
++		if gtk.pygtk_version &lt;= (2, 6, 0):
++			version = '-%s' % version
++			raise
+ 	except:
+-		missing.append({'module': 'gtk',
+-			'module_version': '2.6', # &gt;=
+-			'module_url'	: '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
+-			'debian'	: 'python-gtk2',
+-			'debian_version': '2.8.6-1'
+-			# TODO: 'fedora', 'suse', etc.
+-		})
++		version = False
++	depend.append({'module': 'gtk',
++		'version'	: version,
++		'module_req'	: '2.6',
++		'url'		: '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
++		'debian'	: 'python-gtk2',
++		'debian_req'	: '2.8.6-1'
++		# TODO: 'fedora', 'suse', etc.
++	})
+ 	try:
+ 		import gtk.glade
++		# (version == gtk.pygtk_version)
+ 	except:
+-		missing.append({'module': 'gtk.glade',
+-			'module_version': '2.6',
+-			'module_url'	: '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
+-			'debian'	: 'python-glade2',
+-			'debian_version': '2.8.6-1'
+-		})
++		version = False
++	depend.append({'module': 'gtk.glade',
++		'version'	: version,
++		'module_req'	: '2.6',
++		'url'		: '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
++		'debian'	: 'python-glade2',
++		'debian_req'	: '2.8.6-1'
++	})
+ 	try:
+ 		import sqlalchemy
++		version = True
+ 	except:
+-		missing.append({'module': 'sqlalchemy',
+-			'module_version': '0.3',
+-			'module_url'	: '<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>',
+-			'debian'	: 'python-sqlalchemy',
+-			'debian_version': '0.3.0-1'
+-		})
++		version = False
++	depend.append({'module': 'sqlalchemy',
++		'version'	: version,
++		'module_req'	: '0.3',
++		'url'		: '<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>',
++		'debian'	: 'python-sqlalchemy',
++		'debian_req'	: '0.3.0-1'
++	})
+ 	try:
+ 		import pysqlite2
++		version = True
+ 		# TODO: check if &quot;pysqlite&quot; is in version &gt;= 2
+ 	except:
+-		missing.append({'module': 'pysqlite2',
+-			'module_version': None,
+-			'module_url'		: '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
+-			'debian'	: 'python-pysqlite2',
+-			'debian_version': '2.3.0-1'
+-		})
++		version = False
++	depend.append({'module': 'pysqlite2',
++		'version'	: version,
++		'url'		: '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
++		'debian'	: 'python-pysqlite2',
++		'debian_req'	: '2.3.0-1'
++	})
+ 	try:
+ 		import reportlab
++		version = reportlab.Version
+ 	except:
+-		missing.append({'module': 'reportlab',
+-			'module_url'	: '<A HREF="http://www.reportlab.org/">http://www.reportlab.org/</A>',
+-			'debian'	: 'python-reportlab',
+-			'debian_version': '1.20debian-6'
+-		})
++		version = False
++	depend.append({'module': 'reportlab',
++		'version'	: version,
++		'url'		: '<A HREF="http://www.reportlab.org/">http://www.reportlab.org/</A>',
++		'debian'	: 'python-reportlab',
++		'debian_req'	: '1.20debian-6'
++	})
+ 	try:
+ 		import PIL
++		version = True
+ 	except:
+-		missing.append({'module': 'PIL',
+-			'module_url'	: '<A HREF="http://www.pythonware.com/products/pil/">http://www.pythonware.com/products/pil/</A>',
+-			'debian'	: 'python-imaging',
+-			'debian_version': '1.1.5-6'
+-		})
++		version = False
++	depend.append({'module': 'PIL',
++		'version'	: version,
++		'url'		: '<A HREF="http://www.pythonware.com/products/pil/">http://www.pythonware.com/products/pil/</A>',
++		'debian'	: 'python-imaging',
++		'debian_req'	: '1.1.5-6'
++	})
+ 	try:
+ 		import xml
++		version	= '.'.join([str(i) for i in xml.version_info])
+ 	except:
+-		missing.append({'module': 'xml',
+-			'module_url'	: '<A HREF="http://pyxml.sf.net/">http://pyxml.sf.net/</A>',
+-			'debian'	: 'python-xml'
+-		})
++		version = False
++	depend.append({'module': 'xml',
++		'version'	: version,
++		'url'		: '<A HREF="http://pyxml.sf.net/">http://pyxml.sf.net/</A>',
++		'debian'	: 'python-xml'
++	})
+ 	# extra dependencies:
+-	extra_missing = []
++	optional = []
+ 	try:
+ 		import psycopg2
++		version = psycopg2.__version__
+ 	except:
+-		extra_missing.append({'module': 'psycopg2',
+-			'module_url'	: '<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>',
+-			'debian'	: 'python-psycopg2',
+-			'debian_version': '1.1.21-6'
+-		})
++		version = False
++	optional.append({'module': 'psycopg2',
++		'version'	: version,
++		'url'		: '<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>',
++		'debian'	: 'python-psycopg2',
++		'debian_req'	: '1.1.21-6'
++	})
+ 	try:
+ 		import MySQLdb
++		version	= '.'.join([str(i) for i in MySQLdb.version_info])
+ 	except:
+-		extra_missing.append({'module': 'MySQLdb',
+-			'module_url'	: '<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>',
+-			'debian'	: 'python-mysqldb',
+-			'debian_version': '1.2.1-p2-2'
+-		})
+-	return missing, extra_missing
++		version = False
++	optional.append({'module': 'MySQLdb',
++		'version'	: version,
++		'url'		: '<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>',
++		'debian'	: 'python-mysqldb',
++		'debian_req'	: '1.2.1-p2-2'
++	})
++	return depend, optional
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000003.html">[Griffith-svn] r471 - griffith/lib
+</A></li>
+	<LI>Next message: <A HREF="000005.html">[Griffith-svn] r473 - in griffith: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

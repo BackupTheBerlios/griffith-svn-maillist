@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1132 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1132%20-%20trunk/lib&In-Reply-To=%3C200901181505.n0IF5ULB016245%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000606.html">
+   <LINK REL="Next"  HREF="000608.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1132 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1132%20-%20trunk/lib&In-Reply-To=%3C200901181505.n0IF5ULB016245%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1132 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 18 16:05:30 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000606.html">[Griffith-svn] r1131 - in trunk: . debian lib
+</A></li>
+        <LI>Next message: <A HREF="000608.html">[Griffith-svn] r1133 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#607">[ date ]</a>
+              <a href="thread.html#607">[ thread ]</a>
+              <a href="subject.html#607">[ subject ]</a>
+              <a href="author.html#607">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-01-18 16:05:29 +0100 (Sun, 18 Jan 2009)
+New Revision: 1132
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/advfilter.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/delete.py
+   trunk/lib/edit.py
+   trunk/lib/loan.py
+Log:
+few more SQL optimizations
+
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2009-01-18 14:23:49 UTC (rev 1131)
++++ trunk/lib/add.py	2009-01-18 15:05:29 UTC (rev 1132)
+@@ -84,8 +84,7 @@
+         else:
+             new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+             details[&quot;poster_md5&quot;] = new_poster_md5
+-            poster = self.db.session.query(db.Poster).filter_by(md5sum=new_poster_md5).first()
+-            if not poster:
++            if self.db.session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
+                 try:
+                     data = file(tmp_image_path, 'rb').read()
+                 except Exception, e:
+@@ -652,8 +651,7 @@
+         if os.path.isfile(tmp_image_path):
+             new_poster_md5 = gutils.md5sum(file(tmp_image_path, 'rb'))
+ 
+-            poster = self.db.session.query(db.Poster).filter_by(md5sum=new_poster_md5).first()
+-            if not poster:
++            if self.db.session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
+                 try:
+                     data = file(tmp_image_path, 'rb').read()
+                 except Exception, e:
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2009-01-18 14:23:49 UTC (rev 1131)
++++ trunk/lib/advfilter.py	2009-01-18 15:05:29 UTC (rev 1132)
+@@ -129,7 +129,7 @@
+ 
+ def initialize(widgets, gsql, field_names):
+     # tags
+-    items = gsql.session.query(db.Tag).all()
++    items = gsql.session.query(db.Tag.tag_id, db.Tag.name).all()
+     if len(items):
+         options = (_('ignore'), _('with'), _('without'), _('require'))
+         _fill_container(widgets[&quot;tags_vbox&quot;], items, options, 'tag_id')
+@@ -138,7 +138,7 @@
+         widgets[&quot;tags_frame&quot;].hide()
+ 
+     # volumes
+-    items = gsql.session.query(db.Volume).all()
++    items = gsql.session.query(db.Volume.volume_id, db.Volume.name).all()
+     options = (_('ignore'), _('in'), _('not in'))
+     if len(items):
+         _fill_container(widgets[&quot;volumes_vbox&quot;], items, options, 'volume_id')
+@@ -147,7 +147,7 @@
+         widgets[&quot;volumes_frame&quot;].hide()
+ 
+     # collections
+-    items = gsql.session.query(db.Collection).all()
++    items = gsql.session.query(db.Collection.collection_id, db.Collection.name).all()
+     if len(items):
+         # use volume's options
+         _fill_container(widgets[&quot;collections_vbox&quot;], items, options, 'collection_id')
+@@ -156,7 +156,7 @@
+         widgets[&quot;collections_frame&quot;].hide()
+ 
+     # loans
+-    items = gsql.session.query(db.Person).all()
++    items = gsql.session.query(db.Person.person_id, db.Person.name).all()
+     if len(items):
+         options = (_('ignore'), _('loaned to '), _('loan history'))
+         _fill_container(widgets[&quot;loans_vbox&quot;], items, options, 'person_id')
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-01-18 14:23:49 UTC (rev 1131)
++++ trunk/lib/dbupgrade.py	2009-01-18 15:05:29 UTC (rev 1132)
+@@ -226,7 +226,7 @@
+         try:
+             import sqlite
+         except ImportError:
+-            log.info('Old DB conversion: please install pysqlite legacy (v1.0)')
++            log.error('Old DB conversion: please install pysqlite legacy (v1.0)')
+             gutils.warning(self,_(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;))
+             return False
+     else:
+
+Modified: trunk/lib/delete.py
+===================================================================
+--- trunk/lib/delete.py	2009-01-18 14:23:49 UTC (rev 1131)
++++ trunk/lib/delete.py	2009-01-18 15:05:29 UTC (rev 1132)
+@@ -47,7 +47,7 @@
+         try:
+             self.db.session.commit()
+         except:
+-            log.info(&quot;Unexpected problem: %s&quot; % e)
++            log.info(&quot;Unexpected problem: %s&quot;, e)
+             return False
+ 
+         # update main treelist
+@@ -70,7 +70,7 @@
+             try:
+                 self.db.session.commit()
+             except Exception, e:
+-                log.warn(&quot;cannot delete poster from db: %s&quot; % e)
++                log.warn(&quot;cannot delete poster from db: %s&quot;, e)
+                 self.db.session.rollback()
+                 return False
+ 
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-01-18 14:23:49 UTC (rev 1131)
++++ trunk/lib/edit.py	2009-01-18 15:05:29 UTC (rev 1132)
+@@ -65,7 +65,7 @@
+     movie = session.query(db.Movie).filter_by(number=number).one()
+     old_poster_md5 = movie.poster_md5
+ 
+-    if not session.query(db.Poster).filter_by(md5sum=poster_md5).first():
++    if session.query(db.Poster).filter_by(md5sum=poster_md5).count() == 0:
+         poster = db.Poster(md5sum=poster_md5, data=file(filename, 'rb').read())
+         session.add(poster)
+ 
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2009-01-18 14:23:49 UTC (rev 1131)
++++ trunk/lib/loan.py	2009-01-18 15:05:29 UTC (rev 1132)
+@@ -30,7 +30,7 @@
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def loan_movie(self):
+-    people = self.db.session.query(db.Person).order_by(db.Person.name.asc()).all()
++    people = self.db.session.query(db.Person.name).order_by(db.Person.name.asc()).all()
+     model = gtk.ListStore(str)
+     if len(people)&gt;0:
+         for person in people:
+@@ -51,12 +51,12 @@
+         return False
+     self.widgets['w_loan_to'].hide()
+ 
+-    person = self.db.session.query(db.Person).filter_by(name=person_name).first()
++    person = self.db.session.query(db.Person.person_id).filter_by(name=person_name).first()
+     if not person:
+         log.info(&quot;loan_commit: person doesn't exist&quot;)
+         return False
+     if self._movie_id:
+-        movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
++        movie = self.db.session.query(db.Movie.movie_id, db.Movie.collection_id).filter_by(movie_id=self._movie_id).first()
+         if not movie:
+             log.info(&quot;loan_commit: wrong movie_id&quot;)
+             return False
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000606.html">[Griffith-svn] r1131 - in trunk: . debian lib
+</A></li>
+	<LI>Next message: <A HREF="000608.html">[Griffith-svn] r1133 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#607">[ date ]</a>
+              <a href="thread.html#607">[ thread ]</a>
+              <a href="subject.html#607">[ subject ]</a>
+              <a href="author.html#607">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1206 - in trunk: . debian lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1206%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200906071340.n57DePPp003758%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000678.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1206 - in trunk: . debian lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1206%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200906071340.n57DePPp003758%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1206 - in trunk: . debian lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jun  7 15:40:25 CEST 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000678.html">[Griffith-svn] r1207 - in trunk: . glade lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#677">[ date ]</a>
+              <a href="thread.html#677">[ thread ]</a>
+              <a href="subject.html#677">[ subject ]</a>
+              <a href="author.html#677">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-07 15:40:24 +0200 (Sun, 07 Jun 2009)
+New Revision: 1206
+
+Modified:
+   trunk/ChangeLog
+   trunk/debian/copyright
+   trunk/lib/db.py
+Log:
+Recognize more resolution aliases
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-24 20:07:22 UTC (rev 1205)
++++ trunk/ChangeLog	2009-06-07 13:40:24 UTC (rev 1206)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-06-07  Piotr O&#380;arowski
++	* Recognize more resolution aliases
++
+ 2009-05-24  Michael Jahn
+ 	* updated CineMovies, FilmAffinity, FilmDb, OFDb plugin
+ 	* added proxy support for MovieMeter plugin
+@@ -29,7 +32,7 @@
+ 	* updated CineMovies plugin
+ 	* updated Cineteka plugin
+ 	* updated FilmDb plugin
+-	
++
+ 2009-04-08  Michael Jahn
+ 	* added AllMovie plugin
+ 
+
+Modified: trunk/debian/copyright
+===================================================================
+--- trunk/debian/copyright	2009-05-24 20:07:22 UTC (rev 1205)
++++ trunk/debian/copyright	2009-06-07 13:40:24 UTC (rev 1206)
+@@ -8,7 +8,7 @@
+ 
+ License:
+ 
+- Copyright (c) 2005-2008 Vasco Nunes, Piotr O&#380;arowski
++ Copyright &#169; 2005-2009 Vasco Nunes, Piotr O&#380;arowski
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-05-24 20:07:22 UTC (rev 1205)
++++ trunk/lib/db.py	2009-06-07 13:40:24 UTC (rev 1206)
+@@ -25,7 +25,7 @@
+ # XXX: keep stdlib and SQLAlchemy imports only in this file
+ 
+ from sqlalchemy     import *
+-from sqlalchemy.orm import mapper, relation, deferred, sessionmaker, validates, column_property
++from sqlalchemy.orm import mapper, relation, deferred, validates, column_property
+ import re
+ import string
+ import logging
+@@ -89,7 +89,7 @@
+                 self.md5sum = md5sum
+                 self.data = data
+             else:
+-                log.error(&quot;md5sum has wrong size&quot;)
++                log.error('md5sum has wrong size')
+ 
+     def __repr__(self):
+         return &quot;&lt;Poster(%s)&gt;&quot; % self.md5sum
+@@ -103,53 +103,60 @@
+         return &quot;&lt;Loan:%s (movie:%s person:%s)&gt;&quot; % (self.loan_id, self.movie_id, self.person_id)
+ 
+ class Movie(object):
+-    _res_aliases = {'CGA': (320, 200),
+-                    'HD 1080': (1920, 1080),
+-                    'HD 720': (1280, 720),
+-                    'NTSC': (720, 480),
+-                    'PAL': (768, 576),
+-                    'QSXGA': (2560, 1600),
+-                    'QVGA': (320, 240),
+-                    'QXGA': (2048, 1536),
+-                    'SVGA': (800, 600),
+-                    'SXGA': (1280, 1024),
+-                    'SXGA+': (1400, 1050),
+-                    'VGA': (640, 480),
+-                    'WSXGA+': (1680, 1050),
+-                    'WUXGA': (1920, 1200),
+-                    'WVGA': (854, 480),
+-                    'XGA': (1024, 768),
+-                    'UXGA': (1600, 1200),
+-                    #'': (1152, 768),
+-                    #'': (1280, 854),
+-                    #'': (1280, 960),
+-                    #'': (1440, 960),
+-    }
+-    _res_alias_repr = {}
+-    for alias, res in _res_aliases.iteritems():
+-        _res_alias_repr[&quot;%dx%d&quot; % res] = alias
+-    del alias, res
++    _res_aliases = {(2560, 1600): ('QSXGA',),
++                    (2048, 1536): ('QXGA',),
++                    (1920, 1200): ('WUXGA',),
++                    (1920, 1080): ('HD 1080', '1080p', '1080'),
++                    (1920, 540): ('1080i',),
++                    (1680, 1050): ('WSXGA+',),
++                    (1600, 1200): ('UXGA',),
++                    (1400, 1050): ('SXGA+',),
++                    #(1440, 960): ('',),
++                    #(1280, 960): ('',),
++                    #(1280, 854): ('',),
++                    (1280, 720): ('HD 720', '720p', '720'),
++                    (1280, 360): ('720i',),
++                    (1280, 1024): ('SXGA',),
++                    #(1152, 768): ('',),
++                    (1024, 768): ('XGA',),
++                    (854, 480): ('WVGA',),
++                    (800, 600): ('SVGA',),
++                    (768, 576): ('PAL',),
++                    (720, 480): ('NTSC',),
++                    (640, 480): ('VGA',),
++                    (320, 240): ('QVGA',),
++                    (320, 200): ('CGA',)}
++    _res_alias_res = {}
++    for res, aliases in _res_aliases.iteritems():
++        for alias in aliases:
++            _res_alias_res[alias.upper()] = res
++    print aliases, alias, res
++    del aliases, alias, res
+ 
+     def _set_resolution(self, res_string):
+-        if not res_string:
++        if not res_string: # clear resulution field
+             self.width = None
+             self.height = None
+-        elif res_string.upper() in Movie._res_aliases:
+-            self.width, self.height = Movie._res_aliases[res_string.upper()]
+-        elif res_string.lower() in Movie._res_alias_repr:
+-            self.width, self.height = Movie._res_aliases[Movie._res_alias_repr[res_string.lower()]]
+-        elif 'x' in res_string.lower():
+-            self.width, self.height = map(int, res_string.lower().split('x'))
++        elif res_string.upper() in Movie._res_alias_res:
++            self.width, self.height = Movie._res_alias_res[res_string.upper()]
+         else:
+-            raise ValueError('Use standard resolution name or \d+x\d+')
++            try:
++                if 'x' in res_string:
++                    self.width, self.height = map(int, res_string.lower().split('x'))
++                else:
++                    self.width, self.height = map(int, res_string.lower().split())
++            except Exception, e:
++                log.warning('wrong resolution name: %s', e)
++                raise ValueError('Use standard resolution name or \d+x\d+')
+ 
+     def _get_resolution(self):
+         if not self.width or not self.height:
+             return None
+-        res_string = &quot;%dx%d&quot; % (self.width, self.height)
+-        if res_string in Movie._res_alias_repr:
+-            return Movie._res_alias_repr[res_string]
++        resolution = (self.width, self.height)
++        if resolution in Movie._res_aliases:
++            return Movie._res_aliases[resolution][0]
+         else:
++            res_string = &quot;%dx%d&quot; % resolution
+             return res_string
+ 
+     resolution = property(_get_resolution, _set_resolution)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000678.html">[Griffith-svn] r1207 - in trunk: . glade lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#677">[ date ]</a>
+              <a href="thread.html#677">[ thread ]</a>
+              <a href="subject.html#677">[ subject ]</a>
+              <a href="author.html#677">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

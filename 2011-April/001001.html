@@ -1,0 +1,373 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1541 - in trunk: i18n/it/LC_MESSAGES	lib/plugins/movie po
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1541%20-%20in%20trunk%3A%20i18n/it/LC_MESSAGES%0A%09lib/plugins/movie%20po&In-Reply-To=%3C20110422231138.53561481490%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001002.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1541 - in trunk: i18n/it/LC_MESSAGES	lib/plugins/movie po</H1>
+    <B>filosottile at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1541%20-%20in%20trunk%3A%20i18n/it/LC_MESSAGES%0A%09lib/plugins/movie%20po&In-Reply-To=%3C20110422231138.53561481490%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1541 - in trunk: i18n/it/LC_MESSAGES	lib/plugins/movie po">filosottile at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 23 01:11:37 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001002.html">[Griffith-svn] r1542 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1001">[ date ]</a>
+              <a href="thread.html#1001">[ thread ]</a>
+              <a href="subject.html#1001">[ subject ]</a>
+              <a href="author.html#1001">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: filosottile
+Date: 2011-04-23 01:11:37 +0200 (Sat, 23 Apr 2011)
+New Revision: 1541
+
+Modified:
+   trunk/i18n/it/LC_MESSAGES/griffith.mo
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-it.py
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+   trunk/po/it.po
+Log:
+New CSFD plugin by Kamil Hanus; minor fixes in IMDB-it and MyMoviesIt; typo in it.po
+
+Modified: trunk/i18n/it/LC_MESSAGES/griffith.mo
+===================================================================
+(Binary files differ)
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-03-20 15:53:55 UTC (rev 1540)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-04-22 23:11:37 UTC (rev 1541)
+@@ -1,6 +1,6 @@
+ # -*- coding: utf-8 -*-
+-__revision__ = '$Id: PluginMovieCSFD.py 12 2007-01-05 09:08:06Z blondak $'
+-# Copyright (c) 2005 Blondak
++__revision__ = '$Id: PluginMovieCSFD.py 12 2011-05-22 08:37:14Z KamilHanus $'
++# Copyright (c) 2011 Kamil Hanus
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -19,6 +19,7 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++from gettext import gettext as _
+ import gutils
+ import movie,string
+ import re
+@@ -27,36 +28,31 @@
+ plugin_description = &quot;Cesko-Slovenska Filmova Databaze&quot;
+ plugin_url = &quot;www.csfd.cz&quot;
+ plugin_language = _(&quot;Czech&quot;)
+-plugin_author = &quot;Blondak&quot;
+-plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">blondak at neser.cz</A>&gt;&quot;
+-plugin_version = '0.9'
++plugin_author = &quot;Kamil Hanus&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">kamilhanus at gmail.com</A>&gt;&quot;
++plugin_version = '1.1'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.movie_id = id
+         self.encode = &quot;utf-8&quot;
+-        self.url = &quot;<A HREF="http://www.csfd.cz/">http://www.csfd.cz/</A>&quot;+str(id)
++        self.url = &quot;<A HREF="http://www.csfd.cz">http://www.csfd.cz</A>&quot;+str(id)
+ 
+     def get_image(self):
+-        self.image_url = re.search(r&quot;background=\&quot;<A HREF="http://img.csfd.cz/posters/([^\">http://img.csfd.cz/posters/([^\</A>&quot;]*)\&quot;&quot;,self.page)
++        self.image_url = re.search(r&quot;content=\&quot;<A HREF="http://img.csfd.cz/posters/([^\">http://img.csfd.cz/posters/([^\</A>&quot;]*)\&quot;&quot;,self.page)
+         if self.image_url:
+             self.image_url = &quot;<A HREF="http://img.csfd.cz/posters/">http://img.csfd.cz/posters/</A>&quot; + gutils.strip_tags(self.image_url.group(1))
+         else:
+             self.image_url = &quot;&quot;
+ 
+-    def get_o_title(self):
+-        self.o_title = re.findall(r&quot;/images/flag_[\d]+\.gif'[^&gt;]*&gt;&lt;/td&gt;&lt;td&gt;([^&lt;]*)&quot;,self.page)
+-        if len(self.o_title)&gt;0:
+-            self.o_title = self.o_title[len(self.o_title)-1]
+-        else:
+-            self.o_title = &quot;&quot;
+-        if self.o_title == &quot;&quot;:
+-            self.o_title = self.get_title(True)
+ 
+     def get_title(self, ret=False):
+-        data = re.search(r&quot;&lt;title&gt;CSFD.cz - ([^,]*)\(\d{4}\)&quot;,self.page)
++        data = re.search(r'&lt;title&gt;*&gt;([^&gt;]*)',self.page)
+         if data:
+-            data = data.group(1)
++            if len(data.group(1).split(&quot;/&quot;)) == 2:
++		data = data.group(1).split(&quot; | &quot;)[0][:-7]
++	    else:
++		data = data.group(1).split(&quot; / &quot;)[0]
+         else:
+             data = &quot;&quot;
+         if ret is True:
+@@ -64,56 +60,104 @@
+         else:
+             self.title = data
+ 
+-    def get_director(self):
+-        self.director = re.search(r&quot;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&quot;, self.page)
+-        if self.director:
+-            self.director = gutils.strip_tags(self.director.group(1))
++
++    def get_o_title(self):
++        self.o_title = re.findall(r'/images/flags/flag_[\d]+.gif&quot;[^&lt;]*&gt;([^/]*)',self.page)
++        if len(self.o_title)&gt;0:
++            self.o_title = self.o_title[0]
++	    self.o_title = self.o_title[11:-1]
+         else:
+-            self.director = &quot;&quot;
++            self.o_title = &quot;&quot;
++        if self.o_title == &quot;&quot;:
++            self.o_title = self.get_title(True)
+ 
++
++
++    def get_director(self):
++	a=re.sub(&quot;\t&quot;, &quot;&quot;, self.page)
++	a=re.sub(&quot;\n&quot;, &quot;&quot;, a)
++	try:
++	    b = re.search(r'data-truncate=&quot;60&quot;&gt;(.*)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;',a).group()
++	    b = re.search(r&quot;&lt;a(.*)&lt;/span&quot;, b).group()[:-6]
++	    b = b.split(&quot;,&quot;)
++
++	    self.director=&quot;&quot;
++	    for i in b:
++	        self.director=self.director + &quot;, &quot;+i[:-4].split(&quot;&gt;&quot;)[-1]
++	    if self.director[0] == &quot;,&quot;:
++	        self.director=self.director[2:]
++	except:
++	    self.director=&quot;&quot;
++	if self.director==&quot;&quot;:
++	    try:
++		b = re.search(r'data-truncate=&quot;60&quot;&gt;(.*)&lt;/a&gt;&lt;/span&gt;&lt;/div&gt;',a).group()
++
++		b = re.search(r&quot;&lt;a(.*)&lt;/span&quot;, b).group()[:-6]
++		b = b.split(&quot;,&quot;)
++
++		self.director=&quot;&quot;
++	        for i in b:
++	            self.director=self.director + &quot;, &quot;+i[:-4].split(&quot;&gt;&quot;)[-1]
++	        if self.director[0] == &quot;,&quot;:
++	            self.director=self.director[2:]
++	    except:
++		self.director=&quot;&quot;
++
++
+     def get_year(self):
+-        self.year = re.search(r&quot;&lt;title&gt;.*\(([\d]+)\)&quot;, self.page)
++        self.year = re.search(r'&lt;p class=&quot;origin&quot;[^&lt;]*&gt;([^&gt;]*)', self.page)
+         if self.year:
+-            self.year = self.year.group(1)
++            self.year = self.year.group()[18:-7].split(&quot;, &quot;)[-2]
+         else:
+             self.year = &quot;&quot;
+ 
+     def get_runtime(self):
+-        self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&quot;, self.page)
++        self.runtime = re.search(r'&lt;p class=&quot;origin&quot;[^&lt;]*&gt;([^&gt;]*)', self.page)
+         if self.runtime:
+-            self.runtime = gutils.strip_tags(self.runtime.group(1))
++	    self.runtime = self.runtime.group()[18:-7].split(&quot;, &quot;)[-1]
++
+         else:
+             self.runtime = &quot;&quot;
+ 
+     def get_genre(self):
+-        self.genre = re.search(r&quot;/images/flag_[\d]+.gif.*&lt;/table&gt;[\s]*&lt;br&gt;[\s]*&lt;b&gt;([^&amp;:]*)&nbsp;&lt;br&gt;&quot;,self.page)
+-        if self.genre:
+-            self.genre = gutils.strip_tags(self.genre.group(1))
+-        else:
++	try:
++            self.genre = re.search(r'&lt;p class=&quot;genre&quot;[^&lt;]*&gt;([^&gt;]*)',self.page).group()[17:-3]
++        except:
+             self.genre = &quot;&quot;
+ 
+     def get_country(self):
+-        self.country = re.search(r&quot;/images/flag_[\d]+.gif.*&lt;/table&gt;[\s]*&lt;br&gt;[\s]*&lt;b&gt;[^&amp;:]*&nbsp;&lt;br&gt;(.*), [\d]{4}, &quot;,self.page)
++        self.country = re.search(r'&lt;p class=&quot;origin&quot;[^&lt;]*&gt;([^&gt;]*)', self.page)
+         if self.country:
+-            self.country = gutils.strip_tags(self.country.group(1))
++            self.country = self.country.group()[18:-7].split(&quot;, &quot;)[0]
+         else:
+             self.country = &quot;&quot;
+ 
+     def get_cast(self):
+-        self.cast = re.search(r&quot;Hraj&#237;: (.*)&lt;/div&gt;&lt;br&gt;&quot;, self.page)
+-        if self.cast:
+-            self.cast = gutils.strip_tags(self.cast.group(1))
+-        else:
+-            self.cast = &quot;&quot;
++	a=re.sub(&quot;\t&quot;, &quot;&quot;, self.page)
++	a=re.sub(&quot;\n&quot;, &quot;&quot;, a)
++	try:
++	    b = re.search(r'data-truncate=&quot;280&quot;&gt;(.*)&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;',a).group()
++	    b = re.search(r&quot;&lt;a(.*)&lt;/span&quot;, b).group()[:-6]
++	    b = b.split(&quot;,&quot;)
++	
++	    self.cast=&quot;&quot;
++	    for i in b:
++	        self.cast=self.cast + &quot;, &quot;+i[:-4].split(&quot;&gt;&quot;)[-1]
++	    if self.cast[0] == &quot;,&quot;:
++	        self.cast=self.cast[2:]
++	except:
++	    self.cast=&quot;&quot;
+ 
+     def get_plot(self):
+-        text = re.search(r&quot;\?text=([\d]*)&quot;, self.page)
+-        if text:
+-            page_content = self.open_page(url=self.url+&quot;?text=&quot;+text.group(1))
+-            self.plot = gutils.strip_tags(gutils.trim(page_content,&quot;Obsah:&quot;,&quot;&nbsp;&nbsp;&nbsp;&lt;b&gt;&lt;i&gt;(&quot;))
+-        else:
+-            self.plot = gutils.strip_tags(gutils.trim(self.page,&quot;Obsah:&quot;,&quot;&nbsp;&nbsp;&nbsp;&lt;b&gt;&lt;i&gt;(&quot;))
+ 
++	a= re.sub(&quot;\t&quot;, &quot;&quot;, self.page)
++	a= re.sub(&quot;\n&quot;, &quot;&quot;, a)
++	a= re.sub(&quot;&lt;BR&gt;&quot;, &quot;&quot;, a)
++	try:
++            self.plot = re.search(r'ka&quot;([^&lt;]*)',a).group(0)[6:]
++	except:
++	    self.plot = &quot;&quot;
++
+     def get_site(self):
+         self.site = re.search(r&quot;href=[\&quot;'](<A HREF="http://.*imdb\.com/title/[^\">http://.*imdb\.com/title/[^\</A>&quot;']*)&quot;,self.page)
+         if self.site:
+@@ -123,24 +167,27 @@
+ 
+     def get_trailer(self):
+         self.trailer = re.search(r&quot;&lt;a href=\&quot;([^\&quot;]*)\&quot;[^&gt;]*&gt;trailer&lt;br&gt;&lt;img src=\&quot;<A HREF="http://img.csfd.cz/images/new/film/ikona_trailer">http://img.csfd.cz/images/new/film/ikona_trailer</A>&quot;,self.page)
+-        if self.trailer:
+-            self.trailer = &quot;<A HREF="http://www.csfd.cz/">http://www.csfd.cz/</A>&quot;+gutils.strip_tags(self.trailer.group(1))
++        try:
++            self.trailer = self.url+&quot;videa&quot;
+ 
+-        else:
++        except:
+             self.trailer = &quot;&quot;
+ 
+     def get_rating(self):
+-        self.rating = re.search(r&quot;[\s]*([\d]+)%[\s]*&lt;/td&gt;&quot;,self.page)
++	a= re.sub(&quot;\t&quot;, &quot;&quot;, self.page)
++	a= re.sub(&quot;\n&quot;, &quot;&quot;, a)
++        self.rating = re.search(r&quot;[\s]*([\d]+)%[\s]*&lt;/h2&gt;&quot;,a).group()[:-6]
++	
+         if self.rating:
+-            self.rating = str(float(self.rating.group(1))/10)
++            self.rating = str(float(self.rating)/10)
+         else:
+             self.rating = &quot;&quot;
+ 
+     def get_o_site(self):
+-        self.o_site = re.search(r&quot;href=\&quot;([^\&quot;]*)\&quot;[^&gt;]*&gt;www&lt;br&gt;&lt;img src=\&quot;<A HREF="http://img.csfd.cz/images/new/film/ikona_www">http://img.csfd.cz/images/new/film/ikona_www</A>&quot;,self.page)
+-        if self.o_site:
+-            self.o_site = gutils.strip_tags(self.o_site.group(1))
+-        else:
++	try:
++            self.o_site = &quot;<A HREF="http://">http://</A>&quot;+re.findall(r'&lt;li&gt;&lt;a\ href=&quot;<A HREF="http://([^">http://([^</A>&gt;]*)',self.page)[1][:-36]
++
++        except:
+             self.o_site = &quot;&quot;
+ 
+     def get_notes(self):
+@@ -155,8 +202,8 @@
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode = &quot;utf-8&quot;
+-        self.original_url_search   = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
+-        self.translated_url_search = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
++        self.original_url_search   = &quot;<A HREF="http://www.csfd.cz/hledat/?q=">http://www.csfd.cz/hledat/?q=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.csfd.cz/hledat/?q=">http://www.csfd.cz/hledat/?q=</A>&quot;
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -175,4 +222,3 @@
+                     self.ids.append(item[0])
+ #                    self.titles.append(gutils.convert_entities(item[1])+' '+item[2])
+                     self.titles.append(item[1]+' '+item[2])
+-
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-it.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-it.py	2011-03-20 15:53:55 UTC (rev 1540)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-it.py	2011-04-22 23:11:37 UTC (rev 1541)
+@@ -82,8 +82,8 @@
+                     self.plot = self.plot + gutils.strip_tags(gutils.before(element, '&lt;/a&gt;')) + '\n\n'
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.o_page, '&lt;a href=&quot;/Sections/Years/', '&lt;/a&gt;')
+-        self.year = gutils.after(self.year, '&quot;&gt;')
++        self.year = gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;')
++        self.year = gutils.trim(self.year, '(', ')')
+ 
+     def get_runtime(self):
+         self.runtime = gutils.trim(self.page, '&lt;h5&gt;Durata:&lt;/h5&gt;', ' min')
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-03-20 15:53:55 UTC (rev 1540)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-04-22 23:11:37 UTC (rev 1541)
+@@ -111,7 +111,7 @@
+         self.country = gutils.trim(self.page[pos+2:], '- ', '  &lt;')
+ 
+     def get_rating(self):
+-        rat = gutils.trim(self.page, '&lt;div style=&quot;text-align:center; font-size:23px; font-weight:bold; letter-spacing:1px; margin:0px 11px 7px 11px&quot;&gt;', '&lt;span style=&quot;font-size:11px&quot;&gt;/5&lt;/span&gt;&lt;/div&gt;')
++        rat = gutils.trim(self.page, '&lt;div style=&quot;text-align:center; font-size:23px; font-weight:bold; letter-spacing:1px; margin:0px 11px 7px 11px&quot;&gt;&lt;span class=&quot;rating&quot;&gt;', '&lt;/span&gt;&lt;span style=&quot;font-size:11px&quot;&gt;/5&lt;/span&gt;&lt;/div&gt;')
+         if rat != '':
+             self.rating = int(round(float(rat.replace(',', '.'))*2, 0))
+         else:
+
+Modified: trunk/po/it.po
+===================================================================
+--- trunk/po/it.po	2011-03-20 15:53:55 UTC (rev 1540)
++++ trunk/po/it.po	2011-04-22 23:11:37 UTC (rev 1541)
+@@ -2149,7 +2149,7 @@
+ 
+ #: ../glade/griffith.glade.h:46
+ msgid &quot;Create backup&quot;
+-msgstr &quot;Creare bacjup&quot;
++msgstr &quot;Creare backup&quot;
+ 
+ #: ../glade/griffith.glade.h:48
+ msgid &quot;DVD layers&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001002.html">[Griffith-svn] r1542 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1001">[ date ]</a>
+              <a href="thread.html#1001">[ thread ]</a>
+              <a href="subject.html#1001">[ subject ]</a>
+              <a href="author.html#1001">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

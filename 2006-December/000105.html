@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r576 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r576%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200612171133.kBHBXbpH011241%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000104.html">
+   <LINK REL="Next"  HREF="000106.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r576 - trunk/lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r576%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200612171133.kBHBXbpH011241%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r576 - trunk/lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 17 12:33:37 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000104.html">[Griffith-svn] r575 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000106.html">[Griffith-svn] r577 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#105">[ date ]</a>
+              <a href="thread.html#105">[ thread ]</a>
+              <a href="subject.html#105">[ subject ]</a>
+              <a href="author.html#105">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-17 12:33:36 +0100 (Sun, 17 Dec 2006)
+New Revision: 576
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieWP.py
+Log:
+WP movie plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieWP.py	2006-12-17 10:41:49 UTC (rev 575)
++++ trunk/lib/plugins/movie/PluginMovieWP.py	2006-12-17 11:33:36 UTC (rev 576)
+@@ -1,8 +1,8 @@
+-# -*- coding: iso-8859-2 -*-
++# -*- coding: utf-8 -*-
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2006 Piotr Ozarowski
++# Copyright (c) 2005-2006 Piotr O&#191;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -30,9 +30,9 @@
+ plugin_description  = 'Serwis filmowy Wirtualnej Polski'
+ plugin_url          = 'www.film.wp.pl'
+ plugin_language     = _('Polish')
+-plugin_author       = 'Piotr Ozarowski'
++plugin_author       = 'Piotr O&#191;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '2.0'
++plugin_version      = '2.1'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -49,13 +49,21 @@
+ 		self.image_url = gutils.trim(self.page, '&lt;img src=&quot;', '&quot; name=&quot;o')
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '&lt;b&gt;Tytu&#179; orygina&#179;u:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		self.o_title = gutils.trim(self.page, '&lt;b&gt;Tytu\xB3 orygina\xB3u:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		self.o_title = gutils.clean(self.o_title)
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, '&lt;/h1&gt;', '&lt;div')
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;b&gt;Tytu&#179; polski:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		self.title = gutils.trim(self.page, '&lt;b&gt;Tytu\xB3 polski:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		if self.title == '':
++			self.title = gutils.before(self.page, '&lt;/h1&gt;')
++			pos = string.find(self.title, '(')
++			if pos &gt; -1:
++				self.title = self.title[:pos]
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.cast_page, '&gt;re&#191;yser	&lt;/div&gt;', '&lt;/div&gt;')
++		self.director = gutils.trim(self.cast_page, '&gt;re\xBFyser	&lt;/div&gt;', '&lt;/div&gt;')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, ' /&gt;', '\t\t&lt;div class=&quot;clr&quot;&gt;')
+@@ -63,11 +71,15 @@
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page, '&lt;b&gt;Rok produkcji:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+-		self.year = re.findall(r'\d+', self.year)[0]
++		year = re.findall(r'\d+', self.year)
++		if len(year)&gt;0:
++			self.year = year[0]
+ 
+ 	def get_runtime(self):
+ 		self.runtime = gutils.trim(self.page, '&lt;b&gt;Czas trwania:&lt;/b&gt;', 'min')
+-		self.runtime = re.findall(r'\d+', self.runtime)[0]
++		runtime =  re.findall(r'\d+', self.runtime)
++		if len(runtime)&gt;0:
++			self.runtime = runtime
+ 
+ 	def get_genre(self):
+ 		self.genre = gutils.trim(self.page, '&lt;b&gt;Gatunek:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+@@ -83,11 +95,11 @@
+ 		self.cast = string.replace(self.cast,  &quot;%s\n&quot; % _(' as '), &quot;\n&quot;)
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.page, '&lt;b&gt;Przedzia&#179; wiekowy:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		self.classification = gutils.trim(self.page, '&lt;b&gt;Przedzia\xB3 wiekowy:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+ 		self.classification = gutils.trim(self.classification, 'od ', ' ')
+ 
+ 	def get_studio(self):
+-		self.studio = gutils.trim(self.page, '&lt;b&gt;Wyt&#243;wrnia:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		self.studio = gutils.trim(self.page, '&lt;b&gt;Wytw\xF3rnia:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ''
+@@ -130,4 +142,3 @@
+ 				self.titles.append(tmp_title)
+ 		else:
+ 			self.number_results = 0
+-# vim: fenc=latin2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000104.html">[Griffith-svn] r575 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000106.html">[Griffith-svn] r577 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#105">[ date ]</a>
+              <a href="thread.html#105">[ thread ]</a>
+              <a href="subject.html#105">[ subject ]</a>
+              <a href="author.html#105">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

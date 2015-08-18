@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1057 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1057%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811172018.mAHKIdix024434%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000532.html">
+   <LINK REL="Next"  HREF="000534.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1057 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1057%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811172018.mAHKIdix024434%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1057 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 17 21:18:39 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000532.html">[Griffith-svn] r1055 - in trunk: . debian lib
+</A></li>
+        <LI>Next message: <A HREF="000534.html">[Griffith-svn] r1058 - in trunk: . debian lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#533">[ date ]</a>
+              <a href="thread.html#533">[ thread ]</a>
+              <a href="subject.html#533">[ subject ]</a>
+              <a href="author.html#533">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-17 21:18:38 +0100 (Mon, 17 Nov 2008)
+New Revision: 1057
+
+Modified:
+   trunk/griffith
+   trunk/lib/config.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+generate correct posters' path while upgrading from Griffith &lt; 0.10 (i.e. db version &lt; 3)
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-11-16 23:29:08 UTC (rev 1056)
++++ trunk/griffith	2008-11-17 20:18:38 UTC (rev 1057)
+@@ -1463,6 +1463,7 @@
+     home_dir, config_name = gconsole.check_args()
+     if not (config_name.find('/') &gt;= 0 or config_name.find('\\') &gt;= 0):
+         config_name = os.path.join(home_dir, config_name)
++    log.debug(&quot;config file used: %s&quot;, config_name)
+     config = config.Config(file=config_name)
+ 
+     if ('~' in version.pversion or '-' in version.pversion) and \
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2008-11-16 23:29:08 UTC (rev 1056)
++++ trunk/lib/config.py	2008-11-17 20:18:38 UTC (rev 1057)
+@@ -25,8 +25,10 @@
+ import os.path
+ import ConfigParser
+ #import cPickle as pickle
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+-class Config:
++class Config(object):
+     subst = {'True': True, 'False': False, 'None': None}
+     def __init__ (self, file):
+         self._file = file
+@@ -42,14 +44,13 @@
+             return default
+         else:
+             value = self._cfg.get(section, option, False)
+-            if value in self.subst.keys():
+-                value = self.subst[value]
++            value = Config.subst.get(value, value) # replace 'True' etc.
+             return value
+ 
+     def set(self, option, value, section='main'):
+-        if not isinstance(option, str):
++        if not isinstance(option, basestring):
+             option = str(option)
+-        if not isinstance(value, str):
++        if not isinstance(value, basestring):
+             value = str(value)
+         if not self._cfg.has_section(section):
+             self._cfg.add_section(section)
+@@ -64,13 +65,16 @@
+     def __getitem__(self, key):
+         return self.get('main', key)
+ 
++    def remove_option(self, option, section='main'):
++        return self._cfg.remove_option(section, option)
++
+     def keys(self, section='main'):
+         return [ i[0] for i in self._cfg.items(section) ]
+     def values(self, section='main'):
+         return [ i[1] for i in self._cfg.items(section) ]
+     def items(self, section='main'):
+         return self._cfg.items(section)
+-    def toDict(self, section='main'):
++    def to_dict(self, section='main'):
+         d = {}
+         for i,j in self._cfg.items(section):
+             d[i] = j
+@@ -86,8 +90,9 @@
+             self._cfg = ConfigParser.SafeConfigParser()
+             try:
+                 self._cfg.read(self._file)
+-            except:
+-                print 'Cannot parse config file'
++            except Exception, e:
++                log.debug(str(e))
++                log.error('Cannot parse config file')
+                 return False
+             # check values for number datatypes
+             # if current value could not be converted to number datatype
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-11-16 23:29:08 UTC (rev 1056)
++++ trunk/lib/dbupgrade.py	2008-11-17 20:18:38 UTC (rev 1057)
+@@ -1,4 +1,5 @@
+ # -*- coding: UTF-8 -*-
++# vim: fdm=marker
+ 
+ __revision__ = '$Id$'
+ 
+@@ -28,7 +29,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+-def upgrade_database(self, version, locations):
++def upgrade_database(self, version, locations, config):
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
+     b = self.session.bind
+     if version == 0 or version is None:
+@@ -149,8 +150,9 @@
+                 return False
+         
+         log.info(&quot;... saving posters in database&quot;)
++        posters_dir = get_old_posters_location(locations['home'], config, clean_config=True)
+         for movie in self.session.query(db.Movie).all():
+-            poster_file_name = os.path.join(locations['posters'], &quot;%s.jpg&quot; % movie.image)
++            poster_file_name = os.path.join(posters_dir, &quot;%s.jpg&quot; % movie.image)
+             if os.path.isfile(poster_file_name):
+                 poster_md5  = gutils.md5sum(file(poster_file_name, 'rb'))
+                 poster = self.session.query(db.Poster).filter_by(md5sum=poster_md5).first()
+@@ -513,4 +515,20 @@
+     clear_mappers()
+     return True
+ #}}}
+-# vim: fdm=marker
++
++def get_old_posters_location(home_dir, config, clean_config=False):
++    if config.get('posters', None) is not None:
++        dirname = config.get('posters')
++    elif config.get('type', 'sqlite', section='database') == 'sqlite':
++        dbname = config.get('name', 'griffith', section='database')
++        if dbname != 'griffith':
++            dirname = &quot;posters_sqlite_%s&quot; % dbname
++        else:
++            dirname = 'posters'
++    else:
++        dirname = &quot;posters_%(type)s_%(host)s_%(port)s_%(name)s_%(user)s&quot; % config.to_dict('database')
++    if clean_config:
++        config.remove_option('posters')
++        config.save()
++    return os.path.join(home_dir, dirname)
++
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2008-11-16 23:29:08 UTC (rev 1056)
++++ trunk/lib/preferences.py	2008-11-17 20:18:38 UTC (rev 1057)
+@@ -401,7 +401,7 @@
+     self.pdf_reader = save_reader
+ 
+     # database
+-    old = c.toDict(section='database')
++    old = c.to_dict(section='database')
+     
+     c.set('host', w['db_host'].get_text(), section='database')
+     c.set('port', int(w['db_port'].get_value()), section='database')
+@@ -432,7 +432,8 @@
+         # new database connection
+         self.initialized = False
+         try:
+-            self.db = sql.GriffithSQL(c, self.locations['home'], self.locations)
++            c['posters'] = None # force update
++            self.db = sql.GriffithSQL(c, self.locations['home'], self.locations, fallback=True)
+         except InvalidRequestError, e:
+             log.error(str(e))
+             c.set('type', 'sqlite', section='database')
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-11-16 23:29:08 UTC (rev 1056)
++++ trunk/lib/sql.py	2008-11-17 20:18:38 UTC (rev 1057)
+@@ -37,7 +37,7 @@
+ class GriffithSQL(object):
+     version = 3    # database format version, increase after changing data structures
+ 
+-    def __init__(self, config, griffith_dir, locations, reconnect=True):
++    def __init__(self, config, griffith_dir, locations, fallback=True):
+         #mapper = Session.mapper
+         self.config = config
+         self.data_dir = griffith_dir
+@@ -101,9 +101,9 @@
+             engine = create_engine(url, echo=False)
+             conn = engine.connect()
+         except Exception, e:    # InvalidRequestError, ImportError
+-            log.info(&quot;MetaData: %s&quot; % e)
+-            if not reconnect:
+-                return False
++            log.info(&quot;MetaData: %s&quot;, e)
++            if not fallback:
++                raise e
+             config.set('type', 'sqlite', section='database')
+             gutils.warning(self, &quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+@@ -116,9 +116,9 @@
+             session = Session()
+             #self.metadata.bind.connect()
+         except Exception, e:
+-            log.info(&quot;engine connection: %s&quot; % e)
+-            if not reconnect:
+-                return False
++            log.info(&quot;engine connection error: %s&quot;, e)
++            if not fallback:
++                raise e
+             gutils.error(self, _('Database connection failed.'))
+             config.set('type', 'sqlite', section='database')
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+@@ -145,7 +145,7 @@
+             v = int(v.value)
+         if v &lt; self.version:
+             from dbupgrade import upgrade_database
+-            if not upgrade_database(self, v, locations):
++            if not upgrade_database(self, v, locations, config):
+                 raise Exception(&quot;cannot upgrade database&quot;)
+         elif v &gt; self.version:
+             log.error(&quot;database version mismatch (detacted:%s; current:%s)&quot;, v, self.version)
+@@ -295,7 +295,7 @@
+         movie.collection.loaned = True
+         for m in movie.collection.movies:
+             if m.loaned:
+-                log.warn(&quot;collection contains loaned movie (%s), cannot proceed&quot; % m.number)
++                log.warn(&quot;collection contains loaned movie (%s), cannot proceed&quot;, m.number)
+                 session.rollback()
+                 return -1
+             m.loaned = True
+@@ -332,18 +332,18 @@
+     if loan is None:
+         movie = session.query(db.Movie).filter_by(movie_id=movie_id).first()
+         if not movie:
+-            log.warn(&quot;Cannot find &quot;)
++            log.warn(&quot;Cannot find movie: %s&quot;, movie_id)
+             return False
+         # lets check if whole colletion was loaned
+         elif movie.collection and movie.collection.loaned:
+             loan = session.query(db.Loan).filter_by(collection_id=movie.collection_id, return_date=None).first()
+             if not loan:
+-                log.error(&quot;Collection is marked as loaned but there's no such loan&quot;)
++                log.error(&quot;Collection is marked as loaned but there's no loan data&quot;)
+                 return False
+         elif movie.volume and movie.volume.loaned:
+             loan = session.query(db.Loan).filter_by(volume_id=movie.volume_id, return_date=None).first()
+         else:
+-            log.error(&quot;Cannot find loan data&quot;)
++            log.error(&quot;Cannot find loan data (movie_id:%s)&quot;, movie_id)
+             return False
+ 
+     if loan.collection:
+@@ -447,6 +447,6 @@
+     if filter_:
+         return filter_.conditions
+     else:
+-        log.warn(&quot;Cannot find search conditions: %s&quot; % name)
++        log.warn(&quot;Cannot find search conditions: %s&quot;, name)
+         return None
+ #}}}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000532.html">[Griffith-svn] r1055 - in trunk: . debian lib
+</A></li>
+	<LI>Next message: <A HREF="000534.html">[Griffith-svn] r1058 - in trunk: . debian lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#533">[ date ]</a>
+              <a href="thread.html#533">[ thread ]</a>
+              <a href="subject.html#533">[ subject ]</a>
+              <a href="author.html#533">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

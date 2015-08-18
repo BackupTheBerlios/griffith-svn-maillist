@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1066 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1066%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200811181336.mAIDaAqG008082%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000540.html">
+   <LINK REL="Next"  HREF="000542.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1066 - trunk/lib/plugins/movie</H1>
+    <B>kura666 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1066%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200811181336.mAIDaAqG008082%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1066 - trunk/lib/plugins/movie">kura666 at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 18 14:36:10 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000540.html">[Griffith-svn] r1065 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000542.html">[Griffith-svn] r1067 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#541">[ date ]</a>
+              <a href="thread.html#541">[ thread ]</a>
+              <a href="subject.html#541">[ subject ]</a>
+              <a href="author.html#541">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: kura666
+Date: 2008-11-18 14:34:47 +0100 (Tue, 18 Nov 2008)
+New Revision: 1066
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieFDb.py
+Log:
+FDb movie plugin updated
+
+
+Modified: trunk/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFDb.py	2008-11-17 22:28:24 UTC (rev 1065)
++++ trunk/lib/plugins/movie/PluginMovieFDb.py	2008-11-18 13:34:47 UTC (rev 1066)
+@@ -32,10 +32,10 @@
+ plugin_language        = _('Polish')
+ plugin_author        = 'Piotr O&#380;arowski, Bartosz Kurczewski'
+ plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
+-plugin_version        = '1.10'
++plugin_version        = '1.11'
+ 
+ class Plugin(movie.Movie):
+-    TRAILER_PATTERN = re.compile('<A HREF="http://.*\.fdb\.pl/zwiastuny/odtwarzaj/[0-9">http://.*\.fdb\.pl/zwiastuny/odtwarzaj/[0-9</A>]*')
++    TRAILER_PATTERN = re.compile('/film/.*/zwiastuny/odtwarzaj/[0-9]*')
+ 
+     def __init__(self, movie_id):
+         from md5 import md5
+@@ -53,7 +53,7 @@
+             self.image_url = ''
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
++        self.o_title = gutils.trim(self.page, '&lt;h2 class=&quot;title&quot;&gt;', '&lt;/h2&gt;')
+         self.o_title = gutils.strip_tags(self.o_title)
+         if self.o_title == '':
+             self.o_title = self.get_title(True)
+@@ -70,7 +70,7 @@
+ 
+     def get_director(self):
+         self.director = ''
+-        elements = gutils.trim(self.page,'&gt;Re&#380;yseria&lt;/h4&gt;','&lt;/div&gt;')
++        elements = gutils.trim(self.page,'&gt;Re&#380;yseria: &lt;/h4&gt;','&lt;/div&gt;')
+         elements = string.split(elements, '&lt;/li&gt;')
+         if elements[0] != '':
+             for element in elements:
+@@ -80,23 +80,23 @@
+             self.director = string.replace(self.director[2:], ', &nbsp;&nbsp;&nbsp;(wi&#281;cej)', '')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page,'Opis filmu&lt;/h3&gt;','&lt;/div&gt;')
+-        self.plot = gutils.trim(self.plot,'&lt;p&gt;',&quot;\n \n   &quot;)
++        self.plot = gutils.trim(self.page,'Opis filmu','&lt;/div&gt;')
++        self.plot = gutils.trim(self.plot,'&lt;p&gt;',&quot;\n\n&quot;)
+ 
+     def get_year(self):
+         self.year = gutils.trim(self.page,'&lt;small&gt;(', ')&lt;/small&gt;')
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page,'Czas trwania&lt;/h4&gt;','&lt;/div&gt;')
++        self.runtime = gutils.trim(self.page,'Czas trwania: &lt;/h4&gt;','&lt;/div&gt;')
+         self.runtime = gutils.trim(self.runtime,'&lt;li&gt;',' minut')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page,'Gatunek&lt;/h4&gt;','&lt;/div&gt;')
++        self.genre = gutils.trim(self.page,'Gatunek: &lt;/h4&gt;','&lt;/div&gt;')
+         self.genre = gutils.trim(self.genre,'&lt;li&gt;','&lt;/li&gt;')
+         self.genre = string.replace(self.genre, ' / ', ' | ')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page,'Obsada&lt;/h3&gt;','&lt;/div&gt;')
++        self.cast = gutils.trim(self.page,'&lt;h2 class=&quot;category-header&quot;&gt;\n    Obsada','&lt;/div&gt;')
+         self.cast = gutils.trim(self.cast,&quot;&lt;table&gt;\n&quot;,'  &lt;/table&gt;')
+         if self.cast != '':
+             self.cast = gutils.strip_tags(self.cast)
+@@ -106,7 +106,7 @@
+             self.cast = self.cast.replace(&quot;\n\n\n\n\n&quot;,&quot;&quot;)
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page,&quot;Od lat&lt;/h4&gt;&quot;,&quot;&lt;/div&gt;&quot;)
++        self.classification = gutils.trim(self.page,&quot;Od lat: &lt;/h4&gt;&quot;,&quot;&lt;/div&gt;&quot;)
+         self.classification = gutils.trim(self.classification,'&lt;li&gt;','&lt;/li&gt;')
+ 
+     def get_studio(self):
+@@ -121,14 +121,14 @@
+     def get_trailer(self):
+         trailer_url = self.TRAILER_PATTERN.findall(self.page)
+         if trailer_url:
+-            self.trailer = trailer_url[0]
++            self.trailer = '<A HREF="http://fdb.pl">http://fdb.pl</A>' + trailer_url[0]
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page,'Kraj produkcji&lt;/h4&gt;','&lt;/div&gt;')
++        self.country = gutils.trim(self.page,'Kraj produkcji: &lt;/h4&gt;','&lt;/div&gt;')
+         self.country = gutils.trim(self.country,'&lt;li&gt;','&lt;/li&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, 'class=&quot;vote&quot;','&lt;/strong&gt;')
++        self.rating = gutils.trim(self.page, 'class=&quot;vote&quot;','/10&lt;/strong&gt;')
+         self.rating = gutils.after(self.rating, '&lt;strong&gt;')
+         if self.rating:
+             self.rating = str(float(gutils.clean(self.rating)))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000540.html">[Griffith-svn] r1065 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000542.html">[Griffith-svn] r1067 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#541">[ date ]</a>
+              <a href="thread.html#541">[ thread ]</a>
+              <a href="subject.html#541">[ subject ]</a>
+              <a href="author.html#541">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

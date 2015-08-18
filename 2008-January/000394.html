@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r894 - branches/0.9.x/lib/plugins/export	trunk/lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r894%20-%20branches/0.9.x/lib/plugins/export%0A%09trunk/lib/plugins/export&In-Reply-To=%3C200801062025.m06KP69V007818%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000395.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r894 - branches/0.9.x/lib/plugins/export	trunk/lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r894%20-%20branches/0.9.x/lib/plugins/export%0A%09trunk/lib/plugins/export&In-Reply-To=%3C200801062025.m06KP69V007818%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r894 - branches/0.9.x/lib/plugins/export	trunk/lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  6 21:25:06 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000395.html">[Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#394">[ date ]</a>
+              <a href="thread.html#394">[ thread ]</a>
+              <a href="subject.html#394">[ subject ]</a>
+              <a href="author.html#394">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-01-06 21:24:35 +0100 (Sun, 06 Jan 2008)
+New Revision: 894
+
+Modified:
+   branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+fixed pdf export with non-ascii characters [#174463]
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2007-12-25 23:28:06 UTC (rev 893)
++++ branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2008-01-06 20:24:35 UTC (rev 894)
+@@ -132,14 +132,15 @@
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = &quot;&quot;
+-                    p = Paragraph(&quot;&lt;font name=&quot; + self.fontName + &quot; size=\&quot;7\&quot;&gt;&quot; + \
+-                        saxutils.escape(str(number) + &quot; | &quot; + original_title) + \
+-                        &quot;&lt;/font&gt;&lt;font name=&quot; + self.fontName + &quot; size=\&quot;7\&quot;&gt;&quot; + \
+-                        saxutils.escape(&quot; (&quot; + title + &quot;)&quot; + year + director) + \
+-                        &quot;&lt;/font&gt;&quot;, self.styles[&quot;Normal&quot;])
++                    paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
++                        saxutils.escape(str(number) + ' | ' + original_title) + \
++                        '&lt;/font&gt;&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
++                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '&lt;/font&gt;'
++                    p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+-                gutils.info(self, _(&quot;PDF has been created.&quot;), self.parent)
++                gutils.info(self, _('PDF has been created.'), self.parent)
+             
+     def page_template(self, canvas, doc):
+         canvas.saveState()
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-12-25 23:28:06 UTC (rev 893)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2008-01-06 20:24:35 UTC (rev 894)
+@@ -132,14 +132,15 @@
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = &quot;&quot;
+-                    p = Paragraph(&quot;&lt;font name=&quot; + self.fontName + &quot; size=\&quot;7\&quot;&gt;&quot; + \
+-                        saxutils.escape(str(number) + &quot; | &quot; + original_title) + \
+-                        &quot;&lt;/font&gt;&lt;font name=&quot; + self.fontName + &quot; size=\&quot;7\&quot;&gt;&quot; + \
+-                        saxutils.escape(&quot; (&quot; + title + &quot;)&quot; + year + director) + \
+-                        &quot;&lt;/font&gt;&quot;, self.styles[&quot;Normal&quot;])
++                    paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
++                        saxutils.escape(str(number) + ' | ' + original_title) + \
++                        '&lt;/font&gt;&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
++                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '&lt;/font&gt;'
++                    p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+-                gutils.info(self, _(&quot;PDF has been created.&quot;), self.parent)
++                gutils.info(self, _('PDF has been created.'), self.parent)
+             
+     def page_template(self, canvas, doc):
+         canvas.saveState()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000395.html">[Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#394">[ date ]</a>
+              <a href="thread.html#394">[ thread ]</a>
+              <a href="subject.html#394">[ subject ]</a>
+              <a href="author.html#394">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

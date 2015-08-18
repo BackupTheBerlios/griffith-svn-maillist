@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r769 - in trunk: . lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r769%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200706091506.l59F6BGD007015%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000287.html">
+   <LINK REL="Next"  HREF="000289.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r769 - in trunk: . lib/plugins/export</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r769%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200706091506.l59F6BGD007015%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r769 - in trunk: . lib/plugins/export">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Sat Jun  9 17:06:11 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000287.html">[Griffith-svn] r768 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000289.html">[Griffith-svn] r771 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#288">[ date ]</a>
+              <a href="thread.html#288">[ thread ]</a>
+              <a href="subject.html#288">[ subject ]</a>
+              <a href="author.html#288">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-06-09 17:06:10 +0200 (Sat, 09 Jun 2007)
+New Revision: 769
+
+Added:
+   trunk/lib/plugins/export/PluginExportiPod.py
+Modified:
+   trunk/ChangeLog
+Log:
+Added new alpha export plugin for iPods. Exports directly to iPod on macosx for now, saves files in custom location on other platforms. Not handling 4Kb iPod notes limit yet.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-07 11:23:45 UTC (rev 768)
++++ trunk/ChangeLog	2007-06-09 15:06:10 UTC (rev 769)
+@@ -4,6 +4,11 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-06-09  Vasco Nunes
++	* Added new alpha export plugin for iPods.
++	  Exports directly to iPod on macosx for now, saves files in custom location on other platforms.
++	  Not handling 4Kb iPod notes limit yet.
++
+ 2007-05-31  Piotr O&#380;arowski
+ 	* IMDB, IMDB-de and KinoDe movie plugins updated (thanks to Michael Jahn)
+ 	* Resizable columns in add movie window's languages tab (thanks to Michael Jahn)
+
+Added: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2007-06-07 11:23:45 UTC (rev 768)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2007-06-09 15:06:10 UTC (rev 769)
+@@ -0,0 +1,115 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id:  $'
++
++# Copyright (c) 2005-2007 Vasco Nunes
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import csv
++import gtk
++import gutils
++import os
++import commands
++import string
++import platform
++import shutil
++from tempfile import mkdtemp
++from gettext import gettext as _
++
++plugin_name = &quot;iPod&quot;
++plugin_description = _(&quot;iPod Notes export plugin&quot;)
++plugin_author = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version = &quot;0.1&quot;
++
++# TODO: bypass the 4Kb file limit on the iPod notes folder, splitting the file in multiple ones and linking them.
++
++class Path2iPod:
++
++  def __init__(self):
++    self.thing_to_find=&quot;iPod_Control&quot;
++    self.basepath=&quot;/Volumes/&quot;
++    self.path_to_pod=self.basepath
++  
++  def returnPath(self):
++    rawfiles = commands.getoutput('ls '+self.basepath)
++    myfiles=string.split(rawfiles,'\n')
++  
++    for myfilename in myfiles:
++      tempout = commands.getoutput('ls &quot;'+self.basepath+myfilename+'&quot;')
++      newfiles=string.split(tempout,'\n')
++      for piece in newfiles:
++        if piece==self.thing_to_find:
++          self.path_to_pod=self.basepath+myfilename
++
++    if self.path_to_pod == self.basepath:
++      return ''
++    else:
++      return self.path_to_pod
++
++class ExportPlugin:
++
++    def __init__(self, database, locations, parent, debug):
++        self.db = database
++        self.locations = locations
++        self.parent = parent
++        self.export_iPod()
++
++    def export_iPod(self):
++		tmp_dir = mkdtemp()
++		griffith_list = open(os.path.join(tmp_dir,&quot;movies&quot;),&quot;w&quot;)
++		t = []
++		
++		for movie in self.db.Movie.select():
++			t.append(&quot;%s | %s | %s | %s&quot;%(movie['number'],movie['o_title'],movie['title'],movie['director']))
++	
++		griffith_list.write(&quot;&lt;title&gt;%s&lt;/title&gt;&lt;br&gt;&lt;br&gt;&quot;%_(&quot;My Movies List&quot;))
++		
++		for movie in t:
++			griffith_list.write(str(movie))
++			griffith_list.write(&quot;&lt;br&gt;&quot;)
++			
++		griffith_list.close()
++		
++		# this is a mac, lets export to iPod's notes folder
++		# TODO: windows and linux iPod autodetection
++		if platform.system() == 'Darwin':
++			thisPod=Path2iPod()
++			thisPath=thisPod.returnPath()
++		
++			if thisPath:
++				commands.getoutput('mv '+os.path.join(tmp_dir,&quot;movies&quot;)+' &quot;'+thisPath+'/Notes/&quot;')
++				gutils.info(self, _(&quot;List was successful exported to iPod.&quot;), self.parent)		
++			else:
++				gutils.info(self, _(&quot;iPod is not connected.&quot;), self.parent)
++		# this is not a mac, lets save the file
++		else:
++			filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++	            buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='ipod_griffith_list')
++			if filename[0]:
++				overwrite = None
++				if os.path.isfile(filename[0]):
++					response = gutils.question(self, _(&quot;File exists. Do you want to overwrite it?&quot;), 1, self.parent)
++					if response==-8:
++						overwrite = True
++					else:
++						overwrite = False
++				if overwrite == True or overwrite is None:
++					shutil.copyfile(os.path.join(tmp_dir,&quot;movies&quot;), filename[0])
++					gutils.info(self, _(&quot;List was successful exported. Now you should move it to the 'Notes' folder on your iPod.&quot;), self.parent)
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000287.html">[Griffith-svn] r768 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000289.html">[Griffith-svn] r771 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#288">[ date ]</a>
+              <a href="thread.html#288">[ thread ]</a>
+              <a href="subject.html#288">[ subject ]</a>
+              <a href="author.html#288">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

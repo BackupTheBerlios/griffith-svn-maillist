@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r762 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r762%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200705191829.l4JIT2gT007401%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000280.html">
+   <LINK REL="Next"  HREF="000282.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r762 - in trunk: . lib/plugins/movie</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r762%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200705191829.l4JIT2gT007401%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r762 - in trunk: . lib/plugins/movie">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Sat May 19 20:29:02 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000280.html">[Griffith-svn] r761 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000282.html">[Griffith-svn] r763 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#281">[ date ]</a>
+              <a href="thread.html#281">[ thread ]</a>
+              <a href="subject.html#281">[ subject ]</a>
+              <a href="author.html#281">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-05-19 20:29:01 +0200 (Sat, 19 May 2007)
+New Revision: 762
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+Log:
+e-pipoca and ptlink movie plugins fixes
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-19 18:04:07 UTC (rev 761)
++++ trunk/ChangeLog	2007-05-19 18:29:01 UTC (rev 762)
+@@ -7,6 +7,8 @@
+ 2007-05-19  Vasco Nunes
+ 	* French translation updated (thanks to Guillaume Pratte)
+ 	* IMDB plugin rating fix (thanks to babelfish)
++	* PTGate movie plugin encoding fixed
++	* E-pipoca movie plugin updated
+ 
+ 2007-05-11  Jessica K. Parth
+ 	* OFDb updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-05-19 18:04:07 UTC (rev 761)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-05-19 18:29:01 UTC (rev 762)
+@@ -34,7 +34,7 @@
+ plugin_language = _(&quot;Brazilian Portuguese&quot;)
+ plugin_author = &quot;Vasco Nunes&quot;
+ plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.4&quot;
++plugin_version = &quot;0.5&quot;
+ 
+ class Plugin(movie.Movie):
+ 	&quot;A movie plugin object&quot;
+@@ -148,8 +148,7 @@
+ 
+ 		if (elements[0] != ''):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element, &quot;&lt;a href=\&quot;filmes_detalhes.php?idf=&quot;, &quot;\&quot;&gt;&lt;img src=\&quot;images/&quot;))
+-				self.titles.append(gutils.convert_entities \
+-					(gutils.trim(element, &quot;&lt;/a&gt;&lt;/font&gt; &lt;br&gt;(&lt;i&gt;&quot;, &quot;&lt;/i&gt;, &lt;a href=&quot;) ))
++				self.ids.append(gutils.trim(element, &quot;&lt;a href=\&quot;filmes_detalhes.php?idf=&quot;, &quot;\&quot;&gt;&quot;))
++				self.titles.append(gutils.strip_tags(gutils.trim(element, &quot;&lt;font class=\&quot;titulo\&quot;&gt;&quot;, &quot;&lt;b&gt;Adicionar aos meus filmes favoritos&lt;/b&gt;&quot;) ))
+ 		else:
+ 			self.number_results = 0
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-05-19 18:04:07 UTC (rev 761)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-05-19 18:29:01 UTC (rev 762)
+@@ -32,7 +32,7 @@
+ plugin_language = _(&quot;Portuguese&quot;)
+ plugin_author = &quot;Vasco Nunes&quot;
+ plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_version = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -50,7 +50,7 @@
+ 		self.title = string.capwords(gutils.trim(self.page,&quot;class=subtitle&gt;&quot;,&quot;&lt;/b&gt;&lt;br&gt;&quot;) )
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&lt;b&gt;realiza&#195;&#167;&#195;&#163;o&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;&quot;)
++		self.director = gutils.trim(self.page,&quot;&lt;b&gt;realiza&#231;&#227;o&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;&quot;)
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page,&quot;&lt;b&gt;sinopse&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&quot;)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000280.html">[Griffith-svn] r761 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000282.html">[Griffith-svn] r763 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#281">[ date ]</a>
+              <a href="thread.html#281">[ thread ]</a>
+              <a href="subject.html#281">[ subject ]</a>
+              <a href="author.html#281">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

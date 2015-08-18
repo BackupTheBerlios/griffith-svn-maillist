@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1242 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1242%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200907051816.n65IGQNJ008755%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000711.html">
+   <LINK REL="Next"  HREF="000713.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1242 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1242%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200907051816.n65IGQNJ008755%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1242 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jul  5 20:16:26 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000711.html">[Griffith-svn] r1241 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000713.html">[Griffith-svn] r1243 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#712">[ date ]</a>
+              <a href="thread.html#712">[ thread ]</a>
+              <a href="subject.html#712">[ subject ]</a>
+              <a href="author.html#712">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-05 20:16:25 +0200 (Sun, 05 Jul 2009)
+New Revision: 1242
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/advfilter.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/edit.py
+   trunk/lib/people.py
+   trunk/lib/sql.py
+Log:
+Remove ilike from search criteria
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/ChangeLog	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -8,6 +8,7 @@
+ 2009-07-05  Piotr O&#380;arowski
+ 	* Use SQLAlchemy's PickleType to store search conditions
+ 	  (old rules are removed without warning - beta version privilege ;)
++	* Remove ilike from search criteria
+ 
+ 2009-07-04  Piotr O&#380;arowski
+ 	* Version changed to 0.10-beta3+svn
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/lib/add.py	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -374,7 +374,7 @@
+     }
+     if self._am_movie_id is not None:
+         t_movies['movie_id'] = self._am_movie_id
+-    
++
+     if t_movies['collection_id'] &gt; 0:
+         t_movies['collection_id'] = self.collection_combo_ids[t_movies['collection_id']]
+     else:
+@@ -693,7 +693,7 @@
+         return False
+ 
+     rows = len(self.treemodel)
+-    if rows&gt;0:
++    if rows &gt; 0:
+         insert_after = self.treemodel.get_iter(rows-1)    # last
+     else:
+         insert_after = None
+@@ -855,8 +855,8 @@
+         session.commit()
+     except IntegrityError, e:
+         session.rollback()
+-        gutils.warning(str(e.orig))
+         log.warn(&quot;Cannot commit movie: %s&quot;, e.message)
++        gutils.warning(unicode(e.orig))
+         return False
+     except Exception, e:
+         log.error(&quot;Unexpected problem: %s&quot;, e)
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/lib/advfilter.py	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -21,15 +21,18 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++import logging
++from copy import deepcopy
++
+ import gtk
+-from copy       import deepcopy
+ from sqlalchemy import select
+-import logging
+-log = logging.getLogger(&quot;Griffith&quot;)
++
+ import db
+ import sql
+ from gutils import info
+ 
++log = logging.getLogger(&quot;Griffith&quot;)
++
+ __conditions = { # default
+     'loaned'          : None,  # None, True, False
+     'seen'            : None,  # None, True, False
+@@ -51,15 +54,13 @@
+     'contains_n'      : {}, # see above
+     'like'            : {}, # see above
+     'like_n'          : {}, # see above
+-    'ilike'           : {}, # see above
+-    'ilike_n'         : {}, # see above
+     }
+ 
+ QUERY_FIELDS = ('title', 'o_title', 'director', 'plot', 'cast', 'notes', 'number',
+                 'runtime', 'year', 'screenplay', 'cameraman', 'country', 'genre',
+                 'studio', 'classification', 'o_site', 'site', 'trailer')
+ QUERY_COMMANDS = ('equals', 'equals_n', 'startswith', 'startswith_n', 'contains',
+-                  'contains_n', 'like', 'like_n', 'ilike', 'ilike_n')
++                  'contains_n', 'like', 'like_n')
+ QUERY_COMMAND_NAMES = {
+     'equals'      : _('is equal to'),
+     'equals_n'    : _('is not equal to'),
+@@ -68,9 +69,7 @@
+     'contains'    : _('contains'),
+     'contains_n'  : _(&quot;doesn't contain&quot;),
+     'like'        : _('like'),
+-    'like_n'      : _('not like'),
+-    'ilike'       : _('ilike'),
+-    'ilike_n'     : _('not ilike')}
++    'like_n'      : _('not like')}
+ 
+ # widgets -----------------------------------------------------{{{
+ 
+@@ -269,13 +268,13 @@
+         else:
+             hbox_items[1].set_active(True)
+ 
+-    if not cond[&quot;equals&quot;] and not cond[&quot;startswith&quot;] and not cond[&quot;contains&quot;] and not cond[&quot;like&quot;] and not cond[&quot;ilike&quot;]:
++    if not cond[&quot;equals&quot;] and not cond[&quot;startswith&quot;] and not cond[&quot;contains&quot;] and not cond[&quot;like&quot;]:
+         for i in widgets['dynamic_vbox'].get_children():
+             i.destroy()
+         add_query_widget(widgets['dynamic_vbox'], field_names)
+     else:
+         vbox = widgets['dynamic_vbox']
+-        for rule in ('equals', 'startswith', 'contains', 'like', 'ilike'):
++        for rule in ('equals', 'startswith', 'contains', 'like'):
+             for field in cond[rule]:
+                 for text in cond[rule][field]:
+                     add_query_widget(vbox, field_names, field, rule, text)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/lib/dbupgrade.py	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -22,16 +22,19 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++import logging
++import os.path
++
+ from sqlalchemy import *
+-import os.path
++
++import db
+ import gutils
+-import db
+-import logging
++
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def upgrade_database(self, version, config):
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
+-    b = self.session.bind
++    b = self.engine
+     if version == 0 or version is None:
+         log.info('Creating new database...')
+         # version is 0 or none only for new databases
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/lib/edit.py	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -21,20 +21,21 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++import logging
+ import os
++import tempfile
++from urllib import urlcleanup, FancyURLopener, urlretrieve
++
+ import gtk
+-import tempfile
+-import shutil
+-from PIL     import Image
+-from urllib  import urlcleanup, FancyURLopener, urlretrieve
+-import logging
+-log = logging.getLogger(&quot;Griffith&quot;)
++from PIL import Image
++
+ import amazon
+ import db
+ import delete
+ import gutils
+-import movie
+ 
++log = logging.getLogger(&quot;Griffith&quot;)
++
+ def change_poster(self):
+     &quot;&quot;&quot;
+     changes movie poster image to a custom one
+@@ -78,7 +79,7 @@
+     session.add(movie)
+     try:
+         session.commit()
+-    except Exceptionm, e:
++    except Exception, e:
+         session.rollback()
+         log.error(&quot;cannot add poster to database: %s&quot; % e)
+         return False
+@@ -234,6 +235,7 @@
+ 
+ def get_poster(self, f, result):
+     from widgets import reconnect_add_signals
++    from movie import Progress, Retriever
+     if f is None:
+         treeselection = self.widgets['results']['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
+@@ -248,8 +250,8 @@
+     canceled = False
+     if len(result.Item[f].LargeImage.URL):
+         try:
+-            progress = movie.Progress(self.widgets['window'],_(&quot;Fetching poster&quot;),_(&quot;Wait a moment&quot;))
+-            retriever = movie.Retriever(result.Item[f].LargeImage.URL, self.widgets['window'], progress, file_to_copy)
++            progress = Progress(self.widgets['window'],_(&quot;Fetching poster&quot;),_(&quot;Wait a moment&quot;))
++            retriever = Retriever(result.Item[f].LargeImage.URL, self.widgets['window'], progress, file_to_copy)
+             retriever.start()
+             while retriever.isAlive():
+                 progress.pulse()
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/lib/people.py	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -21,9 +21,11 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++import logging
++
++import db
+ import gutils
+-import db
+-import logging
++
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def show_people_window(self):
+@@ -61,6 +63,7 @@
+         try:
+             self.db.session.commit()
+         except Exception, e:
++            self.db.session.rollback()
+             log.info(str(e))
+         else:
+             myiter = self.p_treemodel.insert_after(None, None)
+@@ -105,6 +108,7 @@
+     try:
+         self.db.session.commit()
+     except Exception, e:
++        self.db.session.rollback()
+         log.info(str(e))
+     else:
+         self.update_statusbar(_(&quot;Record updated&quot;))
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-07-05 16:03:01 UTC (rev 1241)
++++ trunk/lib/sql.py	2009-07-05 18:16:25 UTC (rev 1242)
+@@ -103,7 +103,8 @@
+             conn = engine.connect()
+ 
+         self.Session = sessionmaker(bind=engine) # create new sessions using this class
+-        self.session = self.Session() # global session
++        self.engine = engine
++        self.session = self.Session() # TODO: get rid of it, force developers to create new session using gsql.Session()
+         #}}}
+ 
+         # check if database needs an upgrade
+@@ -196,10 +197,6 @@
+         values = [ not_(db.movies_table.columns[field].like(value)) for value in cond[&quot;like_n&quot;][field] ]
+         query.append_whereclause(and_(*values))
+ 
+-    for field in cond[&quot;ilike_n&quot;]:
+-        values = [ not_(db.movies_table.columns[field].ilike(value)) for value in cond[&quot;ilike_n&quot;][field] ]
+-        query.append_whereclause(and_(*values))
+-
+     for field in cond[&quot;contains_n&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
+         values = [ not_(db.movies_table.columns[field].like('%'+value+'%')) for value in cond[&quot;contains_n&quot;][field] ]
+         query.append_whereclause(and_(*values))
+@@ -216,10 +213,6 @@
+         values = [ db.movies_table.columns[field].like(value) for value in cond[&quot;like&quot;][field] ]
+         query.append_whereclause(or_(*values))
+ 
+-    for field in cond[&quot;ilike&quot;]:
+-        values = [ db.movies_table.columns[field].ilike(value) for value in cond[&quot;ilike&quot;][field] ]
+-        query.append_whereclause(or_(*values))
+-
+     for field in cond[&quot;contains&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
+         values = [ db.movies_table.columns[field].like('%'+value+'%') for value in cond[&quot;contains&quot;][field] ]
+         query.append_whereclause(or_(*values))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000711.html">[Griffith-svn] r1241 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000713.html">[Griffith-svn] r1243 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#712">[ date ]</a>
+              <a href="thread.html#712">[ thread ]</a>
+              <a href="subject.html#712">[ subject ]</a>
+              <a href="author.html#712">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

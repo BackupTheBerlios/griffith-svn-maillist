@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r983 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r983%20-%20trunk/lib&In-Reply-To=%3C200808042253.m74Mr5A7005396%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000465.html">
+   <LINK REL="Next"  HREF="000470.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r983 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r983%20-%20trunk/lib&In-Reply-To=%3C200808042253.m74Mr5A7005396%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r983 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug  5 00:53:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000465.html">[Griffith-svn] r982 - in trunk: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="000470.html">[Griffith-svn] r987 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#466">[ date ]</a>
+              <a href="thread.html#466">[ thread ]</a>
+              <a href="subject.html#466">[ subject ]</a>
+              <a href="author.html#466">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-08-05 00:52:49 +0200 (Tue, 05 Aug 2008)
+New Revision: 983
+
+Modified:
+   trunk/lib/advfilter.py
+   trunk/lib/db.py
+   trunk/lib/quick_filter.py
+   trunk/lib/view.py
+Log:
+add some new rules to advfilter
+
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2008-08-03 20:44:23 UTC (rev 982)
++++ trunk/lib/advfilter.py	2008-08-04 22:52:49 UTC (rev 983)
+@@ -1,6 +1,6 @@
+ # -*- coding: UTF-8 -*-
+ # vim: fdm=marker et ts=4 sw=4
+-__revision__ = '$Id: $'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2008 Vasco Nunes, Piotr O&#380;arowski
+ #
+@@ -33,16 +33,16 @@
+     'not_loaned_only' : False,
+     'seen_only'       : False,
+     'not_seen_only'   : False,
+-    'collections'     : [],
+-    'volumes'         : [],
+-    'tags'            : [],
+-    'loaned_to'       : [],
++    'collections'     : [], # list of collection_ids
++    'volumes'         : [], # list of volume_ids
++    'tags'            : [], # list of tag_ids
++    'loaned_to'       : [], # list of person_ids
+     'sort_by'         : [&quot;number&quot;], # &quot;number DESC&quot;
+-    'equals'          : [], # (column, value), (column, value), ...
+-    'startswith'      : [], # see above
+-    'contains'        : [], # see above
+-    'like'            : [], # see above
+-    'ilike'           : [], # see above
++    'equals'          : {}, # {column1: [value1, value2, ...], column2: []}
++    'startswith'      : {}, # see above
++    'contains'        : {}, # see above
++    'like'            : {}, # see above
++    'ilike'           : {}, # see above
+     }
+ 
+ # widgets -----------------------------------------------------{{{
+@@ -66,8 +66,11 @@
+     # TODO: get these from advfilter window
+     cond.update({
+             'seen_only' : True,
+-            'tags'      : [1],
+-            'sort_by'   : [&quot;year&quot;, &quot;movies.title&quot; , &quot;number&quot;]
++            #'tags'      : [1],
++            'sort_by'   : [&quot;title&quot;, &quot;year&quot;, &quot;number&quot;],
++            'equals'    : {&quot;year&quot;: [2003, 2004]},
++            #'startswith': {&quot;o_title&quot;: [u&quot;Ma&quot;, u&quot;Ani&quot;] }
++            'contains'  : {&quot;o_title&quot;: [u&quot;ma&quot;, u&quot;ani&quot;] }
+             })
+     return cond # }}}
+ 
+@@ -103,10 +106,10 @@
+         query.append_whereclause(db.Movie.seen==False)
+ 
+     if cond[&quot;collections&quot;]:
+-        query.append_whereclause(db.collections_table.collection_id.in_(cond[&quot;collections&quot;]))
++        query.append_whereclause(db.Movie.collection_id.in_(cond[&quot;collections&quot;]))
+ 
+     if cond[&quot;volumes&quot;]:
+-        query.append_whereclause(db.volumes_table.volume_id.in_(cond[&quot;volumes&quot;]))
++        query.append_whereclause(db.Movie.volume_id.in_(cond[&quot;volumes&quot;]))
+     
+     loaned_to = []
+     for per_id in cond[&quot;loaned_to&quot;]:
+@@ -122,29 +125,42 @@
+     if tags:
+         query.append_whereclause(or_(*tags))
+ 
++    for field in cond[&quot;equals&quot;]:
++        values = [ db.movies_table.columns[field]==value for value in cond[&quot;equals&quot;][field] ]
++        query.append_whereclause(or_(*values))
++    
++    for field in cond[&quot;startswith&quot;]:
++        values = [ db.movies_table.columns[field].startswith(value) for value in cond[&quot;startswith&quot;][field] ]
++        query.append_whereclause(or_(*values))
++
++    for field in cond[&quot;like&quot;]:
++        values = [ db.movies_table.columns[field].like(value) for value in cond[&quot;like&quot;][field] ]
++        query.append_whereclause(or_(*values))
++    
++    for field in cond[&quot;ilike&quot;]:
++        values = [ db.movies_table.columns[field].ilike(value) for value in cond[&quot;ilike&quot;][field] ]
++        query.append_whereclause(or_(*values))
++    
++    for field in cond[&quot;contains&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
++        values = [ db.movies_table.columns[field].like('%'+value+'%') for value in cond[&quot;contains&quot;][field] ]
++        query.append_whereclause(or_(*values))
++    
+     # sorting
+     for rule in cond[&quot;sort_by&quot;]:
+         if rule.endswith(&quot; DESC&quot;):
+             reverse = True
+             rule = rule.replace(&quot; DESC&quot;, '')
+         else:
+-            reverse = True
++            reverse = False
+ 
+-        table, column = get_tableNcolumn(rule)
+-
+         if reverse:
+-            query.append_order_by(asc(db.tables[table].columns[column]))
++            query.append_order_by(desc(db.movies_table.columns[rule]))
+         else:
+-            query.append_order_by(desc(db.tables[table].columns[column]))
++            query.append_order_by(asc(db.movies_table.columns[rule]))
+ 
+     return query
+ 
+-def get_tableNcolumn(rule):
+-        table = &quot;movies&quot;
+-        pos = rule.find('.')
+-        if pos &gt; 0:
+-            table = rule[:pos]
+-            rule = rule[pos+1:]
+-
+-        return (table, rule)
+-
++def save_conditions(cond, name, qsql):
++    raise NotImplemented
++def load_conditions(name, qsql):
++    raise NotImplemented
+
+
+Property changes on: trunk/lib/advfilter.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-08-03 20:44:23 UTC (rev 982)
++++ trunk/lib/db.py	2008-08-04 22:52:49 UTC (rev 983)
+@@ -1,6 +1,6 @@
+ # -*- coding: UTF-8 -*-
+ # vim: fdm=marker
+-__revision__ = '$Id: $'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2008 Vasco Nunes, Piotr O&#380;arowski
+ #
+@@ -292,6 +292,7 @@
+     'configuration':  configuration_table,
+     'posters':        posters_table}
+ #}}}
++
+ ### mappers ################################################### {{{
+ mapper(Configuration, configuration_table)
+ mapper(Volume, volumes_table, order_by=volumes_table.c.name, properties={
+
+
+Property changes on: trunk/lib/db.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2008-08-03 20:44:23 UTC (rev 982)
++++ trunk/lib/quick_filter.py	2008-08-04 22:52:49 UTC (rev 983)
+@@ -47,7 +47,7 @@
+                 statement.limit = limit
+     self.populate_treeview(statement)
+ 
+-def clear_filter(self):
++def clear_filter(self, populate=True):
+     # prevent multiple treeview updates
+     self.initialized = False
+     self.widgets['filter']['text'].set_text('')
+@@ -56,5 +56,6 @@
+     self.widgets['filter']['volume'].set_active(0)
+     self.widgets['filter']['tag'].set_active(0)
+     self.initialized = True
+-    self.populate_treeview()
++    if populate:
++        self.populate_treeview()
+ 
+
+Modified: trunk/lib/view.py
+===================================================================
+--- trunk/lib/view.py	2008-08-03 20:44:23 UTC (rev 982)
++++ trunk/lib/view.py	2008-08-04 22:52:49 UTC (rev 983)
+@@ -39,14 +39,14 @@
+ 
+ def filter_by_volume(self, volume_id):
+     from quick_filter import clear_filter
+-    clear_filter(self)
++    clear_filter(self, populate=False)
+     self.populate_treeview(where={'volume_id':volume_id})
+     volume_name = self.db.Volume.query.filter_by(volume_id=volume_id).one().name
+     self.update_statusbar(_(&quot;Filter activated. Showing only movies from volume: %s&quot;)%volume_name)
+ 
+ def filter_by_collection(self, collection_id):
+     from quick_filter import clear_filter
+-    clear_filter(self)
++    clear_filter(self, populate=False)
+     self.populate_treeview(where={'collection_id':collection_id})
+     collection_name = self.db.Collection.query.filter_by(collection_id=collection_id).one().name
+     self.update_statusbar(_(&quot;Filter activated. Showing only movies from collection: %s&quot;)%collection_name)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000465.html">[Griffith-svn] r982 - in trunk: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="000470.html">[Griffith-svn] r987 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#466">[ date ]</a>
+              <a href="thread.html#466">[ thread ]</a>
+              <a href="subject.html#466">[ subject ]</a>
+              <a href="author.html#466">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

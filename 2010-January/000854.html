@@ -1,0 +1,610 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1388 - in trunk: . lib lib/plugins/export	lib/plugins/extensions lib/plugins/imp lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1388%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export%0A%09lib/plugins/extensions%20lib/plugins/imp%20lib/plugins/movie&In-Reply-To=%3C201001062102.o06L2Nc2021252%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000853.html">
+   <LINK REL="Next"  HREF="000855.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1388 - in trunk: . lib lib/plugins/export	lib/plugins/extensions lib/plugins/imp lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1388%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export%0A%09lib/plugins/extensions%20lib/plugins/imp%20lib/plugins/movie&In-Reply-To=%3C201001062102.o06L2Nc2021252%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1388 - in trunk: . lib lib/plugins/export	lib/plugins/extensions lib/plugins/imp lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  6 22:02:23 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000853.html">[Griffith-svn] r1387 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000855.html">[Griffith-svn] r1389 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#854">[ date ]</a>
+              <a href="thread.html#854">[ thread ]</a>
+              <a href="subject.html#854">[ subject ]</a>
+              <a href="author.html#854">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2010-01-06 22:02:22 +0100 (Wed, 06 Jan 2010)
+New Revision: 1388
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/backup.py
+   trunk/lib/delete.py
+   trunk/lib/edit.py
+   trunk/lib/gemail.py
+   trunk/lib/gutils.py
+   trunk/lib/people.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/extensions/ge_amazon.py
+   trunk/lib/plugins/imp/AMC.py
+   trunk/lib/plugins/imp/AllMyMovies.py
+   trunk/lib/plugins/imp/BESTheMovieLibrary.py
+   trunk/lib/plugins/imp/DVDProfiler.py
+   trunk/lib/plugins/imp/FoxMovieManager.py
+   trunk/lib/plugins/imp/GCstar.py
+   trunk/lib/plugins/imp/MovieTrack.py
+   trunk/lib/plugins/imp/MyDVDs.py
+   trunk/lib/plugins/imp/PersonalVideoDatabase.py
+   trunk/lib/plugins/imp/TheMovieLibrary.py
+   trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+   trunk/lib/plugins/imp/__init__.py
+   trunk/lib/plugins/imp/eXtremeMovieManager.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/test_movieplugins.py
+Log:
+remove &quot;self&quot; from gutils.error args
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/ChangeLog	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-01-06  Piotr O&#380;arowski
++	* Some cleanups
++
+ 2010-01-05  Michael Jahn
+ 	* save and restore sorting column in main list
+ 	* updated movie plugin Stopklatka
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/griffith	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -232,7 +232,7 @@
+         if movie is not None:
+             add.edit_movie(self, movie)
+         else:
+-            gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
++            gutils.error(_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+ 
+     def hide_add_window(self, *args):
+         #if self.widgets['add']['b_get_from_web'].is_sensitive() is True: # fetch from amazon is not working
+@@ -1018,7 +1018,7 @@
+         if movie_number is not None:
+             cover_simple(self, movie_number)
+         else:
+-            gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
++            gutils.error(_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+ 
+     def print_cover_image(self, *args):
+         self.widgets['print_cover']['ci_size'].set_active(0)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/add.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -277,7 +277,7 @@
+                 self.founded_results_id = str(row)
+                 populate_with_results(self)
+     else:
+-        gutils.error(self.widgets['results']['window'], _(&quot;No results&quot;), self.widgets['add']['window'])
++        gutils.error(_(&quot;No results&quot;), self.widgets['add']['window'])
+ 
+ 
+ def get_from_web(self):
+@@ -320,8 +320,7 @@
+                 self.search_movie.get_searches()
+         self.show_search_results(self.search_movie)
+     else:
+-        gutils.error(self.widgets['results']['window'], \
+-            _(&quot;You should fill the original title\nor the movie title.&quot;))
++        gutils.error(_(&quot;You should fill the original title\nor the movie title.&quot;))
+ 
+ 
+ def source_changed(self):
+@@ -659,8 +658,7 @@
+ 
+     details = get_details(self)
+     if not details['o_title'] and not details['title']:
+-        gutils.error(self.widgets['results']['window'],
+-            _(&quot;You should fill the original title\nor the movie title.&quot;),
++        gutils.error(_(&quot;You should fill the original title\nor the movie title.&quot;),
+             parent=self.widgets['add']['window'])
+         return False
+ 
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/backup.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -44,7 +44,7 @@
+ def create(self):
+     &quot;&quot;&quot;perform a compressed griffith database/posters/preferences backup&quot;&quot;&quot;
+     #if self.db.session.bind.engine.name != 'sqlite':
+-    #    gutils.error(self, _(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
++    #    gutils.error(_(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
+     #    return False
+ 
+     default_name = &quot;%s_backup_%s.zip&quot; % (self.config.get('name','griffith', section='database'),\
+@@ -68,7 +68,7 @@
+                 else:
+                     mzip = zipfile.ZipFile(zipfilename, 'w')
+             except:
+-                gutils.error(self, _(&quot;Error creating backup&quot;), self.widgets['window'])
++                gutils.error(_(&quot;Error creating backup&quot;), self.widgets['window'])
+                 return False
+             if self.db.session.bind.engine.name == 'sqlite':
+                 mzip.write(os.path.join(self.locations['home'],'griffith.cfg').encode('utf-8'), arcname='griffith.cfg')
+@@ -196,7 +196,7 @@
+             try:
+                 zip_file = zipfile.ZipFile(filename, 'r')
+             except:
+-                gutils.error(self, _(&quot;Can't read backup file&quot;), self.widgets['window'])
++                gutils.error(_(&quot;Can't read backup file&quot;), self.widgets['window'])
+                 return False
+ 
+             old_config_file = False
+
+Modified: trunk/lib/delete.py
+===================================================================
+--- trunk/lib/delete.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/delete.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -34,7 +34,7 @@
+     number, m_iter = self.get_maintree_selection()
+     movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+     if movie is None:
+-        gutils.error(self, _(&quot;You have no movies in your database&quot;), self.widgets['window'])
++        gutils.error(_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+         return False
+ 
+     if movie.loaned:
+@@ -65,7 +65,6 @@
+ 
+ 
+ def delete_poster(self, md5sum, commit=False):
+-    log.warning('delete.delete_poster')
+     if commit:
+         session = self.db.Session()
+     else:
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/edit.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -40,7 +40,7 @@
+     picture = self.widgets['movie']['picture']
+     number = self.get_maintree_selection()[0]
+     if number is None:
+-        gutils.error(self, _(&quot;You have no movies in your database&quot;), self.widgets['window'])
++        gutils.error(_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+         return False
+     filename = gutils.file_chooser(_(&quot;Select image&quot;),
+                                    action=gtk.FILE_CHOOSER_ACTION_OPEN,
+@@ -71,7 +71,7 @@
+                 loader.get_pixbuf().scale_simple(100, 140, gtk.gdk.INTERP_BILINEAR))
+     except Exception, e:
+         log.error(str(e))
+-        gutils.error(self, _(&quot;Image is not valid.&quot;), self.widgets['window'])
++        gutils.error(_(&quot;Image is not valid.&quot;), self.widgets['window'])
+         return False
+ 
+     poster_md5 = gutils.md5sum(data)
+
+Modified: trunk/lib/gemail.py
+===================================================================
+--- trunk/lib/gemail.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/gemail.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -35,7 +35,7 @@
+         session = smtplib.SMTP(server, port)
+         session.set_debuglevel(1)
+     except socket.timeout:
+-        gutils.error(self, _(&quot;Connection timed out&quot;), \
++        gutils.error(_(&quot;Connection timed out&quot;), \
+             self.widgets['window'])
+         return()
+     if tls == True:
+@@ -46,7 +46,7 @@
+         try:
+             session.login(user, password)
+         except:
+-            gutils.error(self, _(&quot;Error sending e-mail: %s&quot;)%_(&quot;login failure&quot;), \
++            gutils.error(_(&quot;Error sending e-mail: %s&quot;)%_(&quot;login failure&quot;), \
+                 self.widgets['window'])
+             return
+     headers = &quot;From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n&quot; \
+@@ -56,7 +56,7 @@
+         gutils.info(_(&quot;E-mail sent sucessfuly&quot;), self.widgets['window'])
+         return
+     except:
+-        gutils.error(self, _(&quot;Error sending e-mail: %s&quot;)%&quot;&quot;, self.widgets['window'])
++        gutils.error(_(&quot;Error sending e-mail: %s&quot;)%&quot;&quot;, self.widgets['window'])
+         
+     session.quit()
+ 
+@@ -77,7 +77,7 @@
+                 %(self.person_name, self.widgets['movie']['o_title'].get_text().decode('utf-8'), \
+                 self.widgets['movie']['title'].get_text().decode('utf-8'), self.loan_date[:10]))
+         except:
+-            gutils.error(self, _(&quot;Mail could not be sent. Please check e-mail preferences.&quot;), self.widgets['window'])
++            gutils.error(_(&quot;Mail could not be sent. Please check e-mail preferences.&quot;), self.widgets['window'])
+     else:
+         gutils.info(_(&quot;This person has no e-mail address defined.&quot;), \
+             self.widgets['window'])
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/gutils.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -244,7 +244,7 @@
+ # Messages
+ 
+ 
+-def error(self, msg, parent=None):
++def error(msg, parent=None):
+     dialog = gtk.MessageDialog(parent,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+             gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/people.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -71,7 +71,7 @@
+             self.p_treemodel.set_value(myiter, 1, p.email)
+         self.widgets['people']['window'].present()
+     else:
+-        gutils.error(self.widgets['results']['window'],_(&quot;You should fill the person name&quot;))
++        gutils.error(_(&quot;You should fill the person name&quot;))
+ 
+ def edit_person(self):
+     try:
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -551,7 +551,7 @@
+             try:
+                 os.mkdir(config['exported_dir'])
+             except:
+-                gutils.error(self,_(&quot;Can't create %s!&quot;) % config['exported_dir'])
++                gutils.error(_(&quot;Can't create %s!&quot;) % config['exported_dir'])
+                 return 2
+             
+         data_path = os.path.join(self.locations['share'], 'export_templates', self.templates[tid]['dir'], 'data')
+@@ -585,14 +585,14 @@
+                     try:
+                         shutil.rmtree(posters_dir)
+                     except:
+-                        gutils.error(self,_(&quot;Can't remove %s!&quot;) % config['exported_dir'])
++                        gutils.error(_(&quot;Can't remove %s!&quot;) % config['exported_dir'])
+                         return 3
+                 else:
+                     return 4
+             try:
+                 os.mkdir(posters_dir)
+             except:
+-                gutils.error(self,_(&quot;Can't create %s!&quot;) % posters_dir)
++                gutils.error(_(&quot;Can't create %s!&quot;) % posters_dir)
+                 return 5
+ 
+         if config['custom_style']:
+@@ -635,7 +635,7 @@
+             filename = 'page.tpl'
+             tpl_header = file(os.path.join(template_dir,filename), &quot;r&quot;).read()
+         except:
+-            gutils.error(self,_(&quot;Can't open %s!&quot;)%filename)
++            gutils.error(_(&quot;Can't open %s!&quot;)%filename)
+             return False
+ 
+         tpl_header = self.fill_template(tpl_header, 'header', config['title'])
+@@ -689,7 +689,7 @@
+                 try:
+                     exported_file = file(filename, 'w')
+                 except:
+-                    gutils.error(self,_(&quot;Can't create %s!&quot;)%filename)
++                    gutils.error(_(&quot;Can't create %s!&quot;)%filename)
+                     return False
+                 tmp2 = tpl_header + ''
+                 exported_file.write(self.fill_template(tmp2, 'page', str(page)))
+
+Modified: trunk/lib/plugins/extensions/ge_amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_amazon.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/extensions/ge_amazon.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -70,11 +70,11 @@
+         secretkey = self.get_config_value('secretkey')
+ 
+         if not accesskey or not secretkey:
+-            gutils.error(self.app, _('Please configure your Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++            gutils.error(_('Please configure your Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
+             return False
+ 
+         if movie is None:
+-            gutils.error(self.app, _('You have no movies in your database'), self.widgets['window'])
++            gutils.error(_('You have no movies in your database'), self.widgets['window'])
+             return False
+ 
+         keyword = movie.o_title
+
+Modified: trunk/lib/plugins/imp/AMC.py
+===================================================================
+--- trunk/lib/plugins/imp/AMC.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/AMC.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -118,7 +118,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/AllMyMovies.py
+===================================================================
+--- trunk/lib/plugins/imp/AllMyMovies.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/AllMyMovies.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -57,7 +57,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/BESTheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/BESTheMovieLibrary.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/BESTheMovieLibrary.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -57,7 +57,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/DVDProfiler.py
+===================================================================
+--- trunk/lib/plugins/imp/DVDProfiler.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/DVDProfiler.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -54,7 +54,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/FoxMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/FoxMovieManager.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/FoxMovieManager.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -57,7 +57,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/GCstar.py
+===================================================================
+--- trunk/lib/plugins/imp/GCstar.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/GCstar.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -55,7 +55,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/MovieTrack.py
+===================================================================
+--- trunk/lib/plugins/imp/MovieTrack.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/MovieTrack.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -53,7 +53,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         if self.filename:
+             self.imdbfilename = os.path.join(os.path.dirname(self.filename), 'IMDb.dat')
+
+Modified: trunk/lib/plugins/imp/MyDVDs.py
+===================================================================
+--- trunk/lib/plugins/imp/MyDVDs.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/MyDVDs.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -57,7 +57,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/PersonalVideoDatabase.py
+===================================================================
+--- trunk/lib/plugins/imp/PersonalVideoDatabase.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/PersonalVideoDatabase.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -54,7 +54,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/TheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/TheMovieLibrary.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/TheMovieLibrary.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -57,7 +57,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+===================================================================
+--- trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -56,7 +56,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/__init__.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -405,7 +405,7 @@
+                 ip.clear()
+         except Exception, e:
+             log.exception('')
+-            gutils.error(self, str(e), self.widgets['window'])
++            gutils.error(str(e), self.widgets['window'])
+         finally:
+             ip.destroy()
+             self.widgets['import']['pwindow'].hide()
+
+Modified: trunk/lib/plugins/imp/eXtremeMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/eXtremeMovieManager.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/imp/eXtremeMovieManager.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -54,7 +54,7 @@
+         self.filename = name
+         self.fileversion = self.read_fileversion()
+         if self.fileversion == None:
+-            gutils.error(self, _('The format of the file is not supported.'))
++            gutils.error(_('The format of the file is not supported.'))
+             return False
+         return True
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -56,7 +56,7 @@
+             accesskey = self.config.get('amazon_accesskey', None, section='extensions')
+             secretkey = self.config.get('amazon_secretkey', None, section='extensions')
+             if not accesskey or not secretkey:
+-                gutils.error(None, _('Please configure your Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++                gutils.error(_('Please configure your Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
+                 return False
+             amazon.setLicense(accesskey, secretkey)
+ 
+@@ -251,7 +251,7 @@
+             accesskey = self.config.get('amazon_accesskey', None, section='extensions')
+             secretkey = self.config.get('amazon_secretkey', None, section='extensions')
+             if not accesskey or not secretkey:
+-                gutils.error(None, _('Please configure your Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++                gutils.error(_('Please configure your Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
+                 return False
+             amazon.setLicense(accesskey, secretkey)
+ 
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-01-06 20:35:36 UTC (rev 1387)
++++ trunk/lib/test_movieplugins.py	2010-01-06 21:02:22 UTC (rev 1388)
+@@ -158,7 +158,7 @@
+         
+         if domsgbox:
+             if not result:
+-                gutils.error(self, 'SearchPluginTest %s: Test NOT successful !' % plugin_name)
++                gutils.error('SearchPluginTest %s: Test NOT successful !' % plugin_name)
+             else:
+                 gutils.info('SearchPluginTest %s: Test successful !' % plugin_name)
+         
+@@ -267,7 +267,7 @@
+         
+         if domsgbox:
+             if not result:
+-                gutils.error(self, 'PluginTest %s: Test NOT successful !' % plugin_name)
++                gutils.error('PluginTest %s: Test NOT successful !' % plugin_name)
+             else:
+                 gutils.info('PluginTest %s: Test successful !' % plugin_name)
+         
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000853.html">[Griffith-svn] r1387 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000855.html">[Griffith-svn] r1389 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#854">[ date ]</a>
+              <a href="thread.html#854">[ thread ]</a>
+              <a href="subject.html#854">[ subject ]</a>
+              <a href="author.html#854">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

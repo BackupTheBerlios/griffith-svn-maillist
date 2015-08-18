@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1000 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1000%20-%20trunk/lib&In-Reply-To=%3C200809141406.m8EE6xcg008354%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000479.html">
+   <LINK REL="Next"  HREF="000481.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1000 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1000%20-%20trunk/lib&In-Reply-To=%3C200809141406.m8EE6xcg008354%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1000 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 14 16:06:59 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000479.html">[Griffith-svn] r999 - in trunk: . lib lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000481.html">[Griffith-svn] r1001 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#480">[ date ]</a>
+              <a href="thread.html#480">[ thread ]</a>
+              <a href="subject.html#480">[ subject ]</a>
+              <a href="author.html#480">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-09-14 16:06:59 +0200 (Sun, 14 Sep 2008)
+New Revision: 1000
+
+Modified:
+   trunk/lib/loan.py
+   trunk/lib/sql.py
+Log:
+collections with loaned movies cannot be loaned
+
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2008-09-14 13:54:01 UTC (rev 999)
++++ trunk/lib/loan.py	2008-09-14 14:06:59 UTC (rev 1000)
+@@ -75,7 +75,11 @@
+         elif response == gtk.RESPONSE_CANCEL:
+             return False
+     
+-    if sql.loan_movie(self.db, movie.movie_id, person.person_id, loan_whole_collection):
++    resp = sql.loan_movie(self.db, movie.movie_id, person.person_id, loan_whole_collection)
++    if resp == -1:
++        gutils.warning(self, _(&quot;Collection contains loaned movie.\nLoan aborted!&quot;))
++        return False
++    elif resp:
+         self.update_statusbar(_(&quot;Movie loaned&quot;))
+         self.treeview_clicked()
+ 
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-09-14 13:54:01 UTC (rev 999)
++++ trunk/lib/sql.py	2008-09-14 14:06:59 UTC (rev 1000)
+@@ -172,10 +172,13 @@
+     loan.movie = movie
+ 
+     if whole_collection:
+-        # TODO: check if there are loaned movies inside the collection and return False if yes
+         loan.collection = movie.collection
+         movie.collection.loaned = True
+         for m in movie.collection.movies:
++            if m.loaned:
++                log.warn(&quot;collection contains loaned movie (%s), cannot proceed&quot; % m.number)
++                session.rollback()
++                return -1
+             m.loaned = True
+             session.add(m)
+         session.add(movie.collection)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000479.html">[Griffith-svn] r999 - in trunk: . lib lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000481.html">[Griffith-svn] r1001 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#480">[ date ]</a>
+              <a href="thread.html#480">[ thread ]</a>
+              <a href="subject.html#480">[ subject ]</a>
+              <a href="author.html#480">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

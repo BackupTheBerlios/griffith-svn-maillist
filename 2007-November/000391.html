@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r888 - in trunk: . lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r888%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200711302257.lAUMvvJ1021218%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000390.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r888 - in trunk: . lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r888%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200711302257.lAUMvvJ1021218%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r888 - in trunk: . lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 30 23:57:57 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000390.html">[Griffith-svn] r887 - in trunk: . glade lib
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#391">[ date ]</a>
+              <a href="thread.html#391">[ thread ]</a>
+              <a href="subject.html#391">[ subject ]</a>
+              <a href="author.html#391">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-11-30 23:57:45 +0100 (Fri, 30 Nov 2007)
+New Revision: 888
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportXML.py
+Log:
+export plugins remember the last directory which was used
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/ChangeLog	2007-11-30 22:57:45 UTC (rev 888)
+@@ -7,6 +7,7 @@
+ 2007-11-30  Michael Jahn
+ 	* HTML export supports video codec name
+ 	* quick filter for volumes
++	* export plugins remember the last directory which was used
+ 
+ 2007-11-29 Vasco Nunes
+ 	* Russian language file updated
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -39,12 +39,26 @@
+         self.db = database
+         self.locations = locations
+         self.parent = parent
++        if kwargs.has_key('config'):
++            self.persistent_config = kwargs['config']
++        else:
++            self.persistent_config = None
+         self.export_csv()
+ 
+     def export_csv(self):
+-        filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-            buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv')
++        basedir = None
++        if not self.persistent_config is None:
++            basedir = self.persistent_config.get('export_dir', None, section='export-csv')
++        if basedir is None:
++            filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv')
++        else:
++            filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv',folder=basedir)
+         if filename[0]:
++            if not self.persistent_config is None and filename[1]:
++                self.persistent_config.set('export_dir', filename[1], section='export-csv')
++                self.persistent_config.save()
+             overwrite = None
+             if os.path.isfile(filename[0]):
+                 response = gutils.question(self, _(&quot;File exists. Do you want to overwrite it?&quot;), 1, self.parent)
+@@ -55,7 +69,7 @@
+                     
+             if overwrite == True or overwrite is None:
+                 writer = csv.writer(file(filename[0], 'w'), dialect=csv.excel)
+-		for movie in self.db.Movie.select():
++                for movie in self.db.Movie.select():
+                     t = []
+                     for s in ('number', 'o_title', 'title', 'director', 'year', 'classification', 'country',
+                             'genre', 'rating', 'runtime', 'studio', 'seen', 'loaned', 'o_site', 'site', 'trailer',
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -385,7 +385,7 @@
+ 			self.widgets['vb_posters'].set_sensitive(False)
+ 		# persistent config
+ 		if not self.persistent_config is None:
+-			tmp = self.persistent_config.get('exported_dir', None, section='export-html')
++			tmp = self.persistent_config.get('export_dir', None, section='export-html')
+ 			if not tmp is None:
+ 				self.widgets['fcw'].set_current_folder(tmp)
+ 	#}}}
+@@ -656,7 +656,7 @@
+ 		
+ 		# persist config
+ 		if not self.persistent_config is None:
+-			self.persistent_config.set('exported_dir', config['exported_dir'], section='export-html')
++			self.persistent_config.set('export_dir', config['exported_dir'], section='export-html')
+ 			self.persistent_config.save()
+ 
+ 		if fields['movies_image']:
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -68,8 +68,17 @@
+         else:
+                 self.fontName = &quot;Helvetica&quot;
+ 
+-        filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;)
++        basedir = None
++        if not self.config is None:
++            basedir = self.config.get('export_dir', None, section='export-pdf')
++        if basedir is None:
++            filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;)
++        else:
++            filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;,folder=basedir)
+         if filename[0]:
++            if not self.config is None and filename[1]:
++                self.config.set('export_dir', filename[1], section='export-pdf')
++                self.config.save()
+             overwrite = None
+             pdffilename = filename[0].decode('utf-8')
+             if os.path.isfile(pdffilename):
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportXML.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -40,12 +40,26 @@
+ 		self.db = database
+ 		self.locations = locations
+ 		self.parent = parent_window
++		if kwargs.has_key('config'):
++			self.persistent_config = kwargs['config']
++		else:
++			self.persistent_config = None
+ 		self.export_xml()
+ 
+ 	def export_xml(self):
+-		filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml')
++		basedir = None
++		if not self.persistent_config is None:
++			basedir = self.persistent_config.get('export_dir', None, section='export-xml')
++		if basedir is None:
++			filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml')
++		else:
++			filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml',folder=basedir)
+ 		if filename[0]:
++			if not self.persistent_config is None and filename[1]:
++				self.persistent_config.set('export_dir', filename[1], section='export-xml')
++				self.persistent_config.save()
+ 			overwrite = None
+ 			if os.path.isfile(filename[0]):
+ 				response = gutils.question(self, _(&quot;File exists. Do you want to overwrite it?&quot;), 1, self.parent)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000390.html">[Griffith-svn] r887 - in trunk: . glade lib
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#391">[ date ]</a>
+              <a href="thread.html#391">[ thread ]</a>
+              <a href="subject.html#391">[ subject ]</a>
+              <a href="author.html#391">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

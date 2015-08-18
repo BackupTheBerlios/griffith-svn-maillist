@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r517 - in griffith/lib: . plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r517%20-%20in%20griffith/lib%3A%20.%20plugins/movie&In-Reply-To=%3C200612111250.kBBCoS7D028793%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000050.html">
+   <LINK REL="Next"  HREF="000051.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r517 - in griffith/lib: . plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r517%20-%20in%20griffith/lib%3A%20.%20plugins/movie&In-Reply-To=%3C200612111250.kBBCoS7D028793%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r517 - in griffith/lib: . plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 11 13:50:28 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000050.html">[Griffith-svn] r516 - in griffith: export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib	lib/plugins/export lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000051.html">[Griffith-svn] r518 - in griffith: . glade lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#47">[ date ]</a>
+              <a href="thread.html#47">[ thread ]</a>
+              <a href="subject.html#47">[ subject ]</a>
+              <a href="author.html#47">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-11 13:50:28 +0100 (Mon, 11 Dec 2006)
+New Revision: 517
+
+Modified:
+   griffith/lib/dbupgrade.py
+   griffith/lib/plugins/movie/PluginMovieCSFD.py
+   griffith/lib/plugins/movie/PluginMovieCineteka.py
+   griffith/lib/plugins/movie/PluginMovieFilmweb.py
+   griffith/lib/plugins/movie/PluginMovieOnet.py
+   griffith/lib/plugins/movie/PluginMovieStopklatka.py
+   griffith/lib/plugins/movie/PluginMovieTanukiAnime.py
+   griffith/lib/plugins/movie/PluginMovieWP.py
+Log:
+fix encoding
+
+
+Modified: griffith/lib/dbupgrade.py
+===================================================================
+--- griffith/lib/dbupgrade.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/dbupgrade.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -91,7 +91,7 @@
+ 		#self.Lang.mapper.mapped_table.insert().execute(name=_('Italian'))
+ 		#self.Lang.mapper.mapped_table.insert().execute(name=_('Portuguese'))
+ 		#self.Lang.mapper.mapped_table.insert().execute(name=_('Polish'))
+-		self.Lang.mapper.mapped_table.insert().execute(name=_('Spanish'))
++		#self.Lang.mapper.mapped_table.insert().execute(name=_('Spanish'))
+ 		self.MovieLang.mapper.mapped_table.create()
+ 		self.Tag.mapper.mapped_table.create()
+ 		self.Tag.mapper.mapped_table.insert().execute(name=_('Favourite'))
+
+Modified: griffith/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieCSFD.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieCSFD.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -62,7 +62,7 @@
+ 			self.o_title = self.title
+ 
+ 	def get_director(self):
+-		self.director = re.search(r&quot;Re&#194;&#158;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#195;&#173;:&quot;,self.page)
++		self.director = re.search(r&quot;Re&#158;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#237;:&quot;,self.page)
+ 		if self.director:
+ 			self.director = gutils.strip_tags(self.director.group(1))
+ 		else:
+@@ -76,7 +76,7 @@
+ 			self.year = &quot;&quot;
+ 
+ 	def get_runtime(self):
+-		self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&#194;&#158;ie:&quot;,self.page)
++		self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&#158;ie:&quot;,self.page)
+ 		if self.runtime:
+ 			self.runtime = gutils.strip_tags(self.runtime.group(1))
+ 		else:
+@@ -97,14 +97,14 @@
+ 			self.country = &quot;&quot;
+ 
+ 	def get_cast(self):
+-		self.cast = re.search(r&quot;Hraj&#195;&#173;: (.*)&lt;/div&gt;&lt;br&gt;&quot;,self.page)
++		self.cast = re.search(r&quot;Hraj&#237;: (.*)&lt;/div&gt;&lt;br&gt;&quot;,self.page)
+ 		if self.cast:
+ 			self.cast = gutils.strip_tags(self.cast.group(1))
+ 		else:
+ 			self.cast = &quot;&quot;
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.strip_tags(string.replace(gutils.trim(self.page,&quot;Obsah / Info:&quot;,&quot;&lt;/td&gt;&quot;),&quot;(ofici&#195;&#161;ln&#195;&#173; text distributora)&quot;,&quot;&quot;))
++		self.plot = gutils.strip_tags(string.replace(gutils.trim(self.page,&quot;Obsah / Info:&quot;,&quot;&lt;/td&gt;&quot;),&quot;(ofici&#225;ln&#237; text distributora)&quot;,&quot;&quot;))
+ 
+ 	def get_site(self):
+ 		self.o_site = re.search(r&quot;href=[\&quot;'](<A HREF="http://.*imdb\.com/title[^\">http://.*imdb\.com/title[^\</A>&quot;']*)&quot;,self.page)
+
+Modified: griffith/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieCineteka.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieCineteka.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -68,7 +68,7 @@
+ 
+ 	def get_runtime(self):
+ 		&quot;&quot;&quot;Finds the film's running time&quot;&quot;&quot;
+-		self.runtime = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Dura&#195;&#167;&#195;&#163;o:&lt;/b&gt; &quot;, &quot; min.&lt;/td&gt;&quot;)
++		self.runntime = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Dura&#195;&#167;&#196;&#131;o:&lt;/b&gt; &quot;, &quot; min.&lt;/td&gt;&quot;)
+ 
+ 	def get_genre(self):
+ 		&quot;&quot;&quot;Finds the film's genre&quot;&quot;&quot;
+@@ -129,7 +129,7 @@
+ 	def sub_search(self):
+ 		&quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
+ 		self.page = gutils.trim(self.page, \
+-			&quot;&quot;&quot;ordenados por data de aquisi&#195;&#167;&#195;&#163;o:&lt;/div&gt;&quot;&quot;&quot;, &quot;&quot;&quot;&lt;div style=&quot;margin-top: 10px; text-align: center;&quot;&gt;&lt;/div&gt;&quot;&quot;&quot;)
++			&quot;&quot;&quot;ordenados por data de aquisi&#195;&#167;&#196;&#131;o:&lt;/div&gt;&quot;&quot;&quot;, &quot;&quot;&quot;&lt;div style=&quot;margin-top: 10px; text-align: center;&quot;&gt;&lt;/div&gt;&quot;&quot;&quot;)
+ 
+ 	def get_searches(self):
+ 		&quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
+
+Modified: griffith/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieFilmweb.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieFilmweb.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -69,7 +69,7 @@
+ 		self.director = string.replace(self.director, &quot;\t&quot;,'')
+ 		self.director = string.replace(self.director, &quot;\n&quot;,'')
+ 		self.director = string.replace(self.director, &quot;,&quot;,&quot;, &quot;)
+-		self.director = string.replace(self.director, &quot;,  (wi&#195;&#132;&#194;&#130;&#195;&#130;&#194;&#132;&#196;&#130;&#194;&#130;&#195;&#130;&#194;&#153;cej&#160;...)&quot;,'')
++		self.director = string.replace(self.director, &quot;,  (wi&#196;&#130;&#194;&#132;&#195;&#130;&#194;&#153;cej&#160;...)&quot;,'')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page,&quot; alt=\&quot;o filmie\&quot;/&gt;&lt;/div&gt;&quot;,&quot;&lt;/div&gt;&quot;)
+
+Modified: griffith/lib/plugins/movie/PluginMovieOnet.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieOnet.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieOnet.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -69,7 +69,7 @@
+ 			self.director = gutils.before(self.director,&quot;&lt;/B&gt;&quot;)
+ 
+ 	def get_plot(self):
+-		pos = string.find(self.page, &quot;&lt;TD class=tym&gt;Tre??&lt;/TD&gt;&quot;)
++		pos = string.find(self.page, &quot;&lt;TD class=tym&gt;Tre&#197;&#155;&#196;&#135;&lt;/TD&gt;&quot;)
+ 		if pos &gt; 0:
+ 			self.plot = self.page[pos:]
+ 			self.plot = gutils.trim(self.plot, &quot;&lt;DIV class=a2&gt;&quot;, &quot;&lt;/DIV&gt;&quot;)
+@@ -121,7 +121,7 @@
+ 		self.country = gutils.before(self.country,&quot;,&quot;)
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page,&quot;&gt;Ocena filmu&lt;/TD&gt;&quot;,&quot;g?os?w)&quot;)
++		self.rating = gutils.trim(self.page,&quot;&gt;Ocena filmu&lt;/TD&gt;&quot;,&quot;g&#197;&#130;os&#195;&#179;w)&quot;)
+ 		self.rating = gutils.after(self.rating,&quot;&lt;BR&gt;&lt;B&gt;&quot;)
+ 		self.rating = gutils.before(self.rating,&quot;/5&lt;/B&gt;&quot;)
+ 		if self.rating &lt;&gt; &quot;&quot;:
+
+Modified: griffith/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieStopklatka.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieStopklatka.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -40,8 +40,8 @@
+ 		self.encode = 'iso-8859-2'
+ 
+ 	def initialize(self):
+-		self.page = self.page.replace('\x9c','?')
+-		self.page = self.page.replace('?','?')
++		self.page = self.page.replace('\x9c','&#197;&#155;')
++		self.page = self.page.replace('&#197;&#161;','&#196;&#133;')
+ 
+ 	def get_image(self):
+ 		self.image_url = gutils.trim(self.page,&quot;<A HREF="http://img.stopklatka.pl/film/">http://img.stopklatka.pl/film/</A>&quot;,&quot;' border=1&quot;)
+@@ -56,7 +56,7 @@
+ 			self.o_title = self.title
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&gt;re?yseria:&lt;&quot;,&quot;&lt;/font&gt;&quot;)
++		self.director = gutils.trim(self.page,&quot;&gt;re&#197;&#188;yseria:&lt;&quot;,&quot;&lt;/font&gt;&quot;)
+ 		self.director = gutils.after(self.director,&quot;&lt;b&gt;&quot;)
+ 		self.director = gutils.strip_tags(self.director)
+ 
+@@ -81,7 +81,7 @@
+ 		self.cast = gutils.after(self.cast,&quot;&lt;b&gt;&quot;)
+ 		self.cast = string.replace(self.cast,&quot;, &quot;, &quot;\n&quot;)
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
+-		pos = string.find(self.cast,&quot;Wi?cej &gt;&quot;)
++		pos = string.find(self.with,&quot;Wi&#196;&#153;cej &gt;&quot;)
+ 		if pos &gt; 0:
+ 			self.cast = self.cast[0:pos]
+ 
+@@ -124,8 +124,8 @@
+ 
+ 	def sub_search(self):
+ 		self.page = gutils.trim(self.page,&quot;&lt;blockquote&gt;&quot;, &quot;&lt;/blockquote&gt;&quot;);
+-		self.page = self.page.replace('\x9c','?')
+-		self.page = self.page.replace('?','?')
++		self.page = self.page.replace('\x9c','&#197;&#155;')
++		self.page = self.page.replace('&#197;&#161;','&#196;&#133;')
+ 
+ 	def get_searches(self):
+ 		elements = string.split(self.page,&quot;&lt;li&gt;&quot;)
+
+Modified: griffith/lib/plugins/movie/PluginMovieTanukiAnime.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieTanukiAnime.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieTanukiAnime.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -75,7 +75,7 @@
+ 		if self.runtime.find(&quot;?&quot;) != -1:
+ 			self.runtime = ''
+ 		else:
+-			self.runtime = gutils.after(self.runtime, &quot;?&quot;)
++			self.runtime = gutils.after(self.runtime, &quot;&#195;&#151;&quot;)
+ 			self.runtime = gutils.before(self.runtime, &quot; min&quot;)
+ 
+ 	def get_genre(self):
+
+Modified: griffith/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieWP.py	2006-12-11 02:05:45 UTC (rev 516)
++++ griffith/lib/plugins/movie/PluginMovieWP.py	2006-12-11 12:50:28 UTC (rev 517)
+@@ -64,7 +64,7 @@
+ 			self.o_title = gutils.gdecode(self.title, self.encode)
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&lt;b&gt;Re&#195;&#130;&#197;&#188;yseria:&lt;/b&gt;&quot;,&quot;&lt;br&gt;&quot;)
++		self.director = gutils.trim(self.page,&quot;&lt;b&gt;Re&#194;&#191;yseria:&lt;/b&gt;&quot;,&quot;&lt;br&gt;&quot;)
+ 		self.director = gutils.after(self.director,&quot;\&quot;&gt;&quot;)
+ 		self.director = gutils.strip_tags(self.director)
+ 
+@@ -111,7 +111,7 @@
+ 		self.country = gutils.trim(self.page,&quot;&lt;b&gt;Kraj:&lt;/b&gt; &quot;,&quot;&lt;br&gt;&quot;)
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page,&quot;&lt;b&gt;Ocena internaut&#196;&#130;&#197;&#130;w: &quot;,&quot;&lt;/b&gt;&quot;)
++		self.rating = gutils.trim(self.page,&quot;&lt;b&gt;Ocena internaut&#195;&#179;w: &quot;,&quot;&lt;/b&gt;&quot;)
+ 		if self.rating != '':
+ 			self.rating = str( float(self.rating) )
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000050.html">[Griffith-svn] r516 - in griffith: export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib	lib/plugins/export lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000051.html">[Griffith-svn] r518 - in griffith: . glade lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#47">[ date ]</a>
+              <a href="thread.html#47">[ thread ]</a>
+              <a href="subject.html#47">[ subject ]</a>
+              <a href="author.html#47">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,529 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1300 - in trunk/lib: . plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1300%20-%20in%20trunk/lib%3A%20.%20plugins/movie&In-Reply-To=%3C200909251018.n8PAIFNn013428%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000767.html">
+   <LINK REL="Next"  HREF="000769.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1300 - in trunk/lib: . plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1300%20-%20in%20trunk/lib%3A%20.%20plugins/movie&In-Reply-To=%3C200909251018.n8PAIFNn013428%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1300 - in trunk/lib: . plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 25 12:18:15 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000767.html">[Griffith-svn] r1299 - in trunk: . lib lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000769.html">[Griffith-svn] r1301 - in trunk: . debian lib lib/db
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#768">[ date ]</a>
+              <a href="thread.html#768">[ thread ]</a>
+              <a href="subject.html#768">[ subject ]</a>
+              <a href="author.html#768">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-09-25 12:17:53 +0200 (Fri, 25 Sep 2009)
+New Revision: 1300
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAllMovie.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/test_movieplugins.py
+Log:
+updated movie plugin test data
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllMovie.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllMovie.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieAllMovie.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -240,7 +240,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa' : [ 100, 100 ],
++        'Rocky Balboa' : [ 11, 11 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -92,25 +92,25 @@
+             self.image_url = self.page.SmallImage.URL
+ 
+     def get_o_title(self):
+-        if hasattr(self.page.ItemAttributes, 'Title'):
+-            self.o_title = self.page.ItemAttributes.Title
+-        else:
+-            self.director = ''
++        self.o_title = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'Title'):
++                self.o_title = self.page.ItemAttributes.Title
+ 
+     def get_title(self):
+-        if hasattr(self.page.ItemAttributes, 'Title'):
+-            self.title = self.page.ItemAttributes.Title
+-        else:
+-            self.director = ''
++        self.title = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'Title'):
++                self.title = self.page.ItemAttributes.Title
+ 
+     def get_director(self):
+-        if hasattr(self.page.ItemAttributes, 'Director'):
+-            if isinstance(self.page.ItemAttributes.Director, list):
+-                self.director = string.join(self.page.ItemAttributes.Director, ', ')
+-            else:
+-                self.director = self.page.ItemAttributes.Director
+-        else:
+-            self.director = ''
++        self.director = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'Director'):
++                if isinstance(self.page.ItemAttributes.Director, list):
++                    self.director = string.join(self.page.ItemAttributes.Director, ', ')
++                else:
++                    self.director = self.page.ItemAttributes.Director
+ 
+     def get_plot(self):
+         self.plot = ''
+@@ -127,18 +127,18 @@
+                         self.plot = self.page.EditorialReviews.EditorialReview.Content
+ 
+     def get_year(self):
+-        if hasattr(self.page.ItemAttributes, 'TheatricalReleaseDate'):
+-            self.year = self.page.ItemAttributes.TheatricalReleaseDate[:4]
+-        elif hasattr(self.page.ItemAttributes, 'ReleaseDate'):
+-            self.year = self.page.ItemAttributes.ReleaseDate[:4]
+-        else:
+-            self.year = ''
++        self.year = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'TheatricalReleaseDate'):
++                self.year = self.page.ItemAttributes.TheatricalReleaseDate[:4]
++            elif hasattr(self.page.ItemAttributes, 'ReleaseDate'):
++                self.year = self.page.ItemAttributes.ReleaseDate[:4]
+ 
+     def get_runtime(self):
+-        if hasattr(self.page.ItemAttributes, 'RunningTime'):
+-            self.runtime = self.page.ItemAttributes.RunningTime
+-        else:
+-            self.runtime = ''
++        self.runtime = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'RunningTime'):
++                self.runtime = self.page.ItemAttributes.RunningTime
+ 
+     def get_genre(self):
+         # BrowseNodeId 547664 (Genres)
+@@ -157,23 +157,24 @@
+ 
+     def get_cast(self):
+         self.cast = ''
+-        if hasattr(self.page.ItemAttributes, 'Actor'):
+-            if isinstance(self.page.ItemAttributes.Actor, list):
+-                self.cast = string.join(self.page.ItemAttributes.Actor, '\n')
+-            else:
+-                self.cast = self.page.ItemAttributes.Actor
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'Actor'):
++                if isinstance(self.page.ItemAttributes.Actor, list):
++                    self.cast = string.join(self.page.ItemAttributes.Actor, '\n')
++                else:
++                    self.cast = self.page.ItemAttributes.Actor
+ 
+     def get_classification(self):
+-        if hasattr(self.page.ItemAttributes, 'AudienceRating'):
+-            self.classification = self.page.ItemAttributes.AudienceRating
+-        else:
+-            self.classification = ''
++        self.classification = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'AudienceRating'):
++                self.classification = self.page.ItemAttributes.AudienceRating
+ 
+     def get_studio(self):
+-        if hasattr(self.page.ItemAttributes, 'Studio'):
+-            self.studio = self.page.ItemAttributes.Studio
+-        else:
+-            self.studio = ''
++        self.studio = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'Studio'):
++                self.studio = self.page.ItemAttributes.Studio
+ 
+     def get_o_site(self):
+         self.o_site = ''
+@@ -215,12 +216,15 @@
+ 
+     def get_notes(self):
+         self.notes = ''
+-        if hasattr(self.page.ItemAttributes, 'EAN'):
+-            self.notes = 'EAN: ' + self.page.ItemAttributes.EAN
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'EAN'):
++                self.notes = 'EAN: ' + self.page.ItemAttributes.EAN
+ 
+     def get_barcode(self):
+-        if hasattr(self.page.ItemAttributes, 'EAN'):
+-            self.barcode = self.page.ItemAttributes.EAN
++        self.barcode = ''
++        if hasattr(self.page, 'ItemAttributes'):
++            if hasattr(self.page.ItemAttributes, 'EAN'):
++                self.barcode = self.page.ItemAttributes.EAN
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -169,7 +169,7 @@
+     test_configuration = {
+         'Rocky'      : [ 12, 12 ],
+         'per&#195;&#178;'       : [  6,  6 ],
+-        'il ritorno' : [ 95, 95 ]
++        'il ritorno' : [ 96, 96 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -293,7 +293,7 @@
+             'plot'                : True,
+             'cast'                : 'Animation',
+             'country'             : u'Jap&#243;n',
+-            'genre'               : u'Animaci&#243;n. Aventuras',
++            'genre'               : u'Animaci&#243;n. Aventuras. B&#233;lico',
+             'classification'      : False,
+             'studio'              : 'Production I.G. / Nippon Television Network Corporation (NTV)',
+             'o_site'              : '<A HREF="http://sky.crawlers.jp/">http://sky.crawlers.jp/</A>',
+@@ -301,7 +301,7 @@
+             'trailer'             : False,
+             'year'                : 2008,
+             'notes'               : False,
+-            'runtime'             : 0,
++            'runtime'             : 122,
+             'image'               : True,
+             'rating'              : 6,
+             'cameraman'           : 'Animation',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -205,60 +205,60 @@
+ Carl Weathers\n\
+ Burt Young\n\
+ Talia Shire\n\
++Milo Ventimiglia\n\
+ Burgess Meredith\n\
+-Milo Ventimiglia\n\
++Tony Burton\n\
+ Mr. T\n\
+-Tony Burton\n\
+ Geraldine Hughes\n\
+ Frank Stallone\n\
++Lahmard J. Tate\n\
+ Michael Buffer\n\
+-Lahmard J. Tate\n\
+ Don Sherman\n\
++Tobias Segal\n\
+ Gunnar Peterson\n\
+ LeRoy Neiman\n\
+-Tobias Segal\n\
+-Stu Nahan\n\
+-Skip Bayless\n\
+-Robert Michael Kelly\n\
++Jody Giambelluca\n\
+ Ricky Cavazos\n\
+ Rick Buchborn\n\
+-Jody Giambelluca\n\
+-Yahya\n\
+-Charles Johnson\n\
++Stu Nahan\n\
+ Barney Fitzpatrick\n\
+ Henry G. Sanders\n\
+ Fran Pultro\n\
+-Dana Jacobson\n\
++Joe Cortez\n\
++Yahya\n\
++Skip Bayless\n\
++Robert Michael Kelly\n\
++Angela Boyd\n\
+ Tim Carr\n\
+-Joe Cortez\n\
+ Jim Lampley\n\
+-Max Kellerman\n\
+-Ana Gerena\n\
+-Marc Ratner\n\
+-Jack Lazzarado\n\
++Charles Johnson\n\
+ Carter Mitchell\n\
+-Angela Boyd\n\
+-Maureen Schilling\n\
+-James Binns\n\
+-Antonio Tarver\n\
+ A.J. Benza\n\
+-Nick Baker\n\
+-Louis Giansante\n\
+ Matt Frack\n\
++Max Kellerman\n\
++Jack Lazzarado\n\
++Marc Ratner\n\
+ Larry Merchant\n\
+-Paul Dion Monte\n\
++Dana Jacobson\n\
++Antonio Tarver\n\
++Ana Gerena\n\
++Maureen Schilling\n\
+ Bernard Fern&#195;&#161;ndez\n\
++Louis Giansante\n\
++Nick Baker\n\
++James Binns\n\
++Brian Kenny\n\
+ Anthony Lato Jr.\n\
+-Kevin King Templeton\n\
+-Brian Kenny\n\
+ Woody Paige\n\
++Paul Dion Monte\n\
++Gary Compton\n\
+ Lou DiBella\n\
++Kevin King Templeton\n\
++Jay Crawford\n\
+ Pedro Lovell\n\
++Johnnie Hobbs Jr.\n\
+ Bert Randolph Sugar\n\
+ Vinod Kumar\n\
+-Jay Crawford\n\
+-Gary Compton\n\
+-Johnnie Hobbs Jr.\n\
+ James Francis Kelly III',
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+@@ -278,8 +278,8 @@
+             'o_title'             : 'Tatort - M&#195;&#164;rchenwald',
+             'director'            : 'Christiane Balthasar',
+             'plot'                : True,
+-            'cast'                : 'Maria Furtw&#195;&#164;ngler\n\
+-Hannes Jaenicke\n\
++            'cast'                : 'Hannes Jaenicke\n\
++Maria Furtw&#195;&#164;ngler\n\
+ Charly H&#195;&#188;bner\n\
+ Ingo Naujoks\n\
+ Michael Wittenborn',
+@@ -303,8 +303,8 @@
+             'plot'                : True,
+             'cast'                : 'So-yi Yoon\n\
+ Doo-hong Jung\n\
++Ahn Sung-ki\n\
+ Ryu Seung-beom\n\
+-Ahn Sung-ki\n\
+ Yun Ju-Sang',
+             'country'             : 'RK',
+             'genre'               : 'Actionkom&#195;&#182;die',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -24,13 +24,13 @@
+ import gutils, movie
+ import re,string
+ 
+-plugin_name        = 'Filmweb'
+-plugin_description    = 'Web pe&#197;&#130;en film&#195;&#179;w'
+-plugin_url        = 'www.filmweb.pl'
+-plugin_language        = _('Polish')
+-plugin_author        = 'Piotr O&#197;&#188;arowski, Bartosz Kurczewski'
+-plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
+-plugin_version        = '1.13'
++plugin_name         = 'Filmweb'
++plugin_description  = 'Web pe&#197;&#130;en film&#195;&#179;w'
++plugin_url          = 'www.filmweb.pl'
++plugin_language     = _('Polish')
++plugin_author       = 'Piotr O&#197;&#188;arowski, Bartosz Kurczewski'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
++plugin_version      = '1.13'
+ 
+ class Plugin(movie.Movie):
+     TRAILER_PATTERN     = re.compile(&quot;&quot;&quot;&lt;a class=[&quot;']notSelected[&quot;'].*?href=[&quot;'](.*?)[&quot;']&gt;zwiastuny&lt;/a&gt;\s*\[\d+\]\s*&raquo;&quot;&quot;&quot;)
+@@ -71,7 +71,7 @@
+             self.director = string.replace(self.director, &quot;,&quot;,&quot;, &quot;)
+             self.director = string.replace(self.director, &quot;  &quot;,&quot; &quot;)
+             self.director = string.replace(self.director, &quot; ,  &quot;,&quot;, &quot;)
+-            self.director = string.replace(self.director, &quot;,  (wi\xeacej&#160;...)&quot;,'')
++            self.director = string.replace(self.director, u&quot;,  (wi\xeacej&#160;...)&quot;,'')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page,'&lt;h2 id=&quot;o-filmie-header&quot; class=&quot;replace&quot;&gt;','&lt;/div&gt;')
+@@ -82,7 +82,7 @@
+         if url != '':
+             plot_page = self.open_page(url=url)
+             self.plot = gutils.trim(plot_page, '&lt;div class=&quot;filmContent&quot;&gt;', '&lt;/ul&gt;')
+-            self.plot = gutils.after(self.plot, 'zg&#197;&#130;o&#197;&#155; poprawk&#196;&#153;')
++            self.plot = gutils.after(self.plot, u'zg&#197;&#130;o&#197;&#155; poprawk&#196;&#153;')
+ 
+     def get_year(self):
+         self.year = gutils.trim(self.page, '&lt;span class=&quot;year&quot;&gt;', '&lt;/a&gt;')
+@@ -96,7 +96,7 @@
+         self.genre = string.replace(self.genre, &quot;\n&quot;,'')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page, '&lt;td class=&quot;film-actor&quot;&gt;',&quot;zobacz wi&#196;&#153;cej&quot;)
++        self.cast = gutils.trim(self.page, '&lt;td class=&quot;film-actor&quot;&gt;',u&quot;zobacz wi&#196;&#153;cej&quot;)
+         self.cast = string.replace(self.cast, chr(13),&quot;&quot;)
+         self.cast = string.replace(self.cast, chr(10),&quot;&quot;)
+ #        self.cast = string.replace(self.cast, &quot;\n&quot;,&quot;&quot;)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -265,7 +265,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 16, 16 ],
++        'Rocky Balboa'         : [ 18, 18 ],
+         'Ein gl&#195;&#188;ckliches Jahr' : [  6,  6 ]
+     }
+ 
+@@ -341,23 +341,28 @@
+ Gary Compton' + _(' as ') + 'Sicherheitsbediensteter &#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
+ Michael Ahl' + _(' as ') + 'Restaurant patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
++Tim Brooks' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Deon Derrico' + _(' as ') + 'High roller at limo (nicht im Abspann)\n\
+ Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (nicht im Abspann)\n\
++David Gere' + _(' as ') + 'Patron at Adrian\'s (nicht im Abspann)\n\
+ Mark J. Kilbane' + _(' as ') + 'Businessman (nicht im Abspann)\n\
++Zach Klinefelter' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ David Kneeream' + _(' as ') + 'Adrian\'s Patron (nicht im Abspann)\n\
+ Dolph Lundgren' + _(' as ') + 'Captain Ivan Drago (Archivmaterial) (nicht im Abspann)\n\
+ Dean Mauro' + _(' as ') + 'Sports Journalist (nicht im Abspann) (unbest&#195;&#164;tigt)\n\
+ Burgess Meredith' + _(' as ') + 'Mickey Goldmill (Archivmaterial) (nicht im Abspann)\n\
++Dan Montero' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Keith Moyer' + _(' as ') + 'Bargast (nicht im Abspann)\n\
+ Mr. T' + _(' as ') + 'Clubber Lang (Archivmaterial) (nicht im Abspann)\n\
+ Jacqueline Olivia' + _(' as ') + 'M&#195;&#164;dchen (nicht im Abspann)\n\
+ Brian H. Scott' + _(' as ') + 'Ringside Cop #1 (nicht im Abspann)\n\
+ Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
+ Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+-Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)',
++Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)\n\
++Kim Villanova' + _(' as ') + 'Business woman (nicht im Abspann)',
+             'country'           : 'USA',
+-            'genre'             : 'Action | Sport',
++            'genre'             : 'Action | Drama | Sport',
+             'classification'    : False,
+             'studio'            : 'Metro-Goldwyn-Mayer (MGM)',
+             'o_site'            : False,
+@@ -414,6 +419,6 @@
+ + _('Color') + ': Farbe (Eastmancolor)',
+             'runtime'            : 90,
+             'image'              : True,
+-            'rating'             : 8
++            'rating'             : 7
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -254,8 +254,8 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 15, 15 ],
+-        'Ein gl&#195;&#188;ckliches Jahr' : [ 22, 22 ]
++        'Rocky Balboa'         : [ 17, 17 ],
++        'Ein gl&#195;&#188;ckliches Jahr' : [ 23, 23 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -290,8 +290,8 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'          : [ 7, 7 ],
+-        'Arahan'                : [ 6, 6 ],
++        'Rocky Balboa'         : [ 8, 8 ],
++        'Arahan'               : [ 6, 6 ],
+         'Ein gl&#195;&#188;ckliches Jahr' : [ 3, 3 ]
+     }
+ 
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2009-09-14 20:05:52 UTC (rev 1299)
++++ trunk/lib/test_movieplugins.py	2009-09-25 10:17:53 UTC (rev 1300)
+@@ -59,6 +59,7 @@
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ sys.path.append('plugins/movie')
++sys.path.append('plugins/extensions')
+ 
+ #
+ # test class for movie plugin classes Plugin and SearchPlugin
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000767.html">[Griffith-svn] r1299 - in trunk: . lib lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000769.html">[Griffith-svn] r1301 - in trunk: . debian lib lib/db
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#768">[ date ]</a>
+              <a href="thread.html#768">[ thread ]</a>
+              <a href="subject.html#768">[ subject ]</a>
+              <a href="author.html#768">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r853 - trunk/lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r853%20-%20trunk/lib/plugins/export&In-Reply-To=%3C200709021907.l82J7ptc023007%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000359.html">
+   <LINK REL="Next"  HREF="000362.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r853 - trunk/lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r853%20-%20trunk/lib/plugins/export&In-Reply-To=%3C200709021907.l82J7ptc023007%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r853 - trunk/lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep  2 21:07:51 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000359.html">[Griffith-svn] r852 - in trunk: . export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000362.html">[Griffith-svn] r856 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#361">[ date ]</a>
+              <a href="thread.html#361">[ thread ]</a>
+              <a href="subject.html#361">[ subject ]</a>
+              <a href="author.html#361">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-09-02 21:07:35 +0200 (Sun, 02 Sep 2007)
+New Revision: 853
+
+Modified:
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+added sorting to combobox and checkboxes to HTML export plugin
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2007-09-02 18:08:57 UTC (rev 852)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2007-09-02 19:07:35 UTC (rev 853)
+@@ -310,14 +310,21 @@
+ 			self.widgets['combo_theme'].insert_text(i, self.templates[i]['name'])
+ 
+ 		# sortby combo
+-		for i in self.names:
++		keys = self.names.keys()
++		keys.sort()
++		j = 0
++		pos_o_title = 0
++		for i in keys:
+ 			self.widgets['combo_sortby'].append_text(i)
++			if i == _('Original Title'):
++				pos_o_title = j
++			j = j + 1
+ 		self.widgets['combo_sortby'].set_wrap_width(3)
+ 
+ 		# include data
+ 		j = 0
+ 		k = math.ceil( len(self.names) / float(3) )
+-		for i in self.names:
++		for i in keys:
+ 			j = j + 1
+ 			field = self.names[i]
+ 			self.widgets['cb_'+field] = gtk.CheckButton(i)
+@@ -337,7 +344,7 @@
+ 		# set defaults --------------------------------
+ 		self.widgets['entry_header'].set_text(self.config['title'])
+ 		self.widgets['combo_theme'].set_active(2)	# html_tables
+-		self.widgets['combo_sortby'].set_active(17)	# orginal title
++		self.widgets['combo_sortby'].set_active(pos_o_title)	# orginal title
+ 		# spliting
+ 		self.widgets['sb_split_num'].set_value(self.config['split_num'])
+ 		if self.config['split_by'] == 0:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000359.html">[Griffith-svn] r852 - in trunk: . export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000362.html">[Griffith-svn] r856 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#361">[ date ]</a>
+              <a href="thread.html#361">[ thread ]</a>
+              <a href="subject.html#361">[ subject ]</a>
+              <a href="author.html#361">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

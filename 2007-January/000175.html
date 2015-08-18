@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r652 - in trunk: . debian lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r652%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200701032224.l03MOQhp026595%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000174.html">
+   <LINK REL="Next"  HREF="000176.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r652 - in trunk: . debian lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r652%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200701032224.l03MOQhp026595%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r652 - in trunk: . debian lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  3 23:24:26 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000174.html">[Griffith-svn] r651 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000176.html">[Griffith-svn] r653 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#175">[ date ]</a>
+              <a href="thread.html#175">[ thread ]</a>
+              <a href="subject.html#175">[ subject ]</a>
+              <a href="author.html#175">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-03 23:24:26 +0100 (Wed, 03 Jan 2007)
+New Revision: 652
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/README
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/lib/dbupgrade.py
+Log:
+pysqlite1.1 is not needed anymore
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-03 19:26:54 UTC (rev 651)
++++ trunk/ChangeLog	2007-01-03 22:24:26 UTC (rev 652)
+@@ -8,6 +8,7 @@
+ 	* Install Polish manpage in ISO-8859-2 encoding
+ 	* Fix clean rule
+ 	* Sort by last added movies option added
++	* pysqlite1.1 is not needed anymore
+ 
+ 2007-01-02 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Copy volume/collection data when cloning movie
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-01-03 19:26:54 UTC (rev 651)
++++ trunk/NEWS	2007-01-03 22:24:26 UTC (rev 652)
+@@ -12,7 +12,7 @@
+ * Filmweb movie plugin fixed
+ 
+ Note to package maintainers:
+-Please keep pysqlite1.0 (or 1.1 - see README) as required dependency.
++Please keep pysqlite1.0 as required dependency (see README file)
+ This will make upgrade process from 0.6.2 a lot easier.
+ 
+ 
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-01-03 19:26:54 UTC (rev 651)
++++ trunk/README	2007-01-03 22:24:26 UTC (rev 652)
+@@ -44,8 +44,8 @@
+   * Psycopg2		2			<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>
+   MySQL support:
+   * MySQLDb					<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>
+-  Upgrading from Griffith &lt;=0.6.2:
+-  * pyqlite		1.0 (1.1 for SQLite3)	<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>
++  Upgrading from Griffith &lt;=0.6.2 (only if pysqlite 1.0 was used before, 1.1 is not needed)
++  * pysqlite		1.0 			<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>
+   Gtkspell:
+   * python-gnome-extras
+   Covers and reports support:
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-01-03 19:26:54 UTC (rev 651)
++++ trunk/debian/changelog	2007-01-03 22:24:26 UTC (rev 652)
+@@ -1,8 +1,6 @@
+ griffith (0.9~rc2-1) UNRELEASED; urgency=low
+ 
+   * New upstream release
+-  * Added python-pysqlite1.1 dependency as an alternative to python-sqlite
+-    (for upgrades from SQLite3 databases)
+ 
+  -- Piotr Ozarowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;  Tue,  2 Jan 2007 00:15:43 +0100
+ 
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2007-01-03 19:26:54 UTC (rev 651)
++++ trunk/debian/control	2007-01-03 22:24:26 UTC (rev 652)
+@@ -11,7 +11,7 @@
+ 
+ Package: griffith
+ Architecture: all
+-Depends: ${python:Depends}, python-gtk2 (&gt;= 2.8.6-1), python-glade2 (&gt;= 2.8.6-1), python-sqlalchemy (&gt;= 0.3.0-1), python-pysqlite2 (&gt;= 2.3.0-1), python-reportlab (&gt;= 1.20debian-6), python-imaging (&gt;= 1.1.5-6), python-sqlite | python-pysqlite1.1
++Depends: ${python:Depends}, python-gtk2 (&gt;= 2.8.6-1), python-glade2 (&gt;= 2.8.6-1), python-sqlalchemy (&gt;= 0.3.0-1), python-pysqlite2 (&gt;= 2.3.0-1), python-reportlab (&gt;= 1.20debian-6), python-imaging (&gt;= 1.1.5-6), python-sqlite
+ Recommends: python-gnome2-extras (&gt;= 2.14.0-1), python-psycopg2 (&gt;= 1.1.21-6), python-mysqldb (&gt;= 1.2.1-p2-2), python-chardet
+ Suggests: griffith-extra-artwork (&gt;= 0.8)
+ XB-Python-Version: ${python:Versions}
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-01-03 19:26:54 UTC (rev 651)
++++ trunk/lib/dbupgrade.py	2007-01-03 22:24:26 UTC (rev 652)
+@@ -119,13 +119,20 @@
+ 	from sql import GriffithSQL
+ 	from gutils import digits_only
+ 	import os
+-	try:
+-		import sqlite
+-		from sqlite import DatabaseError
+-	except:
+-		print 'Old DB conversion: please install pysqlite legacy (v1.0)'
+-		gutils.warning(self,_(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;))
++
++	if not os.path.isfile(source_file):
+ 		return False
++	if open(source_file).readline()[:47] == '** This file contains an SQLite 2.1 database **':
++		try:
++			import sqlite
++			from sqlite import DatabaseError
++		except:
++			print 'Old DB conversion: please install pysqlite legacy (v1.0)'
++			gutils.warning(self,_(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;))
++			return False
++	else:
++		from pysqlite2 import dbapi2 as sqlite
++		from pysqlite2.dbapi2 import DatabaseError
+ 
+ 	if os.path.isfile(destination_file):
+ 		# rename destination_file if it already exist
+@@ -138,16 +145,16 @@
+ 		os.rename(destination_file, &quot;%s_%s&quot; % (destination_file, i))
+ 
+ 	try:
+-		old_db = sqlite.connect(source_file,autocommit=0)
++		#old_db = sqlite.connect(source_file,autocommit=0)
++		old_db = sqlite.connect(source_file, isolation_level=None)
+ 	except DatabaseError, e:
+ 		if str(e) == 'file is encrypted or is not a database':
+-			print 'Your database is most probably in SQLite3 format, please convert it to SQLite2:'
+-			print '$ sqlite3 ~/.griffith/griffith.gri .dump | sqlite ~/.griffith/griffith.gri2'
+-			print '$ mv ~/.griffith/griffith.gri{,3}'
+-			print '$ mv ~/.griffith/griffith.gri{2,}'
+-			print 'or install pysqlite in version 1.1'
+-			print 'if your database is in SQLite2 format - convert it to SQLite3 or install pysqlite in version 1.0 (legacy)'
+-			gutils.warning(self,_(&quot;Your database is most probably in SQLite3 format, please convert it to SQLite2&quot;))
++			print 'Your database is most probably in wrong SQLite format, please convert it to SQLite3:'
++			print '$ sqlite ~/.griffith/griffith.gri .dump | sqlite3 ~/.griffith/griffith.gri3'
++			print '$ mv ~/.griffith/griffith.gri{,2}'
++			print '$ mv ~/.griffith/griffith.gri{3,}'
++			print 'or install pysqlite in version 1.0'
++			gutils.warning(self,_(&quot;Your database is most probably in SQLite2 format, please convert it to SQLite3&quot;))
+ 		else:
+ 			raise
+ 		return False
+@@ -201,7 +208,7 @@
+ 	new_db = GriffithSQL(self.config, self.debug, self.locations['home'])
+ 
+ 	# collections
+-	collection_mapper = {0:None}
++	collection_mapper = {0:None, u'':None}
+ 	old_cursor.execute(&quot;SELECT id, name, loaned FROM collections;&quot;)
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.Collection(name=i[1], loaned=bool(i[2]))
+@@ -209,7 +216,7 @@
+ 		collection_mapper[i[0]] = o.collection_id
+ 	
+ 	# volumes
+-	volume_mapper = {0:None}
++	volume_mapper = {0:None, u'':None}
+ 	old_cursor.execute(&quot;SELECT id, name, loaned FROM volumes;&quot;)
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.Volume(name=i[1], loaned=bool(i[2]))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000174.html">[Griffith-svn] r651 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000176.html">[Griffith-svn] r653 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#175">[ date ]</a>
+              <a href="thread.html#175">[ thread ]</a>
+              <a href="subject.html#175">[ subject ]</a>
+              <a href="author.html#175">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

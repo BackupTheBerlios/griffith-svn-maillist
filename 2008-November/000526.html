@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1048 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1048%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811161839.mAGIdxU2001056%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000525.html">
+   <LINK REL="Next"  HREF="000527.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1048 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1048%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811161839.mAGIdxU2001056%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1048 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 16 19:39:59 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000525.html">[Griffith-svn] r1047 - branches/0.9.x/lib
+</A></li>
+        <LI>Next message: <A HREF="000527.html">[Griffith-svn] r1049 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#526">[ date ]</a>
+              <a href="thread.html#526">[ thread ]</a>
+              <a href="subject.html#526">[ subject ]</a>
+              <a href="author.html#526">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-16 19:39:58 +0100 (Sun, 16 Nov 2008)
+New Revision: 1048
+
+Modified:
+   trunk/griffith
+   trunk/lib/db.py
+   trunk/lib/loan.py
+Log:
+show_volume() fixed
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-11-16 12:59:48 UTC (rev 1047)
++++ trunk/griffith	2008-11-16 18:39:58 UTC (rev 1048)
+@@ -506,11 +506,15 @@
+                     initialize.fill_collections_combo(self, default=col_id)
+ 
+     def show_volume(self, widget):
++        import advfilter
+         vol_id = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first().volume_id
+-        pos = gutils.findKey(vol_id, self.volume_combo_ids)
+-        quick_filter.clear_filter(self)
+-        self.widgets['filter']['volume'].set_active(pos)
++        #quick_filter.clear_filter(self)
++        cond = advfilter.get_def_conditions()
++        cond[&quot;volumes&quot;] = set((vol_id,))
++        movies = advfilter.create_select_query(self, None, cond, None).execute().fetchall()
++        self.populate_treeview(movies)
+ 
++
+     def show_collection(self, widget):
+         col_id = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first().collection_id
+         pos = gutils.findKey(col_id, self.collection_combo_ids)
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-11-16 12:59:48 UTC (rev 1047)
++++ trunk/lib/db.py	2008-11-16 18:39:58 UTC (rev 1048)
+@@ -41,21 +41,21 @@
+             if hasattr(self, i):
+                 setattr(self, i, kwargs[i])
+             else:
+-                log.warn(&quot;%s.%s not set&quot; % (self.__class__.__name__, i))
++                log.warn(&quot;%s.%s not set&quot;, self.__class__.__name__, i)
+     def __repr__(self):
+         return &quot;&lt;%s:%s&gt;&quot; % (self.__class__.__name__, self.name.encode('utf-8'))
+ 
+     @validates('name')
+     def _validate_name(self, key, name):
+         if not name or not name.strip():
+-            log.warning(&quot;%s: empty name (%s)&quot; % (self.__class__.__name__, name))
++            log.warning(&quot;%s: empty name (%s)&quot;, self.__class__.__name__, name)
+             raise ValueError(_(&quot;Name cannot be empty&quot;))
+         return name.strip()
+ 
+     def remove_from_db(self):
+         dbtable_id = self.__dict__[self.__class__.__name__.lower() + '_id']
+         if dbtable_id&lt;1:
+-            log.info(&quot;%s: none selected =&gt; none removed&quot; % self.__class__.__name__)
++            log.info(&quot;%s: none selected =&gt; none removed&quot;, self.__class__.__name__)
+             return False
+         tmp = None
+         if hasattr(self,'movies'):
+@@ -65,19 +65,19 @@
+         if tmp and len(tmp)&gt;0:
+             gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+             return False
+-        log.info(&quot;%s: removing '%s' (id=%s) from database...&quot;%(self.__class__.__name__, self.name, dbtable_id))
++        log.info(&quot;%s: removing '%s' (id=%s) from database...&quot;, self.__class__.__name__, self.name, dbtable_id)
+         self.delete()
+         try:
+             self.flush()
+         except exceptions.SQLError, e:
+-            log.info(&quot;%s: remove_from_db: %s&quot; % (self.__class__.__name__, e))
++            log.info(&quot;%s: remove_from_db: %s&quot;, self.__class__.__name__, e)
+             return False
+         #self.refresh()
+         return True
+     def update_in_db(self):
+         dbtable_id = self.__dict__[self.__class__.__name__.lower() + '_id']
+         if dbtable_id&lt;1:
+-            log.info(&quot;%s: none selected =&gt; none updated&quot; % self.__class__.__name__)
++            log.info(&quot;%s: none selected =&gt; none updated&quot;, self.__class__.__name__)
+             return False
+         tmp = self.query.filter_by(name=self.name).first()
+         if tmp is not None and tmp is not self:
+@@ -87,7 +87,7 @@
+         try:
+             self.flush()
+         except exceptions.SQLError, e:
+-            log.info(&quot;%s: update_in_db: %s&quot; % (self.__class__.__name__, e))
++            log.info(&quot;%s: update_in_db: %s&quot;, self.__class__.__name__, e)
+             return False
+         self.refresh()
+         return True
+@@ -114,7 +114,7 @@
+     def _validate_email(self, key, address):
+         address = address.strip()
+         if not EMAIL_PATTERN.match(address):
+-            log.warning(&quot;%s: email address is not valid (%s)&quot; % (self.__class__.__name__, address))
++            log.warning(&quot;%s: email address is not valid (%s)&quot;, self.__class__.__name__, address)
+             raise ValueError(_(&quot;E-mail address is not valid&quot;))
+         return address
+ 
+@@ -397,7 +397,7 @@
+     import sqlalchemy
+     logging.basicConfig()
+     log.setLevel(logging.INFO)
+-    log.info(&quot;SQLAlchemy version: %s&quot; % sqlalchemy.__version__)
++    log.info(&quot;SQLAlchemy version: %s&quot;, sqlalchemy.__version__)
+ 
+     ### ENGINE ###
+     engine_mem = create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>', echo=False)
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2008-11-16 12:59:48 UTC (rev 1047)
++++ trunk/lib/loan.py	2008-11-16 18:39:58 UTC (rev 1048)
+@@ -21,7 +21,6 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-gettext.install('griffith', unicode=1)
+ import gutils
+ import gtk
+ import datetime
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000525.html">[Griffith-svn] r1047 - branches/0.9.x/lib
+</A></li>
+	<LI>Next message: <A HREF="000527.html">[Griffith-svn] r1049 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#526">[ date ]</a>
+              <a href="thread.html#526">[ thread ]</a>
+              <a href="subject.html#526">[ subject ]</a>
+              <a href="author.html#526">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

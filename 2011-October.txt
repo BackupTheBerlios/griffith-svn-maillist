@@ -1,0 +1,106 @@
+From mikej06 at mail.berlios.de  Sun Oct  2 21:25:14 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun,  2 Oct 2011 21:25:14 +0200
+Subject: [Griffith-svn] r1595 - trunk/lib
+Message-ID: <20111002192515.0B162481247@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-10-02 21:25:14 +0200 (Sun, 02 Oct 2011)
+New Revision: 1595
+
+Modified:
+   trunk/lib/add.py
+Log:
+lost poster after editing a movie entry
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-09-22 21:00:44 UTC (rev 1594)
++++ trunk/lib/add.py	2011-10-02 19:25:14 UTC (rev 1595)
+@@ -83,7 +83,7 @@
+     details = get_details(self)
+ 
+     old_poster_md5 = movie.poster_md5
+-    new_poster_md5 = None
++    new_poster_md5 = old_poster_md5
+     if details['image']:
+         if old_poster_md5 != details['image']: # details["image"] can contain MD5 or file path
+             new_image_path = details['image']
+
+
+
+From piotrek at mail.berlios.de  Tue Oct  4 20:41:03 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue,  4 Oct 2011 20:41:03 +0200
+Subject: [Griffith-svn] r1596 - trunk/lib
+Message-ID: <20111004184103.8B2C0481224@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-10-04 20:41:03 +0200 (Tue, 04 Oct 2011)
+New Revision: 1596
+
+Modified:
+   trunk/lib/dbupgrade.py
+Log:
+fix upgrading MySQL databases with posters_md5 column
+
+(i.e. add support for different error message)
+
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2011-10-02 19:25:14 UTC (rev 1595)
++++ trunk/lib/dbupgrade.py	2011-10-04 18:41:03 UTC (rev 1596)
+@@ -162,7 +162,7 @@
+             try:
+                 self.session.bind.execute(query)
+             except OperationalError, e:
+-                if e.message.find(b'(OperationalError) duplicate column name:') > -1:
++                if e.message.lower().find('duplicate column name') > -1:
+                     log.warn("Cannot add '%s' column because it exists already: %s", key, e)
+                     continue
+                 else:
+@@ -265,7 +265,7 @@
+     if version == 5:    # fix changes between v5 and v6
+         version += 1
+         log.info("Upgrading database to version %d...", version)
+-        
++
+         # common SQL statements
+         if self.session.bind.name in ['postgres', 'postgresql']:
+             queries = {'created': 'ALTER TABLE movies ADD created TIMESTAMP;',
+
+
+
+From piotrek at mail.berlios.de  Tue Oct  4 20:41:24 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue,  4 Oct 2011 20:41:24 +0200
+Subject: [Griffith-svn] r1597 - trunk/lib
+Message-ID: <20111004184124.A0E104811E4@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-10-04 20:41:24 +0200 (Tue, 04 Oct 2011)
+New Revision: 1597
+
+Modified:
+   trunk/lib/preferences.py
+Log:
+one more SA 0.7 fix
+
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2011-10-04 18:41:03 UTC (rev 1596)
++++ trunk/lib/preferences.py	2011-10-04 18:41:24 UTC (rev 1597)
+@@ -494,7 +494,7 @@
+             old['name'] != c.get('name', section='database'):
+         log.info('DATABASE: connecting to new db server...')
+         import sql
+-        from sqlalchemy.exceptions import InvalidRequestError
++        from sqlalchemy.exc import InvalidRequestError
+         from initialize import dictionaries, people_treeview
+ 
+         # new database connection
+
+
+

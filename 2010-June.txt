@@ -1,0 +1,878 @@
+From mikej06 at mail.berlios.de  Mon Jun  7 22:05:15 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 7 Jun 2010 22:05:15 +0200
+Subject: [Griffith-svn] r1425 - in trunk: . lib lib/plugins/movie
+Message-ID: <201006072005.o57K5F1O029076@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-07 22:04:57 +0200 (Mon, 07 Jun 2010)
+New Revision: 1425
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieClubedevideo.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/test_movieplugins.py
+   trunk/winpackage.iss
+Log:
+added Clubedevideo movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/ChangeLog	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-06-07  Michael Jahn
++	* added Clubedevideo movie plugin
++
+ 2010-05-10  Michael Jahn
+ 	* updated movie plugin IMDB-de
+ 	* poster md5 wasn't saved if poster is already in database
+
+Added: trunk/lib/plugins/movie/PluginMovieClubedevideo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieClubedevideo.py	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/lib/plugins/movie/PluginMovieClubedevideo.py	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -0,0 +1,191 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2010
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = "Clubedevideo"
++plugin_description  = "www.clubedevideo.com"
++plugin_url          = "www.clubedevideo.com"
++plugin_language     = _("Portuguese")
++plugin_author       = "Michael Jahn"
++plugin_author_email = "mike at griffith.cc"
++plugin_version      = "1.0"
++
++
++class Plugin(movie.Movie):
++
++    def __init__(self, id):
++        self.encode = 'iso-8859-1'
++        self.movie_id = id
++        self.url = 'http://www.clubedevideo.com/mods/ficha_filme_if.cdv?numero_filme=%s' % self.movie_id
++
++    def get_image(self):
++        self.image_url = 'http://www.clubedevideo.com/capas/%s.jpg' % self.movie_id
++
++    def get_o_title(self):
++        self.o_title = gutils.after(gutils.trim(self.page, "class='mod_titulos_filme2'", '<'), '>')
++
++    def get_title(self):
++        self.title = gutils.after(gutils.trim(self.page, "class='mod_titulos_filme'", '<'), '>')
++
++    def get_director(self):
++        self.director = gutils.trim(self.page, u'Realiza??o:', '<br>')
++        self.director = string.replace(self.director, '&nbsp', '') # website error, ; missing
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, u'Sin?pse:', '</td>')
++        self.plot = string.replace(self.plot, u'\x93', '"')
++        self.plot = string.replace(self.plot, u'\x94', '"')
++
++    def get_year(self):
++        self.year = ''
++
++    def get_runtime(self):
++        self.runtime = gutils.clean(gutils.trim(self.page, u'Dura??o:', '<br'))
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, 'Categoria:', '<br')
++
++    def get_cast(self):
++        self.cast = gutils.clean(gutils.trim(self.page, 'Protagonistas:', '<br'))
++        # double replacement
++        self.cast = string.replace(self.cast, ', ', '\n')
++        self.cast = string.replace(self.cast, ',', '\n')
++
++    def get_classification(self):
++        self.classification = gutils.regextrim(self.page, u'Classifica??o:', '<br>')
++
++    def get_studio(self):
++        self.studio = gutils.trim(self.page, 'Distribuidora:', '<br>')
++
++    def get_o_site(self):
++        self.o_site = gutils.trim(self.page, 'website.cdv?path=', "'")
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = 'http://www.clubedevideo.com/mods/mod_trailer.cdv?numero=%s' % self.movie_id
++
++    def get_country(self):
++        self.country = ''
++
++    def get_rating(self):
++        self.rating = 0
++        tmp = gutils.trim(self.page, 'Vota??o:', '</td>')
++        if tmp:
++            fullstars = string.split(tmp, 'star_on.gif')
++            halfstars = string.split(tmp, 'star_meia')
++            rating = 0
++            if fullstars:
++                rating = len(fullstars) - 1
++            if halfstars and len(halfstars) > 1:
++                rating = rating + 0.5
++            try:
++                self.rating = round(rating * 2, 0)
++            except:
++                pass
++
++    def get_notes(self):
++        self.notes = ''
++
++    def get_screenplay(self):
++        self.screenplay = ''
++
++    def get_cameraman(self):
++        self.cameraman = ''
++
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search = 'http://www.clubedevideo.com/mods/mod_pesquisa_if.cdv?area_pesquisa=nome_original&submitButtonName=++OK++&valor_pesquisa='
++        self.translated_url_search = 'http://www.clubedevideo.com/mods/mod_pesquisa_if.cdv?area_pesquisa=nome&submitButtonName=++OK++&valor_pesquisa='
++        self.encode = 'iso-8859-1'
++        self.remove_accents = False
++
++    def search(self, parent_window):
++        self.open_search(parent_window)
++        return self.page
++
++    def get_searches(self):
++        elements = string.split(self.page, "href='ficha_filme_if.cdv?numero_filme=")
++        for element in elements[1:]:
++            id = gutils.before(element, "'")
++            title = gutils.trim(element, '>', '</a>')
++            if id and title:
++                self.ids.append(id)
++                self.titles.append(title)
++
++#
++# Plugin Test
++#
++
++
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky' : [ 9, 9 ]
++    }
++
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> dict { arribute -> value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '9384' : {
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa - 2006',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Tony Burton\n\
++MiloVentimiglia',
++            'country'             : False,
++            'genre'               : 'Ac??o',
++            'classification'      : 'M/12',
++            'studio'              : 'Lusomundo',
++            'o_site'              : 'http://www.mgm.com/rocky/',
++            'site'                : 'http://www.clubedevideo.com/mods/ficha_filme_if.cdv?numero_filme=9384',
++            'trailer'             : 'http://www.clubedevideo.com/mods/mod_trailer.cdv?numero=9384',
++            'year'                : False,
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 5,
++            'cameraman'           : False,
++            'screenplay'          : False
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/lib/test_movieplugins.py	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -75,6 +75,7 @@
+         'PluginMovieCinematografo',
+         'PluginMovieCineMovies',
+         'PluginMovieCineteka',
++        'PluginMovieClubedevideo',
+         'PluginMovieCulturalia',
+         'PluginMovieDVDEmpire',
+         'PluginMovieE-Pipoca',
+@@ -220,28 +221,36 @@
+ 
+         # check the fields
+         for i in results_expected:
+-            i_val = results_expected[i]
+-            if isinstance(i_val, bool):
+-                if i_val:
+-                    if not results.has_key(i) or len(results[i]) < 1:
++            try:
++                i_val = results_expected[i]
++                if isinstance(i_val, bool):
++                    if i_val:
++                        if not results.has_key(i) or len(results[i]) < 1:
++                            print "Test error: %s: Value expected but nothing returned.\nKey: %s" % (movieplugin.movie_id, i)
++                            logFile.write("Test error: %s: Value expected but nothing returned.\nKey: %s\n\n" % (movieplugin.movie_id, i))
++                            result = False
++                    else:
++                        if results.has_key(i):
++                            if isinstance(results[i], int) and results[i] == 0:
++                                continue
++                            if not isinstance(results[i], int) and len(results[i]) < 1:
++                                continue
++                            print "Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s" % (movieplugin.movie_id, i, results[i])
++                            logFile.write("Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s\n\n" % (movieplugin.movie_id, i, results[i]))
++                            result = False
++                else:
++                    if not results.has_key(i):
+                         print "Test error: %s: Value expected but nothing returned.\nKey: %s" % (movieplugin.movie_id, i)
+                         logFile.write("Test error: %s: Value expected but nothing returned.\nKey: %s\n\n" % (movieplugin.movie_id, i))
+                         result = False
+-                else:
+-                    if results.has_key(i) and len(results[i]) > 0:
+-                        print "Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s" % (movieplugin.movie_id, i, results[i])
+-                        logFile.write("Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s\n\n" % (movieplugin.movie_id, i, results[i]))
+-                        result = False
+-            else:
+-                if not results.has_key(i):
+-                    print "Test error: %s: Value expected but nothing returned.\nKey: %s" % (movieplugin.movie_id, i)
+-                    logFile.write("Test error: %s: Value expected but nothing returned.\nKey: %s\n\n" % (movieplugin.movie_id, i))
+-                    result = False
+-                else:
+-                    if not results[i] == i_val:
+-                        print "Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s" % (movieplugin.movie_id, i, i_val, results[i])
+-                        logFile.write("Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n" % (movieplugin.movie_id, i, i_val, results[i]))
+-                        result = False
++                    else:
++                        if not results[i] == i_val:
++                            print "Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s" % (movieplugin.movie_id, i, i_val, results[i])
++                            logFile.write("Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n" % (movieplugin.movie_id, i, i_val, results[i]))
++                            result = False
++            except:
++                log.exception(i + ' - ' + str(i_val) + ' - ' + str(results[i]) + ' - ' + str(movieplugin))
++                result = False
+         return result
+ 
+     #
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/winpackage.iss	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -88,6 +88,7 @@
+ Source: dist\lib\plugins\movie\PluginMovieCinematografo.py; DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Italian\Cinematografo
+ Source: dist\lib\plugins\movie\PluginMovieCineMovies.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\French\CineMovies
+ Source: dist\lib\plugins\movie\PluginMovieCineteka.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\Cineteka
++Source: dist\lib\plugins\movie\PluginMovieClubedevideo.py;  DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\Clubedevideo
+ Source: dist\lib\plugins\movie\PluginMovieCSFD.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Czech\CSFD
+ Source: dist\lib\plugins\movie\PluginMovieCulturalia.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Spanish\Culturalia
+ Source: dist\lib\plugins\movie\PluginMovieDVDEmpire.py;     DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\DVD_Empire
+@@ -200,6 +201,7 @@
+ Name: Movie_Import_Plugins\Portuguese;               Description: Portuguese Import Plugins; Types: full
+ Name: Movie_Import_Plugins\Portuguese\7arte;         Description: 7arte / 7arte.net; Types: full
+ Name: Movie_Import_Plugins\Portuguese\Cineteka;      Description: Cineteka / cineteka.com; Types: full
++Name: Movie_Import_Plugins\Portuguese\Clubedevideo;  Description: Clubedevideo / www.clubedevideo.com; Types: full
+ Name: Movie_Import_Plugins\Portuguese\PTGate;        Description: PTGate / cinema.ptgate.pt; Types: full
+ 
+ Name: Movie_Import_Plugins\Brazilian_Portuguese;          Description: Brazilian Portuguese Import Plugins; Types: full
+
+
+
+From mikej06 at mail.berlios.de  Mon Jun  7 22:51:44 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 7 Jun 2010 22:51:44 +0200
+Subject: [Griffith-svn] r1426 - trunk
+Message-ID: <201006072051.o57KpiHV032026@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-07 22:51:23 +0200 (Mon, 07 Jun 2010)
+New Revision: 1426
+
+Modified:
+   trunk/INSTALL
+Log:
+win32 section of INSTALL file updated
+
+Modified: trunk/INSTALL
+===================================================================
+--- trunk/INSTALL	2010-06-07 20:04:57 UTC (rev 1425)
++++ trunk/INSTALL	2010-06-07 20:51:23 UTC (rev 1426)
+@@ -70,27 +70,26 @@
+ 	
+ 2.2 Compiling and making a custom installer
+ 
+-	2.2.1 	This was tested with Griffith 0.9.7. Should work with later versions.
++	2.2.1 	This was tested with Griffith 0.11. Should work with later versions.
+ 			You will need the following packages installed on your system. You can grab them from the pointed urls:
+ 	
+-			* Python         - python 2.5.1                   (http://www.python.org/download/)
+-			* GTK Dev Env.   - gtk-dev-2.12.9-win32-2         (http://gladewin32.sourceforge.net/modules/wfdownloads/)
+-			* PyGTK          - pygtk-2.12.1-2.win32-py2.5     (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/)
+-			* Glade 3        - glade-3.4.3-win32-1            (http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2)
+-			* PyCairo        - pycairo-1.2.6-1.win32-py2.5    (http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/)
+-			* PyGObject      - pygobject-2.12.3-1.win32-py2.5 (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/)
+-			* ReportLab      - ReportLab_2_1                  (http://www.reportlab.org/downloads.html#dlls)
+-			* winshell       - winshell-0.2                   (http://timgolden.me.uk/python/winshell.html)
+-			* PIL            - PIL-1.1.6.win32-py2.5          (http://www.pythonware.com/products/pil/#pil116)
+-			* py2exe         - py2exe-0.6.8.win32-py2.5       (http://sourceforge.net/project/showfiles.php?group_id=15583&package_id=35995&release_id=474800)
+-			* Python For Windows Extensions (pywin32) - pywin32-211.win32-py2.5 (http://sourceforge.net/project/platformdownload.php?group_id=78018)
+-			* SQLAlchemy     - SQLAlchemy-0.3.10              (http://www.sqlalchemy.org/download.html)
+-			* PyXML          - PyXML-0.8.4                    (http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe)
+-			* psycopg2       - psycopg2-2.0.6.win32-py2.5     (http://www.stickpeople.com/projects/python/win-psycopg/#Version2)
+-			* MySQLPython    - MySQL-python-1.2.2.win32-py2.5 (http://sourceforge.net/project/showfiles.php?group_id=22307&package_id=15775&release_id=491012)
+-			* Python-chardet - chardet-1.0                    (http://chardet.feedparser.org/download/)
+-			* Python SQLite  - pysqlite-2.3.5.win32-py2.5     (http://www.initd.org/tracker/pysqlite/wiki/pysqlite)
+-			* Inno Setup     - isetup-5.2.3                   (http://www.jrsoftware.org/isdl.php)
++			* Python            - python 2.5.4                   (http://www.python.org/download/)
++			* GTK+ with Glade 3 - glade3-3.6.7-with-GTK+         (http://ftp.gnome.org/pub/GNOME/binaries/win32/glade3/3.6/)
++			* PyGTK             - pygtk-2.12.1-3.win32-py2.5     (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.12/)
++			* PyCairo           - pycairo-1.4.12-2.win32-py2.5   (http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.4/)
++			* PyGObject         - pygobject-2.14.2-2.win32-py2.5 (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.14/)
++			* ReportLab         - reportlab-2.4.win32-py2.5      (http://www.reportlab.com/software/opensource/rl-toolkit/download/)
++			* winshell          - winshell-0.2                   (http://timgolden.me.uk/python/winshell.html)
++			* PIL               - PIL-1.1.7.win32-py2.5          (http://www.pythonware.com/products/pil/#pil116)
++			* py2exe            - py2exe-0.6.9.win32-py2.5       (http://sourceforge.net/projects/py2exe/files/)
++			* Python For Windows Extensions (pywin32) - pywin32-214.win32-py2.5 (http://sourceforge.net/projects/pywin32/files/)
++			* SQLAlchemy        - SQLAlchemy-0.5.8               (http://www.sqlalchemy.org/download.html)
++			* psycopg2          - psycopg2-2.0.14.win32-py2.5    (http://www.stickpeople.com/projects/python/win-psycopg/#Version2)
++			* MySQLPython       - MySQL-python-1.2.2.win32-py2.5 (http://sourceforge.net/projects/mysql-python/files/)
++            * PyODBC            - pyodbc-2.1.7.win32-py2.5       (http://code.google.com/p/pyodbc/)
++			* Python-chardet    - python2-chardet-2.0.1          (http://chardet.feedparser.org/download/)
++			* Python SQLite     - pysqlite-2.5.6.win32-py2.5     (http://www.initd.org/tracker/pysqlite/wiki/pysqlite)
++			* Inno Setup        - isetup-5.3.9                   (http://www.jrsoftware.org/isdl.php)
+ 			
+ 	2.2.2	After installing all the above packages, get griffith from SVN
+ 			or download the latest source tarball from the official site (http://www.griffith.cc/)
+
+
+
+From mikej06 at mail.berlios.de  Mon Jun  7 23:14:29 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 7 Jun 2010 23:14:29 +0200
+Subject: [Griffith-svn] r1427 - extra_artwork/images
+Message-ID: <201006072114.o57LET6g001659@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-07 23:14:14 +0200 (Mon, 07 Jun 2010)
+New Revision: 1427
+
+Added:
+   extra_artwork/images/PluginMovieClubedevideo.png
+Log:
+added image for clubedevideo plugin
+
+Added: extra_artwork/images/PluginMovieClubedevideo.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: extra_artwork/images/PluginMovieClubedevideo.png
+___________________________________________________________________
+Name: svn:needs-lock
+   + *
+Name: svn:mime-type
+   + image/png
+
+
+
+From mikej06 at mail.berlios.de  Fri Jun 25 20:59:39 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 25 Jun 2010 20:59:39 +0200
+Subject: [Griffith-svn] r1428 - in trunk: . lib/plugins/movie
+Message-ID: <201006251859.o5PIxdKt031362@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-25 20:59:26 +0200 (Fri, 25 Jun 2010)
+New Revision: 1428
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+ updated movie plugin KinoDe
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-06-07 21:14:14 UTC (rev 1427)
++++ trunk/ChangeLog	2010-06-25 18:59:26 UTC (rev 1428)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-06-25  Michael Jahn
++	* updated movie plugin KinoDe
++
+ 2010-06-07  Michael Jahn
+ 	* added Clubedevideo movie plugin
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2010-06-07 21:14:14 UTC (rev 1427)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2010-06-25 18:59:26 UTC (rev 1428)
+@@ -65,7 +65,7 @@
+         tmpdata = gutils.regextrim(self.page, '<div class="cover-area">', '</div>')
+         if tmpdata:
+             # video page
+-            tmpdata = re.search('(http[:][/][/][^/]+[/]flbilder[/][^"]+)', tmpdata)
++            tmpdata = re.search('(http[:][/][/][^/]+[/]flbilder[/][^"\']+)', tmpdata)
+             if tmpdata:
+                 self.image_url = tmpdata.group(1)
+         else:
+
+
+
+From mikej06 at mail.berlios.de  Fri Jun 25 21:20:38 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 25 Jun 2010 21:20:38 +0200
+Subject: [Griffith-svn] r1429 - in trunk: . lib lib/plugins/movie
+Message-ID: <201006251920.o5PJKcbn032466@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-25 21:20:14 +0200 (Fri, 25 Jun 2010)
+New Revision: 1429
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieHKMDB.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/test_movieplugins.py
+   trunk/winpackage.iss
+Log:
+added HKMDB movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-06-25 18:59:26 UTC (rev 1428)
++++ trunk/ChangeLog	2010-06-25 19:20:14 UTC (rev 1429)
+@@ -7,6 +7,7 @@
+ 
+ 2010-06-25  Michael Jahn
+ 	* updated movie plugin KinoDe
++	* added HKMDB movie plugin
+ 
+ 2010-06-07  Michael Jahn
+ 	* added Clubedevideo movie plugin
+
+Added: trunk/lib/plugins/movie/PluginMovieHKMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieHKMDB.py	2010-06-25 18:59:26 UTC (rev 1428)
++++ trunk/lib/plugins/movie/PluginMovieHKMDB.py	2010-06-25 19:20:14 UTC (rev 1429)
+@@ -0,0 +1,218 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2010 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = 'Hong Kong Movie DataBase'
++plugin_description  = 'HKMDB.COM'
++plugin_url          = 'www.hkmdb.com'
++plugin_language     = _('English')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = 'griffith-private at lists.berlios.de'
++plugin_version      = '1.0'
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.encode = 'big5'
++        self.movie_id = id
++        self.url = "http://www.hkmdb.com/db/movies/view.mhtml?display_set=eng&complete_credits=1&id=" + self.movie_id
++
++    def get_image(self):
++        self.image_url = '';
++
++    def get_o_title(self):
++        self.o_title = gutils.trim(self.page, '<font size="+2">', '</font>')
++
++    def get_title(self):
++        self.title = gutils.trim(self.page, '<font size="+2">', '</font>')
++
++    def get_director(self):
++        self.director = ''
++        tmp = gutils.trim(self.page, '>Director<', '</TABLE>')
++        elements = re.split('(href|HREF)="/db/people', tmp)
++        for element in elements:
++            element = gutils.clean(gutils.trim(element, '>', '<'))
++            if element:
++                self.director = self.director + element + ', '
++        if self.director:
++            self.director = self.director[:-2]
++
++    def get_plot(self):
++        self.plot = ''
++
++    def get_year(self):
++        self.year = gutils.trim(self.page, '<font size="+1">', '</font>')
++
++    def get_runtime(self):
++        self.runtime = 0
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, 'Genre:', '<')
++
++    def get_cast(self):
++        self.cast = ''
++        tmp = gutils.trim(self.page, '>Cast<', '</TABLE>')
++        elements = re.split('(href|HREF)="/db/people', tmp)
++        for element in elements:
++            actor = gutils.clean(gutils.trim(element, '>', '<'))
++            if actor:
++                role = gutils.clean(gutils.trim(element, '>...', '</TR>'))
++                if role:
++                    self.cast = self.cast + actor + _(' as ') + role + '\n'
++                else:
++                    self.cast = self.cast + actor + '\n'
++
++    def get_classification(self):
++        self.classification = ''
++
++    def get_studio(self):
++        self.studio = ''
++        tmp = gutils.regextrim(self.page, '>Production Company<', '(<B>|</TABLE>)')
++        elements = re.split('(href|HREF)="/db/companies', tmp)
++        for element in elements:
++            element = gutils.clean(gutils.trim(element, '>', '<'))
++            if element:
++                self.studio = self.studio + element + ', '
++        if self.studio:
++            self.studio = self.studio[:-2]
++
++    def get_o_site(self):
++        self.o_site = ""
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = ""
++
++    def get_country(self):
++        self.country = gutils.trim(self.page, 'Country:', '<')
++
++    def get_rating(self):
++        self.rating = 0
++
++    def get_notes(self):
++        self.notes = ""
++
++    def get_screenplay(self):
++        self.screenplay = ''
++        tmp = gutils.trim(self.page, '>Script<', '</TABLE>')
++        elements = re.split('(href|HREF)="/db/people', tmp)
++        for element in elements:
++            element = gutils.clean(gutils.trim(element, '>', '<'))
++            if element:
++                self.screenplay = self.screenplay + element + ', '
++        if self.screenplay:
++            self.screenplay = self.screenplay[:-2]
++
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search   = "http://www.hkmdb.com/db/search/simple_search_results.mhtml?display_set=eng&search_for=movies&search_string="
++        self.translated_url_search = "http://www.hkmdb.com/db/search/simple_search_results.mhtml?display_set=eng&search_for=movies&search_string="
++        self.encode = 'big5'
++        self.remove_accents = False
++
++    def search(self,parent_window):
++        if not self.open_search(parent_window):
++            return None
++        return self.page
++
++    def get_searches(self):
++        if string.find(self.page, '>Films<') < 0:
++            self.ids.append(gutils.regextrim(self.page, '="/db/movies/view[.]mhtml[?]id=', '([&"])'))
++            self.titles.append('')
++        else:
++            elements = string.split(self.page, '<a href="/db/movies/view.mhtml?id=')
++            elements[0] = ''
++            for element in elements:
++                if element <> '' and string.find(element, 'display_set=eng') > -1:
++                    id = gutils.before(gutils.before(element, '"'), '&')
++                    if id <> '':
++                        self.ids.append(id)
++                        self.titles.append(gutils.trim(element, '>', '</a>'))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky' : [ 2, 2 ]
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> dict { arribute -> value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '8997' : {
++            'title'             : 'Mar\'s Villa, The',
++            'o_title'           : 'Mar\'s Villa, The',
++            'director'          : 'Ting Chung (1)',
++            'plot'              : False,
++            'cast'              : 'John Liu Chung-Liang' + _(' as ') + 'Ma Tien Lang\n\
++Phillip Ko Fei' + _(' as ') + 'Fang Kang and his brother\n\
++Stephen Tung Wai\n\
++Suen Yuet\n\
++Wong Chi-Sang' + _(' as ') + 'Henchman\n\
++Ga Hoi\n\
++Tong Bo-Wan' + _(' as ') + 'Ma\'s wife\n\
++Peng Kong' + _(' as ') + 'Fei Lung\n\
++Wong Hoi (3)\n\
++Chen Chin-Hai' + _(' as ') + 'extra\n\
++Mau Ging-Shun' + _(' as ') + 'extra\n\
++Wong Kwok-Fai (2)\n\
++Peter Chang\n\
++Cheung Chung-Kwai\n\
++Lui Wan-Biu' + _(' as ') + 'extra\n\
++Hung Ji-Yue\n\
++Ho Szu-Yuan\n\
++Mark Lung Goon-Mo\n\
++Chan Jan (1)' + _(' as ') + 'extra',
++            'country'           : 'Taiwan',
++            'genre'             : 'Martial Arts',
++            'classification'    : False,
++            'studio'            : 'Great China Film Company H. K.',
++            'o_site'            : False,
++            'site'              : 'http://www.hkmdb.com/db/movies/view.mhtml?display_set=eng&complete_credits=1&id=8997',
++            'trailer'           : False,
++            'year'              : 1979,
++            'notes'             : False,
++            'runtime'           : 0,
++            'image'             : False,
++            'rating'            : False,
++            'screenplay'        : 'Wai San'
++        }
++    }
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieHKMDB.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-06-25 18:59:26 UTC (rev 1428)
++++ trunk/lib/test_movieplugins.py	2010-06-25 19:20:14 UTC (rev 1429)
+@@ -83,6 +83,7 @@
+         'PluginMovieFilmDb',
+         'PluginMovieFilmeVonAZ',
+         'PluginMovieFilmtipset',
++        'PluginMovieHKMDB',
+         'PluginMovieIMDB',
+         'PluginMovieIMDB-de',
+         'PluginMovieIMDB-es',
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-06-25 18:59:26 UTC (rev 1428)
++++ trunk/winpackage.iss	2010-06-25 19:20:14 UTC (rev 1429)
+@@ -5,9 +5,9 @@
+ AppName=Griffith
+ AppVerName=Griffith 0.11
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+-AppPublisherURL=http://griffith.cc/
+-AppSupportURL=http://griffith.cc/
+-AppUpdatesURL=http://griffith.cc/
++AppPublisherURL=http://www.griffith.cc/
++AppSupportURL=http://www.griffith.cc/
++AppUpdatesURL=http://www.griffith.cc/
+ DefaultDirName={pf}\Griffith
+ DefaultGroupName=Griffith
+ AllowNoIcons=true
+@@ -100,6 +100,7 @@
+ Source: dist\lib\plugins\movie\PluginMovieFilmeVonAZ.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\German\Filme_von_A_bis_Z
+ Source: dist\lib\plugins\movie\PluginMovieFilmtipset.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Swedish\Film_tip_set
+ Source: dist\lib\plugins\movie\PluginMovieFilmweb.py;       DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Polish\Filmweb
++Source: dist\lib\plugins\movie\PluginMovieHKMDB.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\HKMDB
+ Source: dist\lib\plugins\movie\PluginMovieIMDB.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\IMDB
+ Source: dist\lib\plugins\movie\PluginMovieIMDB-de.py;       DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\German\IMDBde
+ Source: dist\lib\plugins\movie\PluginMovieIMDB-es.py;       DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Spanish\IMDB_es
+@@ -122,10 +123,10 @@
+ [Icons]
+ Name: {group}\{cm:LaunchProgram,Griffith};    Filename: {app}\griffith.exe
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
+-Name: {group}\{cm:ProgramOnTheWeb,Griffith};  Filename: http://griffith.cc
++Name: {group}\{cm:ProgramOnTheWeb,Griffith};  Filename: http://www.griffith.cc
+ Name: {group}\Debug\Griffith Debug Start;     Filename: {app}\griffith.exe;         Parameters: --debug
+ Name: {group}\Debug\Griffith Log File;        Filename: %APPDATA%\Griffith\griffith.log
+-Name: {group}\Doc\Griffith Forum;             Filename: http://griffith.cc/forum/
++Name: {group}\Doc\Griffith Forum;             Filename: http://www.griffith.cc/forum/
+ Name: {group}\Doc\Griffith Wiki;              Filename: http://wiki.griffith.cc/
+ ; some information files opened by iexplore which should work on most installations
+ Name: {group}\Doc\INSTALL;     Filename: "{pf}\Internet Explorer\iexplore.exe"; Parameters: {app}\INSTALL;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
+@@ -161,6 +162,7 @@
+ Name: Movie_Import_Plugins\English\AllMovie;         Description: All Media Guide / www.allmovie.com; Types: full
+ Name: Movie_Import_Plugins\English\AnimeDB;          Description: AnimeDB / www.anidb.net; Types: full
+ Name: Movie_Import_Plugins\English\DVD_Empire;       Description: DVD Empire / www.dvdempire.com; Types: full
++Name: Movie_Import_Plugins\English\HKMDB;            Description: Hongkong Movie Database / www.hkmdb.com; Types: full
+ Name: Movie_Import_Plugins\English\Mediadis;         Description: Mediadis / www.mediadis.com; Types: full
+ Name: Movie_Import_Plugins\English\Moviefone;        Description: Moviefone / www.moviefone.com; Types: full
+ 
+
+
+
+From mikej06 at mail.berlios.de  Fri Jun 25 21:42:30 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 25 Jun 2010 21:42:30 +0200
+Subject: [Griffith-svn] r1430 - in trunk: . lib/plugins/movie
+Message-ID: <201006251942.o5PJgUUZ001153@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-25 21:42:09 +0200 (Fri, 25 Jun 2010)
+New Revision: 1430
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+[#596700] IMDB doesn't import original title correctly
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-06-25 19:20:14 UTC (rev 1429)
++++ trunk/ChangeLog	2010-06-25 19:42:09 UTC (rev 1430)
+@@ -8,6 +8,7 @@
+ 2010-06-25  Michael Jahn
+ 	* updated movie plugin KinoDe
+ 	* added HKMDB movie plugin
++	* [#596700] IMDB doesn't import original title correctly
+ 
+ 2010-06-07  Michael Jahn
+ 	* added Clubedevideo movie plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-06-25 19:20:14 UTC (rev 1429)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-06-25 19:42:09 UTC (rev 1430)
+@@ -50,13 +50,15 @@
+             self.image_url = gutils.trim(self.page[tmp:], 'src="', '"')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.regextrim(self.page, '<h1>', '([ ]|[&][#][0-9]+[;])<span')
+-        if self.o_title == '':
++        self.o_title = gutils.regextrim(self.page, 'class="title-extra">', '<')
++        if not self.o_title:
++            self.o_title = gutils.regextrim(self.page, '<h1>', '([ ]|[&][#][0-9]+[;])<span')
++        if not self.o_title:
+             self.o_title = re.sub('[(].*', '', gutils.trim(self.page, '<title>', '</title>'))
+ 
+     def get_title(self):    # same as get_o_title()
+         self.title = gutils.regextrim(self.page, '<h1>', '([ ]|[&][#][0-9]+[;])<span')
+-        if self.title == '':
++        if not self.title:
+             self.title = re.sub('[(].*', '', gutils.trim(self.page, '<title>', '</title>'))
+ 
+     def get_director(self):
+
+
+
+From mikej06 at mail.berlios.de  Wed Jun 30 22:13:42 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 30 Jun 2010 22:13:42 +0200
+Subject: [Griffith-svn] r1431 - trunk/lib/plugins/export
+Message-ID: <20100630201342.45F464809DC@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-06-30 22:13:42 +0200 (Wed, 30 Jun 2010)
+New Revision: 1431
+
+Modified:
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+workaround for a bug in reportlab
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2010-06-25 19:42:09 UTC (rev 1430)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2010-06-30 20:13:42 UTC (rev 1431)
+@@ -163,6 +163,9 @@
+                             image_filename = gutils.get_image_fname(movie.poster_md5, self.db, 'm')
+                         if image_filename:
+                             p = ParagraphAndImage(p, Image(image_filename, width = 30, height = 40), side = 'left')
++                            # wrap call needed because of a bug in reportlab flowables.py - ParagraphAndImage::split(self,availWidth, availHeight)
++                            # AttributeError: ParagraphAndImage instance has no attribute 'wI'
++                            p.wrap(30, 40)
+                     Story.append(p)
+                     if 'year' in pdf_elements and movie.year:
+                         paragraph_text = '<b>' + _('Year') + ': </b>' + saxutils.escape(str(movie.year))
+
+
+

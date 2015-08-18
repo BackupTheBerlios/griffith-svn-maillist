@@ -1,0 +1,363 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r558 - in trunk: . glade lib lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r558%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/plugins/imp&In-Reply-To=%3C200612160837.kBG8bMr7012406%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000086.html">
+   <LINK REL="Next"  HREF="000088.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r558 - in trunk: . glade lib lib/plugins/imp</H1>
+    <B>jessicak at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r558%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/plugins/imp&In-Reply-To=%3C200612160837.kBG8bMr7012406%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r558 - in trunk: . glade lib lib/plugins/imp">jessicak at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 16 09:37:22 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000086.html">[Griffith-svn] r557 - in trunk/lib: . plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000088.html">[Griffith-svn] r559 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#87">[ date ]</a>
+              <a href="thread.html#87">[ thread ]</a>
+              <a href="subject.html#87">[ subject ]</a>
+              <a href="author.html#87">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jessicak
+Date: 2006-12-16 09:37:21 +0100 (Sat, 16 Dec 2006)
+New Revision: 558
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/importcsv.glade
+   trunk/lib/add.py
+   trunk/lib/delete.py
+   trunk/lib/edit.py
+   trunk/lib/plugins/imp/CSV.py
+Log:
+* some error msg added when there are no movies in the db (u may change it to debug.show)
+* import csv plugin uses chardet <A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A> now
+  changed gtkentry to a gtkcombobox
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2006-12-16 01:37:23 UTC (rev 557)
++++ trunk/ChangeLog	2006-12-16 08:37:21 UTC (rev 558)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+ 
++2006-12-16 Jessica K. Parth &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&gt;
++	* added a warning when there are no movies in the database to ( print cover, fetch poster, change poster, edit movie, delete movie, clone movie )
++	* Import CSV Plugin updated (use chardet &quot;<A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A>&quot; to detect file format)
++
+ 2006-12-15 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Added &quot;N/A&quot; to some fields in &quot;technical information&quot; tab (NULL in database)
+ 	* Added some relations between windows
+
+Modified: trunk/glade/importcsv.glade
+===================================================================
+--- trunk/glade/importcsv.glade	2006-12-16 01:37:23 UTC (rev 557)
++++ trunk/glade/importcsv.glade	2006-12-16 08:37:21 UTC (rev 558)
+@@ -30,6 +30,7 @@
+ 
+       &lt;child internal-child=&quot;action_area&quot;&gt;
+ 	&lt;widget class=&quot;GtkHButtonBox&quot; id=&quot;dialog-action_area1&quot;&gt;
++	  &lt;property name=&quot;height_request&quot;&gt;1&lt;/property&gt;
+ 	  &lt;property name=&quot;layout_style&quot;&gt;GTK_BUTTONBOX_END&lt;/property&gt;
+ 	&lt;/widget&gt;
+ 	&lt;packing&gt;
+@@ -69,27 +70,6 @@
+ 		  &lt;property name=&quot;column_spacing&quot;&gt;8&lt;/property&gt;
+ 
+ 		  &lt;child&gt;
+-		    &lt;widget class=&quot;GtkEntry&quot; id=&quot;e_encoding&quot;&gt;
+-		      &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-		      &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+-		      &lt;property name=&quot;editable&quot;&gt;True&lt;/property&gt;
+-		      &lt;property name=&quot;visibility&quot;&gt;True&lt;/property&gt;
+-		      &lt;property name=&quot;max_length&quot;&gt;0&lt;/property&gt;
+-		      &lt;property name=&quot;text&quot;&gt;iso8859-15&lt;/property&gt;
+-		      &lt;property name=&quot;has_frame&quot;&gt;True&lt;/property&gt;
+-		      &lt;property name=&quot;invisible_char&quot;&gt;&#9679;&lt;/property&gt;
+-		      &lt;property name=&quot;activates_default&quot;&gt;False&lt;/property&gt;
+-		    &lt;/widget&gt;
+-		    &lt;packing&gt;
+-		      &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-		      &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-		      &lt;property name=&quot;top_attach&quot;&gt;0&lt;/property&gt;
+-		      &lt;property name=&quot;bottom_attach&quot;&gt;1&lt;/property&gt;
+-		      &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-		    &lt;/packing&gt;
+-		  &lt;/child&gt;
+-
+-		  &lt;child&gt;
+ 		    &lt;widget class=&quot;GtkLabel&quot; id=&quot;label12&quot;&gt;
+ 		      &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+ 		      &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Encoding&lt;/property&gt;
+@@ -343,6 +323,107 @@
+ 		      &lt;property name=&quot;y_options&quot;&gt;fill&lt;/property&gt;
+ 		    &lt;/packing&gt;
+ 		  &lt;/child&gt;
++
++		  &lt;child&gt;
++		    &lt;widget class=&quot;GtkComboBox&quot; id=&quot;e_encoding&quot;&gt;
++		      &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++		      &lt;property name=&quot;items&quot; translatable=&quot;yes&quot;&gt;ascii (English)
++big5 (Traditional Chinese)
++big5hkscs (Traditional Chinese)
++cp037 (English)
++cp424 (Hebrew)
++cp437 (English)
++cp500 (Western Europe)
++cp737 (Greek)
++cp775 (Baltic languages)
++cp850 (Western Europe)
++cp852 (Central and Eastern Europe)
++cp855 (Bulgarian, Byelorussian, Macedonian, Russian, Serbian)
++cp856 (Hebrew)
++cp857 (Turkish)
++cp860 (Portuguese)
++cp861 (Icelandic)
++cp862 (Hebrew)
++cp863 (Canadian)
++cp864 (Arabic)
++cp865 (Danish, Norwegian)
++cp866 (Russian)
++cp869 (Greek)
++cp874 (Thai)
++cp875 (Greek)
++cp932 (Japanese)
++cp949 (Korean)
++cp950 (Traditional Chinese)
++cp1006 (Urdu)
++cp1026 (Turkish)
++cp1140 (Western Europe)
++cp1250 (Central and Eastern Europe)
++cp1251 (Bulgarian, Byelorussian, Macedonian, Russian, Serbian)
++cp1252 (Western Europe)
++cp1253 (Greek)
++cp1254 (Turkish)
++cp1255 (Hebrew)
++cp1256 (Arabic)
++cp1257 (Baltic languages)
++cp1258 (Vietnamese)
++euc_jp (Japanese)
++euc_jis_2004 (Japanese)
++euc_jisx0213 (Japanese)
++euc_kr (Korean)
++gb2312 (Simplified Chinese)
++gbk (Unified Chinese)
++gb18030 (Unified Chinese)
++hz (Simplified Chinese)
++iso2022_jp (Japanese)
++iso2022_jp_1 (Japanese)
++iso2022_jp_2 (Japanese, Korean, Simplified Chinese, Western Europe, Greek)
++iso2022_jp_2004 (Japanese)
++iso2022_jp_3 (Japanese)
++iso2022_jp_ext (Japanese)
++iso2022_kr (Korean)
++latin_1 (West Europe)
++iso8859_2 (Central and Eastern Europe)
++iso8859_3 (Esperanto, Maltese)
++iso8859_4 (Baltic languagues)
++iso8859_5 (Bulgarian, Byelorussian, Macedonian, Russian, Serbian)
++iso8859_6 (Arabic)
++iso8859_7 (Greek)
++iso8859_8 (Hebrew)
++iso8859_9 (Turkish)
++iso8859_10 (Nordic languages)
++iso8859_13 (Baltic languages)
++iso8859_14 (Celtic languages)
++iso8859_15 (Western Europe)
++johab (Korean)
++koi8_r (Russian)
++koi8_u (Ukrainian)
++mac_cyrillic (Bulgarian, Byelorussian, Macedonian, Russian, Serbian)
++mac_greek (Greek)
++mac_iceland (Icelandic)
++mac_latin2 (Central and Eastern Europe)
++mac_roman (Western Europe)
++mac_turkish (Turkish)
++ptcp154 (Kazakh)
++shift_jis (Japanese)
++shift_jis_2004 (Japanese)
++shift_jisx0213 (Japanese)
++utf_16 (all languages)
++utf_16_be (all languages (BMP only))
++utf_16_le (all languages (BMP only))
++utf_7 (all languages)
++utf_8 (all languages)&lt;/property&gt;
++		      &lt;property name=&quot;add_tearoffs&quot;&gt;False&lt;/property&gt;
++		      &lt;property name=&quot;focus_on_click&quot;&gt;True&lt;/property&gt;
++		    &lt;/widget&gt;
++		    &lt;packing&gt;
++		      &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++		      &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++		      &lt;property name=&quot;top_attach&quot;&gt;0&lt;/property&gt;
++		      &lt;property name=&quot;bottom_attach&quot;&gt;1&lt;/property&gt;
++		      &lt;property name=&quot;x_options&quot;&gt;fill&lt;/property&gt;
++		      &lt;property name=&quot;y_options&quot;&gt;fill&lt;/property&gt;
++		    &lt;/packing&gt;
++		  &lt;/child&gt;
+ 		&lt;/widget&gt;
+ 		&lt;packing&gt;
+ 		  &lt;property name=&quot;tab_expand&quot;&gt;False&lt;/property&gt;
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2006-12-16 01:37:23 UTC (rev 557)
++++ trunk/lib/add.py	2006-12-16 08:37:21 UTC (rev 558)
+@@ -585,11 +585,13 @@
+ def clone_movie(self):
+ 	treeselection = self.widgets['treeview'].get_selection()
+ 	(tmp_model, tmp_iter) = treeselection.get_selected()
++	if tmp_iter == None:
++		return False
+ 	number = tmp_model.get_value(tmp_iter, 0)
+ 	movie = self.db.Movie.get_by(number=number)
+ 
+ 	if movie is None:
+-		return false
++		return False
+ 
+ 	next_number = gutils.find_next_available(self.db)
+ 	new_image = str(movie.image) + '_' + str(next_number)
+
+Modified: trunk/lib/delete.py
+===================================================================
+--- trunk/lib/delete.py	2006-12-16 01:37:23 UTC (rev 557)
++++ trunk/lib/delete.py	2006-12-16 08:37:21 UTC (rev 558)
+@@ -29,6 +29,10 @@
+ 	m_id = None
+ 	number, m_iter = self.get_maintree_selection()
+ 	movie = self.db.Movie.get_by(number=number)
++	if movie == None:
++		gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
++		return
++	
+ 	if int(movie.loaned)==1:
+ 		gutils.warning(self, msg=_(&quot;You can't delete movie while it is loaned.&quot;))
+ 		return False
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2006-12-16 01:37:23 UTC (rev 557)
++++ trunk/lib/edit.py	2006-12-16 08:37:21 UTC (rev 558)
+@@ -40,6 +40,9 @@
+ 	&quot;&quot;&quot;
+ 	picture = self.widgets['movie']['picture']
+ 	number = self.get_maintree_selection()[0]
++	if number == None:
++		gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
++		return
+ 	filename = gutils.file_chooser(_(&quot;Select image&quot;), action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK), name=&quot;&quot;, folder=self.locations['desktop'], picture=True)
+ 	if filename and filename[0]:
+ 		filename = filename[0]
+@@ -120,6 +123,9 @@
+ 	match = 0
+ 	self.debug.show(&quot;fetching poster from amazon&quot;)
+ 	movie = self.db.Movie.get_by(movie_id=self._movie_id)
++	if movie == None:
++		gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
++		return
+ 	current_poster = movie.image
+ 	amazon.setLicense(&quot;04GDDMMXX8X9CJ1B22G2&quot;)
+ 
+
+Modified: trunk/lib/plugins/imp/CSV.py
+===================================================================
+--- trunk/lib/plugins/imp/CSV.py	2006-12-16 01:37:23 UTC (rev 557)
++++ trunk/lib/plugins/imp/CSV.py	2006-12-16 08:37:21 UTC (rev 558)
+@@ -43,7 +43,7 @@
+ 	description	= _(&quot;Full CSV list import plugin&quot;)
+ 	author		= &quot;Jessica Katharina Parth&quot;
+ 	email		= &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&quot;
+-	version		= &quot;0.2&quot;
++	version		= &quot;0.3&quot;
+ 	file_filters	= '*.[cC][sS][vV]'
+ 	mime_types	= ('text/comma-separated-values', 'text/csv', 'application/csv',
+ 			'application/excel', 'application/vnd.ms-excel', 'application/vnd.msexcel')
+@@ -247,7 +247,8 @@
+ 		import csv, codecs, os
+ 		# get user values for converting/opening the csv-file
+ 		self.start_row = int(digits_only( self.gtk.get_widget('e_startrow').get_text() ))
+-		encoding = self.gtk.get_widget('e_encoding').get_text()
++		encoding = self.gtk.get_widget('e_encoding').get_active_text()
++		encoding = encoding[:string.find( encoding, ' ' )]
+ 		delimiter = self.gtk.get_widget('e_delimiter').get_text()
+ 		if delimiter == '':
+ 			delimiter = &quot;,&quot;
+@@ -296,7 +297,34 @@
+ 		if name is None or not os.path.isfile(name):
+ 			return False
+ 		self.__source_name = name
++		# auto-detect file-encoding (optional)
++		try:
++			from chardet.universaldetector import UniversalDetector
++			detector = UniversalDetector()
++			detector.reset()
++			lines = 0
++			for line in file(self.__source_name, 'rb'):
++				detector.feed(line)
++				lines += 1
++				if detector.done or lines == 50:
++					break
++			detector.close()
++			encoding = string.replace( string.lower( detector.result['encoding'] ), '-', '' )
++		except:
++			encoding = 'utf_8'
++		# remove - and _ for better detection
++		encoding = string.replace( encoding, '_', '' )
+ 		
++		model	= self.gtk.get_widget('e_encoding').get_model()
++		itempos	= 0
++		for item in model:
++			pos1 = string.find( string.replace( string.lower(str(item[0])), '_', '' ) , encoding )
++			if pos1 == 0:
++				break
++			itempos += 1
++		self.gtk.get_widget('e_encoding').set_active(itempos)
++		
++		# run dialog
+ 		response = self.gtk.get_widget('d_import').run()
+ 		if response == gtk.RESPONSE_OK:
+ 			return True
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000086.html">[Griffith-svn] r557 - in trunk/lib: . plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000088.html">[Griffith-svn] r559 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#87">[ date ]</a>
+              <a href="thread.html#87">[ thread ]</a>
+              <a href="subject.html#87">[ subject ]</a>
+              <a href="author.html#87">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

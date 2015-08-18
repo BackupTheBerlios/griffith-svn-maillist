@@ -1,0 +1,508 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r978 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r978%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200808021932.m72JWrLM011934%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000460.html">
+   <LINK REL="Next"  HREF="000462.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r978 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r978%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200808021932.m72JWrLM011934%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r978 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug  2 21:32:53 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000460.html">[Griffith-svn] r977 - in trunk: . lib lib/plugins/export	lib/plugins/imp lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000462.html">[Griffith-svn] r979 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#461">[ date ]</a>
+              <a href="thread.html#461">[ thread ]</a>
+              <a href="subject.html#461">[ subject ]</a>
+              <a href="author.html#461">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-08-02 21:32:52 +0200 (Sat, 02 Aug 2008)
+New Revision: 978
+
+Modified:
+   trunk/griffith
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/gconsole.py
+   trunk/lib/main_treeview.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+* new movies.poster_md5 column created
+* more {unicode,sa_sesion} related changes
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/griffith	2008-08-02 19:32:52 UTC (rev 978)
+@@ -32,7 +32,10 @@
+ if os.path.isdir(lib):
+     sys.path.insert(1, lib)
+ del lib
++
++# logging
+ import logging
++logging.basicConfig()
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ # check dependencies
+@@ -401,7 +404,7 @@
+ 
+     def add_volume(self, widget):
+         from update import update_volume_combo_ids
+-        name = self.widgets['add']['volume'].get_active_text()
++        name = self.widgets['add']['volume'].get_active_text().decode('utf-8')
+         vol = db.Volume()
+         vol.name = nae
+         if vol and vol.add_to_db():
+@@ -410,7 +413,7 @@
+ 
+     def add_collection(self, widget):
+         from update import update_collection_combo_ids
+-        name = self.widgets['add']['collection'].get_active_text()
++        name = self.widgets['add']['collection'].get_active_text().decode('utf-8')
+         col = db.Collection()
+         col.name = name
+         if col and col.add_to_db():
+@@ -436,7 +439,7 @@
+     def rename_volume(self, widget):
+         vol_id = self._selected_volume
+         if vol_id != 0:
+-            new_name = self.widgets['add']['volume'].get_active_text()
++            new_name = self.widgets['add']['volume'].get_active_text().decode('utf-8')
+             vol = self.db.session.query(db.Volume).filter_by(volume_id=vol_id).first()
+             if vol:
+                 vol.name=new_name
+@@ -446,7 +449,7 @@
+     def rename_collection(self, widget):
+         col_id = self.e_selected_collection
+         if col_id != 0:
+-            new_name = self.widgets['add']['collection'].get_active_text()
++            new_name = self.widgets['add']['collection'].get_active_text().decode('utf-8')
+             col = self.db.session.query(db.Collection).filter_by(collection_id=col_id).first()
+             if col is not None:
+                 col.name=new_name
+@@ -538,7 +541,7 @@
+     # preferences
+     def on_lang_add_clicked(self, widget):
+         lang = db.Lang()
+-        lang.name = self.widgets['preferences']['lang_name'].get_active_text()
++        lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
+         if lang and lang.add_to_db():
+             initialize.language_combos(self)
+ 
+@@ -561,7 +564,7 @@
+         if lang_id&gt;0:
+             lang = self.db.session.query(db.Lang).filter_by(lang_id=lang_id).first()
+             if lang is not None:
+-                lang.name = self.widgets['preferences']['lang_name'].get_active_text()
++                lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
+                 if lang.update_in_db():
+                     initialize.language_combos(self)
+ 
+@@ -574,7 +577,7 @@
+     # tags -------------------------------------------------------------{{{
+     def on_tag_add_clicked(self, widget):
+         tag = db.Tag()
+-        tag.name = self.widgets['preferences']['tag_name'].get_active_text()
++        tag.name = self.widgets['preferences']['tag_name'].get_active_text().decode('utf-8')
+         self.db.session.add(tag)
+         try:
+             self.db.session.commit()
+@@ -616,7 +619,7 @@
+         tag_id = self.tags_ids[active]
+         tag = self.db.session.query(db.Tag).filter_by(tag_id=tag_id).first()
+         if tag:
+-            tag.name = self.widgets['preferences']['tag_name'].get_active_text()
++            tag.name = self.widgets['preferences']['tag_name'].get_active_text().decode('utf-8')
+             try:
+                 self.db.session.commit()
+             except Exception, e:
+@@ -637,7 +640,7 @@
+     # audio codecs ------------------------------------------------------{{{
+     def on_acodec_add_clicked(self, widget):
+         acodec = self.db.ACodec()
+-        acodec.name = self.widgets['preferences']['acodec_name'].get_active_text()
++        acodec.name = self.widgets['preferences']['acodec_name'].get_active_text().decode('utf-8')
+         if acodec and acodec.add_to_db():
+             initialize.acodec_combos(self)
+ 
+@@ -659,7 +662,7 @@
+         acodec_id = self.acodecs_ids[active]
+         acodec = self.db.session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+         if acodec is not None:
+-            acodec.name = self.widgets['preferences']['acodec_name'].get_active_text()
++            acodec.name = self.widgets['preferences']['acodec_name'].get_active_text().decode('utf-8')
+             if acodec.update_in_db():
+                 initialize.acodec_combos(self)
+ 
+@@ -672,7 +675,7 @@
+     # audio channels ----------------------------------------------------{{{
+     def on_achannel_add_clicked(self, widget):
+         achannel = self.db.AChannel()
+-        achannel.name = self.widgets['preferences']['achannel_name'].get_active_text()
++        achannel.name = self.widgets['preferences']['achannel_name'].get_active_text().decode('utf-8')
+         if achannel and achannel.add_to_db():
+             initialize.achannel_combos(self)
+ 
+@@ -694,7 +697,7 @@
+         achannel_id = self.achannels_ids[active]
+         achannel = self.db.session.query(db.AChannel).filter_by(achannel_id=achannel_id).first()
+         if achannel is not None:
+-            achannel.name = self.widgets['preferences']['achannel_name'].get_active_text()
++            achannel.name = self.widgets['preferences']['achannel_name'].get_active_text().decode('utf-8')
+             if achannel.update_in_db():
+                 initialize.achannel_combos(self)
+ 
+@@ -707,7 +710,7 @@
+     # subformats -------------------------------------------------------------{{{
+     def on_subformat_add_clicked(self, widget):
+         subformat = self.db.SubFormat()
+-        subformat.name = self.widgets['preferences']['subformat_name'].get_active_text()
++        subformat.name = self.widgets['preferences']['subformat_name'].get_active_text().decode('utf-8')
+         if subformat and subformat.add_to_db():
+             initialize.subformat_combos(self)
+ 
+@@ -729,7 +732,7 @@
+         subformat_id = self.subformats_ids[active]
+         subformat = self.db.session.query(db.SubFormat).filter_by(subformat_id=subformat_id).first()
+         if subformat is not None:
+-            subformat.name = self.widgets['preferences']['subformat_name'].get_active_text()
++            subformat.name = self.widgets['preferences']['subformat_name'].get_active_text().decode('utf-8')
+             if subformat.update_in_db():
+                 initialize.subformat_combos(self)
+ 
+@@ -742,7 +745,7 @@
+     # media ------------------------------------------------------------{{{
+     def on_medium_add_clicked(self, widget):
+         medium = self.db.Medium()
+-        medium.name = self.widgets['preferences']['medium_name'].get_active_text()
++        medium.name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
+         if medium and medium.add_to_db():
+             initialize.media_combos(self)
+ 
+@@ -764,7 +767,7 @@
+         medium_id = self.media_ids[active]
+         medium = self.db.session.query(db.Medium).filter_by(medium_id=medium_id).first()
+         if medium is not None:
+-            medium.name = self.widgets['preferences']['medium_name'].get_active_text()
++            medium.name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
+             if medium.update_in_db():
+                 initialize.media_combos(self)
+ 
+@@ -777,7 +780,7 @@
+     # vcodecs -------------------------------------------------------------{{{
+     def on_vcodec_add_clicked(self, widget):
+         vcodec = self.db.VCodec()
+-        vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text()
++        vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
+         if vcodec and vcodec.add_to_db():
+             initialize.vcodec_combos(self)
+ 
+@@ -799,7 +802,7 @@
+         vcodec_id = self.vcodecs_ids[active]
+         vcodec = self.db.session.query(db.VCodec).filter_by(vcodec_id=vcodec_id).first()
+         if vcodec is not None:
+-            vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text()
++            vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
+             if vcodec.update_in_db():
+                 initialize.vcodec_combos(self)
+ 
+@@ -937,9 +940,11 @@
+     # statusbar -----------------------------------------------------------
+ 
+     def count_statusbar(self):
++        loaned = not_seen = 0
+         allmovies = self.db.session.query(db.Movie).count()
+-        loaned = self.db.session.query(db.Movie).filter_by(loaned=True).count()
+-        not_seen = self.db.session.query(db.Movie).filter_by(seen=False).count()
++        if allmovies &gt; 0:
++            loaned = self.db.session.query(db.Movie).filter_by(loaned=True).count()
++            not_seen = self.db.session.query(db.Movie).filter_by(seen=False).count()
+         self.update_statusbar(str(allmovies) + ' (' + str(self.total) + ')' + _(' movie(s) in collection. ')
+             + str(loaned) + _(' movie(s) loaned. ')
+             + _('You haven\'t seen ')+&quot;%s&quot;%str(not_seen)+ _(&quot; movie(s)&quot;)
+@@ -952,7 +957,7 @@
+     # quick filter operations ---------------------------------------------
+ 
+     def on_filter_criteria_changed(self, *args):
+-        selected_criteria = self.widgets['filter']['criteria'].get_active_text()
++        selected_criteria = self.widgets['filter']['criteria'].get_active_text().decode('utf-8')
+         self.config.set('criteria', selected_criteria, section='mainlist')
+         quick_filter.change_filter(self)
+ 
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/lib/db.py	2008-08-02 19:32:52 UTC (rev 978)
+@@ -178,7 +178,8 @@
+     Column('trailer', Unicode(256)),
+     Column('country', Unicode(128)),
+     Column('genre', Unicode(128)),
+-    Column('image', Unicode(128)), # TODO: Unicode(32) is enough for MD5, use after transition
++    Column('image', Unicode(128)), # XXX: deprecated
++    Column('poster_md5', Unicode(32), ForeignKey('posters.md5sum')),
+     Column('studio', Unicode(128)),
+     Column('classification', Unicode(128)),
+     Column('cast', TEXT),
+@@ -257,7 +258,7 @@
+     Column('value', Unicode(128), nullable=False))
+ 
+ posters_table = Table('posters', metadata,
+-    Column('md5sum', Unicode(32), ForeignKey('movies.image'), primary_key=True),
++    Column('md5sum', Unicode(32), primary_key=True),
+     Column('data', BLOB, nullable=False))
+ #}}}
+ 
+@@ -274,21 +275,19 @@
+ mapper(Person, people_table, properties = {
+     'loans'    : relation(Loan, backref='person', cascade='all, delete-orphan')})
+ mapper(MovieLang, movie_lang_table, primary_key=[movie_lang_table.c.ml_id], properties = {
+-    'movie'    : relation(Movie, lazy=False),
+-    'language' : relation(Lang, lazy=False),
++    'movie'    : relation(Movie),
++    'language' : relation(Lang),
+     'achannel' : relation(AChannel),
+     'acodec'   : relation(ACodec),
+     'subformat': relation(SubFormat)})
+ mapper(ACodec, acodecs_table, properties={
+-    'movielangs': relation(MovieLang, lazy=False)})
++    'movielangs': relation(MovieLang)})
+ mapper(AChannel, achannels_table, properties={
+-    'movielangs': relation(MovieLang, lazy=False)})
++    'movielangs': relation(MovieLang)})
+ mapper(SubFormat, subformats_table, properties={
+-    'movielangs': relation(MovieLang, lazy=False)})
++    'movielangs': relation(MovieLang)})
+ mapper(Lang, languages_table, properties={
+-    'movielangs': relation(MovieLang, lazy=False)})
+-mapper(Poster, posters_table, properties={
+-    'movies': relation(Movie)})
++    'movielangs': relation(MovieLang)})
+ mapper(MovieTag, movie_tag_table)
+ mapper(Tag, tags_table, properties={'movietags': relation(MovieTag, backref='tag')})
+ mapper(Loan, loans_table, properties = {
+@@ -301,6 +300,8 @@
+                            primaryjoin=movies_table.c.movie_id==movie_tag_table.c.movie_id,
+                            secondaryjoin=movie_tag_table.c.tag_id==tags_table.c.tag_id),
+     'languages' : relation(MovieLang, cascade='all, delete-orphan')})
++mapper(Poster, posters_table, properties={
++    'movies': relation(Movie)})
+ #}}}
+ 
+ 
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/lib/dbupgrade.py	2008-08-02 19:32:52 UTC (rev 978)
+@@ -113,13 +113,26 @@
+         self.session.add(db_version)
+         self.session.commit()
+     if version == 2:    # fix changes between v2 and v3
++        e_type = self.session.bind.engine.dialect.name
+         version += 1
+         log.info(&quot;Upgrading database to version %d...&quot; % version)
++
++        # create new table
+         db.posters_table.create(checkfirst=True, bind=b)
++
++        # add new column
++        query = &quot;ALTER TABLE movies ADD COLUMN poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum)&quot; # SQLite, PostgreSQL
++        if e_type == 'mysql':
++            pass
++        elif e_type == 'mssql':
++            pass
++        self.session.bind.execute(query)
++
+         db_version = self.session.query(db.Configuration).filter_by(param='version').one()
+         db_version.value = version
+         self.session.add(db_version)
+         self.session.commit()
++    return True
+ 
+ 
+ # ---------------------------------------------------
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/lib/gconsole.py	2008-08-02 19:32:52 UTC (rev 978)
+@@ -51,6 +51,9 @@
+                 sys.exit()
+             elif o in ('-D', '--debug'):
+                 log.setLevel(logging.DEBUG)
++            elif o == '--sqlecho':
++                sa_log = logging.getLogger(&quot;sqlalchemy&quot;)
++                sa_log.setLevel(logging.INFO)
+             elif o == '--home':
+                 self._tmp_home = a # see initialize.locations()
+             elif o == '--config':
+@@ -77,8 +80,6 @@
+             if o in ('-C', '--clean'):
+                 gutils.clean_posters_dir(self)
+                 sys.exit()
+-            elif o == '--sqlecho':
+-                self.db.metadata.engine.echo = True
+             elif o in ('-s', '--sort'):
+                 sort = a
+             elif o in ('-o', '--original_title'):
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/lib/main_treeview.py	2008-08-02 19:32:52 UTC (rev 978)
+@@ -29,6 +29,8 @@
+ import os
+ import gtk
+ import db
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def treeview_clicked(self):
+     if self.initialized is False:
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/lib/preferences.py	2008-08-02 19:32:52 UTC (rev 978)
+@@ -29,6 +29,7 @@
+ log = logging.getLogger(&quot;Griffith&quot;)
+ import gutils
+ import initialize
++import db
+ 
+ try:
+     import gtkspell
+@@ -426,28 +427,25 @@
+             old['passwd'] != c.get('passwd', section='database'))) or \
+             old['name'] != c.get('name', section='database'):
+         log.info('DATABASE: connecting to new db server...')
++        import sql
++        from sqlalchemy.exceptions import InvalidRequestError
++        from initialize            import dictionaries, people_treeview, location_posters
+         
+         # new database connection
+-        import sql
+         self.initialized = False
+-        self.db.metadata.clear()
+-        from sqlalchemy.orm import clear_mappers
+-        from sqlalchemy.exceptions import InvalidRequestError
+-        clear_mappers()
+         try:
+             self.db = sql.GriffithSQL(c, self.locations['home'])
+         except InvalidRequestError, e:
+-            log.info(str(e))
++            log.error(str(e))
+             c.set('type', 'sqlite', section='database')
+             w['db_type'].set_active(0)
+             self.db = sql.GriffithSQL(c, self.locations['home'])
+ 
+-        log.info(&quot;New database Engine: %s&quot; % self.db.metadata.engine.name)
++        log.info(&quot;New database Engine: %s&quot; % self.db.session.bind.engine.name)
+         
+         # initialize new database
+-        self.total = int(self.db.Movie.query.count())
++        self.total = int(self.db.session.query(db.Movie).count())
+         self.count_statusbar()
+-        from initialize    import dictionaries, people_treeview, location_posters
+         c['posters'] = None # force update
+         location_posters(self.locations, self.config)
+         dictionaries(self)
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-08-02 09:20:49 UTC (rev 977)
++++ trunk/lib/sql.py	2008-08-02 19:32:52 UTC (rev 978)
+@@ -23,20 +23,19 @@
+ # GNU General Public License, version 2 or later
+ 
+ # imports
+-#from sqlalchemy            import *
++from sqlalchemy            import create_engine
+ from sqlalchemy.orm        import sessionmaker
+-from sqlalchemy.exceptions import SQLError
++from sqlalchemy.exceptions import SQLError, OperationalError
++import os.path
+ import gettext
+ gettext.install('griffith', unicode=1)
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+-import os.path
+ import gutils
++import db # ORM data (SQLAlchemy stuff)
+ 
+-from db import * # ORM data (SQLAlchemy stuff)
+-
+ class GriffithSQL:
+-    version = 3    # database format version, incrase after any changes in data structures
++    version = 3    # database format version, increase after changing data structures
+ 
+     def __init__(self, config, griffith_dir):
+         #mapper = Session.mapper
+@@ -123,11 +122,15 @@
+         #}}}
+         
+         # check if database needs an upgrade
++        db.metadata.create_all(engine)
+         try:
+-            v = self.session.query(Configuration).filter_by(param=u'version').one()    # returns None if table exists &amp;&amp; param ISNULL
+-        except SQLError, e:    # table doesn't exist
+-            log.info(&quot;DB version: %s&quot; % e)
++            v = self.session.query(db.Configuration).filter_by(param=u'version').first()    # returns None if table exists &amp;&amp; param ISNULL
++        except OperationalError, e:
++			log.info(str(e))
+             v = 0
++        except Exception, e:
++            log.error(str(e))
++            v = 0
+ 
+         if v is not None and v&gt;1:
+             v = int(v.value)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000460.html">[Griffith-svn] r977 - in trunk: . lib lib/plugins/export	lib/plugins/imp lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000462.html">[Griffith-svn] r979 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#461">[ date ]</a>
+              <a href="thread.html#461">[ thread ]</a>
+              <a href="subject.html#461">[ subject ]</a>
+              <a href="author.html#461">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1268 - in trunk: . lib lib/db
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1268%20-%20in%20trunk%3A%20.%20lib%20lib/db&In-Reply-To=%3C200907131806.n6DI6F4a003872%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000735.html">
+   <LINK REL="Next"  HREF="000737.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1268 - in trunk: . lib lib/db</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1268%20-%20in%20trunk%3A%20.%20lib%20lib/db&In-Reply-To=%3C200907131806.n6DI6F4a003872%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1268 - in trunk: . lib lib/db">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul 13 20:06:15 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000735.html">[Griffith-svn] r1266 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000737.html">[Griffith-svn] r1269 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#736">[ date ]</a>
+              <a href="thread.html#736">[ thread ]</a>
+              <a href="subject.html#736">[ subject ]</a>
+              <a href="author.html#736">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-13 20:06:14 +0200 (Mon, 13 Jul 2009)
+New Revision: 1268
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db/__init__.py
+   trunk/lib/db/tables.py
+   trunk/lib/version.py
+Log:
+* Version changed to 0.10-rc1+svn
+* Filtering Volumes/Collections by loaned flag fixed
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-12 21:50:30 UTC (rev 1267)
++++ trunk/ChangeLog	2009-07-13 18:06:14 UTC (rev 1268)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-07-13  Piotr O&#380;arowski
++	* Version changed to 0.10-rc1+svn
++	* Filtering Volumes/Collections by loaned flag fixed
++
+ ---- 0.10-rc1 ----
+ 
+ 2009-07-12  Piotr O&#380;arowski
+
+Modified: trunk/lib/db/__init__.py
+===================================================================
+--- trunk/lib/db/__init__.py	2009-07-12 21:50:30 UTC (rev 1267)
++++ trunk/lib/db/__init__.py	2009-07-13 18:06:14 UTC (rev 1268)
+@@ -23,7 +23,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ from sqlalchemy import MetaData, func, select, and_
+-from sqlalchemy.orm import mapper, relation, deferred, column_property
++from sqlalchemy.orm import mapper, relation, deferred, column_property, synonym
+ 
+ metadata = MetaData()
+ import tables # *after* metadata initialization
+@@ -32,8 +32,10 @@
+ 
+ mapper(Configuration, tables.configuration)
+ mapper(Volume, tables.volumes, order_by=tables.volumes.c.name, properties={
++    'loaned': synonym('_loaned', map_column=True),
+     'movies': relation(Movie, backref='volume')})
+ mapper(Collection, tables.collections, order_by=tables.collections.c.name, properties={
++    'loaned': synonym('_loaned', map_column=True),
+     'movies': relation(Movie, backref='collection')})
+ mapper(Medium, tables.media, properties={
+     'movies': relation(Movie, backref='medium')})
+
+Modified: trunk/lib/db/tables.py
+===================================================================
+--- trunk/lib/db/tables.py	2009-07-12 21:50:30 UTC (rev 1267)
++++ trunk/lib/db/tables.py	2009-07-13 18:06:14 UTC (rev 1268)
+@@ -33,12 +33,12 @@
+ volumes = Table('volumes', metadata,
+     Column('volume_id', Integer, primary_key=True),
+     Column('name', Unicode(64), nullable=False, unique=True),
+-    Column('loaned', Boolean, nullable=False, default=False, key='_loaned'))
++    Column('loaned', Boolean, nullable=False, default=False))
+ 
+ collections = Table('collections', metadata,
+     Column('collection_id', Integer, primary_key=True),
+     Column('name', Unicode(64), nullable=False, unique=True),
+-    Column('loaned', Boolean, nullable=False, default=False, key='_loaned'))
++    Column('loaned', Boolean, nullable=False, default=False))
+ 
+ media = Table('media', metadata,
+     Column('medium_id', Integer, primary_key=True),
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2009-07-12 21:50:30 UTC (rev 1267)
++++ trunk/lib/version.py	2009-07-13 18:06:14 UTC (rev 1268)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname        = &quot;Griffith&quot;
+-pversion     = &quot;0.10-rc1&quot;
++pversion     = &quot;0.10-rc1+svn&quot;
+ pauthor      = &quot;Vasco Nunes, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&gt;&quot;
+ pyear        = &quot;2005-2009&quot;
+ pwebsite     = &quot;<A HREF="http://www.griffith.cc/">http://www.griffith.cc/</A>&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000735.html">[Griffith-svn] r1266 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000737.html">[Griffith-svn] r1269 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#736">[ date ]</a>
+              <a href="thread.html#736">[ thread ]</a>
+              <a href="subject.html#736">[ subject ]</a>
+              <a href="author.html#736">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

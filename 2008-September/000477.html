@@ -1,0 +1,505 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r997 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r997%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200809122201.m8CM1jFS027514%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000476.html">
+   <LINK REL="Next"  HREF="000478.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r997 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r997%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200809122201.m8CM1jFS027514%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r997 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep 13 00:01:45 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000476.html">[Griffith-svn] r996 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000478.html">[Griffith-svn] r998 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#477">[ date ]</a>
+              <a href="thread.html#477">[ thread ]</a>
+              <a href="subject.html#477">[ subject ]</a>
+              <a href="author.html#477">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-09-13 00:01:40 +0200 (Sat, 13 Sep 2008)
+New Revision: 997
+
+Modified:
+   trunk/ChangeLog
+   trunk/README
+   trunk/griffith
+   trunk/lib/db.py
+   trunk/lib/gutils.py
+   trunk/lib/people.py
+Log:
+* Validate loan contact's email address
+* Python required version bumped to 2.4 (it was required for a while aready)
+* Use SQLAlchemy's validate decorator (minimum required SA version bumped to 0.5rc1)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-09-09 22:00:48 UTC (rev 996)
++++ trunk/ChangeLog	2008-09-12 22:01:40 UTC (rev 997)
+@@ -4,6 +4,11 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-09-12  Piotr O&#380;arowski
++	* Validate loan contact's email address
++	* Python required version bumped to 2.4 (it was required for a while aready)
++	* Use SQLAlchemy's validate decorator (minimum required SA version bumped to 0.5rc1)
++
+ 2008-09-09  Piotr O&#380;arowski
+ 	* Add aspect ratio, cameraman and screenplay to the database
+ 
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2008-09-09 22:00:48 UTC (rev 996)
++++ trunk/README	2008-09-12 22:01:40 UTC (rev 997)
+@@ -29,13 +29,12 @@
+ 
+   Name			Minimum version		URL						NOTE
+   ----			---------------		---						----
+-  * Python		2.3 or higher		<A HREF="http://www.python.org/">http://www.python.org/</A>
++  * Python		2.4 or higher		<A HREF="http://www.python.org/">http://www.python.org/</A>
+   * GTK+		tested on 2.6.4		<A HREF="http://www.gtk.org/">http://www.gtk.org/</A>
+   * PyGTK (with glade2)	tested on 2.6.1		<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>
+   * SQLAlchemy		0.5			<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>
+   * pysqlite2		2			<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>		Python 2.5's sqlite3 module will be used if available
+   * PIL						<A HREF="http://www.pythonware.com/products/pil/">http://www.pythonware.com/products/pil/</A>
+-  * PyXML					<A HREF="http://pyxml.sf.net/">http://pyxml.sf.net/</A>
+   * ReportLab		1.19			<A HREF="http://www.reportlab.org">http://www.reportlab.org</A>
+ 
+ Other (optional) dependencies:
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-09-09 22:00:48 UTC (rev 996)
++++ trunk/griffith	2008-09-12 22:01:40 UTC (rev 997)
+@@ -52,7 +52,7 @@
+         if i.has_key('module_req'):
+             print &quot;\t:: required version: %(module_req)s&quot; % i,
+             if i['version'] is not False and i['version'][0] == '-':
+-                print &quot;\t:: detected: %(version)s&quot; % i
++                print &quot;\t:: detected: %s&quot; % i['version'][1:]
+         print &quot;\n&quot;,
+     sys.exit(1)
+ del missing
+@@ -107,7 +107,7 @@
+         gconsole.check_args_with_db(self)
+ 
+         gtk.window_set_auto_startup_notification(True)
+-        self.Image = gtk.Image()
++        #self.Image = gtk.Image()
+         self.filter_l = False
+         initialize.gui(self)
+         initialize.toolbar(self)
+@@ -1203,7 +1203,7 @@
+                 self.total = 0
+                 self.count_statusbar()
+                 self.treemodel.clear()
+-                from initialize    import dictionaries, people_treeview
++                from initialize import dictionaries, people_treeview
+                 dictionaries(self)
+                 people_treeview(self)
+ 
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-09-09 22:00:48 UTC (rev 996)
++++ trunk/lib/db.py	2008-09-12 22:01:40 UTC (rev 997)
+@@ -22,11 +22,15 @@
+ # GNU General Public License, version 2 or later
+ 
+ # imports
++import gettext
++gettext.install('griffith', unicode=1)
+ from sqlalchemy     import *
+-from sqlalchemy.orm import mapper, relation, sessionmaker
++from sqlalchemy.orm import mapper, relation, sessionmaker, validates
++import re
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++EMAIL_PATTERN = re.compile('^[a-z0-9]+[.a-z0-9_+-]*@[a-z0-9_-]+(\.[a-z0-9_-]+)+$', re.IGNORECASE)
+ metadata = MetaData()
+ 
+ class DBTable(object):#{{{
+@@ -37,24 +41,15 @@
+             else:
+                 log.warn(&quot;%s.%s not set&quot; % (self.__class__.__name__, i))
+     def __repr__(self):
+-        return &quot;&lt;%s:%s&gt;&quot; % (self.__class__.__name__, self.name)
+-    def add_to_db(self):
+-        if self.name is None or len(self.name)==0:
+-            log.info(&quot;%s: name can't be empty&quot; % self.__class__.__name__)
+-            return False
+-        # check if item already exists
+-#        if self.query.filter_by(name=self.name).first() is not None:
+-#            log.info(&quot;%s: '%s' already exists&quot; % (self.__class__.__name__, self.name))
+-#            return False
+-        log.info(&quot;%s: adding '%s' to database...&quot; % (self.__class__.__name__, self.name))
+-        self.commit()
+-        try:
+-            self.flush()
+-        except exceptions.SQLError, e:
+-            log.error(&quot;%s: add_to_db: %s&quot; % (self.__class__.__name__, e))
+-            return False
+-        self.refresh()
+-        return True
++        return &quot;&lt;%s:%s&gt;&quot; % (self.__class__.__name__, self.name.encode('utf-8'))
++
++    @validates('name')
++    def validate_name(self, key, name):
++        if not name or not name.strip():
++            log.warning(&quot;%s: empty name (%s)&quot; % (self.__class__.__name__, name))
++            raise ValueError(_(&quot;Name cannot be empty&quot;))
++        return name.strip()
++
+     def remove_from_db(self):
+         dbtable_id = self.__dict__[self.__class__.__name__.lower() + '_id']
+         if dbtable_id&lt;1:
+@@ -82,9 +77,6 @@
+         if dbtable_id&lt;1:
+             log.info(&quot;%s: none selected =&gt; none updated&quot; % self.__class__.__name__)
+             return False
+-        if self.name is None or len(self.name)==0:
+-            log.info(&quot;%s: name can't be empty&quot; % self.__class__.__name__)
+-            return False
+         tmp = self.query.filter_by(name=self.name).first()
+         if tmp is not None and tmp is not self:
+             gutils.warning(self, msg=_(&quot;This name is already in use!&quot;))
+@@ -110,7 +102,12 @@
+ class Medium(DBTable):
+     pass
+ class Person(DBTable):
+-    pass
++    @validates('email')
++    def validate_email(self, key, address):
++        if not EMAIL_PATTERN.match(address):
++            log.warning(&quot;%s: email address is not valid (%s)&quot; % (self.__class__.__name__, address))
++            raise ValueError(_(&quot;E-mail address is not valid&quot;))
++        return address
+ class Ratio(DBTable):
+     pass
+ class SubFormat(DBTable):
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-09-09 22:00:48 UTC (rev 996)
++++ trunk/lib/gutils.py	2008-09-12 22:01:40 UTC (rev 997)
+@@ -25,6 +25,7 @@
+ gettext.install('griffith', unicode=1)
+ import string
+ import os
++import sys
+ try:
+     import gtk
+     import gobject
+@@ -362,21 +363,34 @@
+ 
+ def get_dependencies():
+     depend = []
++
++    # Python version
++    if sys.version_info[:2] &lt; (2, 4):
++        depend.append({'module': 'python',
++            'version'    : '-'+'.'.join(map(str,sys.version_info)),
++            'module_req' : '2.4',
++            'url'        : '<A HREF="http://www.python.org/">http://www.python.org/</A>',
++            'debian'     : 'python',
++            'debian_req' : '2.4'
++            # TODO: 'fedora', 'suse', etc.
++        })
++
+     try:
+         import gtk
+-        version    = '.'.join([str(i) for i in gtk.pygtk_version])
++        version = '.'.join([str(i) for i in gtk.pygtk_version])
+         if gtk.pygtk_version &lt;= (2, 6, 0):
+             version = '-%s' % version
+     except:
+         version = False
+     depend.append({'module': 'gtk',
+         'version'    : version,
+-        'module_req'    : '2.6',
++        'module_req' : '2.6',
+         'url'        : '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
+-        'debian'    : 'python-gtk2',
+-        'debian_req'    : '2.8.6-1'
++        'debian'     : 'python-gtk2',
++        'debian_req' : '2.8.6-1'
+         # TODO: 'fedora', 'suse', etc.
+     })
++
+     try:
+         import gtk.glade
+         # (version == gtk.pygtk_version)
+@@ -384,22 +398,25 @@
+         version = False
+     depend.append({'module': 'gtk.glade',
+         'version'    : version,
+-        'module_req'    : '2.6',
++        'module_req' : '2.6',
+         'url'        : '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
+-        'debian'    : 'python-glade2',
+-        'debian_req'    : '2.8.6-1'
++        'debian'     : 'python-glade2',
++        'debian_req' : '2.8.6-1'
+     })
+     try:
+         import sqlalchemy
+-        version = True
++        if map(int, sqlalchemy.__version__.split('.')[:2]) &lt; [0, 5]:
++            version = False
++        else:
++            version = True
+     except:
+         version = False
+     depend.append({'module': 'sqlalchemy',
+         'version'    : version,
+-        'module_req'    : '0.4',
++        'module_req' : '0.5rc1',
+         'url'        : '<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>',
+-        'debian'    : 'python-sqlalchemy',
+-        'debian_req'    : '0.4.0-1'
++        'debian'     : 'python-sqlalchemy',
++        'debian_req' : '0.5~rc1'
+     })
+     try:
+         import sqlite3
+@@ -415,15 +432,15 @@
+         depend.append({'module': 'pysqlite2',
+             'version'    : version,
+             'url'        : '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
+-            'debian'    : 'python-pysqlite2',
+-            'debian_req'    : '2.3.0-1'
++            'debian'     : 'python-pysqlite2',
++            'debian_req' : '2.3.0-1'
+         })
+     else:
+         depend.append({'module': 'sqlite3',
+             'version'    : version,
+             'url'        : '<A HREF="http://www.python.org">http://www.python.org</A>',
+-            'debian'    : 'python',
+-            'debian_req'    : '2.5'
++            'debian'     : 'python',
++            'debian_req' : '2.5'
+         })
+     try:
+         import reportlab
+@@ -433,8 +450,8 @@
+     depend.append({'module': 'reportlab',
+         'version'    : version,
+         'url'        : '<A HREF="http://www.reportlab.org/">http://www.reportlab.org/</A>',
+-        'debian'    : 'python-reportlab',
+-        'debian_req'    : '1.20debian-6'
++        'debian'     : 'python-reportlab',
++        'debian_req' : '1.20debian-6'
+     })
+     try:
+         import PIL
+@@ -444,19 +461,9 @@
+     depend.append({'module': 'PIL',
+         'version'    : version,
+         'url'        : '<A HREF="http://www.pythonware.com/products/pil/">http://www.pythonware.com/products/pil/</A>',
+-        'debian'    : 'python-imaging',
+-        'debian_req'    : '1.1.5-6'
++        'debian'     : 'python-imaging',
++        'debian_req' : '1.1.5-6'
+     })
+-    try:
+-        import xml
+-        version = xml.__version__
+-    except:
+-        version = False
+-    depend.append({'module': 'xml',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://pyxml.sf.net/">http://pyxml.sf.net/</A>',
+-        'debian'    : 'python-xml'
+-    })
+     # extra dependencies:
+     optional = []
+     try:
+@@ -467,8 +474,8 @@
+     optional.append({'module': 'psycopg2',
+         'version'    : version,
+         'url'        : '<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>',
+-        'debian'    : 'python-psycopg2',
+-        'debian_req'    : '1.1.21-6'
++        'debian'     : 'python-psycopg2',
++        'debian_req' : '1.1.21-6'
+     })
+     try:
+         import MySQLdb
+@@ -478,8 +485,8 @@
+     optional.append({'module': 'MySQLdb',
+         'version'    : version,
+         'url'        : '<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>',
+-        'debian'    : 'python-mysqldb',
+-        'debian_req'    : '1.2.1-p2-2'
++        'debian'     : 'python-mysqldb',
++        'debian_req' : '1.2.1-p2-2'
+     })
+     try:
+         import chardet
+@@ -487,9 +494,9 @@
+     except:
+         version = False
+     optional.append({'module': 'chardet',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A>',
+-        'debian'    : 'python-chardet'
++        'version' : version,
++        'url'     : '<A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A>',
++        'debian'  : 'python-chardet'
+     })
+     try:
+         import sqlite
+@@ -497,13 +504,12 @@
+     except:
+         version = False
+     optional.append({'module': 'sqlite',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
+-        'debian'    : 'python-sqlite'
++        'version' : version,
++        'url'     : '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
++        'debian'  : 'python-sqlite'
+     })
+     return depend, optional
+ 
+-
+ def html_encode(s):
+     if not isinstance(s, basestring):
+         s = str(s)
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2008-09-09 22:00:48 UTC (rev 996)
++++ trunk/lib/people.py	2008-09-12 22:01:40 UTC (rev 997)
+@@ -43,17 +43,21 @@
+     self.widgets['people']['window'].present()
+ 
+ def clear_person(self):
+-    self.widgets['person']['name'].set_text(&quot;&quot;)
+-    self.widgets['person']['email'].set_text(&quot;&quot;)
+-    self.widgets['person']['phone'].set_text(&quot;&quot;)
++    self.widgets['person']['name'].set_text('')
++    self.widgets['person']['email'].set_text('')
++    self.widgets['person']['phone'].set_text('')
+ 
+ def add_person_db(self):
+     name = self.widgets['person']['name'].get_text().decode('utf-8')
+     if name:
+         p = db.Person()
+-        p.name = self.widgets['person']['name'].get_text().decode('utf-8')
+-        p.email = self.widgets['person']['email'].get_text().decode('utf-8')
+-        p.phone = gutils.digits_only(self.widgets['person']['phone'].get_text().decode('utf-8'))
++        try:
++            p.name = self.widgets['person']['name'].get_text().decode('utf-8')
++            p.email = self.widgets['person']['email'].get_text().decode('utf-8')
++            p.phone = gutils.digits_only(self.widgets['person']['phone'].get_text().decode('utf-8'))
++        except ValueError, e:
++            gutils.warning(self, e.message)
++            return False
+         self.widgets['person']['window'].hide()
+         self.db.session.add(p)
+         try:
+@@ -72,14 +76,14 @@
+     try:
+         treeselection = self.widgets['people']['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
+-        name = tmp_model.get_value(tmp_iter,0)
++        name = tmp_model.get_value(tmp_iter,0).decode('utf-8')
+     except:
+         return
+     p = self.db.session.query(db.Person).filter_by(name=name).first()
+-    if p is not None:
+-        self.widgets['person']['e_name'].set_text(str(p.name))
+-        self.widgets['person']['e_email'].set_text(str(p.email))
+-        self.widgets['person']['e_phone'].set_text(str(p.phone))
++    if p:
++        self.widgets['person']['e_name'].set_text(p.name)
++        self.widgets['person']['e_email'].set_text(p.email)
++        self.widgets['person']['e_phone'].set_text(p.phone)
+         self.widgets['person']['e_id'].set_text(str(p.person_id))
+     self.widgets['person']['e_window'].show()
+ 
+@@ -89,11 +93,16 @@
+ 
+ def update_person(self):
+     p = self.db.session.query(db.Person).filter_by(person_id=self.widgets['person']['e_id'].get_text().decode('utf-8')).first()
+-    if p is None:
++    if not p:
++        log.warning('Person not found')
+         return False
+-    p.name = self.widgets['person']['e_name'].get_text().decode('utf-8')
+-    p.email = self.widgets['person']['e_email'].get_text().decode('utf-8')
+-    p.phone = self.widgets['person']['e_phone'].get_text().decode('utf-8')
++    try:
++        p.name = self.widgets['person']['e_name'].get_text().decode('utf-8')
++        p.email = self.widgets['person']['e_email'].get_text().decode('utf-8')
++        p.phone = self.widgets['person']['e_phone'].get_text().decode('utf-8')
++    except ValueError, e:
++        gutils.warning(self, e.message)
++        return False
+     self.db.session.add(p)
+     try:
+         self.db.session.commit()
+@@ -103,10 +112,10 @@
+         self.update_statusbar(_(&quot;Record updated&quot;))
+         edit_person_cancel(self)
+         self.p_treemodel.clear()
+-        for p in self.db.session.query(db.Person).order_by(db.people_table.c.name.asc()).all():
++        for p in self.db.session.query(db.Person).order_by(db.Person.name.asc()).all():
+             myiter = self.p_treemodel.insert_before(None, None)
+-            self.p_treemodel.set_value(myiter, 0, str(p.name))
+-            self.p_treemodel.set_value(myiter, 1, str(p.email))
++            self.p_treemodel.set_value(myiter, 0, p.name)
++            self.p_treemodel.set_value(myiter, 1, p.email)
+ 
+ def delete_person(self):
+     response = None
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000476.html">[Griffith-svn] r996 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000478.html">[Griffith-svn] r998 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#477">[ date ]</a>
+              <a href="thread.html#477">[ thread ]</a>
+              <a href="subject.html#477">[ subject ]</a>
+              <a href="author.html#477">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

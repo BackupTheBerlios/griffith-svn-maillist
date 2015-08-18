@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r826 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r826%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200708051816.l75IGITM020349%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000336.html">
+   <LINK REL="Next"  HREF="000338.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r826 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r826%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200708051816.l75IGITM020349%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r826 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug  5 20:16:18 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000336.html">[Griffith-svn] r825 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000338.html">[Griffith-svn] r828 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#337">[ date ]</a>
+              <a href="thread.html#337">[ thread ]</a>
+              <a href="subject.html#337">[ subject ]</a>
+              <a href="author.html#337">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-08-05 20:16:17 +0200 (Sun, 05 Aug 2007)
+New Revision: 826
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/plugins/movie/PluginMovieFDb.py
+Log:
+FDb movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-08-04 20:41:46 UTC (rev 825)
++++ trunk/ChangeLog	2007-08-05 18:16:17 UTC (rev 826)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-08-05  Piotr O&#380;arowski
++	* FDb movie plugin updated
++
+ 2007-08-04  Piotr O&#380;arowski
+ 	* Removing tags function fixed
+ 	* Copy all files from &quot;data&quot; subdirectory to the exported location in HTML export plugin
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-08-04 20:41:46 UTC (rev 825)
++++ trunk/NEWS	2007-08-05 18:16:17 UTC (rev 826)
+@@ -2,7 +2,7 @@
+ ==============
+ * Fixed volume/colection loaning problem
+ * Support for different database names with sqlite
+-* Updated movie plugins: OFDb, PTGate, Kino.de, DVD-Palace and IMDB-de
++* Updated movie plugins: FDb, OFDb, PTGate, Kino.de, DVD-Palace and IMDB-de
+ * New movie plugins: FilmTipset
+ * Translation files synchronized with Rosetta
+   + new: Japanese, Russian and Turkish
+
+Modified: trunk/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFDb.py	2007-08-04 20:41:46 UTC (rev 825)
++++ trunk/lib/plugins/movie/PluginMovieFDb.py	2007-08-05 18:16:17 UTC (rev 826)
+@@ -33,7 +33,7 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O&#380;arowski'
+ plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version		= '1.7'
++plugin_version		= '1.8'
+ 
+ class Plugin(movie.Movie):
+ 	TRAILER_PATTERN = re.compile('\s*&lt;a\shref=[\'&quot;](.*?)[&quot;\'].*?&gt;\(zobacz\szwiastun\)&lt;/a&gt;')
+@@ -50,7 +50,10 @@
+ 	def get_image(self):
+ 		self.image_url = gutils.trim(self.page, 'class=&quot;moviePosterTable&quot;', '&lt;/td&gt;');
+ 		self.image_url = gutils.trim(self.image_url,' src=&quot;',&quot;\&quot;\n&quot;)
+-		self.image_url = &quot;<A HREF="http://fdb.pl%s">http://fdb.pl%s</A>&quot; % self.image_url
++		if self.image_url.endswith('no_picture.png'):
++			self.image_url = ''
++		else:
++			self.image_url = &quot;<A HREF="http://fdb.pl%s">http://fdb.pl%s</A>&quot; % self.image_url
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
+@@ -153,7 +156,10 @@
+ 			elements = string.split(self.page,'&lt;div class=&quot;searchItem&quot;&gt;')
+ 			if len(elements)&gt;0:
+ 				for element in elements:
+-					self.ids.append(gutils.trim(element, '&lt;a href=&quot;', '&quot;'))
++					tmpId = gutils.trim(element, '&lt;a href=&quot;', '&quot;')
++					if tmpId.endswith('dodajNowy.php'):
++						continue
++					self.ids.append(tmpId)
+ 					element = gutils.strip_tags(
+ 						gutils.trim(element, '&quot;&gt;', '&lt;/div&gt;'))
+ 					element = element.replace(&quot;\n&quot;, '')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000336.html">[Griffith-svn] r825 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000338.html">[Griffith-svn] r828 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#337">[ date ]</a>
+              <a href="thread.html#337">[ thread ]</a>
+              <a href="subject.html#337">[ subject ]</a>
+              <a href="author.html#337">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

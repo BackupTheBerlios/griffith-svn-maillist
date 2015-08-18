@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r543 - in trunk: . lib lib/plugins/imp	lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r543%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp%0A%09lib/plugins/movie&In-Reply-To=%3C200612141236.kBECaEnG020138%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000073.html">
+   <LINK REL="Next"  HREF="000075.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r543 - in trunk: . lib lib/plugins/imp	lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r543%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp%0A%09lib/plugins/movie&In-Reply-To=%3C200612141236.kBECaEnG020138%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r543 - in trunk: . lib lib/plugins/imp	lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 14 13:36:14 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000073.html">[Griffith-svn] r542 - in trunk: i18n/de/LC_MESSAGES lib/plugins/imp	po
+</A></li>
+        <LI>Next message: <A HREF="000075.html">[Griffith-svn] r544 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#74">[ date ]</a>
+              <a href="thread.html#74">[ thread ]</a>
+              <a href="subject.html#74">[ subject ]</a>
+              <a href="author.html#74">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-14 13:36:14 +0100 (Thu, 14 Dec 2006)
+New Revision: 543
+
+Modified:
+   trunk/INSTALL
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/config.py
+   trunk/lib/plugins/imp/__init__.py
+   trunk/lib/plugins/movie/PluginMovieCineteka.py
+   trunk/lib/sql.py
+Log:
+* fix selecting last movie when only one movie is in main list
+* don't stop import process if imported movie is damaged
+* some cleanups
+
+
+Modified: trunk/INSTALL
+===================================================================
+--- trunk/INSTALL	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/INSTALL	2006-12-14 12:36:14 UTC (rev 543)
+@@ -38,7 +38,7 @@
+ 	You can test Griffith without installing it:
+ 
+ 		$ cd griffith-version
+-		$ ./griffith
++		$ ./griffith --home /tmp/griffith
+ 
+ 1.2 Installing from downloaded package
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/griffith	2006-12-14 12:36:14 UTC (rev 543)
+@@ -1024,9 +1024,9 @@
+ 		elif direction == 'first':
+ 			nextiter = treemodel.get_iter_first()
+ 		elif direction == 'last':
+-			rows = len(treemodel)-1
++			rows = len(treemodel)
+ 			if rows&gt;0:
+-				nextiter = treemodel.get_iter(rows)	# last
++				nextiter = treemodel.get_iter(rows-1)	# last
+ 		else:
+ 			logger.warning(&quot;Bad direction: %s&quot;%direction)
+ 		# select new iter
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/lib/add.py	2006-12-14 12:36:14 UTC (rev 543)
+@@ -34,7 +34,6 @@
+ 	set_details(self, {})
+ 
+ def add_movie(self, details={}):
+-	quick_filter.clear_filter(self)	 # FIXME: remove this line
+ 	if not details.has_key('number'):
+ 		details['number'] = gutils.find_next_available(self.db)
+ 	set_details(self, details)
+@@ -377,7 +376,8 @@
+ 				return False
+ 
+ 	movie = self.db.Movie()
+-	movie.add_to_db(details)
++	if not movie.add_to_db(details):
++		return False
+ 
+ 	# lets move poster from tmp to posters dir
+ 	tmp_dest = self.locations['posters']
+@@ -392,8 +392,9 @@
+ 			gutils.make_thumbnail(self, &quot;%s.jpg&quot;%details['image'])
+ 			gutils.make_medium_image(self, &quot;%s.jpg&quot;%details['image'])
+ 
+-	if int(self.widgets['add']['number'].get_text()) &gt;= 2:
+-		insert_after = self.treemodel.get_iter(int(self.widgets['add']['number'].get_text())-2)
++	rows = len(self.treemodel)
++	if rows&gt;0:
++		insert_after = self.treemodel.get_iter(rows-1)	# last
+ 	else:
+ 		insert_after = None
+ 	myiter = self.treemodel.insert_after(None, insert_after)
+@@ -411,7 +412,7 @@
+ 	self.total += 1
+ 	self.count_statusbar()
+ 	#select new entry from main treelist
+-	self.widgets['treeview'].set_cursor(int(self.widgets['add']['number'].get_text())-1)
++	self.widgets['treeview'].get_selection().select_iter(myiter)
+ 	self.treeview_clicked()
+ 	clear(self)
+ 
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/lib/config.py	2006-12-14 12:36:14 UTC (rev 543)
+@@ -110,7 +110,7 @@
+ 		self.config['font']                 = &quot;&quot;
+ 		self.config['db_type']              = &quot;sqlite&quot;
+ 		self.config['db_host']              = &quot;localhost&quot;
+-		self.config['db_port']              = &quot;5433&quot;
++		self.config['db_port']              = &quot;5432&quot;
+ 		self.config['db_name']              = &quot;griffith&quot;
+ 		self.config['db_user']              = &quot;griffith&quot;
+ 		self.config['db_passwd']            = &quot;gRiFiTh&quot;
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/lib/plugins/imp/__init__.py	2006-12-14 12:36:14 UTC (rev 543)
+@@ -92,9 +92,6 @@
+ 			self.debug.show(&quot;Can't read data from file %s&quot; % name)
+ 			return False
+ 		
+-		import time # DEBUG
+-		print 'start_time=', time.localtime() # FIXME: remove it
+-		
+ 		self.widgets['pwindow'].show()
+ 		gtk.main_iteration()
+ 
+@@ -143,8 +140,11 @@
+ 						number += 1
+ 					#movie = self.db.Movie()
+ 					#movie.add_to_db(details)
+-					self.db.Movie.mapper.mapped_table.insert().execute(details)
+-					self.imported += 1
++					try:
++						self.db.Movie.mapper.mapped_table.insert().execute(details)
++						self.imported += 1
++					except Exception, e:
++						self.debug.show(&quot;movie details are not unique, skipping: %s&quot; % str(e))
+ 			else:
+ 				self.debug.show('skipping movie without title or original title')
+ 			self.widgets['progressbar'].set_text(&quot;%s/%s&quot; % (str(self.imported), str(count)))
+@@ -155,7 +155,6 @@
+ 				gtk.main_iteration()
+ 		self.widgets['progressbar'].set_text(&quot;%s/%s&quot; % (str(self.imported), str(count)))
+ 		self.widgets['progressbar'].set_fraction(1)
+-		print 'end_time=', time.localtime() # FIXME: remove it
+ 		return True
+ 
+ 	def clear(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineteka.py	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/lib/plugins/movie/PluginMovieCineteka.py	2006-12-14 12:36:14 UTC (rev 543)
+@@ -134,8 +134,8 @@
+ 	def get_searches(self):
+ 		&quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
+ 		elements = string.split(self.page, &quot;&lt;/a&gt;]&lt;/td&gt;&quot;)
+-		print elements
+ 		self.number_results = elements[-1]
++
+ 		if (elements[0]&lt;&gt;''):
+ 			for element in elements:
+ 				self.ids.append(gutils.trim(element, &quot;?op=Movie&amp;id=&quot;, &quot;\&quot;&quot;))
+@@ -143,3 +143,4 @@
+ 					(gutils.trim(element, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/span&gt;&lt;/nobr&gt;&lt;/td&gt;&quot;))))
+ 		else:
+ 			self.number_results = 0
++
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2006-12-14 05:17:01 UTC (rev 542)
++++ trunk/lib/sql.py	2006-12-14 12:36:14 UTC (rev 543)
+@@ -324,7 +324,7 @@
+ 			self.metadata.engine.connect()
+ 		except:
+ 			gutils.error(self, _('Database connection failed.'))
+-			self.config['db_type'] = 'sqlite'
++			config['db_type'] = 'sqlite'
+ 			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+ 			self.metadata = BoundMetaData(url)
+ 			self.metadata.engine.connect()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000073.html">[Griffith-svn] r542 - in trunk: i18n/de/LC_MESSAGES lib/plugins/imp	po
+</A></li>
+	<LI>Next message: <A HREF="000075.html">[Griffith-svn] r544 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#74">[ date ]</a>
+              <a href="thread.html#74">[ thread ]</a>
+              <a href="subject.html#74">[ subject ]</a>
+              <a href="author.html#74">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

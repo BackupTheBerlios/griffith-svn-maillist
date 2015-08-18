@@ -1,0 +1,543 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1334 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1334%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200912202146.nBKLkChw005943%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000801.html">
+   <LINK REL="Next"  HREF="000803.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1334 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1334%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200912202146.nBKLkChw005943%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1334 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 20 22:46:12 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000801.html">[Griffith-svn] r1333 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000803.html">[Griffith-svn] r1335 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#802">[ date ]</a>
+              <a href="thread.html#802">[ thread ]</a>
+              <a href="subject.html#802">[ subject ]</a>
+              <a href="author.html#802">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-12-20 22:46:11 +0100 (Sun, 20 Dec 2009)
+New Revision: 1334
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/config.py
+   trunk/lib/initialize.py
+   trunk/lib/widgets.py
+Log:
+Add &quot;Extensions toolbar&quot; menu item
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-15 21:22:04 UTC (rev 1333)
++++ trunk/ChangeLog	2009-12-20 21:46:11 UTC (rev 1334)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-12-20  Piotr O&#380;arowski
++	* Add &quot;Extensions toolbar&quot; menu item
++
+ 2009-12-15  Michael Jahn
+ 	* new import plugin: MovieTrack
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-12-15 21:22:04 UTC (rev 1333)
++++ trunk/glade/griffith.glade	2009-12-20 21:46:11 UTC (rev 1334)
+@@ -222,6 +222,16 @@
+                       &lt;/widget&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
++                      &lt;widget class=&quot;GtkCheckMenuItem&quot; id=&quot;menu_ext_toolbar&quot;&gt;
++                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Extensions toolbar&lt;/property&gt;
++                        &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;active&quot;&gt;False&lt;/property&gt;
++                        &lt;signal name=&quot;activate&quot; handler=&quot;on_view_ext_toolbar_activate&quot;/&gt;
++                        &lt;accelerator key=&quot;T&quot; modifiers=&quot;GDK_SHIFT_MASK | GDK_CONTROL_MASK&quot; signal=&quot;activate&quot;/&gt;
++                      &lt;/widget&gt;
++                    &lt;/child&gt;
++                    &lt;child&gt;
+                       &lt;widget class=&quot;GtkSeparatorMenuItem&quot; id=&quot;separator3&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                       &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-12-15 21:22:04 UTC (rev 1333)
++++ trunk/griffith	2009-12-20 21:46:11 UTC (rev 1334)
+@@ -101,7 +101,7 @@
+             else:
+                 log.error('Cant convert old database, exiting.')
+                 sys.exit(4)
+-        
++
+         # create/connect db
+         from sql import GriffithSQL
+         self.db = GriffithSQL(config, self.locations['home'])
+@@ -209,7 +209,7 @@
+             if not hasattr(self, 'mainwindow_state') or self.mainwindow_state is None:
+                 self.mainwindow_state = {}
+             self.mainwindow_state['state'] = int(windowstate.new_window_state &amp; gtk.gdk.WINDOW_STATE_MAXIMIZED)
+-    
++
+     def toggle_fullscreen(self, widget):
+         if widget is True or widget.get_active():
+             self.widgets['window'].fullscreen()
+@@ -541,7 +541,7 @@
+                 self.widgets['add']['lang_treeview'].grab_focus()
+                 self.widgets['add']['lang_treeview'].set_cursor( path, col, 0)
+             self.widgets['add']['lang_menu'].popup(None, None, None, event.button, time)
+-    
++
+     def create_language_row(self, lang=None):
+         if len(self.languages_ids) == 1:
+             return False
+@@ -564,7 +564,7 @@
+             model.set_value(myiter, 4, get_text(self.lang['subformat'], lang.subformat_id))
+         else:
+             model.set_value(myiter, 0, get_text(self.lang['lang'], -1))
+-    
++
+     def on_tv_lang_combo_edited(self, widget, path, new_text, column):
+         model = self.widgets['add']['lang_treeview'].get_model()
+         model[path][column] = new_text
+@@ -1333,6 +1333,15 @@
+         self.config.set('view_toolbar', state, section='window')
+         self.config.save()
+ 
++    def toggle_ext_toolbar(self, *args):
++        state = self.widgets['menu']['ext_toolbar'].get_active()
++        if state == False:
++            self.widgets['extensions']['toolbar_hb'].hide()
++        else:
++            self.widgets['extensions']['toolbar_hb'].show()
++        self.config.set('view_ext_toolbar', state, section='window')
++        self.config.save()
++
+     def new_dbb(self, *args):
+         &quot;&quot;&quot;initializes a new Griffith Database file&quot;&quot;&quot;
+         if gutils.question(_('Are you sure you want to create a new database?\nYou will lose ALL your current data!'), self.widgets['window']):
+@@ -1345,7 +1354,7 @@
+                 posters_dir = self.locations['posters']
+                 # NOTE: only used images are removed (posters are shared between various db)
+                 log.debug('removing old images...')
+-                
++
+                 posters = self.db.session.query(db.Movie.poster_md5).all()
+                 for poster in posters:
+                     delete_poster_from_cache(self, poster[0])
+@@ -1420,7 +1429,7 @@
+         if event.type == gtk.gdk._2BUTTON_PRESS:
+             return self.on_results_select_press_event(widget)
+         return self._resultswin_button_pressed_signal(widget, event)
+-    
++
+     def on_results_select_press_event(self, button):
+         treeselection = self.widgets['results']['treeview'].get_selection()
+         if not treeselection:
+@@ -1450,7 +1459,7 @@
+     def go_next(self, *args):
+         self.click_on(self.widgets['treeview'], 'next')
+     # TODO: remove total_filter var.
+-    
++
+     def click_on(self, treeview, direction):
+         treeselection = treeview.get_selection()
+         if not treeselection:
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2009-12-15 21:22:04 UTC (rev 1333)
++++ trunk/lib/config.py	2009-12-20 21:46:11 UTC (rev 1334)
+@@ -205,5 +205,6 @@
+         self._cfg.set('window', 'left', 'None')
+         self._cfg.set('window', 'top', 'None')
+         self._cfg.set('window', 'view_toolbar', 'True')
++        self._cfg.set('window', 'view_ext_toolbar', 'False')
+         self._cfg.set('window', 'width', '500')
+         self.save()
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-12-15 21:22:04 UTC (rev 1333)
++++ trunk/lib/initialize.py	2009-12-20 21:46:11 UTC (rev 1334)
+@@ -52,11 +52,11 @@
+     locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0])) # deprecated
+     locations['lib']  = os.path.dirname(__file__)
+     locations['home'] = home_dir
+-    
++
+     if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+         import winshell
+         from win32com.shell import shellcon, shell
+-        
++
+         locations['movie_plugins']  = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+         locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+         locations['images']         = &quot;%s\\images&quot; % locations['exec']
+@@ -65,7 +65,7 @@
+         locations['desktop']        = ''
+         locations['i18n']           = &quot;%s\\i18n&quot; % locations['exec']
+         os.environ['PATH'] += &quot;;lib;&quot;
+-        
++
+         # windows hack for locale setting
+         lang = os.getenv('LANG')
+         if lang is None:
+@@ -88,10 +88,10 @@
+     else:
+         print 'Operating system not supported'
+         sys.exit()
+-    
++
+     from tempfile import gettempdir
+     locations['temp'] = gettempdir()
+-    
++
+     try:
+         if not os.path.exists(locations['home']):
+             log.info('Creating %s', locations['home'])
+@@ -106,7 +106,7 @@
+     if not os.access(locations['home'], os.W_OK):
+         log.info('Cannot write to griffith directory, %s', locations['home'])
+         sys.exit()
+-    
++
+     locations['posters'] = os.path.join(locations['home'], 'posters')
+     if not os.path.isdir(locations['posters']):
+         os.makedirs(locations['posters'])
+@@ -115,7 +115,7 @@
+     sys.path.append(locations['lib'])
+     sys.path.append(locations['movie_plugins'])
+     sys.path.append(locations['export_plugins'])
+-    
++
+     self.locations = locations
+     return locations
+ 
+@@ -126,9 +126,9 @@
+         self.mac = True
+     else:
+         self.mac = False
+-    
++
+     self.griffith_dir = self.locations['home']    # deprecated
+-    
++
+     if self.windows:
+         gtk.rc_parse('%s\\gtkrc' % self.locations['exec'])
+ 
+@@ -147,9 +147,18 @@
+ 
+ def toolbar(self):
+     &quot;&quot;&quot;if toolbar is hide in config lets hide the widget&quot;&quot;&quot;
+-    if not self.config.get('view_toolbar', 'True', section='window'):
++    if not self.config.get('view_toolbar', True, section='window'):
+         self.widgets['toolbar'].hide()
+         self.widgets['menu']['toolbar'].set_active(False)
++    else:
++        self.widgets['toolbar'].show()
++        self.widgets['menu']['toolbar'].set_active(True)
++    if not self.config.get('view_ext_toolbar', True, section='window'):
++        self.widgets['extensions']['toolbar_hb'].hide()
++        self.widgets['menu']['ext_toolbar'].set_active(False)
++    else:
++        self.widgets['extensions']['toolbar_hb'].show()
++        self.widgets['menu']['ext_toolbar'].set_active(True)
+ 
+ def treeview(self):
+     self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str)
+@@ -311,7 +320,7 @@
+     column.set_property('resizable', True)
+     column.set_sort_column_id(0)
+     treeview.append_column(column)
+-    
++
+     model = self.lang['type'] = gtk.ListStore(int, str)
+     #i = 0
+     #for lang_type in self._lang_types:
+@@ -348,7 +357,7 @@
+     column.set_property('resizable', True)
+     column.set_sort_column_id(2)
+     treeview.append_column(column)
+-    
++
+     model = self.lang['achannel'] = gtk.ListStore(int, str)
+     for i in self.db.session.query(db.AChannel.achannel_id, db.AChannel.name).all():
+         model.append([i.achannel_id, i.name])
+@@ -363,7 +372,7 @@
+     column.set_property('resizable', True)
+     column.set_sort_column_id(3)
+     treeview.append_column(column)
+-    
++
+     model = self.lang['subformat'] = gtk.ListStore(int, str)
+     for i in self.db.session.query(db.SubFormat.subformat_id, db.SubFormat.name).all():
+         model.append([i.subformat_id, i.name])
+@@ -378,7 +387,7 @@
+     column.set_property('resizable', True)
+     column.set_sort_column_id(4)
+     treeview.append_column(column)
+-    
++
+     treeview.show_all()
+ 
+ def movie_plugins(self):
+@@ -416,13 +425,13 @@
+         self.widgets['menu']['export'].append(menu_items)
+         menu_items.connect('activate', self.on_export_activate, plugin_name)
+         menu_items.show()
+-        
++
+ def import_plugins(self):
+     &quot;&quot;&quot;
+     dinamically finds the available import plugins
+     and fills the import menu entry
+     &quot;&quot;&quot;
+-    
++
+     import plugins.imp, math
+ 
+     fields_to_import = ( 'number','title', 'o_title', 'director', 'year', 'runtime', 'country',
+@@ -434,7 +443,7 @@
+     # glade
+     glade_file = gtk.glade.XML(os.path.join(self.locations['glade'], 'import.glade'))
+     get = lambda x: glade_file.get_widget(x)
+-    
++
+     w = self.widgets['import'] = {
+         'window'    : get('dialog_import'),
+         'pwindow'    : get('dialog_progress'),
+@@ -457,11 +466,11 @@
+     w['plugin'].connect('changed', plugins.imp.on_import_plugin_changed, w)
+     w['window'].set_transient_for(self.widgets['window'])
+     w['pwindow'].set_transient_for(self.widgets['window'])
+-    
++
+     for name in plugins.imp.__all__:
+         w['plugin'].append_text(name)
+     w['plugin'].set_active(0)
+-    
++
+     # fields to import
+     j = 0
+     k = math.ceil( len(self.field_names) / float(3) )
+@@ -685,7 +694,7 @@
+     vcodec_combos(self)
+     media_combos(self)
+     create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+-    self.sort_criteria = [ # &quot;[]&quot; because of index() 
++    self.sort_criteria = [ # &quot;[]&quot; because of index()
+         'number', 'o_title', 'title', 'director', 'year', 'runtime', 'country',
+         'genre', 'studio', 'media_num', 'rating', 'classification', 'collection_id',
+         'volume_id', 'cond', 'layers', 'region', 'movie_id']
+@@ -805,7 +814,7 @@
+         self.widgets['preferences']['db_type'].set_active(3)
+     else:
+         self.widgets['preferences']['db_type'].set_active(0)
+-        
++
+     # add completion data
+     treemodel = gtk.TreeStore(str)
+     for name in (os.path.basename(x)[:-3] for x in glob(&quot;%s/*.db&quot; % self.locations['home'])):
+@@ -859,7 +868,7 @@
+         else:
+             name = ''
+         self.widgets['add']['collection'].insert_text(int(i), name)
+-        # add some white spaces to prevent scrollbar hides parts of the names    
++        # add some white spaces to prevent scrollbar hides parts of the names
+         self.widgets['filter']['collection'].insert_text(int(i), name + '   ')
+     self.widgets['add']['collection'].show_all()
+     self.widgets['filter']['collection'].show_all()
+@@ -876,7 +885,7 @@
+     self.widgets['filter']['advfilter'].get_model().clear()
+     self.widgets['filter']['advfilter'].insert_text(0, '') # empty one
+     for i, item in enumerate(self.db.session.query(db.Filter.name).all()):
+-        # add some white spaces to prevent scrollbar hides parts of the names    
++        # add some white spaces to prevent scrollbar hides parts of the names
+         self.widgets['filter']['advfilter'].insert_text(i+1, item.name + '   ')
+     self.widgets['filter']['advfilter'].show_all()
+     self.widgets['filter']['advfilter'].set_active(0)
+@@ -955,7 +964,7 @@
+     self.widgets['preferences']['medium_name'].get_model().clear()
+     self.widgets['preferences']['media'].get_model().clear()
+     self.widgets['add']['media'].get_model().clear()
+-    
++
+     self.media_ids = {}
+ 
+     self.media_ids[0] = None
+@@ -986,9 +995,9 @@
+     self.widgets['preferences']['vcodec_name'].get_model().clear()
+     self.widgets['preferences']['vcodec'].get_model().clear()
+     self.widgets['add']['vcodec'].get_model().clear()
+-    
++
+     self.vcodecs_ids = {}
+-    
++
+     self.vcodecs_ids[0] = None
+     self.widgets['preferences']['vcodec_name'].insert_text(0, '')
+     self.widgets['add']['vcodec'].insert_text(0, _('N/A'))
+@@ -1002,7 +1011,7 @@
+     self.widgets['preferences']['vcodec_name'].show_all()
+     self.widgets['add']['vcodec'].show_all()
+     self.widgets['preferences']['vcodec'].show_all()
+-    
++
+     pos = gutils.findKey(self.config.get('vcodec', 0, section='defaults'), self.vcodecs_ids)
+     if pos is not None:
+         self.widgets['preferences']['vcodec'].set_active(int(pos))
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2009-12-15 21:22:04 UTC (rev 1333)
++++ trunk/lib/widgets.py	2009-12-20 21:46:11 UTC (rev 1334)
+@@ -23,13 +23,12 @@
+ # GNU General Public License, version 2 or later
+ 
+ import gtk
+-import sys
+ import advfilter
+ 
+ def define_widgets(self, gladefile):
+     get = lambda x: gladefile.get_widget(x)
+     self.widgets = {}
+-    
++
+     self.widgets['window'] = get('main_window')
+     self.widgets['window'].connect('key_press_event', self.on_key_press_event)
+     self.widgets['treeview'] = get('main_treeview')
+@@ -39,8 +38,8 @@
+     #buttons
+     self.widgets['new_db'] = get('new_bt')
+     self.widgets['toolbar'] = get('toolbar1')
+-    
+ 
++
+     self.widgets['movie'] = {#{{{
+         'cast'                   : get('m_cast'),
+         'classification'         : get('m_classification'),
+@@ -150,9 +149,9 @@
+     self.widgets['add']['o_title'].connect('activate', self.on_enter)
+     self.widgets['add']['title'].connect('activate', self.on_enter)
+     self.widgets['add']['window'].set_transient_for(self.widgets['window'])
+-    
++
+     #}}}
+-    
++
+     self.widgets['advfilter'] = {#{{{
+         'window'           : get('w_advfilter'),
+         'advfilter_vbox'   : get('advfilter_rules_vbox'),
+@@ -292,7 +291,7 @@
+     self.widgets['print_cover']['window_simple'].set_transient_for(self.widgets['window'])
+     self.widgets['print_cover']['window_image'].set_transient_for(self.widgets['window'])
+     #}}}
+-    
++
+     self.widgets['people'] = {#{{{
+         'window':    get('w_people'),
+         'treeview':    get('p_treeview'),
+@@ -300,7 +299,7 @@
+     self.widgets['people']['window'].connect('delete_event', self.on_delete_event_wp)
+     self.widgets['people']['window'].set_transient_for(self.widgets['window'])
+     #}}}
+-    
++
+     self.widgets['person'] = {#{{{
+         # TODO: merge these two windows
+         'window'   : get('w_add_person'),
+@@ -325,10 +324,11 @@
+         'collection' : get('f_col'),
+         'advfilter'  : get('f_advfilter'),
+     }#}}}
+-    
++
+     self.widgets['menu'] = {#{{{
+         'fullscreen'      : get('menu_fullscreen'),
+         'toolbar'         : get('menu_toolbar'),
++        'ext_toolbar'     : get('menu_ext_toolbar'),
+         'export'          : get('export_menu'),
+         'import'          : get('import_menu'),
+         'not_seen_movies' : get('seen_movies'),
+@@ -338,7 +338,7 @@
+         'email'           : get('return1'),
+         'return'          : get('e-mail_reminder1'),
+     }#}}}
+-    
++
+     self.widgets['popups'] = {#{{{
+         'main'   : get('popup'),
+         'loan'   : get('popup_loan'),
+@@ -347,9 +347,10 @@
+     }#}}}
+     self.widgets['extensions'] = {
+         'toolbar': get('ext_toolbar'),
++        'toolbar_hb': get('ext_toolbar_hb'),
+         'preferences_vbox': get('p_extensions_vbox'),
+     }
+-    
++
+     self.widgets['w_loan_to']     = get('w_loan_to')
+     self.widgets['w_loan_to'].connect('delete_event', self.on_delete_event_lt)
+ 
+@@ -429,6 +430,7 @@
+         'on_combo_source_changed'                : self.source_changed,
+         # toolbar
+         'on_view_toolbar_activate'               : self.toggle_toolbar,
++        'on_view_ext_toolbar_activate'           : self.toggle_ext_toolbar,
+         'on_go_first_clicked'                    : self.go_first,
+         'on_go_last_clicked'                     : self.go_last,
+         'on_go_back_clicked'                     : self.go_prev,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000801.html">[Griffith-svn] r1333 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000803.html">[Griffith-svn] r1335 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#802">[ date ]</a>
+              <a href="thread.html#802">[ thread ]</a>
+              <a href="subject.html#802">[ subject ]</a>
+              <a href="author.html#802">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

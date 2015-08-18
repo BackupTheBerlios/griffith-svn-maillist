@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r638 - in trunk: . docs docs/en docs/pl docs/pt	lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r638%20-%20in%20trunk%3A%20.%20docs%20docs/en%20docs/pl%20docs/pt%0A%09lib/plugins/movie&In-Reply-To=%3C200612312355.kBVNteEE013229%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000164.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r638 - in trunk: . docs docs/en docs/pl docs/pt	lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r638%20-%20in%20trunk%3A%20.%20docs%20docs/en%20docs/pl%20docs/pt%0A%09lib/plugins/movie&In-Reply-To=%3C200612312355.kBVNteEE013229%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r638 - in trunk: . docs docs/en docs/pl docs/pt	lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  1 00:55:40 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000164.html">[Griffith-svn] r639 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#163">[ date ]</a>
+              <a href="thread.html#163">[ thread ]</a>
+              <a href="subject.html#163">[ subject ]</a>
+              <a href="author.html#163">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-01 00:55:38 +0100 (Mon, 01 Jan 2007)
+New Revision: 638
+
+Modified:
+   trunk/Makefile
+   trunk/docs/Makefile
+   trunk/docs/en/Makefile
+   trunk/docs/en/griffith-export-template.xml
+   trunk/docs/en/griffith.xml
+   trunk/docs/pl/Makefile
+   trunk/docs/pt/Makefile
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+Log:
+* allow easy changing of docbook2x-man executable name
+* switch o_title &lt;-&gt; title in Filmweb movie plugin
+* s/latin1/iso-8859-1/ in English manpages
+
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/Makefile	2006-12-31 23:55:38 UTC (rev 638)
+@@ -18,6 +18,7 @@
+ MSGMERGE ?= msgmerge
+ XGETTEXT ?= xgettext
+ FIND ?= find
++DOC2MAN ?= docbook2x-man
+ 
+ PREFIX = $(DESTDIR)/usr
+ BINDIR = $(PREFIX)/bin
+
+Modified: trunk/docs/Makefile
+===================================================================
+--- trunk/docs/Makefile	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/docs/Makefile	2006-12-31 23:55:38 UTC (rev 638)
+@@ -1,5 +1,7 @@
+ # $Id$
+ LANGUAGES = en pl pt
++DOC2MAN ?= docbook2x-man
++
+ .PHONY: man clean $(LANGUAGES) 
+ 
+ 
+
+Modified: trunk/docs/en/Makefile
+===================================================================
+--- trunk/docs/en/Makefile	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/docs/en/Makefile	2006-12-31 23:55:38 UTC (rev 638)
+@@ -7,6 +7,7 @@
+ PREFIX= $(DESTDIR)/usr
+ MANDIR= $(PREFIX)/share/man
+ INSTALL ?= install
++DOC2MAN ?= docbook2x-man
+ 
+ all: man
+ 
+@@ -16,10 +17,10 @@
+ 	$(RM) $(MANPAGES)
+ 
+ %.1: %.xml
+-	docbook2x-man $&lt;
++	$(DOC2MAN) $&lt;
+ 
+ %.5: %.xml
+-	docbook2x-man $&lt;
++	$(DOC2MAN) $&lt;
+ 
+ install: $(MANPAGES)
+ 	$(INSTALL) -m 755 -d &quot;$(MANDIR)/man1&quot;
+
+Modified: trunk/docs/en/griffith-export-template.xml
+===================================================================
+--- trunk/docs/en/griffith-export-template.xml	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/docs/en/griffith-export-template.xml	2006-12-31 23:55:38 UTC (rev 638)
+@@ -1,4 +1,4 @@
+-&lt;?xml version=&quot;1.0&quot; encoding=&quot;latin1&quot; ?&gt;
++&lt;?xml version=&quot;1.0&quot; encoding=&quot;iso-8859-1&quot; ?&gt;
+ &lt;!DOCTYPE refentry PUBLIC &quot;-//OASIS//DTD DocBook V4.4//EN&quot;
+ 	&quot;<A HREF="http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd</A>&quot;
+ 	[
+
+Modified: trunk/docs/en/griffith.xml
+===================================================================
+--- trunk/docs/en/griffith.xml	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/docs/en/griffith.xml	2006-12-31 23:55:38 UTC (rev 638)
+@@ -1,4 +1,4 @@
+-&lt;?xml version=&quot;1.0&quot; encoding=&quot;latin1&quot; ?&gt;
++&lt;?xml version=&quot;1.0&quot; encoding=&quot;iso-8859-1&quot; ?&gt;
+ &lt;!DOCTYPE refentry PUBLIC &quot;-//OASIS//DTD DocBook V4.4//EN&quot;
+ 	&quot;<A HREF="http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd</A>&quot;
+ 	[
+
+Modified: trunk/docs/pl/Makefile
+===================================================================
+--- trunk/docs/pl/Makefile	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/docs/pl/Makefile	2006-12-31 23:55:38 UTC (rev 638)
+@@ -7,6 +7,7 @@
+ PREFIX= $(DESTDIR)/usr
+ MANDIR= $(PREFIX)/share/man
+ INSTALL ?= install
++DOC2MAN ?= docbook2x-man
+ 
+ all: man
+ 
+@@ -16,10 +17,10 @@
+ 	$(RM) $(MANPAGES)
+ 
+ %.1: %.xml
+-	docbook2x-man --encoding utf8 $&lt;
++	$(DOC2MAN) --encoding utf8 $&lt;
+ 
+ %.5: %.xml
+-	docbook2x-man --encoding utf8 $&lt;
++	$(DOC2MAN) --encoding utf8 $&lt;
+ 
+ install: $(MANPAGES)
+ 	$(INSTALL) -m 755 -d &quot;$(MANDIR)/pl/man1&quot;
+
+Modified: trunk/docs/pt/Makefile
+===================================================================
+--- trunk/docs/pt/Makefile	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/docs/pt/Makefile	2006-12-31 23:55:38 UTC (rev 638)
+@@ -7,6 +7,7 @@
+ PREFIX= $(DESTDIR)/usr
+ MANDIR= $(PREFIX)/share/man
+ INSTALL ?= install
++DOC2MAN ?= docbook2x-man
+ 
+ all: man
+ 
+@@ -16,10 +17,10 @@
+ 	$(RM) $(MANPAGES)
+ 
+ %.1: %.xml
+-	docbook2x-man $&lt;
++	$(DOC2MAN) $&lt;
+ 
+ %.5: %.xml
+-	docbook2x-man $&lt;
++	$(DOC2MAN) $&lt;
+ 
+ install: $(MANPAGES)
+ 	$(INSTALL) -m 755 -d &quot;$(MANDIR)/pt/man1&quot;
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2006-12-31 11:50:53 UTC (rev 637)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2006-12-31 23:55:38 UTC (rev 638)
+@@ -47,16 +47,16 @@
+ 			self.image_url = gutils.trim(self.image_url, 'src=&quot;', '&quot;')
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '&lt;div id=&quot;filmTitle&quot;&gt;', '&lt;span')
+-		self.o_title = string.replace(self.o_title, &quot;\t&quot;, '')
+-		self.o_title = string.replace(self.o_title, &quot;\n&quot;, '')
+-		if string.find(self.o_title, '(') &gt; -1:
+-			self.o_title = gutils.before(self.o_title, '(')
++		self.o_title = gutils.trim(self.page, '&lt;span class=&quot;otherTitle&quot;&gt;', '&lt;span')
++		self.o_title = string.replace(self.o_title, &quot;\t&quot;,'')
++		self.o_title = string.replace(self.o_title, &quot;\n&quot;,'')
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;span class=&quot;otherTitle&quot;&gt;', '&lt;span')
+-		self.title = string.replace(self.title, &quot;\t&quot;,'')
+-		self.title = string.replace(self.title, &quot;\n&quot;,'')
++		self.title = gutils.trim(self.page, '&lt;div id=&quot;filmTitle&quot;&gt;', '&lt;span')
++		self.title = string.replace(self.title, &quot;\t&quot;, '')
++		self.title = string.replace(self.title, &quot;\n&quot;, '')
++		if string.find(self.title, '(') &gt; -1:
++			self.title = gutils.before(self.title, '(')
+ 
+ 	def get_director(self):
+ 		self.director = re.findall(r'yseria\t+(.*)\t+scenariusz', self.page)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000164.html">[Griffith-svn] r639 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#163">[ date ]</a>
+              <a href="thread.html#163">[ thread ]</a>
+              <a href="subject.html#163">[ subject ]</a>
+              <a href="author.html#163">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

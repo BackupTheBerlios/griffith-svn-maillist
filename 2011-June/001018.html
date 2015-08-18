@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1559 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1559%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C20110620212107.18FAE480E51%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001017.html">
+   <LINK REL="Next"  HREF="001019.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1559 - in trunk: . glade lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1559%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C20110620212107.18FAE480E51%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1559 - in trunk: . glade lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun 20 23:21:06 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001017.html">[Griffith-svn] r1558 - in trunk: . lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001019.html">[Griffith-svn] r1560 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1018">[ date ]</a>
+              <a href="thread.html#1018">[ thread ]</a>
+              <a href="subject.html#1018">[ subject ]</a>
+              <a href="author.html#1018">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-06-20 23:21:06 +0200 (Mon, 20 Jun 2011)
+New Revision: 1559
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/add.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+Log:
+[#570053] Region selection shows DVD regions when media is not DVD.
+(added Bluray regions)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/ChangeLog	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -5,6 +5,10 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-06-20  Michael Jahn
++	* [#570053] Region selection shows DVD regions when media is not DVD.
++	  (added Bluray regions)
++
+ 2011-06-17  Michael Jahn
+ 	* [#725810] CSFD plugin is not working
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/glade/griffith.glade	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -2326,7 +2326,7 @@
+                           &lt;widget class=&quot;GtkLabel&quot; id=&quot;label108&quot;&gt;
+                             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                             &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;DVD region&lt;/property&gt;
++                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Region&lt;/property&gt;
+                           &lt;/widget&gt;
+                           &lt;packing&gt;
+                             &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
+@@ -2358,7 +2358,7 @@
+                           &lt;widget class=&quot;GtkLabel&quot; id=&quot;label109&quot;&gt;
+                             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                             &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;DVD layers&lt;/property&gt;
++                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Layers&lt;/property&gt;
+                           &lt;/widget&gt;
+                           &lt;packing&gt;
+                             &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/lib/add.py	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -521,9 +521,9 @@
+     else:
+         w['layers'].set_active(gutils.digits_only(self.config.get('layers', 0, section='defaults'), 4))
+     if 'region' in item and item['region'] &gt;= 0:
+-            w['region'].set_active(gutils.digits_only(item['region'], 8))
++        w['region'].set_active(gutils.digits_only(item['region'], 11))
+     else:
+-        w['region'].set_active(gutils.digits_only(self.config.get('region', 0, section='defaults'), 8))
++        w['region'].set_active(gutils.digits_only(self.config.get('region', 0, section='defaults'), 11))
+     if 'cond' in item and item['cond'] &gt;= 0:
+         w['condition'].set_active(gutils.digits_only(item['cond'], 5))
+     else:
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/lib/initialize.py	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -823,6 +823,9 @@
+         _('Region 6 (Popular Republic of China)'),
+         _('Region 7 (Reserved for Unspecified Special Use)'),
+         _('Region 8 (Airlines/Cruise Ships)'),
++        _('Region A/1 (North and South America, Japan, Korea, Taiwan, Hong Kong, Southeast Asia)'),
++        _('Region B/2 (Europe, Middle East, Africa, Australia, Oceania)'),
++        _('Region C/3 (India, Nepal, China, Russia, Central and South Asia)'),
+     )
+ 
+ 
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/lib/main_treeview.py	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -165,9 +165,9 @@
+     else:
+         w['condition'].set_text('')
+     if 'region' in item and item['region']:
+-        if str(item['region']) in [str(i) for i in range(len(self._regions))]:
+-            w['region'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item['region']))
+-            if int(item['region']) &lt; 9:
++        if item['region'] &lt; len(self._regions):
++            w['region'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(self._regions[item['region']]))
++            if int(item['region']) &lt; 12:
+                 self.widgets['tooltips'].set_tip(w['region'], self._regions[int(item['region'])])
+         else:
+             log.info(&quot;Wrong value in 'region' field (movie_id=%s, region=%s)&quot; % (item['movie_id'], item['region']))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001017.html">[Griffith-svn] r1558 - in trunk: . lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001019.html">[Griffith-svn] r1560 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1018">[ date ]</a>
+              <a href="thread.html#1018">[ thread ]</a>
+              <a href="subject.html#1018">[ subject ]</a>
+              <a href="author.html#1018">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

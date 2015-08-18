@@ -1,0 +1,2041 @@
+From mikej06 at mail.berlios.de  Thu Sep  1 22:03:35 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu,  1 Sep 2011 22:03:35 +0200
+Subject: [Griffith-svn] r1579 - in trunk: . lib/plugins/movie
+Message-ID: <20110901200336.17D6A4811D9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-01 22:03:35 +0200 (Thu, 01 Sep 2011)
+New Revision: 1579
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+updated Allocine plugin, switch to JSON api
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-30 21:17:33 UTC (rev 1578)
++++ trunk/ChangeLog	2011-09-01 20:03:35 UTC (rev 1579)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-09-01  Michael Jahn
++	* updated Allocine plugin, switch to JSON api
++
+ 2011-08-30  Michael Jahn
+ 	* updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-08-30 21:17:33 UTC (rev 1578)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-09-01 20:03:35 UTC (rev 1579)
+@@ -21,10 +21,8 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils
+ import movie
+-import string
+-import re
++import json
+ import logging
+ log = logging.getLogger("Griffith")
+ 
+@@ -32,74 +30,82 @@
+ plugin_description  = "Internet Movie Database"
+ plugin_url          = "www.allocine.fr"
+ plugin_language     = _("French")
+-plugin_author       = "Pierre-Luc Levy"
++plugin_author       = "Pierre-Luc Levy, Michael Jahn (JSON api)"
+ plugin_author_email = ""
+-plugin_version      = "0.7"
++plugin_version      = "1.0"
+ 
+ 
+ class Plugin(movie.Movie):
+-    replace_tabs = re.compile('[\t\r\n]', re.M)
+-
+     def __init__(self, id):
+         self.movie_id = id
+-        self.url      = "http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html" % str(self.movie_id)
++        self.url      = "http://api.allocine.fr/xml/movie?partner=3&json=1&profile=large&code=%s" % str(self.movie_id)
+         self.encode   = 'utf-8'
+ 
+     def initialize(self):
+-        self.page_cast = self.open_page(self.parent_window, url = "http://www.allocine.fr/film/casting_gen_cfilm=%s.html" % str(self.movie_id))
++        self.movie = json.JSONDecoder().decode(self.page)['movie']
+ 
+     def get_image(self):
+-        urls = re.split('<img[ \t]+src=[\'"]', gutils.trim(self.page, '<div class="poster">', '</div>'))
+-        for url in urls[1:]:
+-            url = gutils.before(url, '"')
+-            url = gutils.before(url, '\'')
+-            if string.find(url, '.jpg') >= 0:
+-                self.image_url = url
+-                break
++        self.image_url = ''
++        if 'poster' in self.movie:
++            self.image_url = self.movie['poster']['href']
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.after(gutils.trim(self.page, 'Titre original : <span', '</span>'), '>')
+-        if (self.o_title == ''):
+-            self.o_title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin?', ''))
++        self.o_title = ''
++        if 'originalTitle' in self.movie:
++            self.o_title = self.movie['originalTitle']
++        elif 'title' in self.movie:
++            self.o_title = self.movie['title']
+ 
+     def get_title(self):
+-        self.title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin?', ''))
++        self.title = ''
++        if 'title' in self.movie:
++            self.title = self.movie['title']
++        elif 'originalTitle' in self.movie:
++            self.title = self.movie['originalTitle']
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, u'R?alis? par ', '</a>')
++        self.director = self.buildfromcast(8002)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, 'Synopsis : ', '</div>')
++        self.plot = ''
++        if 'synopsis' in self.movie:
++            self.plot = self.movie['synopsis']
+ 
+     def get_year(self):
+-        self.year = gutils.clean(gutils.trim(self.page, u'Ann?e de production :', '</a>'))
++        self.year = ''
++        if 'productionYear' in self.movie:
++            self.year = self.movie['productionYear']
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.clean(gutils.trim(self.page, u'Dur?e :', 'min'))
+-        if self.runtime:
+-            self.runtime = str(int(gutils.before(self.runtime, "h")) * 60 + int(gutils.after(self.runtime, "h")))
++        self.runtime = ''
++        if 'runtime' in self.movie:
++            self.runtime = self.movie['runtime'] / 60
+ 
+     def get_genre(self):
+-        self.genre = gutils.regextrim(self.page, 'Genre :', '</a>[^,]')
+-        self.genre = string.replace(self.replace_tabs.sub('', gutils.clean(self.genre)), ',', ', ')
++        self.genre = ''
++        if 'genre' in self.movie:
++            for genre in self.movie['genre']:
++                self.genre = self.genre + genre['$'] + ', '
++        if self.genre:
++            self.genre = self.genre[:-2]
+ 
+     def get_cast(self):
+-        self.cast = ""
+-        casts = gutils.trim(self.page_cast, 'Acteurs, r?les, personnages', '<h2>')
+-        parts = string.split(casts, 'href="/personne/fichepersonne_gen_cpersonne=')
+-        for index in range(1, len(parts), 1):
+-            character = gutils.clean(gutils.trim(parts[index], 'R?le :', '<'))
+-            if not character:
+-                character = gutils.clean(gutils.trim(parts[index - 1], '<td>', '</td>'))
+-            actor = gutils.clean(gutils.trim(parts[index], '>', '<'))
+-            if actor:
+-                if character:
+-                    self.cast = self.cast + actor + _(' as ') + character + '\n'
+-                else:
+-                    self.cast = self.cast + actor + '\n'
++        self.cast = ''
++        if 'castMember' in self.movie:
++            for cast in self.movie['castMember']:
++                if 'activity' in cast:
++                    activity = cast['activity']
++                    if 'code' in activity:
++                        if activity['code'] == 8001:
++                            if 'role' in cast:
++                                self.cast = self.cast + cast['person']['$'] + _(' as ') + cast['role'] + '\n'
++                            else:
++                                self.cast = self.cast + cast['person']['$'] + '\n'
+ 
+     def get_classification(self):
+         self.classification = ""
++        if 'movieCertificate' in self.movie:
++            self.classification = self.movie['movieCertificate']['$']
+ 
+     def get_studio(self):
+         self.studio = ""
+@@ -109,81 +115,86 @@
+ 
+     def get_site(self):
+         self.site = "http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html" % self.movie_id
++        if 'link' in self.movie:
++            for link in self.movie['link']:
++                if link['rel'] == 'aco:more':
++                    self.site = link['href']
+ 
+     def get_trailer(self):
+         self.trailer = "http://www.allocine.fr/film/video_gen_cfilm=%s.html" % self.movie_id
++        if 'trailer' in self.movie:
++            self.trailer = self.movie['trailer']['href']
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, 'Long-m?trage', '</a>')
++        self.country = ''
++        if 'nationality' in self.movie:
++            for country in self.movie['nationality']:
++                self.country = self.country + country['$'] + ', '
++        if self.country:
++            self.country = self.country[:-2]
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, 'Spectateurs</a>', 'src=')
+-        self.rating = gutils.trim(self.rating, 'class="stareval n', ' ')
+-        if self.rating:
+-            try:
+-                self.rating = str(round(float(int(self.rating) * .225)))
+-            except:
+-                self.rating = 0
++        self.rating = 0
++        if 'statistics' in self.movie:
++            statistics = self.movie['statistics']
++            if 'pressRating' in statistics:
++                self.rating = statistics['pressRating'] * 2
++            elif 'userRating' in statistics:
++                self.rating = statistics['userRating'] * 2
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.clean(gutils.trim(self.page_cast, u'Sc?nariste', '</tr>'))
++        self.screenplay = self.buildfromcast(8004)
+ 
+     def get_cameraman(self):
+-        self.cameraman = gutils.clean(gutils.trim(self.page_cast, 'Directeur de la photographie', '</tr>'))
++        self.cameraman = self.buildfromcast(8037)
+ 
++    def buildfromcast(self, code):
++        result = ''
++        if 'castMember' in self.movie:
++            for cast in self.movie['castMember']:
++                if 'activity' in cast:
++                    activity = cast['activity']
++                    if 'code' in activity:
++                        if activity['code'] == code:
++                            result = result + cast['person']['$'] + ', '
++        if result:
++            result = result[:-2]
++        return result
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search   = "http://www.allocine.fr/recherche/1/?q="
+-        self.translated_url_search = "http://www.allocine.fr/recherche/1/?q="
++        self.original_url_search   = "http://api.allocine.fr/xml/search?partner=3&json=1&count=100&profile=small&q="
++        self.translated_url_search = "http://api.allocine.fr/xml/search?partner=3&json=1&count=100&profile=small&q="
+         self.encode                = 'utf-8'
+         self.remove_accents        = True
+ 
+     def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+-        # try to find next pages if more than 20 results
+-        match = re.search('<span class="navcurrpage">1</span> / ([0-9])+</li>', self.page)
+-        self.sub_search()
+-        if match:
+-            saved_url = self.url
+-            saved_title = self.title
+-            self.title = ''
+-            try:
+-                maxpages = int(match.group(1))
+-                if maxpages > 1:
+-                    currpage = 2
+-                    while currpage <= maxpages and currpage < 5:
+-                        oldpage = self.page
+-                        self.url = string.replace(saved_url, '/?q=', '/?p=%s&q=' % currpage)
+-                        if not self.open_search(parent_window):
+-                            return None
+-                        self.sub_search()
+-                        self.page = oldpage + self.page
+-                        currpage = currpage + 1
+-            except:
+-                log.exception('')
+-            self.url = saved_url
+-            self.title = saved_title
+         return self.page
+ 
+-    def sub_search(self):
+-        self.page = gutils.regextrim(self.page, u'r?sultat[s]* trouv?[s]*', '<form ')
+-
+     def get_searches(self):
+-        elements = string.split(self.page, '<a href=\'/film/fichefilm_gen_cfilm=')
+-        if (elements[0] <> ''):
+-            for index in range(1, len(elements), 1):
+-                element = elements[index]
+-                title = gutils.clean(gutils.convert_entities(gutils.trim(element, '>', '</a>')))
+-                year = gutils.clean(gutils.trim(element, '<span class="fs11">', '<br'))
+-                if title:
+-                    self.ids.append(gutils.before(element, '.'))
+-                    if year:
+-                        self.titles.append(title + ' (' + year + ')')
+-                    else:
+-                        self.titles.append(title)
++        result = json.JSONDecoder().decode(self.page)
++        try:
++            movies = result['feed']['movie']
++            for movie in movies:
++                try:
++                    title = ''
++                    year = ''
++                    if 'title' in movie:
++                        title = movie['title']
++                    elif 'originalTitle' in movie:
++                        title = movie['originalTitle']
++                    if 'productionYear' in movie:
++                        year = '(%s)' % movie['productionYear']
++                    self.titles.append('%s %s' % (title, year))
++                    self.ids.append(movie['code'])
++                except:
++                    log.exception('')
++        except:
++            log.exception('')
+ 
+ 
+ #
+@@ -223,25 +234,25 @@
+ Ana?s Demoustier' + _(' as ') + 'Justine\n\
+ Maud Buquet' + _(' as ') + 'la prostitu?e\n\
+ Francis Leplay' + _(' as ') + 'l\'agent immobilier',
+-            'country'             : u'fran?ais',
++            'country'             : u'France',
+             'genre'               : u'Com?die',
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : False,
+             'site'                : 'http://www.allocine.fr/film/fichefilm_gen_cfilm=110585.html',
+-            'trailer'             : 'http://www.allocine.fr/film/video_gen_cfilm=110585.html',
++            'trailer'             : 'http://www.allocine.fr/blogvision/18726250',
+             'year'                : 2007,
+             'notes'               : False,
+             'runtime'             : 95,
+             'image'               : True,
+-            'rating'              : 6,
++            'rating'              : 4,
+             'cameraman'           : u'Jean-Fran?ois Robin',
+             'screenplay'          : u'Alexandra Lecl?re',
+             'barcode'             : False
+         },
+         '309' : {
+             'title'               : u'Terminator',
+-            'o_title'             : u'Terminator',
++            'o_title'             : u'Terminator, The',
+             'director'            : u'James Cameron',
+             'plot'                : True,
+             'cast'                : u'Arnold Schwarzenegger' + _(' as ') + 'le Terminator\n\
+@@ -281,20 +292,20 @@
+ John E. Bristol' + _(' as ') + 'Biker at Phone Booth\n\
+ Gregory Robbins' + _(' as ') + 'Tiki Motel Customer\n\
+ Chino \'Fats\' Williams' + _(' as ') + 'Truck Driver',
+-            'country'             : u'am?ricain',
+-            'genre'               : u'Science fiction',
+-            'classification'      : False,
++            'country'             : 'U.S.A.',
++            'genre'               : 'Science fiction, Thriller',
++            'classification'      : 'Interdit aux moins de 12 ans',
+             'studio'              : False,
+             'o_site'              : False,
+             'site'                : 'http://www.allocine.fr/film/fichefilm_gen_cfilm=309.html',
+-            'trailer'             : 'http://www.allocine.fr/film/video_gen_cfilm=309.html',
++            'trailer'             : 'http://www.allocine.fr/blogvision/18895020',
+             'year'                : 1984,
+             'notes'               : False,
+             'runtime'             : 108,
+             'image'               : True,
+-            'rating'              : 9,
++            'rating'              : 8,
+             'cameraman'           : u'Adam Greenberg',
+-            'screenplay'          : u'James Cameron',
++            'screenplay'          : u'James Cameron, Gale Anne Hurd, Harlan Ellison, William Wisher',
+             'barcode'             : False
+         },
+     }
+
+
+
+From mikej06 at mail.berlios.de  Thu Sep  1 23:02:20 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu,  1 Sep 2011 23:02:20 +0200
+Subject: [Griffith-svn] r1580 - in trunk: . lib/plugins/extensions
+Message-ID: <20110901210220.6470B4811D9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-01 23:02:19 +0200 (Thu, 01 Sep 2011)
+New Revision: 1580
+
+Added:
+   trunk/lib/plugins/extensions/ge_sqlitemaintenance.py
+Modified:
+   trunk/ChangeLog
+Log:
+added database maintenance extension
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-09-01 20:03:35 UTC (rev 1579)
++++ trunk/ChangeLog	2011-09-01 21:02:19 UTC (rev 1580)
+@@ -7,6 +7,7 @@
+ 
+ 2011-09-01  Michael Jahn
+ 	* updated Allocine plugin, switch to JSON api
++	* added database maintenance extension
+ 
+ 2011-08-30  Michael Jahn
+ 	* updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
+
+Added: trunk/lib/plugins/extensions/ge_sqlitemaintenance.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_sqlitemaintenance.py	                        (rev 0)
++++ trunk/lib/plugins/extensions/ge_sqlitemaintenance.py	2011-09-01 21:02:19 UTC (rev 1580)
+@@ -0,0 +1,82 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright ? 2011
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import os
++import logging
++import gutils
++from sqlalchemy.sql import delete, exists, and_, not_
++from db.tables import movies as movies_table
++from db.tables import posters as posters_table
++
++from plugins.extensions import GriffithExtensionBase as Base
++
++log = logging.getLogger('Griffith')
++
++class GriffithExtension(Base):
++    name = 'Database Cleanup and Maintenance'
++    description = _('Removes unused posters, executes the VACUUM command and corrects a wrong page size if possible (SQLite)')
++    author = 'Michael Jahn'
++    email = 'mike at griffith.cc'
++    version = 0.1
++    api = 1
++    enabled = False
++
++    toolbar_icon = 'gtk-goto-bottom'
++
++    def toolbar_icon_clicked(self, widget, movie):
++        #
++        # remove unused posters
++        #
++        session = self.db.Session()
++        delete_posters = delete(posters_table)
++        delete_posters = delete_posters.where(not_(exists([movies_table.c.movie_id], and_(posters_table.c.md5sum==movies_table.c.poster_md5)).correlate(posters_table)))
++        log.debug(delete_posters)
++        session.execute(delete_posters)
++        session.commit()
++        #
++        # compressing sqlite databases
++        #
++        if self.app.config.get('type', 'sqlite', section='database') == 'sqlite':
++            databasefilename = "%s.db" % os.path.join(self.app.locations['home'], self.app.config.get('name', section='database'))
++            pagesize = gutils.get_filesystem_pagesize(databasefilename)
++
++            # works since sqlite 3.5.8
++            # python 2.5 doesn't include 3.x but perhaps in future versions
++            # another way is the installation of pysqlite2 with 2.5.6/2.6.0 or higher
++            try:
++                from pysqlite2 import dbapi2 as sqlite3
++
++                con = sqlite3.connect(databasefilename)
++                try:
++                    con.isolation_level = None
++                    cur = con.cursor()
++                    cur.execute('PRAGMA page_size=' + str(pagesize))
++                    cur.execute('VACUUM;')
++                finally:
++                    con.close()
++            except:
++                log.error('fallback to default driver')
++                self.app.db.engine.execute('PRAGMA page_size=' + str(pagesize))
++                self.app.db.engine.execute('VACUUM;')
++        gutils.info(_("Finished"))
++
+
+
+
+From mikej06 at mail.berlios.de  Sun Sep  4 20:25:23 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun,  4 Sep 2011 20:25:23 +0200
+Subject: [Griffith-svn] r1581 - trunk/lib/plugins/movie
+Message-ID: <20110904182524.28A44481214@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-04 20:25:23 +0200 (Sun, 04 Sep 2011)
+New Revision: 1581
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+use simplejson if available
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-09-01 21:02:19 UTC (rev 1580)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-09-04 18:25:23 UTC (rev 1581)
+@@ -22,7 +22,10 @@
+ # GNU General Public License, version 2 or later
+ 
+ import movie
+-import json
++try:
++    import simplejson as json
++except:
++    import json
+ import logging
+ log = logging.getLogger("Griffith")
+ 
+
+
+
+From piotrek at mail.berlios.de  Sun Sep  4 23:08:14 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun,  4 Sep 2011 23:08:14 +0200
+Subject: [Griffith-svn] r1582 - in trunk: . debian lib lib/plugins/movie
+Message-ID: <20110904210814.B5E29481214@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-09-04 23:08:14 +0200 (Sun, 04 Sep 2011)
+New Revision: 1582
+
+Modified:
+   trunk/ChangeLog
+   trunk/debian/control
+   trunk/lib/add.py
+   trunk/lib/gutils.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+AniDB movie plugin rewritten (uses HTTP XML API now) - needs lxml module
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-09-04 18:25:23 UTC (rev 1581)
++++ trunk/ChangeLog	2011-09-04 21:08:14 UTC (rev 1582)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-09-04  Piotr O?arowski
++	* AniDB movie plugin rewritten (uses HTTP XML API now) - needs lxml module
++
+ 2011-09-01  Michael Jahn
+ 	* updated Allocine plugin, switch to JSON api
+ 	* added database maintenance extension
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2011-09-04 18:25:23 UTC (rev 1581)
++++ trunk/debian/control	2011-09-04 21:08:14 UTC (rev 1582)
+@@ -5,7 +5,7 @@
+ Build-Depends: debhelper (>= 5)
+ Build-Depends-Indep: python (>= 2.6.3-3), docbook2x
+ Standards-Version: 3.9.2
+-XS-Python-Version: >=2.5
++X-Python-Version: >= 2.5
+ Vcs-Svn: svn://svn.berlios.de/griffith/trunk/
+ Vcs-Browser: http://svn.berlios.de/wsvn/griffith/trunk/
+ Homepage: http://www.griffith.cc/
+@@ -21,6 +21,7 @@
+  python-imaging (>= 1.1.5-6)
+ Recommends: python-gtkspell,
+  python-chardet,
++ python-lxml,
+  python-psycopg2 (>= 1.1.21-6),
+  python-mysqldb (>= 1.2.1-p2-2)
+ Suggests: griffith-extra-artwork (>= 0.9),
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-09-04 18:25:23 UTC (rev 1581)
++++ trunk/lib/add.py	2011-09-04 21:08:14 UTC (rev 1582)
+@@ -284,6 +284,7 @@
+             reload(sys.modules[plugin_name])
+         self.search_movie = plugin.SearchPlugin()
+         self.search_movie.config = self.config
++        self.search_movie.locations = self.locations
+         if o_title:
+             self.search_movie.url = self.search_movie.original_url_search
+             if self.search_movie.remove_accents:
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-09-04 18:25:23 UTC (rev 1581)
++++ trunk/lib/gutils.py	2011-09-04 21:08:14 UTC (rev 1582)
+@@ -620,6 +620,15 @@
+         'version': version,
+         'url': 'http://initd.org/tracker/pysqlite',
+         'debian': 'python-sqlite'})
++    try:
++        import lxml
++        version = True
++    except ImportError:
++        version = False
++    optional.append({'module': 'lxml',
++        'version': version,
++        'url': 'http://lxml.de/',
++        'debian': 'python-lxml'})
+     return depend, optional
+ 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-04 18:25:23 UTC (rev 1581)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-04 21:08:14 UTC (rev 1582)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Piotr O?arowski
++# Copyright ? 2005-2011 Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -21,9 +21,15 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie
+-import string, re
++import urllib2
++from datetime import datetime
++from locale import getdefaultlocale
++from os.path import getmtime, isfile, join
++
++from lxml import etree
++
+ from gutils import decompress
++from movie import Movie, SearchMovie
+ 
+ plugin_name         = 'AnimeDB'
+ plugin_description  = 'Anime DataBase'
+@@ -31,112 +37,77 @@
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = 'piotr at griffith.cc'
+-plugin_version      = '2.8'
++plugin_version      = '3.0'
+ 
+-aid_pattern = re.compile('[?&;]aid=(\d+)')
++ANIME_TITLES_URL = 'http://anidb.net/api/animetitles.xml.gz'
++ANIME_IMG_URL = 'http://img7.anidb.net/pics/anime/'
++ANIME_WEB_URL = 'http://anidb.net/perl-bin/animedb.pl?show=anime&aid='
++REQUEST = "http://api.anidb.net:9001/httpapi?request=anime&client=%(client)s&clientver=%(version)s&protover=%(protocol)s&aid="
++REQUEST %= dict(client='griffith', version=1, protocol=1)
+ 
+-class Plugin(movie.Movie):
+-    def __init__(self, id):
++lang = getdefaultlocale()[0][:2]  # TODO: get it from settings
++
++
++class Plugin(Movie):
++    def __init__(self, aid):
+         self.encode = 'utf-8'
+-        if string.find(id, 'http://') != -1:
+-            self.url = str(id)
+-            self.movie_id = 'anidb'
+-        else:
+-            self.movie_id = str(id)
+-            self.url = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
++        self._aid = aid
++        self.url = REQUEST + aid
+ 
+     def initialize(self):
+-        self.page = decompress(self.page)
+-        if self.movie_id == 'anidb':
+-            aid =  aid_pattern.search(self.page)
+-            if aid:
+-                self.movie_id = aid.groups()[0]
+-                self.url = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
+-            else:
+-                return False
+-        self.page = gutils.after(self.page, 'id="layout-content"')
+-        pos = string.find(self.page, 'class="g_section anime_episodes">')
+-        if pos >0:
+-            self.page = self.page[:pos]
++        self._xml = etree.fromstring(self.page)
+ 
+     def get_image(self):
+-        match = re.search('img\d*.anidb.net/pics/anime/\d*.jpg', self.page)
+-        if match is not None:
+-            self.image_url = 'http://' + match.group()
+-        else:
+-            self.image_url = ''
++        self.image_url = ANIME_IMG_URL + self._xml.find('picture').text
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '<span class="i_icon i_audio_ja" title=" language: japanese"><span>ja</span></span>', '</td>')
+-        self.o_title = gutils.trim(self.o_title, '<label>', '</label>')
++        self.o_title = self._xml.find('titles/title[@type="main"]').text
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '<h1 class="anime">Anime: ', '</h1>')
++        node = self._xml.xpath("titles/title[@xml:lang='%s' and @type='official']" % lang)
++        if node:
++            self.title = node[0].text
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, '>Direction (&#x76E3;&#x7763;', '</tr>')
+-        self.director = gutils.after(gutils.trim(self.director, '<a ', '</a>'), '>')
++        self.director = ', '.join(n.text for n in self._xml.xpath('creators/name[@type="Direction"]'))
+ 
+     def get_plot(self):
+-        self.plot = gutils.regextrim(self.page, 'class="(g_bubble )*desc">', '</div>')
+-        self.plot = self.plot.replace('<br/>', '\n')
++        self.plot = self._xml.xpath('description')[0].text
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '"field">Year', '</td>')
+-        self.year = gutils.after(self.year, '"value">')[-4:]
++        node = self._xml.xpath('episodes/episode[title="Complete Movie"]')
++        if node:
++            self.year = node.xpath('airdate')[0][:4]
++        # XXX: should we take the first child if "Complete Movie" is missing?
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, '<label>Complete Movie</label>', '</tr>')
+-        self.runtime = gutils.trim(self.runtime, '<td class="duration">', 'm')
++        node = self._xml.xpath('episodes/episode[title="Complete Movie"]')
++        if node:
++            self.runtime = node.xpath('length')[0]
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, '>Categories<', '</td>')
+-        self.genre = gutils.after(self.genre, 'value">')
+-        self.genre = gutils.strip_tags(self.genre)
+-        if len(self.genre) and self.genre.endswith('- similar'):
+-            self.genre =  self.genre[:-9]
+-        elif self.genre == '-':
+-            self.genre = ''
+-        self.genre = string.replace(self.genre, '\n', '')
++        nodes = self._xml.xpath('categories/category/name')
++        self.genre = ', '.join(n.text for n in nodes)
+ 
+     def get_cast(self):
+-        self.cast = 'Characters:\n---------------'
+-        castv = gutils.trim(self.page, '<table id="characterlist" class="characterlist">', '</table>')
+-        if castv != '':
+-            castparts = string.split(castv, '<tr ')
+-            for index in range(2, len(castparts), 1):
+-                castpart = castparts[index]
+-                castcharacter = gutils.clean(gutils.trim(castpart, '<td rowspan="1" class="name">', '</td>'))
+-                castentity = gutils.clean(gutils.trim(castpart, '<td rowspan="1" class="entity">', '</td>'))
+-                castactor = gutils.clean(gutils.trim(castpart, '<td class="name"><a href="animedb.pl?show=creator&amp;creatorid=', 'd>'))
+-                castactor = gutils.clean(gutils.trim(castactor, '">', '</t'))
+-                if castv == ' ':
+-                    castactor = 'unknown'
+-                castrelation = gutils.clean(gutils.trim(castpart, '<td rowspan="1" class="relation">', '</td>'))
+-                castappearance = gutils.clean(gutils.trim(castpart, '<td rowspan="1" class="eprange">', '</td>'))
+-                self.cast += '\n\n' + '[' + castcharacter + '] voiced by ' + castactor + '\n' + castentity + '; ' + castrelation + '; appears in episodes: ' + castappearance
++        nodes = self._xml.xpath('characters/character[@type="main character in"]')
++        self.cast = ''
++        for node in nodes:
++            name = node.xpath('name')[0].text
++            actor = node.xpath('seiyuu')[0].text
++            self.cast += "[%s] voiced by %s\n" % (name, actor)
+ 
+     def get_classification(self):
+         self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '<tr class="producers">', '</tr>')
+-        if self.studio == '':
+-            self.studio = gutils.trim(self.page, '<tr class="g_odd producers">', '</tr>')
+-        self.studio = gutils.trim(self.studio, '<td class="value">', '</td>')
+-        self.studio = gutils.strip_tags(self.studio)
+-        if len(self.studio) and self.studio[:2] == " (":
+-            self.studio = self.studio[2:]
+-            if self.studio[len(self.studio)-1:] == ')':
+-                self.studio = self.studio[:len(self.studio)-1]
+-        self.studio = string.replace(self.studio, '\n', '')
++        self.studio = ', '.join(n.text for n in self._xml.xpath('creators/name[@type="Animation Production"]'))
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page, '<th class="field">Resources</th>', '</tr>') #class varies, tag used
+-        self.o_site = gutils.regextrim(self.o_site, '<a class="official[^"]*" href="', '" rel="anidb::extern">Official page')
++        self.site = self._xml.xpath('url')[0].text
+ 
+     def get_site(self):
+-        self.site = self.url
++        self.site = ANIME_TITLES_URL + self._aid
+ 
+     def get_trailer(self):
+         self.trailer = ''
+@@ -145,78 +116,75 @@
+         self.country = ''
+ 
+     def get_rating(self):
+-        self.rating = gutils.clean(gutils.after(gutils.trim(self.page, '<span class="rating', '</a>'), '>'))
+-        if self.rating:
+-            try:
+-                self.rating = str(round(float(self.rating)))
+-            except:
+-                self.rating = ''
++        rating = self._xml.xpath('ratings/permanent')
++        if rating:
++            self.rating = str(round(float(rating[0].text)))
+ 
+     def get_notes(self):
+         self.notes = ''
+         # ...type and episodes
+-        atype = gutils.trim(self.page, '"field">Type', '</td>')
+-        atype = gutils.clean(atype)
+-        if atype != '':
+-            self.notes += "Type: %s\n" % atype
+-        episodes = gutils.trim(self.page, '>Episode list<', '</table>')
+-        if episodes != '':
+-            parts = string.split(episodes, '<tr ')
+-            for index in range(2, len(parts), 1):
+-                part = parts[index]
+-                nr = gutils.clean(gutils.trim(part, 'class="id eid">', '</td>'))
+-                title = gutils.clean(gutils.after(gutils.trim(part, '<label', '</td>'), '>'))
+-                duration = gutils.clean(gutils.trim(part, 'class="duration">', '</td>'))
+-                airdate = gutils.clean(gutils.trim(part, 'class="date airdate">', '</td>'))
+-                self.notes += '\n' + nr + ': ' + title + ' (' + duration + ', ' + airdate + ')'
++        type_ = self._xml.find('type')
++        if type_ is not None:
++            self.notes += "Type: %s\n" % type_.text
++        episodes = {}
++        for node in self._xml.xpath('episodes/episode'):
++            key = node.find('epno').text
++            titles = {}
++            for tnode in node.xpath('title'):
++                titles[tnode.attrib['xml:lang']] = tnode.text
++            duration = node.find('length').text
++            airdate = node.find('airdate')
++            airdate = airdate.text if airdate is not None else None
++            episodes[key] = dict(titles=titles, duration=duration, airdate=airdate)
++        for key, details in sorted(episodes.iteritems()):
++            self.notes += "\n%s: " % key
++            self.notes += details['titles'].get(lang, details['titles']['en'])
++            self.notes += " (%s" % details['duration']
++            if details['airdate']:
++                self.notes += ", %s)" % details['airdate']
++            else:
++                self.notes += ')'
+ 
+-    def get_screenplay(self):
+-        self.screenplay = gutils.trim(self.page, 'Script/Screenplay (&#x811A;&#x672C;', '</tr>')
+-        self.screenplay = gutils.after(gutils.trim(self.screenplay, '<a ', '</a>'), '>')
+ 
+-class SearchPlugin(movie.SearchMovie):
+-    def __init__(self):
+-        self.encode = 'utf-8'
+-        self.original_url_search = 'http://anidb.net/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
+-        self.translated_url_search = 'http://anidb.net/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
++def load_titles(fpath):
++    # animetitles.xml.gz is updated once a day
++    remote = urllib2.urlopen(ANIME_TITLES_URL)
++    last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
+ 
+-    def search(self,parent_window):
+-        self.open_search(parent_window)
+-        self.page = decompress(self.page)
++    if not isfile(fpath) or \
++       datetime.fromtimestamp(getmtime(fpath)) < last_modified:
++        fp = open(fpath, 'w')
++        fp.write(remote.read())
++        fp.close()
+ 
+-        tmp = string.find(self.page, '>Anime List - Search for: ')
+-        if tmp == -1:        # already a movie page
+-            self.page = 'movie'
+-        else:            # multiple matches
+-            self.page = gutils.trim(self.page, 'class="animelist"', '</table>');
+-            self.page = gutils.after(self.page, '</tr>');
++    return etree.fromstring(decompress(open(fpath).read()))
+ 
+-        return self.page
+ 
+-    def get_searches(self):
+-        if self.page == 'movie':    # already a movie page
+-            self.number_results = 1
+-            self.ids.append(self.url)
+-            self.titles.append(self.title)
+-        else:            # multiple matches
+-            elements = string.split(self.page,"</tr>")
+-            self.number_results = elements[-1]
++class SearchPlugin(SearchMovie):
++    original_url_search = 'http://anidb.net/'
++    translated_url_search = 'http://anidb.net/'
+ 
+-            if len(elements[0]):
+-                for element in elements:
+-                    aid = aid_pattern.search(element)
+-                    if not aid:
+-                        continue
+-                    title = gutils.clean(gutils.trim(element, '<td class="name">', '</a>'))
+-                    type = gutils.clean(gutils.after(gutils.trim(element, '<td class="type', '</td>'), '>'))
+-                    self.ids.append(aid.groups()[0])
+-                    if type:
+-                        self.titles.append(title + ' (' + type + ')')
+-                    else:
+-                        self.titles.append(title)
++    def search(self, parent_window):
++        self._search_results = []
++        exml = load_titles(join(self.locations['home'], 'animetitles.xml.gz'))
++        for node in exml.xpath("anime[contains(., '%s')]" % self.title.replace("'", r"\'")):
++            aid = node.attrib['aid']
++            title = node.xpath("title[@xml:lang='%s']" % lang)
++            # XXX: how about xpath with both cases and sorting results later?
++            if not title:
++                title = node.xpath('title[@type="main"]')[0].text
+             else:
+-                self.number_results = 0
++                title = title[0].text
++            self._search_results.append((aid, title))
+ 
++        return self._search_results
++
++    def get_searches(self):
++        self.number_results = len(self._search_results)
++        for aid, title in self._search_results:
++            self.ids.append(aid)
++            self.titles.append(title)
++
+ #
+ # Plugin Test
+ #
+@@ -228,7 +196,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Hellsing' : [ 9, 9 ]
++        'Hellsing': [ 9, 9 ]
+     }
+ 
+ 
+@@ -241,7 +209,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '32' : {
++        '32': {
+             'title'               : 'Hellsing',
+             'o_title'             : u'?????',
+             'director'            : 'Urata Yasunori',
+
+
+
+From mikej06 at mail.berlios.de  Mon Sep  5 23:27:55 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon,  5 Sep 2011 23:27:55 +0200
+Subject: [Griffith-svn] r1583 - trunk/lib/plugins/movie
+Message-ID: <20110905212756.47055481227@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-05 23:27:55 +0200 (Mon, 05 Sep 2011)
+New Revision: 1583
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+use binary file mode, otherwise it breaks on windows platform
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-04 21:08:14 UTC (rev 1582)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-05 21:27:55 UTC (rev 1583)
+@@ -153,11 +153,11 @@
+ 
+     if not isfile(fpath) or \
+        datetime.fromtimestamp(getmtime(fpath)) < last_modified:
+-        fp = open(fpath, 'w')
++        fp = open(fpath, 'wb')
+         fp.write(remote.read())
+         fp.close()
+ 
+-    return etree.fromstring(decompress(open(fpath).read()))
++    return etree.fromstring(decompress(open(fpath, 'rb').read()))
+ 
+ 
+ class SearchPlugin(SearchMovie):
+
+
+
+From piotrek at mail.berlios.de  Tue Sep  6 20:53:07 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue,  6 Sep 2011 20:53:07 +0200
+Subject: [Griffith-svn] r1584 - trunk/lib/plugins/movie
+Message-ID: <20110906185307.EDE0548122E@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-09-06 20:53:07 +0200 (Tue, 06 Sep 2011)
+New Revision: 1584
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+check headers only once a day
+
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-05 21:27:55 UTC (rev 1583)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-06 18:53:07 UTC (rev 1584)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ import urllib2
+-from datetime import datetime
++from datetime import datetime, timedelta
+ from locale import getdefaultlocale
+ from os.path import getmtime, isfile, join
+ 
+@@ -55,6 +55,8 @@
+         self.url = REQUEST + aid
+ 
+     def initialize(self):
++        if not self.page.startswith('<?xml'):
++            raise Exception('page not in XML format')
+         self._xml = etree.fromstring(self.page)
+ 
+     def get_image(self):
+@@ -148,11 +150,21 @@
+ 
+ def load_titles(fpath):
+     # animetitles.xml.gz is updated once a day
+-    remote = urllib2.urlopen(ANIME_TITLES_URL)
+-    last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
++    remote = None
++    download = True
++    if isfile(fpath):
++        cache_last_modified = datetime.fromtimestamp(getmtime(fpath))
++        if cache_last_modified > datetime.now() - timedelta(days=1):
++            download = False
++        else:
++            remote = urllib2.urlopen(ANIME_TITLES_URL)
++            last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
++            if cache_last_modified >= last_modified:
++                download = False
++    else:
++        remote = urllib2.urlopen(ANIME_TITLES_URL)
+ 
+-    if not isfile(fpath) or \
+-       datetime.fromtimestamp(getmtime(fpath)) < last_modified:
++    if download:
+         fp = open(fpath, 'wb')
+         fp.write(remote.read())
+         fp.close()
+@@ -180,6 +192,8 @@
+         return self._search_results
+ 
+     def get_searches(self):
++        del self.ids[:]
++        del self.titles[:]
+         self.number_results = len(self._search_results)
+         for aid, title in self._search_results:
+             self.ids.append(aid)
+
+
+
+From mikej06 at mail.berlios.de  Mon Sep 12 22:43:18 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 12 Sep 2011 22:43:18 +0200
+Subject: [Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie
+Message-ID: <20110912204319.0B78148125B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-12 22:43:18 +0200 (Mon, 12 Sep 2011)
+New Revision: 1585
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/movie.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+added limited urllib2 support
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-09-06 18:53:07 UTC (rev 1584)
++++ trunk/ChangeLog	2011-09-12 20:43:18 UTC (rev 1585)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-09-12  Michael Jahn
++	* added limited urllib2 support
++
+ 2011-09-04  Piotr O?arowski
+ 	* AniDB movie plugin rewritten (uses HTTP XML API now) - needs lxml module
+ 
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2011-09-06 18:53:07 UTC (rev 1584)
++++ trunk/lib/movie.py	2011-09-12 20:43:18 UTC (rev 1585)
+@@ -74,6 +74,7 @@
+     encode = 'iso-8859-1'
+     fields_to_fetch = []
+     progress = None
++    useurllib2 = False
+ 
+     # functions that plugin should implement: {{{
+     def initialize(self):
+@@ -167,9 +168,10 @@
+             return True
+ 
+         except:
++            self.progress.hide()
+             gutils.error(_("Connection failed."))
+             return False
+-        
++
+     def open_page(self, parent_window=None, url=None):
+         if url is None:
+             url_to_fetch = self.url
+@@ -178,7 +180,7 @@
+         if parent_window is not None:
+             self.parent_window = parent_window
+         self.progress.set_data(parent_window, _("Fetching data"), _("Wait a moment"), False)
+-        retriever = Retriever(url_to_fetch, self.parent_window, self.progress)
++        retriever = Retriever(url_to_fetch, self.parent_window, self.progress, useurllib2=self.useurllib2)
+         retriever.start()
+         while retriever.isAlive():
+             self.progress.pulse()
+@@ -188,28 +190,32 @@
+                 gtk.main_iteration()
+         data = None
+         try:
+-            if retriever.html:
+-                ifile = file(retriever.html[0], "rb")
+-                try:
+-                    data = ifile.read()
+-                finally:
+-                    ifile.close()
+-                # check for gzip compressed pages before decoding to unicode
+-                if len(data) > 2 and data[0:2] == '\037\213':
+-                    data = gutils.decompress(data)
+-                try:
+-                    # try to decode it strictly
+-                    data = data.decode(self.encode)
+-                except UnicodeDecodeError, exc:
+-                    # something is wrong, perhaps a wrong character set
+-                    # or some pages are not as strict as they should be
+-                    # (like OFDb, mixes utf8 with iso8859-1)
+-                    # I want to log the error here so that I can find it
+-                    # but the program should not terminate
+-                    log.error(exc)
+-                    data = data.decode(self.encode, 'ignore')
++            if retriever.exception is None:
++                if retriever.html:
++                    ifile = file(retriever.html[0], "rb")
++                    try:
++                        data = ifile.read()
++                    finally:
++                        ifile.close()
++                    # check for gzip compressed pages before decoding to unicode
++                    if len(data) > 2 and data[0:2] == '\037\213':
++                        data = gutils.decompress(data)
++                    try:
++                        # try to decode it strictly
++                        if self.encode:
++                            data = data.decode(self.encode)
++                    except UnicodeDecodeError, exc:
++                        # something is wrong, perhaps a wrong character set
++                        # or some pages are not as strict as they should be
++                        # (like OFDb, mixes utf8 with iso8859-1)
++                        # I want to log the error here so that I can find it
++                        # but the program should not terminate
++                        log.error(exc)
++                        data = data.decode(self.encode, 'ignore')
++            else:
++                gutils.urllib_error(_("Connection error"), self.parent_window)
+         except IOError:
+-            pass
++            log.exception('')
+         if url is None:
+             self.page = data
+         urlcleanup()
+@@ -222,7 +228,7 @@
+             dest = "%s.jpg" % tmp_dest
+             try:
+                 self.progress.set_data(self.parent_window, _("Fetching poster"), _("Wait a moment"), False)
+-                retriever = Retriever(self.image_url, self.parent_window, self.progress, dest)
++                retriever = Retriever(self.image_url, self.parent_window, self.progress, dest, useurllib2=self.useurllib2)
+                 retriever.start()
+                 while retriever.isAlive():
+                     self.progress.pulse()
+@@ -232,6 +238,7 @@
+                         gtk.main_iteration()
+                 urlcleanup()
+             except:
++                log.exception('')
+                 self.image = ""
+                 try:
+                     os.remove("%s.jpg" % tmp_dest)
+@@ -242,7 +249,7 @@
+ 
+     def parse_movie(self):
+         try:
+-            fields = list(self.fields_to_fetch) # make a copy
++            fields = list(self.fields_to_fetch)  # make a copy
+ 
+             self.initialize()
+ 
+@@ -293,6 +300,8 @@
+             if 'title' in self.fields_to_fetch and self.title is not None:
+                 if self.title[:4] == u'The ':
+                     self.title = self.title[4:] + u', The'
++        except:
++            log.exception('')
+         finally:
+             # close the progress dialog which was opened in get_movie
+             self.progress.hide()
+@@ -311,6 +320,7 @@
+     title = None
+     remove_accents = True
+     progress = None
++    useurllib2 = False
+ 
+     def __init__(self):
+         pass
+@@ -331,7 +341,7 @@
+             # dont forget to hide the progress dialog
+             self.progress.hide()
+ 
+-    def open_search(self, parent_window):
++    def open_search(self, parent_window, destination=None):
+         self.titles = [""]
+         self.ids = [""]
+         if self.url.find('%s') > 0:
+@@ -343,8 +353,8 @@
+             url = self.url.encode(self.encode)
+         except UnicodeEncodeError:
+             url = self.url.encode('utf-8')
+-        self.progress.set_data(parent_window, _("Searching"), _("Wait a moment"), False)
+-        retriever = Retriever(url, parent_window, self.progress)
++        self.progress.set_data(parent_window, _("Searching"), _("Wait a moment"), True)
++        retriever = Retriever(url, parent_window, self.progress, destination, useurllib2=self.useurllib2)
+         retriever.start()
+         while retriever.isAlive():
+             self.progress.pulse()
+@@ -353,31 +363,42 @@
+             while gtk.events_pending():
+                 gtk.main_iteration()
+         try:
+-            if retriever.html:
+-                ifile = file(retriever.html[0], 'rb')
+-                try:
+-                    self.page = ifile.read()
+-                finally:
+-                    ifile.close()
+-                # check for gzip compressed pages before decoding to unicode
+-                if len(self.page) > 2 and self.page[0:2] == '\037\213':
+-                    self.page = gutils.decompress(self.page)
+-                self.page = self.page.decode(self.encode, 'replace')
++            if retriever.exception is None:
++                if destination:
++                    # caller gave an explicit destination file
++                    # don't care about the content
++                    return True
++                if retriever.html:
++                    ifile = file(retriever.html[0], 'rb')
++                    try:
++                        self.page = ifile.read()
++                    finally:
++                        ifile.close()
++                    # check for gzip compressed pages before decoding to unicode
++                    if len(self.page) > 2 and self.page[0:2] == '\037\213':
++                        self.page = gutils.decompress(self.page)
++                    self.page = self.page.decode(self.encode, 'replace')
++                else:
++                    return False
+             else:
++                self.progress.hide()
++                gutils.urllib_error(_("Connection error"), parent_window)
+                 return False
+         except IOError:
+-            pass
+-        urlcleanup()
++            log.exception('')
++        finally:
++            urlcleanup()
+         return True
+ 
+ 
+ class Retriever(threading.Thread):
+ 
+-    def __init__(self, URL, parent_window, progress, destination=None):
++    def __init__(self, URL, parent_window, progress, destination=None, useurllib2=False):
+         self.URL = URL
+         self.html = None
++        self.exception = None
+         self.destination = destination
+-        self.parent_window = parent_window
++        self.useurllib2 = useurllib2
+         self.progress = progress
+         self._stopevent = threading.Event()
+         self._sleepperiod = 1.0
+@@ -385,14 +406,15 @@
+ 
+     def run(self):
+         try:
+-            self.html = urlretrieve(self.URL, self.destination, self.hook)
+-            #self.html = urlretrieve(self.URL.encode('utf-8'), self.destination, self.hook)
++            if self.useurllib2:
++                self.html = urlretrieve2(self.URL, self.destination, self.hook)
++            else:
++                self.html = urlretrieve(self.URL, self.destination, self.hook)
+             if self.progress.status:
+                 self.html = []
+-        except IOError:
+-            self.progress.dialog.hide()
+-            gutils.urllib_error(_("Connection error"), self.parent_window)
+-            self.join()
++        except Exception, e:
++            log.exception('')
++            self.exception = e
+ 
+     def hook(self, count, blockSize, totalSize):
+         if totalSize == -1:
+@@ -412,6 +434,7 @@
+ # which not all sites accepting. (zelluloid.de for example)
+ #
+ _uaurlopener = None
++_tempfilecleanup = None
+ 
+ 
+ def urlretrieve(url, filename=None, reporthook=None, data=None):
+@@ -421,6 +444,33 @@
+     return _uaurlopener.retrieve(url, filename, reporthook, data)
+ 
+ 
++def urlretrieve2(url, filename=None, reporthook=None, data=None):
++    global _tempfilecleanup
++    headers = {
++        'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7',
++        'Cache-Control': 'no-cache',
++        'Pragma': 'no-cache',
++        'Accept-Encoding': 'gzip'}
++    req = urllib2.Request(url, data, headers)
++    response = urllib2.urlopen(req)
++    if not filename:
++        import tempfile
++        (fd, filename) = tempfile.mkstemp()
++        if not _tempfilecleanup:
++            _tempfilecleanup = TempFileCleanup()
++        _tempfilecleanup._tempfiles.append(filename)
++        tfp = os.fdopen(fd, 'wb')
++    else:
++        tfp = file(filename, 'wb')
++    while 1:
++        block = response.read(4096)
++        if block == "":
++            break
++        tfp.write(block)
++    tfp.close()
++    return [filename, response.info()]
++
++
+ class UAFancyURLopener(FancyURLopener):
+     # use Firefox 3.0 User-Agent string from Windows XP
+     version = 'Mozilla/5.0 (Windows; U; Windows NT 6.0) Gecko/2008052906 Firefox/3.0'
+@@ -432,7 +482,32 @@
+         self.addheaders.append(('Cache-Control', 'no-cache'))
+         self.addheaders.append(('Pragma', 'no-cache'))
+ 
++    def open(self, fullurl, data=None):
++        # prevent blocking calls which doesn't come back
++        import socket
++        socket.setdefaulttimeout(20)
++        return FancyURLopener.open(self, fullurl, data)
+ 
++
++class TempFileCleanup:
++    _tempfiles = []
++
++    def __init__(self):
++        self.__unlink = os.unlink
++
++    def __del__(self):
++        self.cleanup()
++
++    def cleanup(self):
++        if self._tempfiles:
++            for file in self._tempfiles:
++                try:
++                    self.__unlink(file)
++                except OSError:
++                    pass
++            del self._tempfiles[:]
++
++
+ class Progress:
+ 
+     def __init__(self, window, title='', message=''):
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-06 18:53:07 UTC (rev 1584)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-12 20:43:18 UTC (rev 1585)
+@@ -22,6 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ import urllib2
++import logging
+ from datetime import datetime, timedelta
+ from locale import getdefaultlocale
+ from os.path import getmtime, isfile, join
+@@ -31,6 +32,8 @@
+ from gutils import decompress
+ from movie import Movie, SearchMovie
+ 
++log = logging.getLogger("Griffith")
++
+ plugin_name         = 'AnimeDB'
+ plugin_description  = 'Anime DataBase'
+ plugin_url          = 'www.anidb.net'
+@@ -50,7 +53,8 @@
+ 
+ class Plugin(Movie):
+     def __init__(self, aid):
+-        self.encode = 'utf-8'
++        self.encode = None
++        self.useurllib2 = True
+         self._aid = aid
+         self.url = REQUEST + aid
+ 
+@@ -133,7 +137,7 @@
+             key = node.find('epno').text
+             titles = {}
+             for tnode in node.xpath('title'):
+-                titles[tnode.attrib['xml:lang']] = tnode.text
++                titles[tnode.attrib['{http://www.w3.org/XML/1998/namespace}lang']] = tnode.text
+             duration = node.find('length').text
+             airdate = node.find('airdate')
+             airdate = airdate.text if airdate is not None else None
+@@ -148,37 +152,36 @@
+                 self.notes += ')'
+ 
+ 
+-def load_titles(fpath):
+-    # animetitles.xml.gz is updated once a day
+-    remote = None
+-    download = True
+-    if isfile(fpath):
+-        cache_last_modified = datetime.fromtimestamp(getmtime(fpath))
+-        if cache_last_modified > datetime.now() - timedelta(days=1):
+-            download = False
+-        else:
+-            remote = urllib2.urlopen(ANIME_TITLES_URL)
+-            last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
+-            if cache_last_modified >= last_modified:
++class SearchPlugin(SearchMovie):
++    original_url_search = 'http://anidb.net/'
++    translated_url_search = 'http://anidb.net/'
++
++    def load_titles(self, fpath, parent_window):
++        # animetitles.xml.gz is updated once a day
++        remote = None
++        download = True
++        if isfile(fpath):
++            cache_last_modified = datetime.fromtimestamp(getmtime(fpath))
++            if cache_last_modified > datetime.now() - timedelta(days=1):
+                 download = False
+-    else:
+-        remote = urllib2.urlopen(ANIME_TITLES_URL)
++            else:
++                remote = urllib2.urlopen(ANIME_TITLES_URL)
++                last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
++                if cache_last_modified >= last_modified:
++                    download = False
++                remote.close()
+ 
+-    if download:
+-        fp = open(fpath, 'wb')
+-        fp.write(remote.read())
+-        fp.close()
++        if download:
++            log.info('downloading title list from %s' % ANIME_TITLES_URL)
++            self.url = ''
++            self.title = ANIME_TITLES_URL
++            self.open_search(parent_window, fpath)
+ 
+-    return etree.fromstring(decompress(open(fpath, 'rb').read()))
++        return etree.fromstring(decompress(open(fpath, 'rb').read()))
+ 
+-
+-class SearchPlugin(SearchMovie):
+-    original_url_search = 'http://anidb.net/'
+-    translated_url_search = 'http://anidb.net/'
+-
+     def search(self, parent_window):
+         self._search_results = []
+-        exml = load_titles(join(self.locations['home'], 'animetitles.xml.gz'))
++        exml = self.load_titles(join(self.locations['home'], 'animetitles.xml.gz'), parent_window)
+         for node in exml.xpath("anime[contains(., '%s')]" % self.title.replace("'", r"\'")):
+             aid = node.attrib['aid']
+             title = node.xpath("title[@xml:lang='%s']" % lang)
+
+
+
+From piotrek at mail.berlios.de  Tue Sep 13 20:12:34 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue, 13 Sep 2011 20:12:34 +0200
+Subject: [Griffith-svn] r1586 - in trunk/lib: . plugins/movie
+Message-ID: <20110913181234.7161448125B@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-09-13 20:12:34 +0200 (Tue, 13 Sep 2011)
+New Revision: 1586
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+few minor fixes in AniDB movie plugin
+
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-09-12 20:43:18 UTC (rev 1585)
++++ trunk/lib/add.py	2011-09-13 18:12:34 UTC (rev 1586)
+@@ -147,7 +147,7 @@
+     w = self.widgets['add']
+     m_id = None
+     if self.founded_results_id:
+-        log.info("self.founded:results_id: %s", self.founded_results_id)
++        log.info("selected id: %s", self.founded_results_id)
+         m_id = self.founded_results_id
+     else:
+         self.founded_results_id = 0
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-12 20:43:18 UTC (rev 1585)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-13 18:12:34 UTC (rev 1586)
+@@ -44,7 +44,8 @@
+ 
+ ANIME_TITLES_URL = 'http://anidb.net/api/animetitles.xml.gz'
+ ANIME_IMG_URL = 'http://img7.anidb.net/pics/anime/'
+-ANIME_WEB_URL = 'http://anidb.net/perl-bin/animedb.pl?show=anime&aid='
++#ANIME_WEB_URL = 'http://anidb.net/perl-bin/animedb.pl?show=anime&aid='
++ANIME_WEB_URL = 'http://anidb.net/a'
+ REQUEST = "http://api.anidb.net:9001/httpapi?request=anime&client=%(client)s&clientver=%(version)s&protover=%(protocol)s&aid="
+ REQUEST %= dict(client='griffith', version=1, protocol=1)
+ 
+@@ -78,18 +79,24 @@
+         self.director = ', '.join(n.text for n in self._xml.xpath('creators/name[@type="Direction"]'))
+ 
+     def get_plot(self):
+-        self.plot = self._xml.xpath('description')[0].text
++        self.plot = self._xml.find('description').text
+ 
+     def get_year(self):
++        self.year = 0
+         node = self._xml.xpath('episodes/episode[title="Complete Movie"]')
+         if node:
+-            self.year = node.xpath('airdate')[0][:4]
++            self.year = node[0].find('airdate').text[:4]
++        else:
++            node = self._xml.find('startdate')
++            if node is not None:
++                self.year = node.text[:4]
+         # XXX: should we take the first child if "Complete Movie" is missing?
+ 
+     def get_runtime(self):
++        self.runtime = 0
+         node = self._xml.xpath('episodes/episode[title="Complete Movie"]')
+         if node:
+-            self.runtime = node.xpath('length')[0]
++            self.runtime = node[0].find('length').text
+ 
+     def get_genre(self):
+         nodes = self._xml.xpath('categories/category/name')
+@@ -99,32 +106,23 @@
+         nodes = self._xml.xpath('characters/character[@type="main character in"]')
+         self.cast = ''
+         for node in nodes:
+-            name = node.xpath('name')[0].text
+-            actor = node.xpath('seiyuu')[0].text
++            name = node.find('name').text
++            actor = node.find('seiyuu').text
+             self.cast += "[%s] voiced by %s\n" % (name, actor)
+ 
+-    def get_classification(self):
+-        self.classification = ''
+-
+     def get_studio(self):
+         self.studio = ', '.join(n.text for n in self._xml.xpath('creators/name[@type="Animation Production"]'))
+ 
+     def get_o_site(self):
+-        self.site = self._xml.xpath('url')[0].text
++        self.o_site = self._xml.find('url').text
+ 
+     def get_site(self):
+-        self.site = ANIME_TITLES_URL + self._aid
++        self.site = ANIME_WEB_URL + self._aid
+ 
+-    def get_trailer(self):
+-        self.trailer = ''
+-
+-    def get_country(self):
+-        self.country = ''
+-
+     def get_rating(self):
+-        rating = self._xml.xpath('ratings/permanent')
+-        if rating:
+-            self.rating = str(round(float(rating[0].text)))
++        rating = self._xml.find('ratings/permanent')
++        if rating is not None:
++            self.rating = str(round(float(rating.text)))
+ 
+     def get_notes(self):
+         self.notes = ''
+@@ -146,6 +144,7 @@
+             self.notes += "\n%s: " % key
+             self.notes += details['titles'].get(lang, details['titles']['en'])
+             self.notes += " (%s" % details['duration']
++            self.notes += _(' min')
+             if details['airdate']:
+                 self.notes += ", %s)" % details['airdate']
+             else:
+@@ -271,7 +270,7 @@
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : 'http://www.gonzo.co.jp/works/0102.html',
+-            'site'                : 'http://anidb.net/perl-bin/animedb.pl?show=anime&aid=32',
++            'site'                : 'http://anidb.net/a32',
+             'trailer'             : False,
+             'year'                : 2002,
+             'notes'               : True,
+@@ -279,6 +278,6 @@
+             'image'               : True,
+             'rating'              : 8,
+             'cameraman'           : False,
+-            'screenplay'          : 'Konaka Chiaki'
++            'screenplay'          : False
+         },
+     }
+
+
+
+From mikej06 at mail.berlios.de  Tue Sep 13 22:06:46 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 13 Sep 2011 22:06:46 +0200
+Subject: [Griffith-svn] r1587 - in trunk/lib: . plugins/movie
+Message-ID: <20110913200646.69A6F4812F2@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-13 22:06:46 +0200 (Tue, 13 Sep 2011)
+New Revision: 1587
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/lib/test_movieplugins.py
+Log:
+refreshed movie plugin autotest for anidb
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-13 18:12:34 UTC (rev 1586)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-13 20:06:46 UTC (rev 1587)
+@@ -212,7 +212,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Hellsing': [ 9, 9 ]
++        'Hellsing': [ 1, 1 ]
+     }
+ 
+ 
+@@ -227,52 +227,21 @@
+     test_configuration = {
+         '32': {
+             'title'               : 'Hellsing',
+-            'o_title'             : u'?????',
++            'o_title'             : 'Hellsing',
+             'director'            : 'Urata Yasunori',
+             'plot'                : True,
+-            'cast'                : u'Characters:\n\
+----------------\n\
+-\n\
+-[Alucard] voiced by Nakata Jouji\n\
+-male; main character in; appears in episodes: -\n\
+-\n\
+-[Incognito] voiced by Yamazaki Takumi\n\
+--; main character in; appears in episodes: 8-13\n\
+-\n\
+-[Seras Victoria] voiced by Orikasa Fumiko\n\
+-female; main character in; appears in episodes: -\n\
+-\n\
++            'cast'                : u'[Alucard] voiced by Nakata Jouji\n\
+ [Sir Integral Fairbrook Wingates Hellsing] voiced by Sakakibara Yoshiko\n\
+-22, female; main character in; appears in episodes: -\n\
+-\n\
+-[Alexander Anderson] voiced by Nozawa Nachi\n\
+-male; secondary cast in; appears in episodes: -\n\
+-\n\
+-[Enrico Maxwell] voiced by Tanaka Hideyuki\n\
+-male; secondary cast in; appears in episodes: -\n\
+-\n\
+-[Helena] voiced by Hiramatsu Akiko\n\
+-female; secondary cast in; appears in episodes: 8, 11\n\
+-\n\
+-[Walter C. Dornez] voiced by Kiyokawa Motomu\n\
+-male; secondary cast in; appears in episodes: -\n\
+-\n\
+-[Hellsing Organization] voiced by \n\
+-Organisation; appears in; appears in episodes: -\n\
+-\n\
+-[Iscariot Organization] voiced by \n\
+-Organisation; appears in; appears in episodes: -\n\
+-\n\
+-[Police Officer inside Heli (???????)] voiced by Andy Holyfield\n\
+--; appears in; appears in episodes: 8',
++[Seras Victoria] voiced by Orikasa Fumiko\n\
++[Incognito] voiced by Yamazaki Takumi',
+             'country'             : False,
+-            'genre'               : 'Action, Contemporary Fantasy, Cops, Fantasy, Gunfights, Horror, Law and Order, Manga, Seinen, Special Squads, Vampires, Violence',
++            'genre'               : 'Law and Order, Alternative Present, Horror, Vampires, Gunfights, Action, Contemporary Fantasy, United Kingdom, Earth, Europe, Special Squads, Cops, Manga, Seinen, Violence, Fantasy, Present',
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : 'http://www.gonzo.co.jp/works/0102.html',
+             'site'                : 'http://anidb.net/a32',
+             'trailer'             : False,
+-            'year'                : 2002,
++            'year'                : 2001,
+             'notes'               : True,
+             'runtime'             : 0,
+             'image'               : True,
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2011-09-13 18:12:34 UTC (rev 1586)
++++ trunk/lib/test_movieplugins.py	2011-09-13 20:06:46 UTC (rev 1587)
+@@ -104,6 +104,7 @@
+         global myconfig
+         result = True
+         plugin.config = myconfig
++        plugin.locations = self.locations
+         # plugin.translated_url_search
+         plugin.url = plugin.translated_url_search
+         if plugin.remove_accents:
+
+
+
+From mikej06 at mail.berlios.de  Wed Sep 14 21:14:08 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 14 Sep 2011 21:14:08 +0200
+Subject: [Griffith-svn] r1588 - in trunk: . lib
+Message-ID: <20110914191408.E68EC481301@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-14 21:14:08 +0200 (Wed, 14 Sep 2011)
+New Revision: 1588
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/gconsole.py
+Log:
+[#815421] add ipython 0.11 compatibilty
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-09-13 20:06:46 UTC (rev 1587)
++++ trunk/ChangeLog	2011-09-14 19:14:08 UTC (rev 1588)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-09-14  Michael Jahn
++	* [#815421] add ipython 0.11 compatibilty (thanks to Julian Taylor)
++
+ 2011-09-12  Michael Jahn
+ 	* added limited urllib2 support
+ 
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2011-09-13 20:06:46 UTC (rev 1587)
++++ trunk/lib/gconsole.py	2011-09-14 19:14:08 UTC (rev 1588)
+@@ -315,10 +315,15 @@
+     try:
+         ipython_args = [] # TODO: do we want to pass some args here?
+         # try to use IPython if possible
+-        from IPython.Shell import IPShellEmbed
+-
+-        shell = IPShellEmbed(argv=ipython_args)
+-        shell.set_banner(shell.IP.BANNER + banner)
++        try:
++            # >= 0.11
++            from IPython.frontend.terminal.embed import InteractiveShellEmbed
++            shell = InteractiveShellEmbed(banner2=banner)
++        except ImportError:
++            # < 0.11
++            from IPython.Shell import IPShellEmbed
++            shell = IPShellEmbed(argv=self.args)
++            shell.set_banner(shell.IP.BANNER + banner)
+         shell(local_ns=locs, global_ns={})
+     except ImportError:
+         log.debug('IPython is not available')
+
+
+
+From mikej06 at mail.berlios.de  Sun Sep 18 13:35:10 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 18 Sep 2011 13:35:10 +0200
+Subject: [Griffith-svn] r1590 - trunk/lib
+Message-ID: <20110918113510.C4FD04813CB@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-18 13:35:10 +0200 (Sun, 18 Sep 2011)
+New Revision: 1590
+
+Modified:
+   trunk/lib/quick_filter.py
+Log:
+quick filter "Any" was broken
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2011-09-15 19:24:56 UTC (rev 1589)
++++ trunk/lib/quick_filter.py	2011-09-18 11:35:10 UTC (rev 1590)
+@@ -34,6 +34,7 @@
+ 
+ 
+ def change_filter_update_whereclause(self, statement):
++    from sqlalchemy import or_
+     text = gutils.gescape(self.widgets['filter']['text'].get_text().decode('utf-8'))
+     if text:
+         (criterianame, criteria) = self.search_criteria_sorted[self.widgets['filter']['criteria'].get_active()]
+
+
+
+From mikej06 at mail.berlios.de  Wed Sep 21 21:05:29 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 21 Sep 2011 21:05:29 +0200
+Subject: [Griffith-svn] r1591 - trunk/lib/plugins/movie
+Message-ID: <20110921190529.C390F4813E0@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-21 21:05:29 +0200 (Wed, 21 Sep 2011)
+New Revision: 1591
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+AniDB plugin fixed for movie entries with missing fields
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-18 11:35:10 UTC (rev 1590)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-21 19:05:29 UTC (rev 1591)
+@@ -65,27 +65,42 @@
+         self._xml = etree.fromstring(self.page)
+ 
+     def get_image(self):
+-        self.image_url = ANIME_IMG_URL + self._xml.find('picture').text
++        self.image_url = ''
++        node = self._xml.find('picture')
++        if node is not None:
++            self.image_url = ANIME_IMG_URL + node.text
+ 
+     def get_o_title(self):
+-        self.o_title = self._xml.find('titles/title[@type="main"]').text
++        self.o_title = ''
++        node = self._xml.find('titles/title[@type="main"]')
++        if node is not None:
++            self.o_title = node.text
+ 
+     def get_title(self):
+         node = self._xml.xpath("titles/title[@xml:lang='%s' and @type='official']" % lang)
+         if node:
+             self.title = node[0].text
++        else:
++            node = self._xml.xpath("titles/title[@type='official']")
++            if node:
++                self.title = node[0].text
+ 
+     def get_director(self):
+         self.director = ', '.join(n.text for n in self._xml.xpath('creators/name[@type="Direction"]'))
+ 
+     def get_plot(self):
+-        self.plot = self._xml.find('description').text
++        self.plot = ''
++        node = self._xml.find('description')
++        if node is not None:
++            self.plot = node.text
+ 
+     def get_year(self):
+         self.year = 0
+         node = self._xml.xpath('episodes/episode[title="Complete Movie"]')
+         if node:
+-            self.year = node[0].find('airdate').text[:4]
++            node = node[0].find('airdate')
++            if node is not None:
++                self.year = node.text[:4]
+         else:
+             node = self._xml.find('startdate')
+             if node is not None:
+@@ -114,7 +129,10 @@
+         self.studio = ', '.join(n.text for n in self._xml.xpath('creators/name[@type="Animation Production"]'))
+ 
+     def get_o_site(self):
+-        self.o_site = self._xml.find('url').text
++        self.o_site = ''
++        node = self._xml.find('url')
++        if node is not None:
++            self.o_site = node.text
+ 
+     def get_site(self):
+         self.site = ANIME_WEB_URL + self._aid
+
+
+
+From mikej06 at mail.berlios.de  Wed Sep 21 22:08:05 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 21 Sep 2011 22:08:05 +0200
+Subject: [Griffith-svn] r1592 - trunk/lib
+Message-ID: <20110921200805.E10274813E0@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-21 22:08:05 +0200 (Wed, 21 Sep 2011)
+New Revision: 1592
+
+Modified:
+   trunk/lib/add.py
+Log:
+show the cancel-button in movie edit dialog
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-09-21 19:05:29 UTC (rev 1591)
++++ trunk/lib/add.py	2011-09-21 20:08:05 UTC (rev 1592)
+@@ -64,7 +64,7 @@
+     set_details(self, details)
+     self.widgets['add']['add_button'].hide()
+     self.widgets['add']['add_close_button'].hide()
+-    self.widgets['add']['clear_button'].hide()
++    self.widgets['add']['clear_button'].show()
+     self.widgets['add']['save_button'].show()
+     self.widgets['add']['window'].set_title(_('Edit movie'))
+     self.widgets['add']['window'].show()
+
+
+
+From mikej06 at mail.berlios.de  Thu Sep 22 22:51:30 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 22 Sep 2011 22:51:30 +0200
+Subject: [Griffith-svn] r1593 - trunk/lib
+Message-ID: <20110922205131.114804813E9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-22 22:51:30 +0200 (Thu, 22 Sep 2011)
+New Revision: 1593
+
+Modified:
+   trunk/lib/add.py
+Log:
+deleting old poster after updating the movie instance because otherwise the new cover is lost
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-09-21 20:08:05 UTC (rev 1592)
++++ trunk/lib/add.py	2011-09-22 20:51:30 UTC (rev 1593)
+@@ -98,26 +98,28 @@
+                         data = file(new_image_path, 'rb').read()
+                     except Exception, e:
+                         log.warning("cannot read poster data")
++                        old_poster_md5 = new_poster_md5
+                     else:
+                         poster = db.Poster(md5sum=new_poster_md5, data=data)
+                         del details["image"]
+                         details['poster_md5'] = new_poster_md5
+                         session.add(poster)
+-
+-                        # delete old image
+-                        import delete
+-                        old_poster = session.query(db.Poster).filter_by(md5sum=old_poster_md5).first()
+-                        if old_poster and len(old_poster.movies) == 1: # other movies are not using the same poster
+-                            session.delete(old_poster)
+-                            delete.delete_poster_from_cache(old_poster_md5, self.locations['posters'])
+                 else:
+                     details['poster_md5'] = new_poster_md5
+     else:
+         details['poster_md5'] = None
+ 
+     update_movie_instance(movie, details, session)
++    session.add(movie)
++    
++    # delete old image
++    if old_poster_md5 and old_poster_md5 != new_poster_md5:
++        import delete
++        old_poster = session.query(db.Poster).filter_by(md5sum=old_poster_md5).first()
++        if old_poster and len(old_poster.movies) == 1: # other movies are not using the same poster
++            session.delete(old_poster)
++            delete.delete_poster_from_cache(old_poster_md5, self.locations['posters'])
+ 
+-    session.add(movie)
+     if commit(session):
+         main_treeview.setmovie(self, movie, self.selected_iter_edit[0], self.treemodel)
+ 
+
+
+
+From mikej06 at mail.berlios.de  Thu Sep 22 23:00:44 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 22 Sep 2011 23:00:44 +0200
+Subject: [Griffith-svn] r1594 - trunk/lib/plugins/movie
+Message-ID: <20110922210045.1C96D4813E9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-09-22 23:00:44 +0200 (Thu, 22 Sep 2011)
+New Revision: 1594
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+plugin AniDb: sorting episodes numerically
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-22 20:51:30 UTC (rev 1593)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-22 21:00:44 UTC (rev 1594)
+@@ -150,7 +150,10 @@
+             self.notes += "Type: %s\n" % type_.text
+         episodes = {}
+         for node in self._xml.xpath('episodes/episode'):
+-            key = node.find('epno').text
++            try:
++                key = int(node.find('epno').text)
++            except:
++                key = node.find('epno').text
+             titles = {}
+             for tnode in node.xpath('title'):
+                 titles[tnode.attrib['{http://www.w3.org/XML/1998/namespace}lang']] = tnode.text
+
+
+

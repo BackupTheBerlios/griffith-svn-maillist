@@ -1,0 +1,2277 @@
+From iznogoud at mail.berlios.de  Tue May  1 15:30:23 2007
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Tue, 1 May 2007 15:30:23 +0200
+Subject: [Griffith-svn] r757 - in trunk: . lib/plugins/movie
+Message-ID: <200705011330.l41DUN5j013434@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-05-01 15:30:22 +0200 (Tue, 01 May 2007)
+New Revision: 757
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+Log:
+e-pipoca movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-15 16:36:14 UTC (rev 756)
++++ trunk/ChangeLog	2007-05-01 13:30:22 UTC (rev 757)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-05-01  Vasco Nunes
++	* E-Pipoca movie plugin updated
++
+ 2007-04-15  Piotr O?arowski
+ 	* IMDB movie plugin updated to version 1.3 (director, rating)
+ 	* Fetch from Amazon function fixed ("No image available" image issue)
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-04-15 16:36:14 UTC (rev 756)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-05-01 13:30:22 UTC (rev 757)
+@@ -21,12 +21,16 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++# Updated on 04/29/2007 by Djohnson "Joe" Lima
++# joe1310 at terra.com.br - S?o Paulo/Brasil
++
++
+ from gettext import gettext as _
+ import gutils, movie, string
+ 
+ plugin_name = "E-Pipoca"
+ plugin_description = "E-Pipoca Brasil"
+-plugin_url = "epipoca.cidadeinternet.com.br"
++plugin_url = "epipoca.uol.com.br"
+ plugin_language = _("Brazilian Portuguese")
+ plugin_author = "Vasco Nunes"
+ plugin_author_email="<vasco.m.nunes at gmail.com>"
+@@ -37,49 +41,48 @@
+ 	def __init__(self, id):
+ 		self.encode='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = "http://epipoca.uol.com.br/filmes_zoom.cfm?id=" + str(self.movie_id)
++		self.url = "http://epipoca.uol.com.br/filmes_detalhes.php?idf=" + str(self.movie_id)
+ 
+ 	def get_image(self):
+ 		"Find the film's poster image"
+-		tmp_pic = gutils.trim(self.page, "/images/filmes/capa_", "\"")
++		tmp_pic = gutils.trim(self.page, "images/filmes/poster/poster_", "\"")
+ 		self.image_url = \
+-			"http://epipoca.uol.com.br/images/filmes/capa_" + tmp_pic
++			"http://epipoca.uol.com.br/images/filmes/poster/poster_" + tmp_pic
+ 
+ 	def get_o_title(self):
+ 		"Find the film's original title"
+-		self.o_title = string.capwords(gutils.trim(self.page, "</font><br>(<i>", "</i>, "))
++		self.o_title = string.capwords(gutils.trim(self.page, "</font><br>(", ", "))
+ 
+ 	def get_title(self):
+ 		"""Find the film's local title.
+ 		Probably the original title translation"""
+-		self.title = gutils.trim(self.page, "'votar');\">", "</b></font><br>(")
++		self.title = gutils.trim(self.page, "<TITLE>", " (")
+ 
+ 	def get_director(self):
+ 		"Find the film's director"
+-		self.director = gutils.trim(self.page, "<b>Diretor(es)</b>:", "</a>  <br>")
++		self.director = gutils.trim(self.page, "<b>Diretor(es): </b>", "</a></td>")
+ 
+ 	def get_plot(self):
+ 		"Find the film's plot"
+-		self.plot = gutils.trim(self.page, "<b>Sinopse</b><br>", "</td></tr></table>")
++		self.plot = gutils.trim(self.page, "<b>SINOPSE</b></font><br><br>", "</td></tr>")
+ 
+ 	def get_year(self):
+ 		"Find the film's year"
+-		self.year = gutils.trim(self.page, "</i>, ", ")<br><img")
+-		self.year = gutils.after(self.year,", ")
++		self.year = gutils.trim(self.page, "<a href=\"busca_mais.php?opc=ano&busca=", "\">")
+ 
+ 	def get_runtime(self):
+ 		"Find the film's running time"
+-		self.runtime = gutils.trim(self.page, "<br> <b>Dura", " min<br>")
++		self.runtime = gutils.trim(self.page, "<td><b>Dura", " min.</td>")
+ 		self.runtime = self.runtime[9:]
+ 
+ 	def get_genre(self):
+ 		"Find the film's genre"
+-		self.genre = gutils.trim(self.page, "nero</b>: ", "<br>")
++		self.genre = gutils.trim(self.page, "<a href=\"busca_mais.php?opc=genero&busca=", "\">")
+ 
+ 	def get_cast(self):
+ 		"Find the actors. Try to make it line separated."
+ 		self.cast = ""
+-		self.cast = gutils.trim(self.page, "<b>Elenco:</b>", "<b>mais...</b>")
++		self.cast = gutils.trim(self.page, "<b>Elenco: </b>", "<b>mais...</b>")
+ 		self.cast = gutils.strip_tags(self.cast)
+ 		self.cast = self.cast[:-2]
+ 
+@@ -89,35 +92,29 @@
+ 
+ 	def get_studio(self):
+ 		"Find the studio"
+-		self.studio = gutils.trim(self.page, "<b>Distribuidora</b>: ", "<br> <b>")
++		self.studio = gutils.trim(self.page, "<b>Distribuidora(s): </b>", "</a></td>")
+ 
+ 	def get_o_site(self):
+ 		"Find the film's oficial site"
+-		self.o_site = gutils.trim(self.page, "<A HREF='", \
+-			"' TARGET=_blank><IMG SRC='/imagens/bf_siteoficial.gif'")
++		self.o_site = "http://epipoca.uol.com.br/filmes_web.php?idf=" + str(self.movie_id)
+ 
+ 	def get_site(self):
+ 		"Find the film's imdb details page"
+-		self.site = gutils.trim(self.page, \
+-			"/imagens/bf_siteoficial.gif' WIDTH=89 HEIGHT=18 BORDER=0 ALT=''>", \
+-			"' TARGET=_blank><IMG SRC='/imagens/bf_imdb.gif'")
+-		self.site = gutils.after(self.site, "<A HREF='")
+-		self.site = string.replace(self.site, "'", "")
++		self.site = "http://epipoca.uol.com.br/filmes_ficha.php?idf=" + str(self.movie_id)
+ 
+ 	def get_trailer(self):
+ 		"Find the film's trailer page or location"
+-		self.trailer = gutils.trim(self.page, "onclick=\"popup('/", "', 600, 400,")
+-		if self.trailer:
+-			self.trailer = "http://epipoca.cidadeinternet.com.br/" + self.trailer
+-
++		self.trailer = "http://epipoca.uol.com.br/filmes_trailer.php?idf=" + str(self.movie_id)
++			
+ 	def get_country(self):
+ 		"Find the film's country"
+-		self.country = gutils.trim(self.page, "</i>, ", ", ")
++		self.country = gutils.trim(self.page, "<a href=\"busca_mais.php?opc=pais&busca=", "\">")
+ 
+ 	def get_rating(self):
+ 		"""Find the film's rating. From 0 to 10.
+ 		Convert if needed when assigning."""
+-		tmp_rating = gutils.trim(self.page, "<font size=\"3\"><b> ", "</b></font><br>")
++		tmp_rating = gutils.trim(self.page, "<br><b>Cota", " (")
++		tmp_rating = gutils.after(tmp_rating, "</b>")
+ 		if tmp_rating <> "":
+ 			tmp_rating = string.replace(tmp_rating,',','.')
+ 			self.rating = str( float(string.strip(tmp_rating)) )
+@@ -128,9 +125,9 @@
+ 	"A movie search object"
+ 	def __init__(self):
+ 		self.original_url_search = \
+-			"http://epipoca.uol.com.br/search/?Ordenado=Popular&busca="
++			"http://epipoca.uol.com.br/busca.php?opc=todos&busca="
+ 		self.translated_url_search = \
+-			"http://epipoca.uol.com.br/search/?Ordenado=Popular&busca="
++			"http://epipoca.uol.com.br/busca.php?opc=todos&busca="
+ 		self.encode='iso-8859-1'
+ 
+ 	def search(self, parent_window):
+@@ -142,17 +139,17 @@
+ 	def sub_search(self):
+ 		"Isolating just a portion (with the data we want) of the results"
+ 		self.page = gutils.trim(self.page, \
+-			"<tr><td valign=\"top\" width=\"100%\">", "&nbsp;&nbsp;<b>Resu")
++			"&nbsp;Resul","><b>Not") 
+ 
+ 	def get_searches(self):
+ 		"Try to find both id and film title for each search result"
+-		elements = string.split(self.page, "<td valign=\"bottom\">&nbsp;</td>")
++		elements = string.split(self.page, "<td width=\"55\" align=\"center\" bgcolor=")
+ 		self.number_results = elements[-1]
+ 
+ 		if (elements[0] != ''):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element, "<b><a href=\"/filmes_zoom.cfm?id=", "\"><font size=\"2\""))
++				self.ids.append(gutils.trim(element, "<a href=\"filmes_detalhes.php?idf=", "\"><img src=\"images/"))
+ 				self.titles.append(gutils.convert_entities \
+-					(gutils.trim(element, "color=\"FF8000\">", "</font></a></b></a><br>") ))
++					(gutils.trim(element, "</a></font> <br>(<i>", "</i>, <a href=") ))
+ 		else:
+ 			self.number_results = 0
+
+
+
+From iznogoud at mail.berlios.de  Tue May  1 15:36:00 2007
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Tue, 1 May 2007 15:36:00 +0200
+Subject: [Griffith-svn] r758 - trunk
+Message-ID: <200705011336.l41Da00x014060@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-05-01 15:36:00 +0200 (Tue, 01 May 2007)
+New Revision: 758
+
+Modified:
+   trunk/ChangeLog
+Log:
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-01 13:30:22 UTC (rev 757)
++++ trunk/ChangeLog	2007-05-01 13:36:00 UTC (rev 758)
+@@ -5,7 +5,7 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
+ 2007-05-01  Vasco Nunes
+-	* E-Pipoca movie plugin updated
++	* E-Pipoca movie plugin updated (thanks to Djohnson "Joe" Lima)
+ 
+ 2007-04-15  Piotr O?arowski
+ 	* IMDB movie plugin updated to version 1.3 (director, rating)
+
+
+
+From jessicak at mail.berlios.de  Sat May 12 23:20:56 2007
+From: jessicak at mail.berlios.de (jessicak at BerliOS)
+Date: Sat, 12 May 2007 23:20:56 +0200
+Subject: [Griffith-svn] r759 - in trunk: . lib/plugins/movie
+Message-ID: <200705122120.l4CLKua9006648@sheep.berlios.de>
+
+Author: jessicak
+Date: 2007-05-12 23:20:55 +0200 (Sat, 12 May 2007)
+New Revision: 759
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb movie plugin update
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-01 13:36:00 UTC (rev 758)
++++ trunk/ChangeLog	2007-05-12 21:20:55 UTC (rev 759)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-05-11  Jessica K. Parth
++	* OFDb updated
++
+ 2007-05-01  Vasco Nunes
+ 	* E-Pipoca movie plugin updated (thanks to Djohnson "Joe" Lima)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-05-01 13:36:00 UTC (rev 758)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-05-12 21:20:55 UTC (rev 759)
+@@ -5,7 +5,7 @@
+ 
+ from gettext import gettext as _
+ import gutils
+-import movie,string
++import movie,string,re
+ 
+ plugin_name = "OFDb"
+ plugin_description = "Online-Filmdatenbank"
+@@ -13,7 +13,7 @@
+ plugin_language = _("German")
+ plugin_author = "Christian Sagmueller, Jessica Katharina Parth"
+ plugin_author_email = "Jessica.K.P at women-at-work.org"
+-plugin_version = "0.7"
++plugin_version = "0.75"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -70,8 +70,14 @@
+ 		self.cast = string.replace(self.cast,"&nbsp;", "")
+ 		self.cast = string.replace(self.cast, "  ", "")
+ 		self.cast = string.replace(self.cast, "\t", "")
+-		self.cast = string.replace(self.cast, "\n\n", "\n")
+-		self.cast = string.replace(self.cast, "\n\n", "")
++		
++		elements = string.split(self.cast,"\n")
++		cast = ""
++		for element in elements:
++			if (element != ''):
++				cast += element + "\n"
++		cast = string.replace( cast, "\n... ", " als ")
++		self.cast = cast
+ 
+ 	def get_classification(self):
+ 		# ofdb.de got no classification
+
+
+
+From iznogoud at mail.berlios.de  Sat May 19 05:13:13 2007
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Sat, 19 May 2007 05:13:13 +0200
+Subject: [Griffith-svn] r760 - in trunk: . lib po
+Message-ID: <200705190313.l4J3DDJk007450@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-05-19 05:13:12 +0200 (Sat, 19 May 2007)
+New Revision: 760
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/about.py
+   trunk/po/fr.po
+Log:
+french translation updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-12 21:20:55 UTC (rev 759)
++++ trunk/ChangeLog	2007-05-19 03:13:12 UTC (rev 760)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-05-19  Vasco Nunes
++	* French translation updated (thanks to Guillaume Pratte)
++
+ 2007-05-11  Jessica K. Parth
+ 	* OFDb updated
+ 
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2007-05-12 21:20:55 UTC (rev 759)
++++ trunk/lib/about.py	2007-05-19 03:13:12 UTC (rev 760)
+@@ -61,6 +61,8 @@
+ 			_("Dutch") + ":\n\t" + \
+ 				"Marcel Dijkstra <mdtje at hotmail.com>\n" + \
+ 			_("French") + ":\n\t" + \
++				"Guillaume Pratte <guillaume at guillaumepratte.net>" + \
++				"original translation from:\n\t" + \
+ 				"Pierre-Luc L?vy <pllevy at free.fr>\n" + \
+ 			_("German") + ":\n\t" + \
+ 				"Jessica Katharina Parth <Jessica.K.P at women-at-work.org>,\n\t" + \
+
+Modified: trunk/po/fr.po
+===================================================================
+--- trunk/po/fr.po	2007-05-12 21:20:55 UTC (rev 759)
++++ trunk/po/fr.po	2007-05-19 03:13:12 UTC (rev 760)
+@@ -1,18 +1,22 @@
+ # Copyright (C) 2005 Vasco Nunes
+ # This file is distributed under the same license as the Griffith package.
+ # Christian Sagm?ller <christan at sagmueller.net>, 2005.
+-#
++# Traducteurs :
++# Pierre-Luc L?vy <pllevy at free.fr>
++# Guillaume Pratte <guillaume at guillaumepratte.net>
++# 
++# 
+ msgid ""
+ msgstr ""
+-"Project-Id-Version: Griffith 0.5\n"
++"Project-Id-Version: Griffith 0.9.2\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2007-01-27 21:05+0100\n"
+-"PO-Revision-Date: 2006-02-28 02:33+0000\n"
+-"Last-Translator: Pierre-Luc L?vy <pllevy at free.fr>\n"
+-"Language-Team: Fran?ais\n"
++"POT-Creation-Date: 2007-05-18 22:09-0400\n"
++"PO-Revision-Date: 2007-05-18 22:54-0400\n"
++"Last-Translator: Guillaume Pratte <guillaume at guillaumepratte.net>\n"
++"Language-Team: French\n"
+ "MIME-Version: 1.0\n"
+ "Content-Type: text/plain; charset=UTF-8\n"
+-"Content-Transfer-Encoding: 8bit\n"
++"Content-Transfer-Encoding: 8bit"
+ 
+ #: ../griffith:164 ../griffith:742 ../lib/delete.py:33 ../lib/edit.py:44
+ #: ../lib/edit.py:128
+@@ -24,7 +28,7 @@
+ msgstr "Vous avez vus tous les films dans votre collection !"
+ 
+ #: ../griffith:425 ../griffith:430 ../lib/initialize.py:252
+-#: ../lib/initialize.py:521
++#: ../lib/initialize.py:522
+ msgid "subtitles"
+ msgstr "sous-titres"
+ 
+@@ -82,54 +86,61 @@
+ "Est-ce que vous confirmez\n"
+ "que vous allez perdre vos donn?es ?"
+ 
+-#: ../lib/about.py:38
++#: ../lib/about.py:39
+ msgid "Main Authors"
+ msgstr "Auteurs principaux"
+ 
+-#: ../lib/about.py:40
++#: ../lib/about.py:41
+ msgid "Programmer"
+ msgstr "Programmeur"
+ 
+-#: ../lib/about.py:42
++#: ../lib/about.py:43
+ msgid "Contributors:"
+ msgstr "Contributeurs:"
+ 
+-#: ../lib/about.py:46
++#: ../lib/about.py:48
+ msgid "Logo, icon and general artwork "
+ msgstr "Logo, ic?ne"
+ 
+-#: ../lib/about.py:50
++#: ../lib/about.py:54
+ msgid "Bulgarian"
+-msgstr ""
++msgstr "Bulgare"
+ 
+-#: ../lib/about.py:52
++#: ../lib/about.py:56
+ msgid "Brasilian Portuguese"
+-msgstr ""
++msgstr "Portugais du Br?sil"
+ 
+-#: ../lib/about.py:54 ../lib/dbupgrade.py:88
++#: ../lib/about.py:58 ../lib/dbupgrade.py:88
+ #: ../lib/plugins/movie/PluginMovieCSFD.py:30
+ msgid "Czech"
+-msgstr ""
++msgstr "Tch?que"
+ 
+-#: ../lib/about.py:57 ../lib/dbupgrade.py:89
++#: ../lib/about.py:61
++msgid "Dutch"
++msgstr "Hollandais"
++
++#: ../lib/about.py:63 ../lib/dbupgrade.py:89
+ #: ../lib/plugins/movie/PluginMovieAllocine.py:32
+ #: ../lib/plugins/movie/PluginMovieCineMovies.py:31
+ msgid "French"
+ msgstr "Fran?ais"
+ 
+-#: ../lib/about.py:59 ../lib/dbupgrade.py:90
++#: ../lib/about.py:65 ../lib/dbupgrade.py:90
++#: ../lib/plugins/movie/PluginMovieFilmDb.py:32
+ #: ../lib/plugins/movie/PluginMovieFilmeVonAZ.py:32
++#: ../lib/plugins/movie/PluginMovieIMDB-de.py:32
+ #: ../lib/plugins/movie/PluginMovieKinoDe.py:32
+ #: ../lib/plugins/movie/PluginMovieOFDb.py:13
++#: ../lib/plugins/movie/PluginMovieZelluloid.py:33
+ msgid "German"
+-msgstr ""
++msgstr "Allemand"
+ 
+-#: ../lib/about.py:64 ../lib/dbupgrade.py:91
++#: ../lib/about.py:70 ../lib/dbupgrade.py:91
+ #: ../lib/plugins/movie/PluginMovieCinematografo.py:30
+ msgid "Italian"
+-msgstr ""
++msgstr "Italien"
+ 
+-#: ../lib/about.py:66 ../lib/dbupgrade.py:93
++#: ../lib/about.py:72 ../lib/dbupgrade.py:93
+ #: ../lib/plugins/movie/PluginMovieFDb.py:32
+ #: ../lib/plugins/movie/PluginMovieFilmweb.py:31
+ #: ../lib/plugins/movie/PluginMovieOnet.py:31
+@@ -137,27 +148,27 @@
+ #: ../lib/plugins/movie/PluginMovieTanukiAnime.py:31
+ #: ../lib/plugins/movie/PluginMovieWP.py:32
+ msgid "Polish"
+-msgstr ""
++msgstr "Polonais"
+ 
+-#: ../lib/about.py:68 ../lib/dbupgrade.py:92
++#: ../lib/about.py:74 ../lib/dbupgrade.py:92
+ #: ../lib/plugins/movie/PluginMovie7arte.py:32
+ #: ../lib/plugins/movie/PluginMovieCineteka.py:32
+ #: ../lib/plugins/movie/PluginMoviePTGate.py:32
+ msgid "Portuguese"
+-msgstr ""
++msgstr "Portugais"
+ 
+-#: ../lib/about.py:70 ../lib/dbupgrade.py:94
++#: ../lib/about.py:76 ../lib/dbupgrade.py:94
+ #: ../lib/plugins/movie/PluginMovieCulturalia.py:32
+ #: ../lib/plugins/movie/PluginMovieFilmAffinity.py:32
+ #: ../lib/plugins/movie/PluginMovieIMDB-es.py:32
+ msgid "Spanish"
+-msgstr ""
++msgstr "Espagnol"
+ 
+-#: ../lib/about.py:72
++#: ../lib/about.py:78
+ msgid "Swedish"
+-msgstr ""
++msgstr "Scandinave"
+ 
+-#: ../lib/about.py:78
++#: ../lib/about.py:87
+ msgid "This program is released under the GNU"
+ msgstr "Ce programme est distribu? sous la GNU"
+ 
+@@ -249,17 +260,17 @@
+ msgid "Released Under the GNU/GPL License"
+ msgstr "Distribu? sous la license GNU/GPL"
+ 
+-#: ../lib/cover.py:176 ../lib/initialize.py:184 ../lib/initialize.py:506
++#: ../lib/cover.py:176 ../lib/initialize.py:184 ../lib/initialize.py:507
+ #: ../lib/plugins/export/PluginExportHTML.py:105 ../glade/griffith.glade.h:93
+ msgid "Original Title"
+ msgstr "Titre Original"
+ 
+-#: ../lib/cover.py:177 ../lib/initialize.py:190 ../lib/initialize.py:514
++#: ../lib/cover.py:177 ../lib/initialize.py:190 ../lib/initialize.py:515
+ #: ../lib/plugins/export/PluginExportHTML.py:111 ../glade/griffith.glade.h:143
+ msgid "Title"
+ msgstr "Titre"
+ 
+-#: ../lib/cover.py:179 ../lib/initialize.py:196 ../lib/initialize.py:496
++#: ../lib/cover.py:179 ../lib/initialize.py:196 ../lib/initialize.py:497
+ #: ../lib/plugins/export/PluginExportHTML.py:96 ../glade/griffith.glade.h:45
+ msgid "Director"
+ msgstr "R?alisateur"
+@@ -272,32 +283,33 @@
+ msgid " min"
+ msgstr " min"
+ 
+-#: ../lib/cover.py:182 ../lib/initialize.py:495
++#: ../lib/cover.py:182 ../lib/initialize.py:496
+ #: ../lib/plugins/export/PluginExportHTML.py:95 ../glade/griffith.glade.h:38
+ msgid "Country"
+ msgstr "Pays"
+ 
+-#: ../lib/cover.py:183 ../lib/initialize.py:497
++#: ../lib/cover.py:183 ../lib/initialize.py:498
+ #: ../lib/plugins/export/PluginExportHTML.py:97 ../glade/griffith.glade.h:59
+ msgid "Genre"
+ msgstr "Genre"
+ 
+ #: ../lib/dbupgrade.py:86 ../lib/plugins/movie/PluginMovieAniDB.py:32
+-#: ../lib/plugins/movie/PluginMovieIMDB.py:32
++#: ../lib/plugins/movie/PluginMovieDVDEmpire.py:32
++#: ../lib/plugins/movie/PluginMovieIMDB.py:31
+ #: ../lib/plugins/movie/PluginMovieMediadis.py:16
+ #: ../lib/plugins/movie/PluginMovieMoviefone.py:16
+ msgid "English"
+-msgstr ""
++msgstr "Anglais"
+ 
+-#: ../lib/dbupgrade.py:87 ../lib/plugins/movie/PluginMovieE-Pipoca.py:30
++#: ../lib/dbupgrade.py:87 ../lib/plugins/movie/PluginMovieE-Pipoca.py:34
+ msgid "Brazilian Portuguese"
+-msgstr ""
++msgstr "Portugais br?silien"
+ 
+ #: ../lib/dbupgrade.py:97
+ msgid "Favourite"
+ msgstr "Favoris"
+ 
+-#: ../lib/dbupgrade.py:116
++#: ../lib/dbupgrade.py:119
+ msgid ""
+ "Griffith will now convert your database to the new format. This can take "
+ "several minutes if you have a large database."
+@@ -305,11 +317,11 @@
+ "Griffith va convertir votre base de donn?e au nouveau format. Cela peut "
+ "prendre plusieurs minutes suivant l'importance de votre base donn?e."
+ 
+-#: ../lib/dbupgrade.py:130
++#: ../lib/dbupgrade.py:133
+ msgid "Old DB conversion: please install pysqlite legacy (v1.0)"
+-msgstr ""
++msgstr "Conversion de l'ancienne base de donn?e : veuillez installer pysqlite legacy (v. 1.0)"
+ 
+-#: ../lib/dbupgrade.py:155
++#: ../lib/dbupgrade.py:158
+ msgid ""
+ "Your database is most probably in SQLite2 format, please convert it to "
+ "SQLite3"
+@@ -341,12 +353,12 @@
+ msgid "No posters found for this movie."
+ msgstr "Aucune affiche trouv?e pour ce film"
+ 
+-#: ../lib/edit.py:199 ../lib/movie.py:145
++#: ../lib/edit.py:199 ../lib/movie.py:147
+ msgid "Fetching poster"
+ msgstr "R?cup?ration de l'affiche"
+ 
+-#: ../lib/edit.py:199 ../lib/movie.py:119 ../lib/movie.py:145
+-#: ../lib/movie.py:238
++#: ../lib/edit.py:199 ../lib/movie.py:121 ../lib/movie.py:147
++#: ../lib/movie.py:240
+ msgid "Wait a moment"
+ msgstr "Attendez un instant"
+ 
+@@ -354,15 +366,15 @@
+ msgid "Sorry. A connection error has occurred."
+ msgstr "D?sol?. Une erreur de connexion a eu lieu"
+ 
+-#: ../lib/edit.py:239
+-msgid "Do you want to use this poster instead?"
+-msgstr "Voulez-vous utilisez cette affiche ? la place ?"
+-
+-#: ../lib/edit.py:253
++#: ../lib/edit.py:224 ../lib/edit.py:257
+ msgid "Sorry. This movie is listed but has no poster available at Amazon.com."
+ msgstr ""
+ "D?sol?. Ce film est list? mais n'a pas d'affiche disponible chez Amazon.com"
+ 
++#: ../lib/edit.py:243
++msgid "Do you want to use this poster instead?"
++msgstr "Voulez-vous utilisez cette affiche ? la place ?"
++
+ #: ../lib/gconsole.py:134
+ msgid "No movie found"
+ msgstr "Aucun film trouv?"
+@@ -407,7 +419,7 @@
+ msgid "N."
+ msgstr "N."
+ 
+-#: ../lib/initialize.py:179 ../lib/initialize.py:498
++#: ../lib/initialize.py:179 ../lib/initialize.py:499
+ #: ../lib/plugins/export/PluginExportHTML.py:98 ../glade/griffith.glade.h:66
+ msgid "Image"
+ msgstr "Image"
+@@ -424,19 +436,20 @@
+ msgid "Loaned To"
+ msgstr "Pr?t? ?"
+ 
+-#: ../lib/initialize.py:240
++#: ../lib/initialize.py:240 ../lib/plugins/movie/PluginMovieIMDB-de.py:132
++#: ../lib/plugins/movie/PluginMovieIMDB.py:127
+ msgid "Language"
+ msgstr "Langue"
+ 
+-#: ../lib/initialize.py:250 ../lib/initialize.py:521
++#: ../lib/initialize.py:250 ../lib/initialize.py:522
+ msgid "lector"
+ msgstr "Lecteur"
+ 
+-#: ../lib/initialize.py:251 ../lib/initialize.py:521
++#: ../lib/initialize.py:251 ../lib/initialize.py:522
+ msgid "dubbing"
+ msgstr "doublage"
+ 
+-#: ../lib/initialize.py:253 ../lib/initialize.py:521
++#: ../lib/initialize.py:253 ../lib/initialize.py:522
+ msgid "commentary"
+ msgstr "commentaire"
+ 
+@@ -456,184 +469,185 @@
+ msgid "Subtitle format"
+ msgstr "Format du sous-titre"
+ 
+-#: ../lib/initialize.py:412 ../glade/griffith.glade.h:87
++#: ../lib/initialize.py:413 ../glade/griffith.glade.h:87
+ msgid "Name"
+ msgstr "Nom"
+ 
+-#: ../lib/initialize.py:418 ../glade/exporthtml.glade.h:16
++#: ../lib/initialize.py:419 ../glade/exporthtml.glade.h:16
+ #: ../glade/griffith.glade.h:47 ../glade/import.glade.h:5
+ msgid "E-mail"
+ msgstr "Courriel"
+ 
+-#: ../lib/initialize.py:461
++#: ../lib/initialize.py:462
+ msgid "Last added"
+ msgstr "Dernier ajout"
+ 
+-#: ../lib/initialize.py:490 ../lib/plugins/export/PluginExportHTML.py:93
++#: ../lib/initialize.py:491 ../lib/plugins/export/PluginExportHTML.py:93
+ #: ../glade/griffith.glade.h:30
+ msgid "Cast"
+ msgstr "Avec"
+ 
+-#: ../lib/initialize.py:491 ../lib/plugins/export/PluginExportHTML.py:94
++#: ../lib/initialize.py:492 ../lib/plugins/export/PluginExportHTML.py:94
+ #: ../glade/griffith.glade.h:32
+ msgid "Classification"
+ msgstr "Classification"
+ 
+-#: ../lib/initialize.py:492 ../glade/griffith.glade.h:35
++#: ../lib/initialize.py:493 ../glade/griffith.glade.h:35
+ msgid "Collection"
+ msgstr "Collection"
+ 
+-#: ../lib/initialize.py:493 ../lib/initialize.py:520
+-#: ../glade/griffith.glade.h:36
++#: ../lib/initialize.py:494 ../lib/initialize.py:521
++#: ../lib/plugins/movie/PluginMovieIMDB-de.py:136
++#: ../lib/plugins/movie/PluginMovieIMDB.py:131 ../glade/griffith.glade.h:36
+ msgid "Color"
+ msgstr "Couleur"
+ 
+-#: ../lib/initialize.py:494 ../glade/griffith.glade.h:37
++#: ../lib/initialize.py:495 ../glade/griffith.glade.h:37
+ msgid "Condition"
+ msgstr "Condition"
+ 
+-#: ../lib/initialize.py:499 ../glade/griffith.glade.h:70
++#: ../lib/initialize.py:500 ../glade/griffith.glade.h:70
+ msgid "Layers"
+ msgstr "Couche"
+ 
+-#: ../lib/initialize.py:500 ../lib/plugins/export/PluginExportHTML.py:102
++#: ../lib/initialize.py:501 ../lib/plugins/export/PluginExportHTML.py:102
+ msgid "Loaned"
+ msgstr "Pr?t?"
+ 
+-#: ../lib/initialize.py:501 ../glade/griffith.glade.h:46
++#: ../lib/initialize.py:502 ../glade/griffith.glade.h:46
+ msgid "Discs"
+ msgstr "Disques"
+ 
+-#: ../lib/initialize.py:502 ../glade/griffith.glade.h:82
++#: ../lib/initialize.py:503 ../glade/griffith.glade.h:82
+ msgid "Medium"
+ msgstr "Moyen"
+ 
+-#: ../lib/initialize.py:503 ../lib/plugins/export/PluginExportHTML.py:113
++#: ../lib/initialize.py:504 ../lib/plugins/export/PluginExportHTML.py:113
+ #: ../glade/griffith.glade.h:90
+ msgid "Notes"
+ msgstr "Notes"
+ 
+-#: ../lib/initialize.py:504 ../lib/sql.py:278
++#: ../lib/initialize.py:505 ../lib/sql.py:278
+ #: ../lib/plugins/export/PluginExportHTML.py:104 ../glade/griffith.glade.h:91
+ msgid "Number"
+-msgstr "Nombre"
++msgstr "Num?ro"
+ 
+-#: ../lib/initialize.py:505 ../lib/plugins/export/PluginExportHTML.py:99
++#: ../lib/initialize.py:506 ../lib/plugins/export/PluginExportHTML.py:99
+ #: ../glade/griffith.glade.h:92
+ msgid "Official site"
+ msgstr "Site officiel"
+ 
+-#: ../lib/initialize.py:507 ../lib/plugins/export/PluginExportHTML.py:106
++#: ../lib/initialize.py:508 ../lib/plugins/export/PluginExportHTML.py:106
+ #: ../glade/griffith.glade.h:101
+ msgid "Plot"
+ msgstr "Synopsis"
+ 
+-#: ../lib/initialize.py:508 ../lib/plugins/export/PluginExportHTML.py:107
++#: ../lib/initialize.py:509 ../lib/plugins/export/PluginExportHTML.py:107
+ #: ../glade/griffith.glade.h:109
+ msgid "Rating"
+ msgstr "Classement"
+ 
+-#: ../lib/initialize.py:509 ../glade/griffith.glade.h:111
++#: ../lib/initialize.py:510 ../glade/griffith.glade.h:111
+ msgid "Region"
+ msgstr "R?gion"
+ 
+-#: ../lib/initialize.py:510 ../lib/plugins/export/PluginExportHTML.py:108
++#: ../lib/initialize.py:511 ../lib/plugins/export/PluginExportHTML.py:108
+ #: ../glade/griffith.glade.h:119
+ msgid "Runtime"
+ msgstr "Dur?e"
+ 
+-#: ../lib/initialize.py:511 ../lib/plugins/export/PluginExportHTML.py:110
++#: ../lib/initialize.py:512 ../lib/plugins/export/PluginExportHTML.py:110
+ #: ../glade/griffith.glade.h:122
+ msgid "Seen it"
+ msgstr "D?j? vu"
+ 
+-#: ../lib/initialize.py:512 ../lib/plugins/export/PluginExportHTML.py:100
++#: ../lib/initialize.py:513 ../lib/plugins/export/PluginExportHTML.py:100
+ #: ../glade/griffith.glade.h:132
+ msgid "Site"
+ msgstr "Site"
+ 
+-#: ../lib/initialize.py:513 ../lib/plugins/export/PluginExportHTML.py:109
++#: ../lib/initialize.py:514 ../lib/plugins/export/PluginExportHTML.py:109
+ #: ../glade/griffith.glade.h:138
+ msgid "Studio"
+ msgstr "Studio"
+ 
+-#: ../lib/initialize.py:515 ../lib/plugins/export/PluginExportHTML.py:101
++#: ../lib/initialize.py:516 ../lib/plugins/export/PluginExportHTML.py:101
+ #: ../glade/griffith.glade.h:145
+ msgid "Trailer"
+ msgstr "Bande annonce"
+ 
+-#: ../lib/initialize.py:516 ../glade/griffith.glade.h:152
++#: ../lib/initialize.py:517 ../glade/griffith.glade.h:152
+ msgid "Video codec"
+ msgstr "Codec video"
+ 
+-#: ../lib/initialize.py:517 ../glade/griffith.glade.h:155
++#: ../lib/initialize.py:518 ../glade/griffith.glade.h:155
+ msgid "Volume"
+ msgstr "Volume"
+ 
+-#: ../lib/initialize.py:518 ../lib/plugins/export/PluginExportHTML.py:112
++#: ../lib/initialize.py:519 ../lib/plugins/export/PluginExportHTML.py:112
+ #: ../glade/griffith.glade.h:157
+ msgid "Year"
+ msgstr "Ann?e"
+ 
+-#: ../lib/initialize.py:519 ../lib/initialize.py:520 ../lib/initialize.py:522
+-#: ../lib/initialize.py:718 ../lib/initialize.py:719 ../lib/initialize.py:750
+-#: ../lib/initialize.py:751
++#: ../lib/initialize.py:520 ../lib/initialize.py:521 ../lib/initialize.py:523
++#: ../lib/initialize.py:717 ../lib/initialize.py:718 ../lib/initialize.py:749
++#: ../lib/initialize.py:750
+ msgid "N/A"
+ msgstr "N/A"
+ 
+-#: ../lib/initialize.py:519
++#: ../lib/initialize.py:520
+ msgid "Damaged"
+ msgstr "Endommag?"
+ 
+-#: ../lib/initialize.py:519
++#: ../lib/initialize.py:520
+ msgid "Poor"
+ msgstr "Mauvais ?tat"
+ 
+-#: ../lib/initialize.py:519
++#: ../lib/initialize.py:520
+ msgid "Fair"
+ msgstr "Correct"
+ 
+-#: ../lib/initialize.py:519
++#: ../lib/initialize.py:520
+ msgid "Good"
+ msgstr "Bon"
+ 
+-#: ../lib/initialize.py:519
++#: ../lib/initialize.py:520
+ msgid "Excellent"
+ msgstr "Excellent"
+ 
+-#: ../lib/initialize.py:520
++#: ../lib/initialize.py:521
+ msgid "Black and White"
+ msgstr "Noir et Blanc"
+ 
+-#: ../lib/initialize.py:520
++#: ../lib/initialize.py:521
+ msgid "Mixed"
+ msgstr "M?lang?"
+ 
+-#: ../lib/initialize.py:522
++#: ../lib/initialize.py:523
+ msgid "Single Side, Single Layer"
+ msgstr "Simple face, Simple couche"
+ 
+-#: ../lib/initialize.py:522
++#: ../lib/initialize.py:523
+ msgid "Single Side, Dual Layer"
+ msgstr "Simple face, Double couche"
+ 
+-#: ../lib/initialize.py:522
++#: ../lib/initialize.py:523
+ msgid "Dual Side, Single Layer"
+ msgstr "Double face, Simple couche"
+ 
+-#: ../lib/initialize.py:522
++#: ../lib/initialize.py:523
+ msgid "Dual Side, Dual Layer"
+ msgstr "Double face, Double couche"
+ 
+-#: ../lib/initialize.py:524
++#: ../lib/initialize.py:525
+ msgid "Region 0 (No Region Coding)"
+ msgstr "Region 0 (Pas d'encodage)"
+ 
+-#: ../lib/initialize.py:525
++#: ../lib/initialize.py:526
+ msgid "Region 1 (United States of America, Canada)"
+ msgstr "Region 1 (Etats Unis, Canada)"
+ 
+-#: ../lib/initialize.py:526
++#: ../lib/initialize.py:527
+ msgid ""
+ "Region 2 (Europe,including France, Greece, Turkey, Egypt, Arabia, Japan and "
+ "South Africa)"
+@@ -641,11 +655,11 @@
+ "Region 2 (Europe dont France, Gr?ce, Turquie, Egypte, Arabie, Japon "
+ "etAfrique du Sud)"
+ 
+-#: ../lib/initialize.py:527
++#: ../lib/initialize.py:528
+ msgid "Region 3 (Korea, Thailand, Vietnam, Borneo and Indonesia)"
+ msgstr "Region 3 (Cor?e, Thailande, Vietnam, Borneo et Indon?sie)"
+ 
+-#: ../lib/initialize.py:528
++#: ../lib/initialize.py:529
+ msgid ""
+ "Region 4 (Australia and New Zealand, Mexico, the Caribbean, and South "
+ "America)"
+@@ -653,23 +667,23 @@
+ "Region 4 (Australie et Nouvelle Z?lande, Mexique, les Cara?bes et L'Am?rique "
+ "du Sud)"
+ 
+-#: ../lib/initialize.py:529
++#: ../lib/initialize.py:530
+ msgid "Region 5 (India, Africa, Russia and former USSR countries)"
+ msgstr "Region 5 (Inde, Afrique, Russie and les pays de l'ex URSS)"
+ 
+-#: ../lib/initialize.py:530
++#: ../lib/initialize.py:531
+ msgid "Region 6 (Popular Republic of China)"
+ msgstr "Region 6 (R?publique Populaire de Chine)"
+ 
+-#: ../lib/initialize.py:531
++#: ../lib/initialize.py:532
+ msgid "Region 7 (Reserved for Unspecified Special Use)"
+ msgstr "Region 7 (R?serv? ? des usages sp?cifiques non sp?cifi?s)"
+ 
+-#: ../lib/initialize.py:532
++#: ../lib/initialize.py:533
+ msgid "Region 8 (Airlines/Cruise Ships)"
+ msgstr "Region 8 (Compagnies a?riennes/bateaux de croisi?re)"
+ 
+-#: ../lib/initialize.py:571
++#: ../lib/initialize.py:570
+ msgid "Dictionary not available. Spellcheck will be disabled. \n"
+ msgstr ""
+ "Dictionnaire indisponible. La correction orthographique est d?sactiv?e. \n"
+@@ -698,19 +712,19 @@
+ msgid "Movie not loaned"
+ msgstr "Film non pr?t?"
+ 
+-#: ../lib/movie.py:119
++#: ../lib/movie.py:121
+ msgid "Fetching data"
+ msgstr "Rappatriement des donn?es"
+ 
+-#: ../lib/movie.py:238
++#: ../lib/movie.py:240
+ msgid "Searching"
+ msgstr "Recherche"
+ 
+-#: ../lib/movie.py:277
++#: ../lib/movie.py:279
+ msgid "Connection error"
+ msgstr "Erreur de connexion"
+ 
+-#: ../lib/movie.py:301
++#: ../lib/movie.py:303
+ msgid "Cancel"
+ msgstr "Abandon"
+ 
+@@ -830,15 +844,22 @@
+ #: ../lib/plugins/movie/PluginMovieFDb.py:96
+ #: ../lib/plugins/movie/PluginMovieFilmeVonAZ.py:78
+ #: ../lib/plugins/movie/PluginMovieFilmweb.py:100
++#: ../lib/plugins/movie/PluginMovieIMDB-de.py:88
+ #: ../lib/plugins/movie/PluginMovieIMDB-es.py:101
+ #: ../lib/plugins/movie/PluginMovieIMDB.py:80
+-#: ../lib/plugins/movie/PluginMovieKinoDe.py:137
++#: ../lib/plugins/movie/PluginMovieKinoDe.py:136
+ #: ../lib/plugins/movie/PluginMovieOnet.py:102
+ #: ../lib/plugins/movie/PluginMovieWP.py:96
+ #: ../lib/plugins/movie/PluginMovieWP.py:98
++#: ../lib/plugins/movie/PluginMovieZelluloid.py:103
+ msgid " as "
+ msgstr " comme "
+ 
++#: ../lib/plugins/movie/PluginMovieIMDB-de.py:134
++#: ../lib/plugins/movie/PluginMovieIMDB.py:129 ../glade/griffith.glade.h:4
++msgid "<b>Audio</b>"
++msgstr "<b>Audio</b>"
++
+ #: ../lib/plugins/export/PluginExportCSV.py:31
+ msgid "Full CSV list export plugin"
+ msgstr "Plugin d'export de liste CSV"
+@@ -1114,10 +1135,6 @@
+ msgid "<b>Audio codecs</b>"
+ msgstr "<b>Codecs Audio</b>"
+ 
+-#: ../glade/griffith.glade.h:4
+-msgid "<b>Audio</b>"
+-msgstr "<b>Audio</b>"
+-
+ #: ../glade/griffith.glade.h:5
+ msgid "<b>Collection</b>"
+ msgstr "<b>Collection</b>"
+@@ -1820,6 +1837,91 @@
+ "utf_7 (all languages)\n"
+ "utf_8 (all languages)"
+ msgstr ""
++"ascii (Anglais)\n"
++"big5 (Chinois traditionnel)\n"
++"big5hkscs (Chinois traditionnel)\n"
++"cp037 (Anglais)\n"
++"cp424 (H?breux)\n"
++"cp437 (Anglais)\n"
++"cp500 (Europe de l'Ouest)\n"
++"cp737 (Grec)\n"
++"cp775 (Langues baltiques)\n"
++"cp850 (Europe de l'Ouest)\n"
++"cp852 (Europe Centrale et de l'Est)\n"
++"cp855 (Bulgare, bi?lorusse, mac?donien, russe, serbe)\n"
++"cp856 (H?breux)\n"
++"cp857 (Turc)\n"
++"cp860 (Portugais)\n"
++"cp861 (Islandais)\n"
++"cp862 (H?breux)\n"
++"cp863 (Canadien)\n"
++"cp864 (Arabique)\n"
++"cp865 (Danois, norv?gien)\n"
++"cp866 (Russe)\n"
++"cp869 (Grec)\n"
++"cp874 (Tha?)\n"
++"cp875 (Grec)\n"
++"cp932 (Japonais)\n"
++"cp949 (Cor?en)\n"
++"cp950 (Chinois traditionnel)\n"
++"cp1006 (Urdu)\n"
++"cp1026 (Turc)\n"
++"cp1140 (Europe de l'Ouest)\n"
++"cp1250 (Central et Europe de l'Est\n"
++"cp1251 (Bulgare, bi?lorusse, mac?donien, russe, serbe)\n"
++"cp1252 (Europe de l'Ouest)\n"
++"cp1253 (Grec)\n"
++"cp1254 (Turc)\n"
++"cp1255 (H?breux)\n"
++"cp1256 (Arabe)\n"
++"cp1257 (Langues baltiques)\n"
++"cp1258 (Vietnamien)\n"
++"euc_jp (Japonais)\n"
++"euc_jis_2004 (Japonais)\n"
++"euc_jisx0213 (Japonais)\n"
++"euc_kr (Cor?en)\n"
++"gb2312 (Chinois simplifi?)\n"
++"gbk (Chinois unifi?)\n"
++"gb18030 (Chinois unifi?)\n"
++"hz (Chinois simplifi?)\n"
++"iso2022_jp (Japonais)\n"
++"iso2022_jp_1 (Japonais)\n"
++"iso2022_jp_2 (Japonais, cor?en, chinois simplifi?, Europe de l'Ouest, grec)\n"
++"iso2022_jp_2004 (Japonais)\n"
++"iso2022_jp_3 (Japonais)\n"
++"iso2022_jp_ext (Japonais)\n"
++"iso2022_kr (Cor?en)\n"
++"latin_1 (Europe de l'Ouest)\n"
++"iso8859_2 (Europe du Centre et de l'Est)\n"
++"iso8859_3 (Esp?ranto, maltais)\n"
++"iso8859_4 (Langues baltiques)\n"
++"iso8859_5 (Bulgare, bi?lorusse, mac?donien, russe, serbe)\n"
++"iso8859_6 (Arabe)\n"
++"iso8859_7 (Grec)\n"
++"iso8859_8 (H?breux)\n"
++"iso8859_9 (Turc)\n"
++"iso8859_10 (Langues nordiques)\n"
++"iso8859_13 (Langues baltiques)\n"
++"iso8859_14 (Langues celtiques)\n"
++"iso8859_15 (Europe de l'Ouest)\n"
++"johab (Cor?en)\n"
++"koi8_r (Russe)\n"
++"koi8_u (Ukrainiae)\n"
++"mac_cyrillic (Bulgare, bi?lorusse, mac?donien, russe, serbe)\n"
++"mac_greek (Grec)\n"
++"mac_iceland (Islandais)\n"
++"mac_latin2 (Europe Central et de l'Est)\n"
++"mac_roman (Europe de l'Ouest)\n"
++"mac_turkish (Turc)\n"
++"ptcp154 (Kazakh)\n"
++"shift_jis (Japonais)\n"
++"shift_jis_2004 (Japonais)\n"
++"shift_jisx0213 (Japonais)\n"
++"utf_16 (toutes les langues)\n"
++"utf_16_be (toutes les langues (BMP seulement))\n"
++"utf_16_le (toutes les langues (BMP seulement))\n"
++"utf_7 (toutes les langues)\n"
++"utf_8 (toutes les langues)"
+ 
+ #: ../glade/import.glade.h:1
+ msgid "<b>Import only fields selected below</b>"
+@@ -1831,7 +1933,7 @@
+ 
+ #: ../glade/import.glade.h:7
+ msgid "Import window"
+-msgstr "Fen?tre d'import"
++msgstr "Fen?tre d'importation"
+ 
+ #: ../glade/import.glade.h:8
+ msgid "Plugin"
+
+
+
+From iznogoud at mail.berlios.de  Sat May 19 20:04:07 2007
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Sat, 19 May 2007 20:04:07 +0200
+Subject: [Griffith-svn] r761 - in trunk: . lib/plugins/movie
+Message-ID: <200705191804.l4JI47sK005745@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-05-19 20:04:07 +0200 (Sat, 19 May 2007)
+New Revision: 761
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+imdb plugin rating fix
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-19 03:13:12 UTC (rev 760)
++++ trunk/ChangeLog	2007-05-19 18:04:07 UTC (rev 761)
+@@ -6,6 +6,7 @@
+ 
+ 2007-05-19  Vasco Nunes
+ 	* French translation updated (thanks to Guillaume Pratte)
++	* IMDB plugin rating fix (thanks to babelfish)
+ 
+ 2007-05-11  Jessica K. Parth
+ 	* OFDb updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-05-19 03:13:12 UTC (rev 760)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-05-19 18:04:07 UTC (rev 761)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O?arowski'
+ plugin_author_email	= 'griffith-private at lists.berlios.de'
+-plugin_version		= '1.3'
++plugin_version		= '1.4'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -103,7 +103,7 @@
+ 		self.country = gutils.trim(self.page, '<h5>Country:</h5>', '</div>')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '<b>User Rating:</b>', '/10')
++		self.rating = gutils.trim(self.page, '<b>User Rating:</b> \n<b>', '/10')
+ 		if self.rating and self.rating.find('awaiting') == -1:
+ 			try:
+ 				self.rating = float(self.rating)
+
+
+
+From iznogoud at mail.berlios.de  Sat May 19 20:29:02 2007
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Sat, 19 May 2007 20:29:02 +0200
+Subject: [Griffith-svn] r762 - in trunk: . lib/plugins/movie
+Message-ID: <200705191829.l4JIT2gT007401@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-05-19 20:29:01 +0200 (Sat, 19 May 2007)
+New Revision: 762
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+Log:
+e-pipoca and ptlink movie plugins fixes
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-19 18:04:07 UTC (rev 761)
++++ trunk/ChangeLog	2007-05-19 18:29:01 UTC (rev 762)
+@@ -7,6 +7,8 @@
+ 2007-05-19  Vasco Nunes
+ 	* French translation updated (thanks to Guillaume Pratte)
+ 	* IMDB plugin rating fix (thanks to babelfish)
++	* PTGate movie plugin encoding fixed
++	* E-pipoca movie plugin updated
+ 
+ 2007-05-11  Jessica K. Parth
+ 	* OFDb updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-05-19 18:04:07 UTC (rev 761)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-05-19 18:29:01 UTC (rev 762)
+@@ -34,7 +34,7 @@
+ plugin_language = _("Brazilian Portuguese")
+ plugin_author = "Vasco Nunes"
+ plugin_author_email="<vasco.m.nunes at gmail.com>"
+-plugin_version = "0.4"
++plugin_version = "0.5"
+ 
+ class Plugin(movie.Movie):
+ 	"A movie plugin object"
+@@ -148,8 +148,7 @@
+ 
+ 		if (elements[0] != ''):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element, "<a href=\"filmes_detalhes.php?idf=", "\"><img src=\"images/"))
+-				self.titles.append(gutils.convert_entities \
+-					(gutils.trim(element, "</a></font> <br>(<i>", "</i>, <a href=") ))
++				self.ids.append(gutils.trim(element, "<a href=\"filmes_detalhes.php?idf=", "\">"))
++				self.titles.append(gutils.strip_tags(gutils.trim(element, "<font class=\"titulo\">", "<b>Adicionar aos meus filmes favoritos</b>") ))
+ 		else:
+ 			self.number_results = 0
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-05-19 18:04:07 UTC (rev 761)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2007-05-19 18:29:01 UTC (rev 762)
+@@ -32,7 +32,7 @@
+ plugin_language = _("Portuguese")
+ plugin_author = "Vasco Nunes"
+ plugin_author_email="<vasco.m.nunes at gmail.com>"
+-plugin_version = "0.3"
++plugin_version = "0.4"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -50,7 +50,7 @@
+ 		self.title = string.capwords(gutils.trim(self.page,"class=subtitle>","</b><br>") )
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,"<b>realiza????o</b><br>","<br><br><b>")
++		self.director = gutils.trim(self.page,"<b>realiza??o</b><br>","<br><br><b>")
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page,"<b>sinopse</b><br>","<br><br>")
+
+
+
+From piotrek at mail.berlios.de  Tue May 22 20:23:41 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 22 May 2007 20:23:41 +0200
+Subject: [Griffith-svn] r763 - in trunk: . lib
+Message-ID: <200705221823.l4MINfsV027715@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-05-22 20:23:41 +0200 (Tue, 22 May 2007)
+New Revision: 763
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+Log:
+Minor fix in dbupgrade.py
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-19 18:29:01 UTC (rev 762)
++++ trunk/ChangeLog	2007-05-22 18:23:41 UTC (rev 763)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-05-22  Piotr O?arowski
++	* Minor fix in dbupgrade.py
++
+ 2007-05-19  Vasco Nunes
+ 	* French translation updated (thanks to Guillaume Pratte)
+ 	* IMDB plugin rating fix (thanks to babelfish)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-05-19 18:29:01 UTC (rev 762)
++++ trunk/lib/dbupgrade.py	2007-05-22 18:23:41 UTC (rev 763)
+@@ -303,8 +303,10 @@
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.Movie()
+ 		o.number = digits_only(i[6])
+-		o.volume_id = volume_mapper[i[1]]
+-		o.collection_id = collection_mapper[i[2]]
++		if volume_mapper.has_key(i[1]):
++			o.volume_id = volume_mapper[i[1]]
++		if collection_mapper.has_key(i[2]):
++			o.collection_id = collection_mapper[i[2]]
+ 		o.o_title = i[3][:255]
+ 		o.title = i[4][:255]
+ 		o.director = i[5][:255]
+@@ -322,7 +324,8 @@
+ 		o.trailer = i[18][:255]
+ 		o.rating = digits_only(i[19])
+ 		#o.loaned = bool(i[20]) # updated later
+-		o.medium_id = medium_mapper[int(i[21])]
++		if medium_mapper.has_key(int(i[21])):
++			o.medium_id = medium_mapper[int(i[21])]
+ 		o.media_num = digits_only(i[22])
+ 		o.notes = i[23]
+ 		o.seen = bool(i[24])
+
+
+
+From piotrek at mail.berlios.de  Thu May 31 20:26:31 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 31 May 2007 20:26:31 +0200
+Subject: [Griffith-svn] r764 - in trunk: . lib/plugins/movie
+Message-ID: <200705311826.l4VIQVYn002523@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-05-31 20:26:30 +0200 (Thu, 31 May 2007)
+New Revision: 764
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+IMDB, IMDB-de and KinoDe movie plugins updated (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-22 18:23:41 UTC (rev 763)
++++ trunk/ChangeLog	2007-05-31 18:26:30 UTC (rev 764)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-05-31  Piotr O?arowski
++	* IMDB, IMDB-de and KinoDe movie plugins updated (thanks to Michael Jahn)
++
+ 2007-05-22  Piotr O?arowski
+ 	* Minor fix in dbupgrade.py
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-05-22 18:23:41 UTC (rev 763)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-05-31 18:26:30 UTC (rev 764)
+@@ -32,7 +32,7 @@
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = 'mikej06 at hotmail.com'
+-plugin_version      = '1.0'
++plugin_version      = '1.1'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -40,6 +40,10 @@
+ 		self.movie_id = id
+ 		self.url = "http://german.imdb.com/title/tt%s" % str(self.movie_id)
+ 
++	def initialize(self):
++		self.cast_page = self.open_page(url=self.url + '/fullcredits')
++		self.plot_page = self.open_page(url=self.url + '/plotsummary')
++
+ 	def get_image(self):
+ 		tmp = string.find(self.page, 'a name="poster"')
+ 		if tmp == -1:		# poster not available
+@@ -61,15 +65,22 @@
+ 					break
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,'<h5>Regie</h5>', '<br/>\n<br/>')
++		self.director = gutils.trim(self.page,'<h5>Regie</h5>', '<br/>\n')
++		if self.director == '':
++			self.director = gutils.trim(self.page,'<h5>Regisseur:</h5>', '<br/>\n')
+ 		self.director = self.__before_more(self.director)
+ 		self.director = self.director.replace('<br/>', ', ')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, '<h5>Kurzbeschreibung:</h5>', '</div>')
+ 		self.plot = self.__before_more(self.plot)
+-		plot_page = self.open_page(url="http://german.imdb.com/title/tt" + str(self.movie_id) + "/plotsummary")
+-		self.plot = self.plot + '\n\n' + gutils.strip_tags(gutils.trim(plot_page, '<p class="plotpar">', '<div'))
++		elements = string.split(self.plot_page, '<p class="plotpar">')
++		if len(elements) > 1:
++			self.plot = self.plot + '\n\n'
++			elements[0] = ''
++			for element in elements:
++				if element != '':
++					self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n'
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>')
+@@ -84,7 +95,9 @@
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+-		self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
++		self.cast = gutils.trim(self.cast_page, '<table class="cast">', '</table>')
++		if self.cast == '':
++			self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
+ 		self.cast = string.replace(self.cast, ' ... ', _(' as '))
+ 		self.cast = string.replace(self.cast, '</tr><tr>', "\n")
+ 		self.cast = string.replace(self.cast, '</tr><tr class="even">', "\n")
+@@ -110,7 +123,7 @@
+ 		self.country = gutils.trim(self.page, '<h5>Produktionsland:</h5>', '</div>')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '<b>Ihre Bewertung:</b>', '/10')
++		self.rating = gutils.trim(self.page, '<b>Nutzer-Bewertung:</b>', '/10')
+ 		if self.rating:
+ 			try:
+ 				self.rating = str(float(gutils.clean(self.rating)))
+@@ -119,13 +132,13 @@
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+-		language = gutils.trim(self.page, '<h5>Language:</h5>', '</div>')
++		language = gutils.trim(self.page, '<h5>Sprache:</h5>', '</div>')
+ 		language = gutils.strip_tags(language)
+-		color = gutils.trim(self.page, '<h5>Color:</h5>', '</div>')
++		color = gutils.trim(self.page, '<h5>Farbe:</h5>', '</div>')
+ 		color = gutils.strip_tags(color)
+-		sound = gutils.trim(self.page, '<h5>Sound Mix:</h5>', '</div>')
++		sound = gutils.trim(self.page, '<h5>Tonverfahren:</h5>', '</div>')
+ 		sound = gutils.strip_tags(sound)
+-		tagline = gutils.trim(self.page, '<h5>Tagline:</h5>', '</div>')
++		tagline = gutils.trim(self.page, '<h5>Werbezeile:</h5>', '</div>')
+ 		tagline = self.__before_more(tagline)
+ 		tagline = gutils.strip_tags(tagline)
+ 		if len(language)>0:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-05-22 18:23:41 UTC (rev 763)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-05-31 18:26:30 UTC (rev 764)
+@@ -39,6 +39,10 @@
+ 		self.movie_id = id
+ 		self.url = "http://imdb.com/title/tt%s" % str(self.movie_id)
+ 
++	def initialize(self):
++		self.cast_page = self.open_page(url=self.url + '/fullcredits')
++		self.plot_page = self.open_page(url=self.url + '/plotsummary')
++
+ 	def get_image(self):
+ 		tmp = string.find(self.page, 'a name="poster"')
+ 		if tmp == -1:		# poster not available
+@@ -62,6 +66,13 @@
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, '<h5>Plot Outline:</h5>', '</div>')
+ 		self.plot = self.__before_more(self.plot)
++		elements = string.split(self.plot_page, '<p class="plotpar">')
++		if len(elements) > 1:
++			self.plot = self.plot + '\n\n'
++			elements[0] = ''
++			for element in elements:
++				if element <> '':
++					self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n'
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>')
+@@ -76,7 +87,9 @@
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+-		self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
++		self.cast = gutils.trim(self.cast_page, '<table class="cast">', '</table>')
++		if self.cast == '':
++			self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
+ 		self.cast = string.replace(self.cast, ' ... ', _(' as '))
+ 		self.cast = string.replace(self.cast, '</tr><tr>', "\n")
+ 		self.cast = string.replace(self.cast, '</tr><tr class="even">', "\n")
+@@ -88,7 +101,7 @@
+ 		self.classification = gutils.trim(self.classification, 'Rated ', ' ')
+ 
+ 	def get_studio(self):
+-		self.studio = ''
++		self.studio = gutils.trim(self.page, '<h5>Company:</h5>', '</a>')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ''
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-05-22 18:23:41 UTC (rev 763)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-05-31 18:26:30 UTC (rev 764)
+@@ -1,272 +1,281 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2006-2007
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-from gettext import gettext as _
+-import gutils
+-import movie
+-import string
+-
+-plugin_name = "Kino.de"
+-plugin_description = "KINO.DE"
+-plugin_url = "www.kino.de"
+-plugin_language = _("German")
+-plugin_author = "Michael Jahn"
+-plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.5"
+-
+-class Plugin(movie.Movie):
+-	url_to_use = "http://www.kino.de/kinofilm.php4?"
+-	url_type = "K"
+-
+-	def __init__(self, id):
+-		self.encode='iso-8859-1'
+-		elements = string.split(id, "_")
+-		self.movie_id = elements[1]
+-		if (elements[0] == "V"):
+-			self.url_to_use = "http://www.kino.de/videofilm.php4?"
+-			self.url_type = "V"
+-		else:
+-			self.url_to_use = "http://www.kino.de/kinofilm.php4?"
+-			self.url_type = "K"
+-		self.url = self.url_to_use + "typ=film&nr=" + str(self.movie_id)
+-
+-	def initialize(self):
+-		if (gutils.trim(self.url, "typ=", "&") <> "film"):
+-			self.url = self.url_to_use + "typ=film&nr=" + str(self.movie_id)
+-			self.open_page(self.parent_window)
+-		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+-	
+-	def get_image(self):
+-		# first, try to get the second picture before the JavaScript block (it should be the original poster)
+-		# if there is no second picture, use the first picture (it should be a picture from the film)
+-		self.image_url = "http://images.kino.de/flbilder/" + gutils.trim(gutils.after(gutils.before(self.tmp_page, "<script language="), "img src=\"http://images.kino.de/flbilder/"),"img src=\"http://images.kino.de/flbilder/", "\"")
+-		if (self.image_url == "http://images.kino.de/flbilder/"):
+-			self.image_url = "http://images.kino.de/flbilder/" + gutils.trim(self.tmp_page,"img src=\"http://images.kino.de/flbilder/", "\"")
+-
+-	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page,"span CLASS=\"standardsmall\"><br>(",")<")
+-
+-	def get_title(self):
+-		if (self.url_type == "V"):
+-			self.title = gutils.after(gutils.trim(self.page,"\"headline2\"><A HREF=\"/videofilm.php4?nr=", "</A>"), ">")
+-		else:
+-			self.title = gutils.after(gutils.trim(self.page,"\"headline2\"><A HREF=\"/kinofilm.php4?nr=", "</A>"), ">")
+-
+-	def get_director(self):
+-		if (gutils.trim(self.url, "typ=", "&") <> "credits"):
+-			self.url = self.url_to_use + "typ=credits&nr=" + str(self.movie_id)
+-			self.open_page(self.parent_window)
+-		self.director = gutils.trim(self.page,"Regie","</a>")
+-		self.director = gutils.after(self.director,"mitwirk.php4")
+-		self.director = gutils.after(self.director,">")
+-
+-	def get_plot(self):
+-		if (gutils.trim(self.url, "typ=", "&") <> "film"):
+-			self.url = self.url_to_use + "typ=film&nr=" + str(self.movie_id)
+-			self.open_page(self.parent_window)
+-		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+-		# little steps to perfect plot (I hope ... it's a terrible structured content ... )
+-		self.plot = gutils.trim(self.tmp_page,"Kurzinfo", "</TD></TR><tr><td></td></tr><TR>")
+-		if (self.plot == ""):
+-			self.plot = gutils.trim(self.tmp_page,"Kurzinfo", "<script language=\"JavaScript\">")
+-		self.plot = gutils.after(self.plot, "Fotoshow</A>")
+-		self.plot = gutils.after(self.plot, "Filmpreise</A>")
+-		self.plot = gutils.after(self.plot, "Games zum Film</A>")
+-		self.plot = gutils.after(self.plot, " Crew</A>")
+-		self.plot = gutils.before(self.plot, "FOTOSHOW</SPAN>")
+-		self.plot = gutils.after(self.plot, "</TABLE>")
+-
+-	def get_year(self):
+-		self.year = gutils.trim(self.page,"class=\"standardsmall\"><br><b>DVD</b> - <b>","<BR>")
+-		if self.year == "":
+-			self.year = gutils.trim(self.page,"class=\"standardsmall\"><b>","<BR>")
+-		self.year = gutils.trim(self.year,"<b>","</b>")
+-		self.year = gutils.after(self.year," ")
+-
+-	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page,"Jahren</b> - <b>"," Min.")
+-		if (self.runtime == ''):
+-			self.runtime = gutils.trim(self.page,"Jahren</b></b> - <b>"," Min.")
+-		if (self.runtime == ''):
+-			self.runtime = gutils.trim(self.page,"</b><BR><b>"," Min.")
+-
+-	def get_genre(self):
+-		self.genre = gutils.trim(self.page,"class=\"standardsmall\"><br><b>DVD</b> - <b>","</b>")
+-		if self.genre == "":
+-			self.genre = gutils.trim(self.page,"class=\"standardsmall\"><b>","</b>")
+-
+-	def get_cast(self):
+-		if (gutils.trim(self.url, "typ=", "&") <> "credits"):
+-			self.url = self.url_to_use + "typ=credits&nr=" + str(self.movie_id)
+-			self.open_page(self.parent_window)
+-		self.cast = gutils.trim(self.page,"</TD></TR><TR  CLASS=\"dbtreffer", "\n")
+-		self.cast = gutils.after(self.cast, "\">")
+-		self.cast = self.cast.replace("<TR  CLASS=\"dbtrefferlight\">", "\n")
+-		self.cast = self.cast.replace("<TR  CLASS=\"dbtrefferdark\">", "\n")
+-		self.cast = self.cast.replace("&nbsp;", "--flip--")
+-		self.cast = gutils.clean(self.cast)
+-		elements = self.cast.split("\n")
+-		self.cast = ''
+-		for element in elements:
+-			elements2 = element.split("--flip--")
+-			if len(elements2) > 1:
+-				self.cast += elements2[1] + "--flip--" + elements2[0] + "\n"
+-			else:
+-				self.cast = element
+-		self.cast = string.replace(self.cast, "--flip--", _(" as "))
+-
+-	def get_classification(self):
+-		self.classification = gutils.trim(self.page,"FSK: ","</b>")
+-
+-	def get_studio(self):
+-		self.studio = gutils.trim(self.page,"Verleih: ", "</b>")
+-		if (self.studio == ""):
+-			self.studio = gutils.trim(self.page,"Anbieter: ", "</b>")
+-
+-	def get_o_site(self):
+-		self.o_site = ""
+-
+-	def get_site(self):
+-		self.site = self.url_to_use + "nr=" + self.movie_id;
+-
+-	def get_trailer(self):
+-		self.trailer = ""
+-
+-	def get_country(self):
+-		self.country = gutils.trim(self.page,"class=\"standardsmall\"><br><b>DVD</b> - <b>","<BR>")
+-		if self.country == "":
+-			self.country = gutils.trim(self.page,"class=\"standardsmall\"><b>","<BR>")
+-		self.country = gutils.trim(self.country,"<b>","</b>")
+-		self.country = gutils.before(self.country," ")
+-
+-	def get_rating(self):
+-		self.rating = "0"
+-
+-	def get_notes(self):
+-		self.notes = ""
+-		self.url = self.url_to_use + "typ=features&nr=" + str(self.movie_id)
+-		self.open_page(self.parent_window)
+-		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+-		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Sprache</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (tmp_notes != ""):
+-			self.notes = self.notes + "Sprachen:\n" + tmp_notes + "\n\n"
+-		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Untertitel</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (tmp_notes != ""):
+-			self.notes = self.notes + "Untertitel:\n" + tmp_notes + "\n\n"
+-		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Mehrkanalton</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (tmp_notes != ""):
+-			self.notes = self.notes + "Mehrkanalton:\n" + tmp_notes + "\n\n"
+-		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>EAN</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (tmp_notes != ""):
+-			self.notes = self.notes + "EAN:\n" + tmp_notes + "\n\n"
+-
+-#
+-# kino.de use iso-8859-1
+-# it's not necessary to decode the page
+-# in fact if utf-8 is used you can't search for movies with german umlaut
+-# and if you use the decode call you get a terrible formatted result list
+-#
+-
+-class SearchPlugin(movie.SearchMovie):
+-
+-	def __init__(self):
+-		self.original_url_search    = "http://www.kino.de/megasuche.php4?typ=filme&wort="
+-		self.translated_url_search    = "http://www.kino.de/megasuche.php4?typ=filme&wort="
+-#		self.encode='utf-8'
+-		self.encode='iso-8859-1'
+-
+-	def search(self,parent_window):
+-		self.open_search(parent_window)
+-		tmp_pagemovie = string.replace( self.page, "</B>", "</b>" )
+-		tmp_pagemovie = string.replace( tmp_pagemovie, "A HREF", "a href" )
+-		tmp_pagemovie = gutils.trim(tmp_pagemovie,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
+-		#
+-		# try to get all result pages (not so nice, but it works)
+-		#
+-		tmp_pagecount = gutils.trim(tmp_pagemovie, "&nbsp;von ", "</SPAN>")
+-		try:
+-			tmp_pagecountint = int(tmp_pagecount)
+-		except:
+-			tmp_pagecountint = 1
+-		tmp_pagecountintcurrent = 1
+-		while (tmp_pagecountint > tmp_pagecountintcurrent):
+-			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = "http://www.kino.de/megasuche.php4?typ=filme&page=" + str(tmp_pagecountintcurrent) + "&wort="
+-			self.open_search(parent_window)
+-			tmp_page = string.replace( self.page, "</B>", "</b>" )
+-			tmp_page = string.replace( tmp_page, "A HREF", "a href" )
+-			tmp_page = gutils.trim(tmp_page,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
+-			tmp_pagemovie = tmp_pagemovie + tmp_page
+-		#
+-		# Look for DVD and VHS
+-		#
+-		self.url = "http://www.kino.de/megasuche.php4?typ=video&wort="
+-		self.open_search(parent_window)
+-		tmp_pagevideo = string.replace( self.page, "<B>", "<b>" )
+-		tmp_pagevideo = string.replace( tmp_pagevideo, "A HREF", "a href" )
+-		tmp_pagevideo = gutils.trim(tmp_pagevideo,"align=center><b>Video/DVD 1", '<!-- PRINT-CONTENT-ENDE-->');
+-		tmp_pagevideo = tmp_pagemovie + tmp_pagevideo
+-		#
+-		# try to get all result pages (not so nice, but it works)
+-		#
+-		tmp_pagecount = gutils.trim(self.page, "&nbsp;von ", "</SPAN>")
+-		try:
+-			tmp_pagecountint = int(tmp_pagecount)
+-		except:
+-			tmp_pagecountint = 1
+-		tmp_pagecountintcurrent = 1
+-		while (tmp_pagecountint > tmp_pagecountintcurrent):
+-			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = "http://www.kino.de/megasuche.php4?typ=video&page=" + str(tmp_pagecountintcurrent) + "&wort="
+-			self.open_search(parent_window)
+-			tmp_page = string.replace( self.page, "<B>", "<b>" )
+-			tmp_page = string.replace( tmp_page, "A HREF", "a href" )
+-			tmp_page = gutils.trim(tmp_page,"align=center><b>Video/DVD ", '<!-- PRINT-CONTENT-ENDE-->');
+-			tmp_pagevideo = tmp_pagevideo + tmp_page
+-
+-		self.page = tmp_pagevideo
+-		return self.page
+-
+-	def get_searches(self):
+-		elements1 = string.split(self.page,'headline3"><a href="/kinofilm.php4?nr=')
+-		elements1[0] = ''
+-		for element in elements1:
+-			if element <> '':
+-				self.ids.append("K_" + gutils.before(element,'&'))
+-				self.titles.append(gutils.strip_tags(
+-					gutils.trim(element,">","</A>") + " " +
+-					gutils.trim(element, "<span CLASS=\"standardsmall\"><br>", "</SPAN>") + " (" +
+-					string.replace(
+-						gutils.trim(element, "<span class=\"standardsmall\"><b>", "</span>"), "<b>", ", ")
+-							+ ")"))
+-							
+-		elements2 = string.split(self.page,'headline3"><a href="/videofilm.php4?nr=')
+-		elements2[0] = ''
+-		for element in elements2:
+-			if element <> '':
+-				self.ids.append("V_" + gutils.before(element,'&'))
+-				self.titles.append(gutils.strip_tags( 
+-					gutils.trim(element,">","</A>") + " " +
+-					gutils.trim(element, '<span CLASS="standardsmall"><br>', '</SPAN>') + " (" +
+-					string.replace(
+-						gutils.trim(element, '<span class="standardsmall"><br><b>', "</span>"), "<b>", ", ") + ")"))
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2006-2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++
++plugin_name = "Kino.de"
++plugin_description = "KINO.DE"
++plugin_url = "www.kino.de"
++plugin_language = _("German")
++plugin_author = "Michael Jahn"
++plugin_author_email = "<mikej06 at hotmail.com>"
++plugin_version = "1.6"
++
++class Plugin(movie.Movie):
++	url_to_use = "http://www.kino.de/kinofilm/"
++	url_type = "K"
++
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		elements = string.split(id, "_")
++		self.movie_id = elements[1]
++		if (elements[0] == "V"):
++			self.url_to_use = "http://www.kino.de/videofilm/"
++			self.url_type = "V"
++		else:
++			self.url_to_use = "http://www.kino.de/kinofilm/"
++			self.url_type = "K"
++		self.url = self.url_to_use + str(self.movie_id)
++
++	def initialize(self):
++		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
++		self.url = self.url_to_use + string.replace(str(self.movie_id), '/', '/credits/')
++		self.open_page(self.parent_window)
++		self.tmp_creditspage = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
++		self.url = self.url_to_use + string.replace(str(self.movie_id), "/", "/features/")
++		self.open_page(self.parent_window)
++		self.tmp_dvdfeaturespage = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
++
++	def get_image(self):
++		# first, try to get the second picture before the JavaScript block (it should be the original poster)
++		# if there is no second picture, use the first picture (it should be a picture from the film)
++		self.image_url = "http://images.kino.de/flbilder/" + gutils.trim(gutils.after(gutils.before(self.tmp_page, "<script language="), "img src=\"http://images.kino.de/flbilder/"),"img src=\"http://images.kino.de/flbilder/", "\"")
++		if (self.image_url == "http://images.kino.de/flbilder/"):
++			self.image_url = "http://images.kino.de/flbilder/" + gutils.trim(self.tmp_page,"img src=\"http://images.kino.de/flbilder/", "\"")
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.tmp_page,"span class=\"standardsmall\"><br />(",")<")
++		if (self.plot == ""):
++			self.o_title = self.title
++
++	def get_title(self):
++		if (self.url_type == "V"):
++			self.title = gutils.after(gutils.trim(self.tmp_page,"\"headline2\"><a href=\"http://www.kino.de/videofilm", "</a>"), ">")
++		else:
++			self.title = gutils.after(gutils.trim(self.tmp_page,"\"headline2\"><a href=\"http://www.kino.de/kinofilm", "</a>"), ">")
++		if (self.o_title == ""):
++			self.o_title = self.title
++
++	def get_director(self):
++		self.director = gutils.trim(self.tmp_creditspage,"Regie","</a>")
++		self.director = gutils.after(self.director,"/star/")
++		self.director = gutils.after(self.director,">")
++
++	def get_plot(self):
++		# little steps to perfect plot (I hope ... it's a terrible structured content ... )
++		self.plot = gutils.trim(self.tmp_page,"Kurzinfo", "</td></tr><tr><td></td></tr><tr>")
++		if (self.plot == ""):
++			self.plot = gutils.trim(self.tmp_page,"Kurzinfo", "<script language=\"JavaScript\">")
++		self.plot = gutils.after(self.plot, "Fotoshow</A>")
++		self.plot = gutils.after(self.plot, "Filmpreise</A>")
++		self.plot = gutils.after(self.plot, "Games zum Film</A>")
++		self.plot = gutils.after(self.plot, " Crew</A>")
++		self.plot = gutils.after(self.plot, "Soundtracks</A>")
++		self.plot = gutils.after(self.plot, "DVD-Features</A>")
++		self.plot = gutils.after(self.plot, " Fassungen</A>")
++		self.plot = gutils.before(self.plot, "FOTOSHOW</span>")
++		self.plot = gutils.after(self.plot, "</TABLE>")
++		self.plot = gutils.before(self.plot, "</span>")
++
++	def get_year(self):
++		self.year = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>DVD</b> - <b>","<br />")
++		if self.year == "":
++			self.year = gutils.trim(self.tmp_page,"class=\"standardsmall\"><b>","<br />")
++		self.year = gutils.trim(self.year,"<b>","</b>")
++		self.year = gutils.after(self.year," ")
++
++	def get_runtime(self):
++		self.runtime = gutils.trim(self.tmp_page,"Jahren</b> - <b>"," Min.")
++		if (self.runtime == ''):
++			self.runtime = gutils.trim(self.tmp_page,"Jahren</b></b> - <b>"," Min.")
++		if (self.runtime == ''):
++			self.runtime = gutils.trim(self.tmp_page,"</b><br /><b>"," Min.")
++
++	def get_genre(self):
++		self.genre = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>DVD</b> - <b>","</b>")
++		if self.genre == "":
++			self.genre = gutils.trim(self.tmp_page,"class=\"standardsmall\"><b>","</b>")
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.tmp_creditspage,"</td></tr><tr  class=\"dbtrefferlight", "</table>")
++		if (self.cast == ""):
++			self.cast = gutils.trim(self.tmp_creditspage,"</td></tr><tr class=\"dbtrefferlight", "</table>")
++		self.cast = gutils.after(self.cast, "\">")
++		self.cast = self.cast.replace("<tr class=\"dbtrefferlight\">", "\n")
++		self.cast = self.cast.replace("<tr class=\"dbtrefferdark\">", "\n")
++		self.cast = self.cast.replace("<tr  class=\"dbtrefferlight\">", "\n")
++		self.cast = self.cast.replace("<tr  class=\"dbtrefferdark\">", "\n")
++		self.cast = self.cast.replace("&nbsp;", "--flip--")
++		self.cast = gutils.clean(self.cast)
++		elements = self.cast.split("\n")
++		self.cast = ''
++		for element in elements:
++			elements2 = element.split("--flip--")
++			if len(elements2) > 1:
++				self.cast += elements2[1] + "--flip--" + elements2[0] + "\n"
++			else:
++				self.cast = element
++		self.cast = string.replace(self.cast, "--flip--", _(" as "))
++
++	def get_classification(self):
++		self.classification = gutils.trim(self.tmp_page,"FSK: ","</b>")
++
++	def get_studio(self):
++		self.studio = gutils.trim(self.tmp_page,"Verleih: ", "</b>")
++		if (self.studio == ""):
++			self.studio = gutils.trim(self.tmp_page,"Anbieter: ", "</b>")
++
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = self.url_to_use + self.movie_id;
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>DVD</b> - <b>","<br />")
++		if self.country == "":
++			self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>VHS</b> - <b>","<br />")
++		if self.country == "":
++			self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>Laser Disc</b> - <b>","<br />")
++		if self.country == "":
++			self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>Video CD</b> - <b>","<br />")
++		if self.country == "":
++			self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><br /><b>Blue-ray Disc</b> - <b>","<br />")
++		if self.country == "":
++			self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><b>","<br />")
++		self.country = gutils.trim(self.country,"<b>","</b>")
++		self.country = gutils.before(self.country," ")
++
++	def get_rating(self):
++		self.rating = "0"
++
++	def get_notes(self):
++		self.notes = ""
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_dvdfeaturespage, "<b>Sprache</b>", "</td></tr>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "Sprachen:\n" + tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_dvdfeaturespage, "<b>Untertitel</b>", "</td></tr>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "Untertitel:\n" + tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_dvdfeaturespage, "<b>Mehrkanalton</b>", "</td></tr>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "Mehrkanalton:\n" + tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_dvdfeaturespage, "<b>EAN</b>", "</td></tr>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "EAN:\n" + tmp_notes + "\n\n"
++
++#
++# kino.de use iso-8859-1
++# it's not necessary to decode the page
++# in fact if utf-8 is used you can't search for movies with german umlaut
++# and if you use the decode call you get a terrible formatted result list
++#
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search    = "http://www.kino.de/megasuche.php4?typ=filme&wort="
++		self.translated_url_search    = "http://www.kino.de/megasuche.php4?typ=filme&wort="
++#		self.encode='utf-8'
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		tmp_pagemovie = string.replace( self.page, "</B>", "</b>" )
++		tmp_pagemovie = string.replace( tmp_pagemovie, "A HREF", "a href" )
++		tmp_pagemovie = gutils.trim(tmp_pagemovie,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
++		#
++		# try to get all result pages (not so nice, but it works)
++		#
++		tmp_pagecount = gutils.trim(tmp_pagemovie, "&nbsp;von ", "</SPAN>")
++		try:
++			tmp_pagecountint = int(tmp_pagecount)
++		except:
++			tmp_pagecountint = 1
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountint > tmp_pagecountintcurrent and tmp_pagecountintcurrent < 5):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = "http://www.kino.de/megasuche.php4?typ=filme&page=" + str(tmp_pagecountintcurrent) + "&wort="
++			self.open_search(parent_window)
++			tmp_page = string.replace( self.page, "</B>", "</b>" )
++			tmp_page = string.replace( tmp_page, "A HREF", "a href" )
++			tmp_page = gutils.trim(tmp_page,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
++			tmp_pagemovie = tmp_pagemovie + tmp_page
++		#
++		# Look for DVD and VHS
++		#
++		self.url = "http://www.kino.de/megasuche.php4?typ=video&wort="
++		self.open_search(parent_window)
++		tmp_pagevideo = string.replace( self.page, "<B>", "<b>" )
++		tmp_pagevideo = string.replace( tmp_pagevideo, "A HREF", "a href" )
++		tmp_pagevideo = gutils.trim(tmp_pagevideo,"align=center><b>Video/DVD 1", '<!-- PRINT-CONTENT-ENDE-->');
++		tmp_pagevideo = tmp_pagemovie + tmp_pagevideo
++		#
++		# try to get all result pages (not so nice, but it works)
++		#
++		tmp_pagecount = gutils.trim(self.page, "&nbsp;von ", "</SPAN>")
++		try:
++			tmp_pagecountint = int(tmp_pagecount)
++		except:
++			tmp_pagecountint = 1
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountint > tmp_pagecountintcurrent and tmp_pagecountintcurrent < 5):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = "http://www.kino.de/megasuche.php4?typ=video&page=" + str(tmp_pagecountintcurrent) + "&wort="
++			self.open_search(parent_window)
++			tmp_page = string.replace( self.page, "<B>", "<b>" )
++			tmp_page = string.replace( tmp_page, "A HREF", "a href" )
++			tmp_page = gutils.trim(tmp_page,"align=center><b>Video/DVD ", '<!-- PRINT-CONTENT-ENDE-->');
++			tmp_pagevideo = tmp_pagevideo + tmp_page
++
++		self.page = tmp_pagevideo
++		return self.page
++
++	def get_searches(self):
++		elements1 = string.split(self.page,'headline3"><a href="http://www.kino.de/kinofilm/')
++		elements1[0] = ''
++		for element in elements1:
++			if element <> '':
++				self.ids.append("K_" + gutils.before(element,'"'))
++				self.titles.append(gutils.strip_tags(
++					gutils.trim(element,">","</a>") + " (" +
++					gutils.trim(element, '<span class="standardsmall">', "</span>") + ")"
++					)
++				)
++
++		elements2 = string.split(self.page,'headline3"><a href="http://www.kino.de/videofilm/')
++		elements2[0] = ''
++		for element in elements2:
++			if element <> '':
++				self.ids.append("V_" + gutils.before(element,'"'))
++				self.titles.append(gutils.strip_tags(
++					gutils.trim(element,">","</a>") + " (" +
++					gutils.trim(element, '<span class="standardsmall">', '</span>') + ")"
++					)
++				)
+
+
+
+From piotrek at mail.berlios.de  Thu May 31 21:10:42 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 31 May 2007 21:10:42 +0200
+Subject: [Griffith-svn] r765 - in trunk: . lib
+Message-ID: <200705311910.l4VJAg0I005869@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-05-31 21:10:42 +0200 (Thu, 31 May 2007)
+New Revision: 765
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+Log:
+Resizable columns in add movie window's languages tab (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-31 18:26:30 UTC (rev 764)
++++ trunk/ChangeLog	2007-05-31 19:10:42 UTC (rev 765)
+@@ -6,6 +6,7 @@
+ 
+ 2007-05-31  Piotr O?arowski
+ 	* IMDB, IMDB-de and KinoDe movie plugins updated (thanks to Michael Jahn)
++	* Resizable columns in add movie window's languages tab (thanks to Michael Jahn)
+ 
+ 2007-05-22  Piotr O?arowski
+ 	* Minor fix in dbupgrade.py
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-05-31 18:26:30 UTC (rev 764)
++++ trunk/lib/initialize.py	2007-05-31 19:10:42 UTC (rev 765)
+@@ -238,6 +238,8 @@
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 0)
+ 	column=gtk.TreeViewColumn(_('Language'), combo, text=0)
++	column.set_property('min-width', 80)
++	column.set_property('resizable', True)
+ 	column.set_sort_column_id(0)
+ 	treeview.append_column(column)
+ 	
+@@ -258,6 +260,8 @@
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 1)
+ 	column=gtk.TreeViewColumn(_('Type'), combo, text=1)
++	column.set_property('min-width', 80)
++	column.set_property('resizable', True)
+ 	column.set_sort_column_id(1)
+ 	treeview.append_column(column)
+ 
+@@ -271,6 +275,8 @@
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 2)
+ 	column=gtk.TreeViewColumn(_('Codec'), combo, text=2)
++	column.set_property('min-width', 80)
++	column.set_property('resizable', True)
+ 	column.set_sort_column_id(2)
+ 	treeview.append_column(column)
+ 	
+@@ -284,6 +290,8 @@
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 3)
+ 	column=gtk.TreeViewColumn(_('Channels'), combo, text=3)
++	column.set_property('min-width', 80)
++	column.set_property('resizable', True)
+ 	column.set_sort_column_id(3)
+ 	treeview.append_column(column)
+ 	
+@@ -297,6 +305,8 @@
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 4)
+ 	column=gtk.TreeViewColumn(_('Subtitle format'), combo, text=4)
++	column.set_property('min-width', 80)
++	column.set_property('resizable', True)
+ 	column.set_sort_column_id(4)
+ 	treeview.append_column(column)
+ 	
+
+
+
+From piotrek at mail.berlios.de  Thu May 31 21:16:29 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 31 May 2007 21:16:29 +0200
+Subject: [Griffith-svn] r766 - in trunk: . glade
+Message-ID: <200705311916.l4VJGTcZ006339@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-05-31 21:16:29 +0200 (Thu, 31 May 2007)
+New Revision: 766
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+Log:
+Increase runtime maximum value (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-31 19:10:42 UTC (rev 765)
++++ trunk/ChangeLog	2007-05-31 19:16:29 UTC (rev 766)
+@@ -7,6 +7,7 @@
+ 2007-05-31  Piotr O?arowski
+ 	* IMDB, IMDB-de and KinoDe movie plugins updated (thanks to Michael Jahn)
+ 	* Resizable columns in add movie window's languages tab (thanks to Michael Jahn)
++	* Increase runtime maximum value (thanks to Michael Jahn)
+ 
+ 2007-05-22  Piotr O?arowski
+ 	* Minor fix in dbupgrade.py
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2007-05-31 19:10:42 UTC (rev 765)
++++ trunk/glade/griffith.glade	2007-05-31 19:16:29 UTC (rev 766)
+@@ -9891,7 +9891,7 @@
+ 		      <property name="update_policy">GTK_UPDATE_ALWAYS</property>
+ 		      <property name="snap_to_ticks">False</property>
+ 		      <property name="wrap">False</property>
+-		      <property name="adjustment">0 0 1000 1 10 10</property>
++		      <property name="adjustment">0 0 99999 1 10 10</property>
+ 		    </widget>
+ 		    <packing>
+ 		      <property name="padding">0</property>
+
+
+
+From piotrek at mail.berlios.de  Thu May 31 22:09:54 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Thu, 31 May 2007 22:09:54 +0200
+Subject: [Griffith-svn] r767 - in trunk: . lib
+Message-ID: <200705312009.l4VK9s0t009981@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-05-31 22:09:54 +0200 (Thu, 31 May 2007)
+New Revision: 767
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/initialize.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+Add Microsoft SQL support (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-05-31 19:16:29 UTC (rev 766)
++++ trunk/ChangeLog	2007-05-31 20:09:54 UTC (rev 767)
+@@ -8,6 +8,7 @@
+ 	* IMDB, IMDB-de and KinoDe movie plugins updated (thanks to Michael Jahn)
+ 	* Resizable columns in add movie window's languages tab (thanks to Michael Jahn)
+ 	* Increase runtime maximum value (thanks to Michael Jahn)
++	* Add Microsoft SQL support (thanks to Michael Jahn)
+ 
+ 2007-05-22  Piotr O?arowski
+ 	* Minor fix in dbupgrade.py
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-05-31 19:16:29 UTC (rev 766)
++++ trunk/griffith	2007-05-31 20:09:54 UTC (rev 767)
+@@ -199,15 +199,20 @@
+ 		if active == 0:
+ 			self.widgets['preferences']['db_details'].set_sensitive(False)
+ 		elif active == 1:
+-			# change port number IF previous one was MySQL's one
+-			if self.widgets['preferences']['db_port'].get_value() == 3306:
++			# change port number IF previous one was MySQL's or MSSQL one
++			if self.widgets['preferences']['db_port'].get_value() == 3306 or self.widgets['preferences']['db_port'].get_value() == 1433:
+ 				self.widgets['preferences']['db_port'].set_value(5432)
+ 			self.widgets['preferences']['db_details'].set_sensitive(True)
+ 		elif active == 2:
+-			# change port number IF previous one was PostgreSQL's one
+-			if self.widgets['preferences']['db_port'].get_value() == 5432:
++			# change port number IF previous one was PostgreSQL's or MSSQL one
++			if self.widgets['preferences']['db_port'].get_value() == 5432 or self.widgets['preferences']['db_port'].get_value() == 1433:
+ 				self.widgets['preferences']['db_port'].set_value(3306)
+ 			self.widgets['preferences']['db_details'].set_sensitive(True)
++		elif active == 3:
++			# change port number IF previous one was PostgreSQL's or MySQL one
++			if self.widgets['preferences']['db_port'].get_value() == 5432 or self.widgets['preferences']['db_port'].get_value() == 3306:
++				self.widgets['preferences']['db_port'].set_value(1433)
++			self.widgets['preferences']['db_details'].set_sensitive(True)
+ 
+ 	# movie related operations --------------------------------------------
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-05-31 19:16:29 UTC (rev 766)
++++ trunk/lib/initialize.py	2007-05-31 20:09:54 UTC (rev 767)
+@@ -589,6 +589,7 @@
+ 	self.widgets['preferences']['db_type'].insert_text(0,'SQLite3 (internal)')
+ 	self.widgets['preferences']['db_type'].insert_text(1,'PostgreSQL')
+ 	self.widgets['preferences']['db_type'].insert_text(2,'MySQL')
++	self.widgets['preferences']['db_type'].insert_text(3,'Microsoft SQL')
+ 	if self.config.has_key('db_host'):
+ 		self.widgets['preferences']['db_host'].set_text(self.config['db_host'])
+ 	if self.config.has_key('db_port'):
+@@ -605,6 +606,8 @@
+ 			self.widgets['preferences']['db_type'].set_active(1)
+ 		elif self.config['db_type'] == 'mysql':
+ 			self.widgets['preferences']['db_type'].set_active(2)
++		elif self.config['db_type'] == 'mssql':
++			self.widgets['preferences']['db_type'].set_active(3)
+ 	else:
+ 		self.widgets['preferences']['db_type'].set_active(0)
+ 		self.widgets['preferences']['db_details'].set_sensitive(False)
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-05-31 19:16:29 UTC (rev 766)
++++ trunk/lib/preferences.py	2007-05-31 20:09:54 UTC (rev 767)
+@@ -346,6 +346,8 @@
+ 		c['db_type'] = 'postgres'
+ 	elif db_type == 2:
+ 		c['db_type'] = 'mysql'
++	elif db_type == 3:
++		c['db_type'] = 'mssql'
+ 	else:
+ 		c['db_type'] = 'sqlite'
+ 
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-05-31 19:16:29 UTC (rev 766)
++++ trunk/lib/sql.py	2007-05-31 20:09:54 UTC (rev 767)
+@@ -320,6 +320,23 @@
+ 				config['db_host'],
+ 				int(config['db_port']),
+ 				config['db_name'])
++		elif config['db_type'] == 'mssql':
++			if not config.has_key('db_port') or config['db_port']==0:
++				config['db_port'] = 1433
++			# use_scope_identity=0 have to be set as workaround for a sqlalchemy bug
++			# but it is not guaranteed that the right identity value will be selected
++			# because the select @@identity statement selects the very last id which
++			# also can be a id from a trigger-insert or another user
++			# sqlalchemy uses a wrong syntax. It has to select the id within the insert
++			# statement: insert <table> (<columns>) values (<values>) select scope_identity()
++			# (one statement !) After preparing and executing there should be a fetch
++			# If it is executed as two separate statements the scope is lost after insert.
++			url = "mssql://%s:%s@%s:%d/%s?use_scope_identity=0" % (
++				config['db_user'],
++				config['db_passwd'],
++				config['db_host'],
++				int(config['db_port']),
++				config['db_name'])
+ 		else:
+ 			config['db_type'] = 'sqlite'
+ 			url = "sqlite:///%s" % os.path.join(griffith_dir, config['default_db'])
+
+
+

@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1306 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1306%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200909301811.n8UIBmhN005598%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000773.html">
+   <LINK REL="Next"  HREF="000775.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1306 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1306%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200909301811.n8UIBmhN005598%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1306 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 30 20:11:48 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000773.html">[Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000775.html">[Griffith-svn] r1307 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#774">[ date ]</a>
+              <a href="thread.html#774">[ thread ]</a>
+              <a href="subject.html#774">[ subject ]</a>
+              <a href="author.html#774">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-09-30 20:11:48 +0200 (Wed, 30 Sep 2009)
+New Revision: 1306
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/griffith
+   trunk/lib/gutils.py
+Log:
+* change log format
+* use WINDOW_TYPE_HINT_DIALOG instead of WINDOW_POPUP in popup_message()
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-09-29 19:32:44 UTC (rev 1305)
++++ trunk/ChangeLog	2009-09-30 18:11:48 UTC (rev 1306)
+@@ -5,11 +5,14 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-09-30  Piotr O&#380;arowski
++	* Change log format
++
+ 2009-09-29  Michael Jahn
+ 	* GCstar import plugin added
+ 
+ 2009-09-26  Piotr O&#380;arowski
+-	* Display a message during database upgrades
++	* Display popup message during database upgrades
+ 
+ 2009-09-25  Michael Jahn
+ 	* Amazon movie plugin updated
+@@ -19,8 +22,8 @@
+ 
+ 2009-09-02  Michael Jahn
+ 	* [#336855] Error being reported saving posters
+-      cleanup of generating thumbnail versions of the images
+-      and filenames for default image/thumbnail
++	  cleanup of generating thumbnail versions of the images
++	  and filenames for default image/thumbnail
+ 
+ 2009-08-28  Piotr O&#380;arowski
+ 	* [Bug 420462] --clean fixed
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-09-29 19:32:44 UTC (rev 1305)
++++ trunk/NEWS	2009-09-30 18:11:48 UTC (rev 1306)
+@@ -4,6 +4,15 @@
+   ~/.griffith/lib/extensions
+ 
+ 
++Griffith 0.10.1
++===============
++* Few posters related fixes (updating, cleaning, etc.)
++* FilmAffinity and Amazon movie plugins updated
++* Reconnect with MySQL servers once an hour (can be configured via pool_recycle
++  config option)
++* Display a popup message during database upgrades
++
++
+ Griffith 0.10
+ =============
+ * Almost unchanged release candidate 1
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-09-29 19:32:44 UTC (rev 1305)
++++ trunk/griffith	2009-09-30 18:11:48 UTC (rev 1306)
+@@ -35,7 +35,7 @@
+ 
+ # logging
+ import logging
+-logging.basicConfig()
++logging.basicConfig(format='%(asctime)s: %(levelname)s: %(name)s(%(module)s:%(lineno)d): %(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ # check dependencies
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2009-09-29 19:32:44 UTC (rev 1305)
++++ trunk/lib/gutils.py	2009-09-30 18:11:48 UTC (rev 1306)
+@@ -273,12 +273,15 @@
+     def wrap(f):
+         def wrapped_f(*args, **kwargs):
+             if gtk:
+-                window = gtk.Window(gtk.WINDOW_POPUP)
++                window = gtk.Window()
++                window.set_title('Griffith info')
++                window.set_position(gtk.WIN_POS_CENTER)
+                 label = gtk.Label()
+-                text = &quot;&quot;&quot;&lt;b&gt;Griffith:&lt;/b&gt;
+-%s&quot;&quot;&quot; % message
+-                label.set_markup(text)
++                label.set_markup(&quot;&quot;&quot;&lt;big&gt;&lt;b&gt;Griffith:&lt;/b&gt;
++%s&lt;/big&gt;&quot;&quot;&quot; % message)
+                 window.add(label)
++                window.set_modal(True)
++                window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+                 window.show_all()
+                 while gtk.events_pending():    # give GTK some time for updates
+                     gtk.main_iteration()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000773.html">[Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000775.html">[Griffith-svn] r1307 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#774">[ date ]</a>
+              <a href="thread.html#774">[ thread ]</a>
+              <a href="subject.html#774">[ subject ]</a>
+              <a href="author.html#774">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

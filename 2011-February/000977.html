@@ -1,0 +1,309 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1517 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1517%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110205110910.AD81C481364%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000976.html">
+   <LINK REL="Next"  HREF="000978.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1517 - in trunk: . lib lib/plugins/movie</H1>
+    <B>lanus at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1517%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110205110910.AD81C481364%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1517 - in trunk: . lib lib/plugins/movie">lanus at mail.berlios.de
+       </A><BR>
+    <I>Sat Feb  5 12:09:10 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000976.html">[Griffith-svn] r1515 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000978.html">[Griffith-svn] r1518 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#977">[ date ]</a>
+              <a href="thread.html#977">[ thread ]</a>
+              <a href="subject.html#977">[ subject ]</a>
+              <a href="author.html#977">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lanus
+Date: 2011-02-05 12:09:10 +0100 (Sat, 05 Feb 2011)
+New Revision: 1517
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieIMDB-pt.py
+Modified:
+   trunk/ChangeLog
+   trunk/TRANSLATORS
+   trunk/griffith
+   trunk/lib/about.py
+Log:
+Added IMDB-pt plugin and temporarily disabled macosx ui integration.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-02-03 21:31:00 UTC (rev 1516)
++++ trunk/ChangeLog	2011-02-05 11:09:10 UTC (rev 1517)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2011-02-05  Ivo Nunes
++    * Mac OS X UI Cocoa menu integration temporarily disabled due to being broken - using native GTK
++    * IMDB-pt plugin added
++
+ 2011-02-03  Vasco Nunes
+ 	* MoviePTGate plugin updated
+ 	* Added MacOSX UI integration
+
+Modified: trunk/TRANSLATORS
+===================================================================
+--- trunk/TRANSLATORS	2011-02-03 21:31:00 UTC (rev 1516)
++++ trunk/TRANSLATORS	2011-02-05 11:09:10 UTC (rev 1517)
+@@ -97,6 +97,11 @@
+ 
+ * Portuguese
+ Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
++Almufadado
++Ivo Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">netherblood at gmail.com</A>&gt;
++Luis Reis
++Rui Ara&#250;jo &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ruka.araujo at gmail.com</A>&gt;
++Tiago Silva
+ 
+ * Russian
+ Pavel V. Kulikov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">kulikovpv8256 at yandex.ru</A>&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-02-03 21:31:00 UTC (rev 1516)
++++ trunk/griffith	2011-02-05 11:09:10 UTC (rev 1517)
+@@ -143,15 +143,15 @@
+         # macosx integration
+         #hide gtk menubar and implement a native Cocoa replacement
+         #using gtk_osxapplication 
+-        if self.mac:
+-            import gtk_osxapplication  
+-            self.macapp = gtk_osxapplication.OSXApplication()
+-            self.macapp.connect(&quot;NSApplicationBlockTermination&quot;, self.destroy)      
+-            gtk.Widget.hide(self.widgets['menu']['menubar']);
+-            self.macapp.set_menu_bar(self.widgets['menu']['menubar'])
+-            self.macapp.insert_app_menu_item(self.widgets['menu']['preferences'],1)
+-            self.macapp.insert_app_menu_item(self.widgets['menu']['about'],0)
+-            self.macapp.ready()
++        #if self.mac:
++        #    import gtk_osxapplication  
++        #    self.macapp = gtk_osxapplication.OSXApplication()
++        #    self.macapp.connect(&quot;NSApplicationBlockTermination&quot;, self.destroy)      
++        #    gtk.Widget.hide(self.widgets['menu']['menubar']);
++        #    self.macapp.set_menu_bar(self.widgets['menu']['menubar'])
++        #    self.macapp.insert_app_menu_item(self.widgets['menu']['preferences'],1)
++        #    self.macapp.insert_app_menu_item(self.widgets['menu']['about'],0)
++        #    self.macapp.ready()
+         # end macosx integration 
+ 
+         self.restore_state()
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2011-02-03 21:31:00 UTC (rev 1516)
++++ trunk/lib/about.py	2011-02-05 11:09:10 UTC (rev 1517)
+@@ -47,8 +47,9 @@
+             version.pauthor.replace(', ', '\n') + &quot;\n&quot;,
+             _(&quot;Programmers&quot;) + ':',
+             'Jessica Katharina Parth &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&gt;',
+-            'Michael Jahn &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;\n',
+-            _('Contributors:'), # FIXME: remove &quot;:&quot;
++            'Michael Jahn &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;',
++            'Ivo Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">netherblood at gmail.com</A>&gt;\n',
++            _('Contributors') + ':',
+             'Christian Sagmueller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">christian at sagmueller.net</A>&gt;\n' \
+             'Arjen Schwarz &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">arjen.schwarz at gmail.com</A>&gt;'
+         ])
+
+Added: trunk/lib/plugins/movie/PluginMovieIMDB-pt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-pt.py	                        (rev 0)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-pt.py	2011-02-05 11:09:10 UTC (rev 1517)
+@@ -0,0 +1,147 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id: $'
++
++# Copyright (c) 2011 Ivo Nunes
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = &quot;IMDb-pt&quot;
++plugin_description  = &quot;Internet Movie Database Portuguese&quot;
++plugin_url          = &quot;www.imdb.pt&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Ivo Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">netherblood at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.1&quot;
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.encode   ='iso-8859-1'
++        self.movie_id = id
++        self.url      = &quot;<A HREF="http://www.imdb.pt/title/">http://www.imdb.pt/title/</A>&quot; + str(self.movie_id)
++
++    def initialize(self):
++        self.page = gutils.convert_entities(self.page)
++
++    def get_image(self):
++        self.image_url = gutils.trim(self.page, u'src=&quot;<A HREF="http://ia.media-imdb.com/images/">http://ia.media-imdb.com/images/</A>', u'.jpg&quot; /&gt;&lt;/a&gt;')
++        self.image_url = &quot;<A HREF="http://ia.media-imdb.com/images/">http://ia.media-imdb.com/images/</A>&quot; + self.image_url + &quot;.jpg&quot;
++        
++    def get_o_title(self):
++        self.o_title = gutils.trim(self.page, u'&lt;title&gt;', u' (')
++        self.o_title = self.o_title.encode(self.encode)
++
++    def get_title(self):
++        self.title = gutils.trim(self.page, u'&lt;div class=&quot;info-content&quot;&gt;       &quot;', u'&quot; - Brasil&lt;br&gt;')
++        self.title = self.title.encode(self.encode)
++
++    def get_director(self):
++        self.director = gutils.trim(self.page, u'&lt;h5&gt;Diretor:&lt;/h5&gt;', u'&lt;/a&gt;&lt;br/&gt;')
++        self.director = gutils.strip_tags(self.director)
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, u'&lt;meta name=&quot;description&quot; content=&quot;', u'Visit IMDb for Photos, Showtimes, Cast, Crew, Reviews, Plot Summary, Comments, Discussions, Taglines, Trailers, Posters, Fan Sites&quot;&gt;')
++        self.plot = self.plot.encode(self.encode)
++
++    def get_year(self):
++        self.year = gutils.trim(self.page, u' (', u')&lt;/title&gt;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, u'&lt;h5&gt;Dura&#231;&#227;o:&lt;/h5&gt;&lt;div class=&quot;info-content&quot;&gt;', u' min')
++        self.runtime = self.runtime.encode(self.encode)
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, u'&lt;h5&gt;G&#234;nero:&lt;/h5&gt;', u'&lt;/div&gt;')
++        self.genre = gutils.strip_tags(self.genre)
++        self.genre = string.replace(self.genre, &quot; | &quot;, &quot;, &quot;)
++        self.genre = self.genre.encode(self.encode)
++
++    def get_cast(self):
++        #self.cast = gutils.trim(self.page, u'Int&#233;rpretes:&lt;/b&gt;&lt;br /&gt;', u'&lt;/p&gt;')
++        #self.cast = gutils.strip_tags(self.cast)
++        #self.cast = string.replace(self.cast, ', ', '\n')
++        self.cast = &quot;&quot; # FIXME
++
++    def get_classification(self):
++        self.classification = gutils.trim(self.page, u'&lt;h5&gt;Certifica&#231;&#227;o:&lt;/h5&gt;&lt;div class=&quot;info-content&quot;&gt;', u'&lt;/div&gt;')
++        self.classification = gutils.strip_tags(self.classification)
++        self.classification = string.replace(self.classification, &quot; | &quot;, &quot;, &quot;)
++        self.classification = self.classification.encode(self.encode)
++
++    def get_studio(self):
++        self.studio = ''
++
++    def get_o_site(self):
++        self.o_site = self.url
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = ''
++
++    def get_country(self):
++        self.country = gutils.trim(self.page, u'&lt;h5&gt;Pa&#237;s:&lt;/h5&gt;&lt;div class=&quot;info-content&quot;&gt;', '&lt;/div&gt;')
++        self.country = string.replace(self.country, &quot; | &quot;, &quot;, &quot;)
++        self.country = self.country.encode(self.encode)
++        
++    def get_notes(self):
++        self.notes = ''
++
++    def get_rating(self):
++        self.rating = gutils.trim(self.page, u'&lt;div class=&quot;starbar-meta&quot;&gt;', '/10')
++    	self.rating = gutils.strip_tags(self.rating)
++    	self.rating = string.replace(self.rating, &quot;,&quot;, &quot;.&quot;)
++        self.rating = float(self.rating)
++    	self.rating = round(self.rating)
++
++class SearchPlugin(movie.SearchMovie):
++    def __init__(self):
++        self.original_url_search   = '<A HREF="http://www.imdb.pt/find?s=all&amp;q=">http://www.imdb.pt/find?s=all&amp;q=</A>'
++        self.translated_url_search = '<A HREF="http://www.imdb.pt/find?s=all&amp;q=">http://www.imdb.pt/find?s=all&amp;q=</A>'
++        self.encode                = 'iso-8859-1'
++
++    def search(self, parent_window):
++        &quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
++        if not self.open_search(parent_window):
++            return None
++            self.sub_search()
++        return self.page
++
++    def sub_search(self):
++        &quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
++        self.page = gutils.trim(self.page, \
++            &quot;Resultado)&lt;table&gt;&quot;, &quot;&lt;p&gt;&lt;b&gt;Nomes (Coincid&quot;)
++
++    def get_searches(self):
++        &quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
++        elements = string.split(self.page, 'height=&quot;6&quot;&gt;&lt;br&gt;&lt;a href=&quot;')
++        self.number_results = elements[-1]
++
++        if (len(elements[0])):
++            for element in elements:
++                self.ids.append(gutils.trim(element, &quot;title/&quot;, '/&quot; onclick=&quot;'))
++                self.titles.append(gutils.convert_entities \
++                    (gutils.trim(element, &quot;&quot;&quot;/';&quot;&gt;&quot;&quot;&quot;, &quot;&lt;/a&gt; &quot;)))
++        else:
++            self.number_results = 0
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000976.html">[Griffith-svn] r1515 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000978.html">[Griffith-svn] r1518 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#977">[ date ]</a>
+              <a href="thread.html#977">[ thread ]</a>
+              <a href="subject.html#977">[ subject ]</a>
+              <a href="author.html#977">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r814 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r814%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200707312127.l6VLR7dp020799%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000325.html">
+   <LINK REL="Next"  HREF="000327.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r814 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r814%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200707312127.l6VLR7dp020799%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r814 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul 31 23:27:07 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000325.html">[Griffith-svn] r813 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000327.html">[Griffith-svn] r815 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#326">[ date ]</a>
+              <a href="thread.html#326">[ thread ]</a>
+              <a href="subject.html#326">[ subject ]</a>
+              <a href="author.html#326">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-07-31 23:26:52 +0200 (Tue, 31 Jul 2007)
+New Revision: 814
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieFilmTipset.py
+Modified:
+   trunk/ChangeLog
+Log:
+FilmTipset plugin added
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-31 20:07:18 UTC (rev 813)
++++ trunk/ChangeLog	2007-07-31 21:26:52 UTC (rev 814)
+@@ -5,6 +5,7 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 2007-07-31  Michael Jahn
++	* FilmTipset plugin added
+ 	* OFDb movie plugin updated
+ 
+ 2007-07-21  Piotr O&#380;arowski
+
+Added: trunk/lib/plugins/movie/PluginMovieFilmTipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmTipset.py	2007-07-31 20:07:18 UTC (rev 813)
++++ trunk/lib/plugins/movie/PluginMovieFilmTipset.py	2007-07-31 21:26:52 UTC (rev 814)
+@@ -0,0 +1,127 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name = &quot;FilmTipset.se&quot;
++plugin_description = &quot;FilmTipset.se&quot;
++plugin_url = &quot;www.filmtipset.se&quot;
++plugin_language = _(&quot;Swedish&quot;)
++plugin_author = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
++plugin_version = &quot;1.0&quot;
++
++class Plugin(movie.Movie):
++
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = '<A HREF="http://www.filmtipset.se/film/">http://www.filmtipset.se/film/</A>' + str(self.movie_id)
++
++	def get_image(self):
++		self.image_url = ''
++		tmp = gutils.trim(self.page, 'src=&quot;posters/', '&quot;')
++		if tmp != '':
++			self.image_url = '<A HREF="http://www.filmtipset.se/posters/">http://www.filmtipset.se/posters/</A>' + tmp
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, 'Originaltitel:', '&lt;/span&gt;')
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
++
++	def get_director(self):
++		self.director = gutils.trim(self.page, 'Regiss&ouml;r:', '&lt;/span&gt;')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, 'Filminfo:', '&lt;/h2&gt;')
++
++	def get_year(self):
++		self.year = gutils.trim(self.page, 'Utgivnings&aring;r:', '&lt;/span&gt;')
++
++	def get_runtime(self):
++		self.runtime = string.strip(gutils.trim(self.page, 'L&auml;ngd:', ' min'))
++
++	def get_genre(self):
++		self.genre = string.strip(gutils.trim(self.page, 'Nyckelord:', '&lt;/span&gt;'))
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.page, 'Sk&aring;despelare:', '&lt;/span&gt;')
++		self.cast = string.replace(self.cast, ', ', '\n')
++
++	def get_classification(self):
++		self.classification = ''
++
++	def get_studio(self):
++		self.studio = ''
++
++	def get_o_site(self):
++		self.o_site = &quot;&quot;
++
++	def get_site(self):
++		self.site = self.url
++
++	def get_trailer(self):
++		self.trailer = &quot;&quot;
++
++	def get_country(self):
++		self.country = string.strip(gutils.trim(self.page, 'Produktionsland:', '&lt;/span&gt;'))
++
++	def get_rating(self):
++		self.rating = &quot;0&quot;
++
++	def get_notes(self):
++		self.notes = ''
++		tmp = gutils.trim(self.page, 'Alt. titel:', '&lt;/span&gt;')
++		if tmp != '':
++			self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
++
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = &quot;<A HREF="http://www.filmtipset.se/search.cgi?field=name&amp;field=orgname&amp;show_graded=1&amp;search_value=">http://www.filmtipset.se/search.cgi?field=name&amp;field=orgname&amp;show_graded=1&amp;search_value=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.filmtipset.se/search.cgi?field=name&amp;field=orgname&amp;show_graded=1&amp;search_value=">http://www.filmtipset.se/search.cgi?field=name&amp;field=orgname&amp;show_graded=1&amp;search_value=</A>&quot;
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		self.page = gutils.trim(self.page, 'Matchning', 'Hittade')
++		return self.page
++
++	def get_searches(self):
++		elements1 = re.split('href=&quot;film/', self.page)
++		elements1[0] = None
++		for element in elements1:
++			if element &lt;&gt; None:
++				self.ids.append(gutils.before(element,'&quot;'))
++				self.titles.append(
++					string.replace(gutils.trim(element, 'title=&quot;', '&quot;'), '&nbsp;', ' ')
++				)
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000325.html">[Griffith-svn] r813 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000327.html">[Griffith-svn] r815 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#326">[ date ]</a>
+              <a href="thread.html#326">[ thread ]</a>
+              <a href="subject.html#326">[ subject ]</a>
+              <a href="author.html#326">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

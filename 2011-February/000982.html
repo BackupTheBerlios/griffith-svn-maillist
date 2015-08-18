@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1522 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1522%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110205195938.CD4F6481364%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000981.html">
+   <LINK REL="Next"  HREF="000983.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1522 - in trunk: . lib</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1522%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110205195938.CD4F6481364%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1522 - in trunk: . lib">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Sat Feb  5 20:59:38 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000981.html">[Griffith-svn] r1521 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000983.html">[Griffith-svn] r1523 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#982">[ date ]</a>
+              <a href="thread.html#982">[ thread ]</a>
+              <a href="subject.html#982">[ subject ]</a>
+              <a href="author.html#982">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2011-02-05 20:59:38 +0100 (Sat, 05 Feb 2011)
+New Revision: 1522
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/loan.py
+   trunk/lib/view.py
+Log:
+fixed [#703576] no automatic refresh after get back a dvd
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-02-05 18:40:52 UTC (rev 1521)
++++ trunk/ChangeLog	2011-02-05 19:59:38 UTC (rev 1522)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2011-02-05  Vasco Nunes
++	* [#703576] no automatic refresh after get back a dvd
++	
+ 2011-02-05  Ivo Nunes
+     * Updated IMDb-pt plugin
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-02-05 18:40:52 UTC (rev 1521)
++++ trunk/griffith	2011-02-05 19:59:38 UTC (rev 1522)
+@@ -429,6 +429,7 @@
+             self.db.session.commit()
+             self.treemodel.set_value(m_iter,6,movie.seen)
+             self.treeview_clicked()
++            self.populate_treeview()
+             self.count_statusbar()
+ 
+     def sugest_movie(self, *args):
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2011-02-05 18:40:52 UTC (rev 1521)
++++ trunk/lib/loan.py	2011-02-05 19:59:38 UTC (rev 1522)
+@@ -101,4 +101,5 @@
+     movie.loan_details.returned_on() # current date will be used be default
+     session.commit()
+     self.treeview_clicked()
++    self.populate_treeview()
+ 
+
+Modified: trunk/lib/view.py
+===================================================================
+--- trunk/lib/view.py	2011-02-05 18:40:52 UTC (rev 1521)
++++ trunk/lib/view.py	2011-02-05 19:59:38 UTC (rev 1522)
+@@ -46,5 +46,4 @@
+     clear_filter(self, populate=False)
+     self.populate_treeview(where={'collection_id':collection_id})
+     collection_name = self.db.Collection.query.filter_by(collection_id=collection_id).one().name
+-    self.update_statusbar(_(&quot;Filter activated. Showing only movies from collection: %s&quot;)%collection_name)
+-
++    self.update_statusbar(_(&quot;Filter activated. Showing only movies from collection: %s&quot;)%collection_name)
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000981.html">[Griffith-svn] r1521 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000983.html">[Griffith-svn] r1523 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#982">[ date ]</a>
+              <a href="thread.html#982">[ thread ]</a>
+              <a href="subject.html#982">[ subject ]</a>
+              <a href="author.html#982">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

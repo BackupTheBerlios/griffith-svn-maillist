@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r580 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r580%20-%20trunk/lib&In-Reply-To=%3C200612171853.kBHIraAo001370%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000108.html">
+   <LINK REL="Next"  HREF="000186.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r580 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r580%20-%20trunk/lib&In-Reply-To=%3C200612171853.kBHIraAo001370%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r580 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 17 19:53:36 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000108.html">[Griffith-svn] r579 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000186.html">[Griffith-svn] r581 - in trunk: i18n/de/LC_MESSAGES lib po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-17 19:53:35 +0100 (Sun, 17 Dec 2006)
+New Revision: 580
+
+Modified:
+   trunk/lib/dbupgrade.py
+   trunk/lib/initialize.py
+   trunk/lib/preferences.py
+Log:
+* remove 'None' collections (bug in one of unreleased Griffith's developement version)
+* fix condition's max value in preferences dialog
+* language treeview's column names should be translated
+
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2006-12-17 13:10:38 UTC (rev 579)
++++ trunk/lib/dbupgrade.py	2006-12-17 18:53:35 UTC (rev 580)
+@@ -179,7 +179,9 @@
+ 	old_cursor.execute(&quot;UPDATE movies SET color=NULL WHERE color='' OR color='0'&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET layers=NULL WHERE layers='' OR layers='4'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = ''&quot;)
++	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = 'None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM collections WHERE name = ''&quot;)
++	old_cursor.execute(&quot;DELETE FROM collections WHERE name = 'None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM languages WHERE name = ''&quot;)
+ 
+ 	self.config['db_type'] = 'sqlite'
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2006-12-17 13:10:38 UTC (rev 579)
++++ trunk/lib/initialize.py	2006-12-17 18:53:35 UTC (rev 580)
+@@ -249,7 +249,7 @@
+ 	combo.set_property('editable', True)
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 1)
+-	column=gtk.TreeViewColumn('Type', combo, text=1)
++	column=gtk.TreeViewColumn(_('Type'), combo, text=1)
+ 	column.set_sort_column_id(1)
+ 	treeview.append_column(column)
+ 
+@@ -262,7 +262,7 @@
+ 	combo.set_property('editable', True)
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 2)
+-	column=gtk.TreeViewColumn('Codec', combo, text=2)
++	column=gtk.TreeViewColumn(_('Codec'), combo, text=2)
+ 	column.set_sort_column_id(2)
+ 	treeview.append_column(column)
+ 	
+@@ -275,7 +275,7 @@
+ 	combo.set_property('editable', True)
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 3)
+-	column=gtk.TreeViewColumn('Channels', combo, text=3)
++	column=gtk.TreeViewColumn(_('Channels'), combo, text=3)
+ 	column.set_sort_column_id(3)
+ 	treeview.append_column(column)
+ 	
+@@ -288,7 +288,7 @@
+ 	combo.set_property('editable', True)
+ 	combo.set_property('has-entry', False)
+ 	combo.connect('edited', self.on_tv_lang_combo_edited, 4)
+-	column=gtk.TreeViewColumn('Subtitle format', combo, text=4)
++	column=gtk.TreeViewColumn(_('Subtitle format'), combo, text=4)
+ 	column.set_sort_column_id(4)
+ 	treeview.append_column(column)
+ 	
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2006-12-17 13:10:38 UTC (rev 579)
++++ trunk/lib/preferences.py	2006-12-17 18:53:35 UTC (rev 580)
+@@ -74,7 +74,7 @@
+ 		w['font'].set_filename(self.config.get('font'))
+ 
+ 	# defaults (for static data only)
+-	w['condition'].set_active( gutils.digits_only(self.config.get('condition', 0), 3) )
++	w['condition'].set_active( gutils.digits_only(self.config.get('condition', 0), 5) )
+ 	w['region'].set_active( gutils.digits_only(self.config.get('region', 0), 8) )
+ 	w['layers'].set_active( gutils.digits_only(self.config.get('layers', 0), 4) )
+ 	w['color'].set_active( gutils.digits_only(self.config.get('color', 0), 3 ))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000108.html">[Griffith-svn] r579 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000186.html">[Griffith-svn] r581 - in trunk: i18n/de/LC_MESSAGES lib po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

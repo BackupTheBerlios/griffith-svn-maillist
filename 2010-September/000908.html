@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1446 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1446%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20100915181241.59F8C481064%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000907.html">
+   <LINK REL="Next"  HREF="000909.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1446 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1446%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20100915181241.59F8C481064%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1446 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 15 20:12:40 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000907.html">[Griffith-svn] r1445 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000909.html">[Griffith-svn] r1447 - in trunk: . lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#908">[ date ]</a>
+              <a href="thread.html#908">[ thread ]</a>
+              <a href="subject.html#908">[ subject ]</a>
+              <a href="author.html#908">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-09-15 20:12:40 +0200 (Wed, 15 Sep 2010)
+New Revision: 1446
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/gutils.py
+   trunk/lib/sql.py
+Log:
+workaround for [#574370] freeze when i select existing mysql database
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-09-15 18:05:35 UTC (rev 1445)
++++ trunk/ChangeLog	2010-09-15 18:12:40 UTC (rev 1446)
+@@ -5,9 +5,18 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-09-15  Michael Jahn
++	* workaround for [#574370] freeze when i select existing mysql database
++
+ 2010-08-29  Piotr O&#380;arowski
+     * Show deprecation warnings only in debug mode
+ 
++2010-08-26  Michael Jahn
++	* small backup optimizations
++
++2010-08-22  Michael Jahn
++	* reintroduce menu entry for loading and removing cover posters
++
+ 2010-07-21  Michael Jahn
+ 	* compatibility fixes for sqlalchemy 0.6
+ 	* adjusting sqlite page size to the value of the filesystem page size
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-09-15 18:05:35 UTC (rev 1445)
++++ trunk/lib/gutils.py	2010-09-15 18:12:40 UTC (rev 1446)
+@@ -662,8 +662,7 @@
+ 
+ 
+ def create_image_cache(md5sum, gsql):
+-    session = gsql.Session()
+-    poster = session.query(db.Poster).filter_by(md5sum=md5sum).first()
++    poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
+     if not poster:
+         log.warn(&quot;poster not available: %s&quot;, md5sum)
+         return False
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2010-09-15 18:05:35 UTC (rev 1445)
++++ trunk/lib/sql.py	2010-09-15 18:12:40 UTC (rev 1446)
+@@ -30,7 +30,7 @@
+ 
+ from sqlalchemy import create_engine, or_, and_, not_, exists, asc, desc
+ from sqlalchemy.exceptions import OperationalError
+-from sqlalchemy.orm import sessionmaker
++from sqlalchemy.orm import sessionmaker, scoped_session
+ from sqlalchemy.sql.expression import Update, Delete
+ 
+ import db # ORM data (SQLAlchemy stuff)
+@@ -113,7 +113,9 @@
+             engine = create_engine(url)
+             conn = engine.connect()
+ 
+-        self.Session = sessionmaker(bind=engine) # create new sessions using this class
++        # scoped_session(...) is a workaround for unclosed sessions in the program
++        # <A HREF="https://bugs.launchpad.net/griffith/+bug/574370">https://bugs.launchpad.net/griffith/+bug/574370</A>
++        self.Session = scoped_session(sessionmaker(bind=engine)) # create new sessions using this class
+         self.engine = engine
+         self.session = self.Session() # TODO: get rid of it, force developers to create new session using gsql.Session()
+         #}}}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000907.html">[Griffith-svn] r1445 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000909.html">[Griffith-svn] r1447 - in trunk: . lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#908">[ date ]</a>
+              <a href="thread.html#908">[ thread ]</a>
+              <a href="subject.html#908">[ subject ]</a>
+              <a href="author.html#908">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

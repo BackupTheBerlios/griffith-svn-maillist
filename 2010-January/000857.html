@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1391 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1391%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201001092154.o09LsPqV013880%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000856.html">
+   <LINK REL="Next"  HREF="000858.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1391 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1391%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201001092154.o09LsPqV013880%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1391 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  9 22:54:25 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000856.html">[Griffith-svn] r1390 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000858.html">[Griffith-svn] r1392 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#857">[ date ]</a>
+              <a href="thread.html#857">[ thread ]</a>
+              <a href="subject.html#857">[ subject ]</a>
+              <a href="author.html#857">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2010-01-09 22:54:24 +0100 (Sat, 09 Jan 2010)
+New Revision: 1391
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+Log:
+MyMoviesIt movie plugin updated (thanks to FiloSottile)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-08 11:13:20 UTC (rev 1390)
++++ trunk/ChangeLog	2010-01-09 21:54:24 UTC (rev 1391)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-01-09  Piotr O&#380;arowski
++	* MyMoviesIt movie plugin updated (thanks to FiloSottile)
++
+ 2010-01-06  Piotr O&#380;arowski
+ 	* Some cleanups
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2010-01-08 11:13:20 UTC (rev 1390)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2010-01-09 21:54:24 UTC (rev 1391)
+@@ -31,9 +31,9 @@
+ plugin_description = &quot;mymovies.it&quot;
+ plugin_url = &quot;www.mymovies.it&quot;
+ plugin_language = _(&quot;Italian&quot;)
+-plugin_author = &quot;Giovanni Sposito&quot;
+-plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">giovanni.sposito at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.1&quot;
++plugin_author = &quot;Giovanni Sposito, Filippo Valsorda&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">giovanni.sposito at gmail.com</A>&gt;, &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">filosottile.wiki at gmail.com</A>&gt;&quot;
++plugin_version = &quot;0.2&quot;
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -43,7 +43,7 @@
+         self.url = &quot;<A HREF="http://www.mymovies.it/dizionario/recensione.asp?id=%s">http://www.mymovies.it/dizionario/recensione.asp?id=%s</A>&quot; % self.movie_id
+ 
+     def get_image(self):
+-        tmp_image = string.find(self.page, '&lt;img style=&quot;border:solid 1px #737373; padding:3px&quot; src=&quot;')
++        tmp_image = string.find(self.page, '&lt;img style=&quot;float:left; border:solid 1px gray; padding:3px; margin:5px;&quot; src=&quot;')
+         if tmp_image == -1:
+             self.image_url = ''
+         else:
+@@ -52,15 +52,15 @@
+     def get_o_title(self):
+         tmp = gutils.trim(self.page, 'Titolo originale &lt;em&gt;', '&lt;/em&gt;')
+         if not tmp:
+-            self.o_title = gutils.trim(self.page, '&lt;meta name=&quot;titolo_tag&quot; content=&quot;', 'titolo_tag_fine')
++            self.o_title = gutils.trim(self.page, '&lt;h1 style=&quot;margin-bottom:3px;&quot;&gt;', '&lt;/h1&gt;')
+         else:
+             self.o_title = tmp
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;meta name=&quot;titolo_tag&quot; content=&quot;', 'titolo_tag_fine')
++        self.title = gutils.trim(self.page, '&lt;h1 style=&quot;margin-bottom:3px;&quot;&gt;', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        pos_iniziale = string.find(self.page, '&lt;div style=&quot;margin:0px&quot; class=&quot;linkblu&quot;&gt;')
++        pos_iniziale = string.find(self.page, '&lt;div style=&quot;text-align:left&quot; class=&quot;linkblu&quot;&gt;')
+         self.director = gutils.trim(self.page[pos_iniziale:],'Un film di &lt;a','&lt;/a&gt;')
+         self.director = gutils.after(self.director,'&gt;')
+         if not self.director:
+@@ -69,20 +69,23 @@
+             self.director = gutils.trim(self.page[pos_iniziale:],'Un film di ','&lt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page,'&lt;p style=&quot;text-align:justify;&quot;&gt;','&lt;/p&gt;')
++        pos_iniziale = string.find(self.page, '&lt;div id=&quot;recensione&quot;&gt;')
++        self.plot = gutils.trim(self.page[pos_iniziale:],'&lt;p&gt;','&lt;/p&gt;')
++        if '&lt;/a&gt;' in self.plot:
++            self.plot = gutils.after(self.plot, '&lt;/a&gt;')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page,'&quot; href=&quot;<A HREF="http://www.mymovies.it/film/?anno=">http://www.mymovies.it/film/?anno=</A>', '&quot;')
++        self.year = gutils.regextrim(self.page,'&lt;strong&gt; &lt;a title=&quot;Film [0-9]+&quot; href=&quot;<A HREF="http://www.mymovies.it/film/[0-9">http://www.mymovies.it/film/[0-9</A>]+/&quot;&gt;', '&lt;/a&gt;&lt;/strong&gt;')
+ 
+     def get_runtime(self):
+         self.runtime = gutils.trim(self.page, 'durata ', ' min.')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, 'document.write(\'&quot;<A HREF="http://ad.it.doubleclick.net/adj/MyMdizionario.it/scheda;genere=">http://ad.it.doubleclick.net/adj/MyMdizionario.it/scheda;genere=</A>', ';')
++        self.genre = gutils.regextrim(self.page,'&lt;a title=&quot;Film [a-zA-Z]+&quot; href=&quot;<A HREF="http://www.mymovies.it/film/[a-zA-Z">http://www.mymovies.it/film/[a-zA-Z</A>]+/&quot;&gt;', '&lt;/a&gt;')
+ 
+-    def get_cast(self):
++    def get_cast(self): # TODO
+         tmp = string.find(self.page, 'Con &lt;a')
+-        self.cast = gutils.trim(self.page[tmp-6:],'Con ','&lt;/a&gt;.')
++        self.cast = gutils.trim(self.page[tmp:],'Con ','&lt;/a&gt;.')
+         self.cast = string.replace(self.cast, ',', '\n')
+ 
+     def get_classification(self):
+@@ -101,27 +104,16 @@
+         self.site = self.url
+ 
+     def get_trailer(self):
+-        tmp = gutils.trim(self.page, '&lt;a title=&quot;Trailer', '&quot;&gt;Trailer&lt;/a&gt;&lt;/span&gt;')
+-        if tmp:
+-            self.trailer = re.sub('.*href=&quot;', '' ,tmp)
+-        else:
+-            self.trailer = ''
++        self.trailer = &quot;<A HREF="http://www.mymovies.it/trailer/?id=%s">http://www.mymovies.it/trailer/?id=%s</A>&quot; % self.movie_id
+ 
+     def get_country(self):
+         pos = string.find(self.page, ' min.')
+         self.country = gutils.trim(self.page[pos+2:], '- ', '  &lt;')
+ 
+     def get_rating(self):
+-        #posizione della parte intera della votazione TODO: translate it :-)
+-        rat = gutils.trim(self.page, '&lt;i&gt;mymonetro&lt;/i&gt; ', ',')
++        rat = gutils.trim(self.page, '&lt;div style=&quot;text-align:center; font-size:23px; font-weight:bold; letter-spacing:1px; margin:0px 11px 7px 11px&quot;&gt;', '&lt;span style=&quot;font-size:11px&quot;&gt;/5&lt;/span&gt;&lt;/div&gt;')
+         if rat != '':
+-            self.rating = int(rat)
+-            #posizione di un'eventuale parte decimale # TODO: see above
+-            pos_rating = string.find(self.page, '&lt;i&gt;mymonetro&lt;/i&gt; ')
+-            pos_rating_dec = gutils.trim(self.page[pos_rating+18:], ',', ' stelle')
+-            if pos_rating_dec != '':
+-                if int(pos_rating_dec) &gt; 51:
+-                    self.rating = self.rating + 1
++            self.rating = int(round(float(rat.replace(',', '.'))*2, 0))
+         else:
+             self.rating = 0
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000856.html">[Griffith-svn] r1390 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000858.html">[Griffith-svn] r1392 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#857">[ date ]</a>
+              <a href="thread.html#857">[ thread ]</a>
+              <a href="subject.html#857">[ subject ]</a>
+              <a href="author.html#857">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

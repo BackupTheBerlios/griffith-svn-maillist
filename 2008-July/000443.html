@@ -1,0 +1,213 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r955 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r955%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200807132000.m6DK0UlD032100%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000442.html">
+   <LINK REL="Next"  HREF="000444.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r955 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r955%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200807132000.m6DK0UlD032100%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r955 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jul 13 22:00:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000442.html">[Griffith-svn] r954 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000444.html">[Griffith-svn] r956 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#443">[ date ]</a>
+              <a href="thread.html#443">[ thread ]</a>
+              <a href="subject.html#443">[ subject ]</a>
+              <a href="author.html#443">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-07-13 22:00:08 +0200 (Sun, 13 Jul 2008)
+New Revision: 955
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/initialize.py
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+Log:
+[#236598] scroll bar in filter &quot;by volume&quot; appears
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-07-13 19:45:44 UTC (rev 954)
++++ branches/0.9.x/ChangeLog	2008-07-13 20:00:08 UTC (rev 955)
+@@ -6,6 +6,7 @@
+ 
+ 2008-07-13  Michael Jahn
+ 	* updated DVDEmpire plugin
++	* [#236598] scroll bar in filter &quot;by volume&quot; appears
+ 
+ 2008-07-11  Michael Jahn
+ 	* added quick filter for tags
+
+Modified: branches/0.9.x/lib/initialize.py
+===================================================================
+--- branches/0.9.x/lib/initialize.py	2008-07-13 19:45:44 UTC (rev 954)
++++ branches/0.9.x/lib/initialize.py	2008-07-13 20:00:08 UTC (rev 955)
+@@ -707,11 +707,13 @@
+ 			name = self.db.Volume.get_by(volume_id=vol_id).name
+ 		else:
+ 			name = ''
+-		self.widgets['add']['volume'].insert_text(int(i), str(name))
+-		self.widgets['filter']['volume'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['add']['volume'].insert_text(int(i), str(name) + '   ')
++		self.widgets['filter']['volume'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['add']['volume'].show_all()
+ 	self.widgets['filter']['volume'].show_all()
+ 	self.widgets['filter']['volume'].set_active(0)
++	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.volume_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['volume'].set_active(int(i))
+@@ -726,11 +728,13 @@
+ 			name = self.db.Collection.get_by(collection_id=col_id).name
+ 		else:
+ 			name = ''
+-		self.widgets['add']['collection'].insert_text(int(i), str(name))
+-		self.widgets['filter']['collection'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['add']['collection'].insert_text(int(i), str(name) + '   ')
++		self.widgets['filter']['collection'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['add']['collection'].show_all()
+ 	self.widgets['filter']['collection'].show_all()
+ 	self.widgets['filter']['collection'].set_active(0)
++	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.collection_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['collection'].set_active(int(i))
+@@ -744,7 +748,8 @@
+ 			name = self.db.Person.get_by(person_id=per_id).name
+ 		else:
+ 			name = ''
+-		self.widgets['filter']['loanedto'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['filter']['loanedto'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['filter']['loanedto'].show_all()
+ 	self.widgets['filter']['loanedto'].set_active(0)
+ 
+@@ -756,7 +761,8 @@
+ 			name = self.db.Tag.get_by(tag_id=id).name
+ 		else:
+ 			name = ''
+-		self.widgets['filter']['tag'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['filter']['tag'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['filter']['tag'].show_all()
+ 	self.widgets['filter']['tag'].set_active(0)
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-07-13 19:45:44 UTC (rev 954)
++++ trunk/ChangeLog	2008-07-13 20:00:08 UTC (rev 955)
+@@ -6,6 +6,7 @@
+ 
+ 2008-07-13  Michael Jahn
+ 	* updated DVDEmpire plugin
++	* [#236598] scroll bar in filter &quot;by volume&quot; appears
+ 
+ 2008-07-11  Michael Jahn
+ 	* added quick filter for tags
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-07-13 19:45:44 UTC (rev 954)
++++ trunk/lib/initialize.py	2008-07-13 20:00:08 UTC (rev 955)
+@@ -707,11 +707,13 @@
+ 			name = self.db.Volume.query.filter_by(volume_id=vol_id).first().name
+ 		else:
+ 			name = ''
+-		self.widgets['add']['volume'].insert_text(int(i), str(name))
+-		self.widgets['filter']['volume'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['add']['volume'].insert_text(int(i), str(name) + '   ')
++		self.widgets['filter']['volume'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['add']['volume'].show_all()
+ 	self.widgets['filter']['volume'].show_all()
+ 	self.widgets['filter']['volume'].set_active(0)
++	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.volume_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['volume'].set_active(int(i))
+@@ -726,11 +728,13 @@
+ 			name = self.db.Collection.query.filter_by(collection_id=col_id).first().name
+ 		else:
+ 			name = ''
+-		self.widgets['add']['collection'].insert_text(int(i), str(name))
+-		self.widgets['filter']['collection'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['add']['collection'].insert_text(int(i), str(name) + '   ')
++		self.widgets['filter']['collection'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['add']['collection'].show_all()
+ 	self.widgets['filter']['collection'].show_all()
+ 	self.widgets['filter']['collection'].set_active(0)
++	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.collection_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['collection'].set_active(int(i))
+@@ -744,7 +748,8 @@
+ 			name = self.db.Person.query.filter_by(person_id=per_id).first().name
+ 		else:
+ 			name = ''
+-		self.widgets['filter']['loanedto'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['filter']['loanedto'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['filter']['loanedto'].show_all()
+ 	self.widgets['filter']['loanedto'].set_active(0)
+ 
+@@ -756,7 +761,8 @@
+ 			name = self.db.Tag.query.filter_by(tag_id=id).first().name
+ 		else:
+ 			name = ''
+-		self.widgets['filter']['tag'].insert_text(int(i), str(name))
++		# add some white spaces to prevent scrollbar hides parts of the names	
++		self.widgets['filter']['tag'].insert_text(int(i), str(name) + '   ')
+ 	self.widgets['filter']['tag'].show_all()
+ 	self.widgets['filter']['tag'].set_active(0)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000442.html">[Griffith-svn] r954 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000444.html">[Griffith-svn] r956 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#443">[ date ]</a>
+              <a href="thread.html#443">[ thread ]</a>
+              <a href="subject.html#443">[ subject ]</a>
+              <a href="author.html#443">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

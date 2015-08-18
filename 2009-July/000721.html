@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1251 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1251%20-%20trunk/lib&In-Reply-To=%3C200907061829.n66ITCuH008616%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000720.html">
+   <LINK REL="Next"  HREF="000722.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1251 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1251%20-%20trunk/lib&In-Reply-To=%3C200907061829.n66ITCuH008616%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1251 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  6 20:29:12 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000720.html">[Griffith-svn] r1250 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000722.html">[Griffith-svn] r1252 - in trunk: . lib lib/db lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#721">[ date ]</a>
+              <a href="thread.html#721">[ thread ]</a>
+              <a href="subject.html#721">[ subject ]</a>
+              <a href="author.html#721">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-06 20:29:12 +0200 (Mon, 06 Jul 2009)
+New Revision: 1251
+
+Modified:
+   trunk/lib/db.py
+Log:
+move {loan_details,loan_history} from mapper to class
+
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-07-06 17:56:52 UTC (rev 1250)
++++ trunk/lib/db.py	2009-07-06 18:29:12 UTC (rev 1251)
+@@ -29,7 +29,7 @@
+ import string
+ 
+ from sqlalchemy import MetaData, Table, Column, ForeignKey, func, select, and_, or_
+-from sqlalchemy.orm import mapper, relation, deferred, validates, column_property
++from sqlalchemy.orm import mapper, relation, deferred, validates, column_property, object_session
+ from sqlalchemy.types import Boolean, Unicode, Text, Integer, SmallInteger, Date, Binary, PickleType
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+@@ -106,7 +106,8 @@
+ 
+ class Loan(object):
+     def __repr__(self):
+-        return &quot;&lt;Loan:%s (movie:%s person:%s)&gt;&quot; % (self.loan_id, self.movie_id, self.person_id)
++        return &quot;&lt;Loan:%s (person:%s, movie_id:%s, volume_id:%s, collection_id:%s )&gt;&quot; % \
++                (self.loan_id, self.person_id, self.movie_id, self.volume_id, self.collection_id)
+ 
+ class Movie(object):
+     _res_aliases = {(2560, 1600): ('QSXGA',),
+@@ -181,6 +182,24 @@
+         else:
+             raise AttributeError, name
+ 
++    def _get_loan_history(self):
++        where = [loans_table.c.movie_id==self.movie_id]
++        if self.collection_id is not None:
++            where.append(loans_table.c.collection_id==self.collection_id)
++        if self.volume_id is not None:
++            where.append(loans_table.c.volume_id==self.volume_id)
++        return object_session(self).query(Loan).filter(and_(loans_table.c.return_date!=None, or_(*where))).all()
++    loan_history = property(_get_loan_history)
++
++    def _get_loan_details(self):
++        where = [loans_table.c.movie_id==self.movie_id]
++        if self.collection_id is not None:
++            where.append(loans_table.c.collection_id==self.collection_id)
++        if self.volume_id is not None:
++            where.append(loans_table.c.volume_id==self.volume_id)
++        return object_session(self).query(Loan).filter(and_(loans_table.c.return_date==None, or_(*where))).first()
++    loan_details = property(_get_loan_details)
++
+ class MovieLang(object):
+     def __init__(self, lang_id=None, type=None, acodec_id=None, achannel_id=None, subformat_id=None):
+         self.lang_id = lang_id
+@@ -375,18 +394,7 @@
+     'tags'      : relation(Tag, secondary=movie_tag_table,
+                            primaryjoin=movies_table.c.movie_id==movie_tag_table.c.movie_id,
+                            secondaryjoin=movie_tag_table.c.tag_id==tags_table.c.tag_id),
+-    'languages' : relation(MovieLang, cascade='all, delete-orphan'),
+-    'loan_details' : relation(Loan, uselist=False, primaryjoin=and_(loans_table.c.return_date==None,
+-                                                              or_(loans_table.c.collection_id==movies_table.c.collection_id,
+-                                                                  loans_table.c.volume_id==movies_table.c.volume_id,
+-                                                                  loans_table.c.movie_id==movies_table.c.movie_id)),
+-                              foreign_keys=[movies_table.c.movie_id, movies_table.c.collection_id, movies_table.c.volume_id]),
+-    'loan_history' : relation(Loan, uselist=True, primaryjoin=and_(loans_table.c.return_date!=None,
+-                                                    or_(loans_table.c.collection_id==movies_table.c.collection_id,
+-                                                        loans_table.c.volume_id==movies_table.c.volume_id,
+-                                                        loans_table.c.movie_id==movies_table.c.movie_id)),
+-                              foreign_keys=[movies_table.c.movie_id, movies_table.c.collection_id, movies_table.c.volume_id])
+-    })
++    'languages' : relation(MovieLang, cascade='all, delete-orphan')})
+ mapper(Poster, posters_table, properties={
+     'movies': relation(Movie),
+     'data'  : deferred(posters_table.c.data)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000720.html">[Griffith-svn] r1250 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000722.html">[Griffith-svn] r1252 - in trunk: . lib lib/db lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#721">[ date ]</a>
+              <a href="thread.html#721">[ thread ]</a>
+              <a href="subject.html#721">[ subject ]</a>
+              <a href="author.html#721">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,478 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1030 - in trunk/lib: . plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1030%20-%20in%20trunk/lib%3A%20.%20plugins/movie&In-Reply-To=%3C200811102051.mAAKpF7Y032285%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000509.html">
+   <LINK REL="Next"  HREF="000511.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1030 - in trunk/lib: . plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1030%20-%20in%20trunk/lib%3A%20.%20plugins/movie&In-Reply-To=%3C200811102051.mAAKpF7Y032285%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1030 - in trunk/lib: . plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 10 21:51:15 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000509.html">[Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000511.html">[Griffith-svn] r1031 - in branches/0.9.x: . lib lib/plugins/export	lib/plugins/imp lib/plugins/movie lib/sqlalchemy/databases
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#510">[ date ]</a>
+              <a href="thread.html#510">[ thread ]</a>
+              <a href="subject.html#510">[ subject ]</a>
+              <a href="author.html#510">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-10 21:51:03 +0100 (Mon, 10 Nov 2008)
+New Revision: 1030
+
+Modified:
+   trunk/lib/gutils.py
+   trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+function regextrim moved from different movie plugins to gutils
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/gutils.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -94,6 +94,19 @@
+         p2 = p1+p2
+     return text[p1:p2]
+ 
++def regextrim(text,key1,key2):
++    obj = re.search(key1, text)
++    if obj is None:
++        return ''
++    else:
++        p1 = obj.end()
++    obj = re.search(key2, text[p1:])
++    if obj is None:
++        return ''
++    else:
++        p2 = p1 + obj.start()
++    return text[p1:p2]
++
+ def after(text,key):
+     p1 = string.find(text,key)
+     return text[p1+len(key):]
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -65,7 +65,7 @@
+             re.sub(
+                 '[&#150;]', '-',
+                 re.sub(
+-                    '[\x93&#132;]', '&quot;', self.regextrim(self.page, 'showcover.php[^&gt;]*&gt;', '&lt;/td&gt;'))))
++                    '[\x93&#132;]', '&quot;', gutils.regextrim(self.page, 'showcover.php[^&gt;]*&gt;', '&lt;/td&gt;'))))
+ 
+     def get_year(self):
+         self.year = gutils.after(gutils.trim(gutils.trim(self.page, 'Originaltitel', '&lt;/TR&gt;'), '(', ')'), ' ')
+@@ -135,19 +135,6 @@
+         )
+         if (tmp_notes != &quot;&quot;):
+             self.notes = self.notes + &quot;Untertitel:&quot; + tmp_notes + &quot;\n\n&quot;
+-            
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.end()
+-        return text[p1:p2]
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+@@ -189,22 +176,10 @@
+                         re.sub('[ \t\n][ \t\n]+', ' ',
+                         string.replace(
+                         string.replace(
+-                            self.regextrim(element, '&lt;div [^&gt;]*&gt;', '&lt;/div&gt;'),
++                            gutils.regextrim(element, '&lt;div [^&gt;]*&gt;', '&lt;/div&gt;'),
+                             '&lt;br&gt;', ' - '),
+                             '&nbsp;', ''))
+                         + ')'
+                     )
+                 )
+-            
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.end()
+-        return text[p1:p2]
++
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -50,7 +50,7 @@
+     def get_o_title(self):
+         self.o_title = string.capwords(
+             gutils.clean(gutils.after(
+-            self.regextrim(self.page, '&quot;[ \t]+class=&quot;text_ergebniss_titel&quot;', '[ \t]+[(]Originaltitel[)]'), '&lt;/a&gt;')))
++            gutils.regextrim(self.page, '&quot;[ \t]+class=&quot;text_ergebniss_titel&quot;', '[ \t]+[(]Originaltitel[)]'), '&lt;/a&gt;')))
+         if self.o_title == '':
+             self.o_title = gutils.after(gutils.trim(self.page, 'sucheNach=titel', '&lt;/a&gt;'), '&gt;')
+ 
+@@ -61,7 +61,7 @@
+         self.director = gutils.after(gutils.trim(self.page, '(Regie)', '&lt;/a&gt;'), '&gt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.after(self.regextrim(self.page, '[(]Darsteller[)]', '&lt;/[pP]&gt;'), '&lt;p&gt;')
++        self.plot = gutils.after(gutils.regextrim(self.page, '[(]Darsteller[)]', '&lt;/[pP]&gt;'), '&lt;p&gt;')
+ 
+     def get_year(self):
+         self.year = gutils.after(gutils.trim(self.page, 'sucheNach=produktionsjahr', '&lt;/a&gt;'), '&gt;')
+@@ -81,7 +81,7 @@
+                     self.delimiter = &quot;, &quot;
+ 
+     def get_cast(self):
+-        self.cast = self.regextrim(self.page, '[(]Darsteller[)]', '(&lt;[pP]&gt;|&lt;br&gt;&lt;span[^&gt;]+&gt;)')
++        self.cast = gutils.regextrim(self.page, '[(]Darsteller[)]', '(&lt;[pP]&gt;|&lt;br&gt;&lt;span[^&gt;]+&gt;)')
+         self.cast = gutils.clean(self.cast)
+         self.cast = self.cast.replace(' als ', _(' as '))
+         self.cast = re.sub('( \t|\t|\r|\n)', '', self.cast)
+@@ -89,7 +89,7 @@
+         self.cast = self.cast.replace(',', '')
+ 
+     def get_classification(self):
+-        self.classification = self.regextrim(self.page, 'FSK:[ ]+', '[,;]')
++        self.classification = gutils.regextrim(self.page, 'FSK:[ ]+', '[,;]')
+ 
+     def get_studio(self):
+         self.studio = gutils.after(gutils.trim(self.page, 'sucheNach=produktionsfirma', '&lt;/a&gt;'), '&gt;')
+@@ -108,19 +108,6 @@
+ 
+     def get_rating(self):
+         self.rating = 0
+-        
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.start()
+-        return text[p1:p2]
+ 
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -61,7 +61,7 @@
+         self.director = gutils.trim(self.page, 'Regiss&ouml;r:', '&lt;/tr&gt;')
+ 
+     def get_plot(self):
+-        self.plot = self.regextrim(self.page, '&lt;h2&gt;Om [^&gt;]*[&gt;]', '&lt;/tr&gt;')
++        self.plot = gutils.regextrim(self.page, '&lt;h2&gt;Om [^&gt;]*[&gt;]', '&lt;/tr&gt;')
+ 
+     def get_year(self):
+         self.year = gutils.trim(self.page, 'Utgivnings&aring;r:', '&lt;/tr&gt;')
+@@ -75,7 +75,7 @@
+             self.genre = string.strip(gutils.trim(self.page, 'Genre:', '&lt;/tr&gt;'))
+ 
+     def get_cast(self):
+-        self.cast = self.regextrim(self.page, 'Sk&aring;despelare [^:]*[:]', '&lt;/tr&gt;')
++        self.cast = gutils.regextrim(self.page, 'Sk&aring;despelare [^:]*[:]', '&lt;/tr&gt;')
+         self.cast = string.replace(self.cast, ', ', '\n')
+ 
+     def get_classification(self):
+@@ -108,19 +108,6 @@
+         if tmp != '':
+             self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
+ 
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.start()
+-        return text[p1:p2]
+-
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -66,7 +66,7 @@
+ 
+     def get_title(self):
+         self.title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;span')
+-        elements = string.split(self.regextrim(self.page, '&lt;h5&gt;(Alternativ|Auch bekannt als):', '&lt;/div&gt;'), '&lt;i class=&quot;transl&quot;')
++        elements = string.split(gutils.regextrim(self.page, '&lt;h5&gt;(Alternativ|Auch bekannt als):', '&lt;/div&gt;'), '&lt;i class=&quot;transl&quot;')
+         if len(elements) &gt; 1:
+             for element in elements:
+                 tmp = gutils.before(gutils.trim(element, '&gt;', '[de]'), '(')
+@@ -99,7 +99,7 @@
+         self.year = gutils.after(self.year, '&quot;&gt;')
+ 
+     def get_runtime(self):
+-        self.runtime = self.regextrim(self.page, '&lt;h5&gt;L[^n]+nge:&lt;/h5&gt;', ' [Mm]in')
++        self.runtime = gutils.regextrim(self.page, '&lt;h5&gt;L[^n]+nge:&lt;/h5&gt;', ' [Mm]in')
+ 
+     def get_genre(self):
+         self.genre = gutils.trim(self.page, '&lt;h5&gt;Genre:&lt;/h5&gt;', '&lt;/div&gt;')
+@@ -194,19 +194,6 @@
+             data = data[:tmp] + '&gt;'
+         return data
+ 
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.start()
+-        return text[p1:p2]
+-
+ class SearchPlugin(movie.SearchMovie):
+     PATTERN = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)(&lt;/td&gt;|&lt;/A&gt;)&quot;&quot;&quot;, re.IGNORECASE)
+     PATTERN_POWERSEARCH = re.compile(r&quot;&quot;&quot;Here are the [0-9]+ matching titles&quot;&quot;&quot;)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -52,12 +52,12 @@
+             self.image_url = gutils.trim(self.page[tmp:], 'src=&quot;', '&quot;')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++        self.o_title = gutils.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
+         if self.o_title == '':
+             self.o_title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+     def get_title(self):    # same as get_o_title()
+-        self.title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++        self.title = gutils.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
+         if self.title == '':
+             self.title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -63,7 +63,7 @@
+ 
+     def get_image(self):
+         self.image_url = ''
+-        tmpdata = self.regextrim(self.tmp_page, '(PRINT[-]CONTENT[-]START|&lt;td class=&quot;content&quot;&gt;)', '(Dieser Film wurde |&gt;FOTOSHOW&lt;|&gt;KRITIK&lt;)')
++        tmpdata = gutils.regextrim(self.tmp_page, '(PRINT[-]CONTENT[-]START|&lt;td class=&quot;content&quot;&gt;)', '(Dieser Film wurde |&gt;FOTOSHOW&lt;|&gt;KRITIK&lt;)')
+         tmpdatasplit = re.split('src=&quot;<A HREF="http://.+/flbilder">http://.+/flbilder</A>', tmpdata)
+         if len(tmpdatasplit) &gt; 2:
+             tmpdata = gutils.before(tmpdatasplit[2], '.jpg')
+@@ -78,25 +78,25 @@
+         self.o_title = gutils.trim(self.tmp_page, 'span class=&quot;standardsmall&quot;&gt;(', ')&lt;')
+         if self.o_title == '':
+             if self.url_type == 'V':
+-                self.o_title = gutils.after(self.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/videofilm', '&lt;/a&gt;'), '&gt;')
++                self.o_title = gutils.after(gutils.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/videofilm', '&lt;/a&gt;'), '&gt;')
+             else:
+-                self.o_title = gutils.after(self.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/kinofilm', '&lt;/a&gt;'), '&gt;')
++                self.o_title = gutils.after(gutils.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/kinofilm', '&lt;/a&gt;'), '&gt;')
+ 
+     def get_title(self):
+         if self.url_type == &quot;V&quot;:
+-            self.title = gutils.after(self.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/videofilm', '&lt;/a&gt;'), '&gt;')
++            self.title = gutils.after(gutils.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/videofilm', '&lt;/a&gt;'), '&gt;')
+         else:
+-            self.title = gutils.after(self.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/kinofilm', '&lt;/a&gt;'), '&gt;')
++            self.title = gutils.after(gutils.regextrim(self.tmp_page, 'headline2&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;a href=&quot;/kinofilm', '&lt;/a&gt;'), '&gt;')
+ 
+     def get_director(self):
+-        self.director = self.regextrim(self.tmp_creditspage, '&gt;[ ]*Regie', '&lt;/a&gt;')
++        self.director = gutils.regextrim(self.tmp_creditspage, '&gt;[ ]*Regie', '&lt;/a&gt;')
+         self.director = gutils.after(self.director, '/star/')
+         self.director = gutils.after(self.director, '&gt;')
+ 
+     def get_plot(self):
+         # little steps to perfect plot (I hope ... it's a terrible structured content ... )
+         self.plot = gutils.before(self.tmp_page, '&lt;!-- PRINT-CONTENT-ENDE--&gt;')
+-        self.plot = self.regextrim(self.plot, 'Kurzinfo', '&lt;/td&gt;&lt;/tr&gt;[ \t\r\n]*&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;')
++        self.plot = gutils.regextrim(self.plot, 'Kurzinfo', '&lt;/td&gt;&lt;/tr&gt;[ \t\r\n]*&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;')
+         if self.plot != '':
+             lastpos = self.plot.rfind('&lt;/table&gt;')
+             if lastpos == -1:
+@@ -118,7 +118,7 @@
+ 
+     def get_year(self):
+         self.year = ''
+-        tmp = self.regextrim(self.tmp_page, 'span class=&quot;standardsmall&quot;[^&gt;]*&gt;&lt;strong&gt;', '&lt;/span&gt;')
++        tmp = gutils.regextrim(self.tmp_page, 'span class=&quot;standardsmall&quot;[^&gt;]*&gt;&lt;strong&gt;', '&lt;/span&gt;')
+         if tmp &lt;&gt; None:
+             srchresult = re.search('[0-9][0-9][0-9][0-9]&lt;/strong&gt;', tmp)
+             if srchresult &lt;&gt; None:
+@@ -128,10 +128,10 @@
+         self.runtime = ''
+         srchresult = re.search('&gt;[0-9]+[ \t]Min[.]&lt;', self.tmp_page)
+         if srchresult &lt;&gt; None:
+-            self.runtime = self.regextrim(srchresult.string[srchresult.start():srchresult.end()], '&gt;', '[^0-9]')
++            self.runtime = gutils.regextrim(srchresult.string[srchresult.start():srchresult.end()], '&gt;', '[^0-9]')
+ 
+     def get_genre(self):
+-        self.genre = self.regextrim(self.tmp_page,'span class=&quot;standardsmall&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;strong&gt;((DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)&lt;/strong&gt;[ \t]-[ \t]&lt;strong&gt;)*', '&lt;/strong&gt;[ \t]-[ \t]&lt;strong&gt;')
++        self.genre = gutils.regextrim(self.tmp_page,'span class=&quot;standardsmall&quot;[^&gt;]*&gt;[ \t\r\n]*&lt;strong&gt;((DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)&lt;/strong&gt;[ \t]-[ \t]&lt;strong&gt;)*', '&lt;/strong&gt;[ \t]-[ \t]&lt;strong&gt;')
+ 
+     def get_cast(self):
+         self.cast = gutils.trim(self.tmp_creditspage,'&gt;Cast&lt;', '&lt;/table&gt;&lt;br')
+@@ -159,12 +159,12 @@
+             self.cast = string.replace(self.cast, '--flip--', _(' as ').encode('utf8'))
+ 
+     def get_classification(self):
+-        self.classification = self.regextrim(self.tmp_page,'FSK:( |&nbsp;)+', '&lt;/strong&gt;')
++        self.classification = gutils.regextrim(self.tmp_page,'FSK:( |&nbsp;)+', '&lt;/strong&gt;')
+ 
+     def get_studio(self):
+-        self.studio = self.regextrim(self.tmp_page, '&gt;[ ]*Verleih:( |&nbsp;)+', '( - |&nbsp;-&nbsp;)*&lt;/strong&gt;')
++        self.studio = gutils.regextrim(self.tmp_page, '&gt;[ ]*Verleih:( |&nbsp;)+', '( - |&nbsp;-&nbsp;)*&lt;/strong&gt;')
+         if (self.studio == &quot;&quot;):
+-            self.studio = self.regextrim(self.tmp_page, '&gt;[ ]*Anbieter:( |&nbsp;)+', '( - |&nbsp;-&nbsp;)*&lt;/strong&gt;')
++            self.studio = gutils.regextrim(self.tmp_page, '&gt;[ ]*Anbieter:( |&nbsp;)+', '( - |&nbsp;-&nbsp;)*&lt;/strong&gt;')
+ 
+     def get_o_site(self):
+         self.o_site = &quot;&quot;
+@@ -176,9 +176,9 @@
+         self.trailer = &quot;&quot;
+ 
+     def get_country(self):
+-        self.country = self.regextrim(self.tmp_page, 'span class=&quot;standardsmall&quot;[^&gt;]*&gt;&lt;strong&gt;((DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)&lt;/strong&gt;[ \t]-[ \t]&lt;strong&gt;)*', '&lt;/span&gt;')
++        self.country = gutils.regextrim(self.tmp_page, 'span class=&quot;standardsmall&quot;[^&gt;]*&gt;&lt;strong&gt;((DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)&lt;/strong&gt;[ \t]-[ \t]&lt;strong&gt;)*', '&lt;/span&gt;')
+         if self.country &lt;&gt; None:
+-            self.country = self.regextrim(self.country, '-[ \t]&lt;strong&gt;', '&lt;/strong&gt;')
++            self.country = gutils.regextrim(self.country, '-[ \t]&lt;strong&gt;', '&lt;/strong&gt;')
+             self.country = re.sub('[0-9]+$', '', self.country)
+         else:
+             self.country = ''
+@@ -200,19 +200,6 @@
+         tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_dvdfeaturespage, &quot;&lt;b&gt;EAN&lt;/b&gt;&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
+         if (tmp_notes != &quot;&quot;):
+             self.notes = self.notes + &quot;EAN:\n&quot; + tmp_notes + &quot;\n\n&quot;
+-            
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.start()
+-        return text[p1:p2]
+ 
+ #
+ # kino.de use iso-8859-1
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-11-10 16:58:54 UTC (rev 1029)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-11-10 20:51:03 UTC (rev 1030)
+@@ -50,7 +50,7 @@
+         self.director = gutils.trim(self.page,&quot;Regie:&quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+     def get_plot(self):
+-        storyid = self.regextrim(self.page, '&lt;a href=&quot;plot/', '(&quot;&gt;|[&amp;])')
++        storyid = gutils.regextrim(self.page, '&lt;a href=&quot;plot/', '(&quot;&gt;|[&amp;])')
+         if not storyid is None:
+             story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/plot/%s">http://www.ofdb.de/plot/%s</A>&quot; % (storyid))
+         self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+@@ -110,19 +110,6 @@
+             self.rating = &quot;0&quot;
+         self.rating = str(round(float(self.rating)))
+ 
+-    def regextrim(self,text,key1,key2):
+-        obj = re.search(key1, text)
+-        if obj is None:
+-            return ''
+-        else:
+-            p1 = obj.end()
+-        obj = re.search(key2, text[p1:])
+-        if obj is None:
+-            return ''
+-        else:
+-            p2 = p1 + obj.start()
+-        return text[p1:p2]
+-
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.original_url_search   = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=OTitel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=OTitel&amp;SText=</A>&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000509.html">[Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000511.html">[Griffith-svn] r1031 - in branches/0.9.x: . lib lib/plugins/export	lib/plugins/imp lib/plugins/movie lib/sqlalchemy/databases
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#510">[ date ]</a>
+              <a href="thread.html#510">[ thread ]</a>
+              <a href="subject.html#510">[ subject ]</a>
+              <a href="author.html#510">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

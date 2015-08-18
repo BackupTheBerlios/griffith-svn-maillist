@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1430 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1430%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201006251942.o5PJgUUZ001153%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000891.html">
+   <LINK REL="Next"  HREF="000893.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1430 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1430%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201006251942.o5PJgUUZ001153%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1430 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 25 21:42:30 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000891.html">[Griffith-svn] r1429 - in trunk: . lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000893.html">[Griffith-svn] r1431 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#892">[ date ]</a>
+              <a href="thread.html#892">[ thread ]</a>
+              <a href="subject.html#892">[ subject ]</a>
+              <a href="author.html#892">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-06-25 21:42:09 +0200 (Fri, 25 Jun 2010)
+New Revision: 1430
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+[#596700] IMDB doesn't import original title correctly
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-06-25 19:20:14 UTC (rev 1429)
++++ trunk/ChangeLog	2010-06-25 19:42:09 UTC (rev 1430)
+@@ -8,6 +8,7 @@
+ 2010-06-25  Michael Jahn
+ 	* updated movie plugin KinoDe
+ 	* added HKMDB movie plugin
++	* [#596700] IMDB doesn't import original title correctly
+ 
+ 2010-06-07  Michael Jahn
+ 	* added Clubedevideo movie plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-06-25 19:20:14 UTC (rev 1429)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-06-25 19:42:09 UTC (rev 1430)
+@@ -50,13 +50,15 @@
+             self.image_url = gutils.trim(self.page[tmp:], 'src=&quot;', '&quot;')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
+-        if self.o_title == '':
++        self.o_title = gutils.regextrim(self.page, 'class=&quot;title-extra&quot;&gt;', '&lt;')
++        if not self.o_title:
++            self.o_title = gutils.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
++        if not self.o_title:
+             self.o_title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+     def get_title(self):    # same as get_o_title()
+         self.title = gutils.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
+-        if self.title == '':
++        if not self.title:
+             self.title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+     def get_director(self):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000891.html">[Griffith-svn] r1429 - in trunk: . lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000893.html">[Griffith-svn] r1431 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#892">[ date ]</a>
+              <a href="thread.html#892">[ thread ]</a>
+              <a href="subject.html#892">[ subject ]</a>
+              <a href="author.html#892">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

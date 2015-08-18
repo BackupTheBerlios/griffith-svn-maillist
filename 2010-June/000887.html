@@ -1,0 +1,374 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1425 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1425%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C201006072005.o57K5F1O029076%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000888.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1425 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1425%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C201006072005.o57K5F1O029076%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1425 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun  7 22:05:15 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000888.html">[Griffith-svn] r1426 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#887">[ date ]</a>
+              <a href="thread.html#887">[ thread ]</a>
+              <a href="subject.html#887">[ subject ]</a>
+              <a href="author.html#887">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-06-07 22:04:57 +0200 (Mon, 07 Jun 2010)
+New Revision: 1425
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieClubedevideo.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/test_movieplugins.py
+   trunk/winpackage.iss
+Log:
+added Clubedevideo movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/ChangeLog	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-06-07  Michael Jahn
++	* added Clubedevideo movie plugin
++
+ 2010-05-10  Michael Jahn
+ 	* updated movie plugin IMDB-de
+ 	* poster md5 wasn't saved if poster is already in database
+
+Added: trunk/lib/plugins/movie/PluginMovieClubedevideo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieClubedevideo.py	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/lib/plugins/movie/PluginMovieClubedevideo.py	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -0,0 +1,191 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2010
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = &quot;Clubedevideo&quot;
++plugin_description  = &quot;www.clubedevideo.com&quot;
++plugin_url          = &quot;www.clubedevideo.com&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mike at griffith.cc</A>&quot;
++plugin_version      = &quot;1.0&quot;
++
++
++class Plugin(movie.Movie):
++
++    def __init__(self, id):
++        self.encode = 'iso-8859-1'
++        self.movie_id = id
++        self.url = '<A HREF="http://www.clubedevideo.com/mods/ficha_filme_if.cdv?numero_filme=%s">http://www.clubedevideo.com/mods/ficha_filme_if.cdv?numero_filme=%s</A>' % self.movie_id
++
++    def get_image(self):
++        self.image_url = '<A HREF="http://www.clubedevideo.com/capas/%s.jpg">http://www.clubedevideo.com/capas/%s.jpg</A>' % self.movie_id
++
++    def get_o_title(self):
++        self.o_title = gutils.after(gutils.trim(self.page, &quot;class='mod_titulos_filme2'&quot;, '&lt;'), '&gt;')
++
++    def get_title(self):
++        self.title = gutils.after(gutils.trim(self.page, &quot;class='mod_titulos_filme'&quot;, '&lt;'), '&gt;')
++
++    def get_director(self):
++        self.director = gutils.trim(self.page, u'Realiza&#231;&#227;o:', '&lt;br&gt;')
++        self.director = string.replace(self.director, '&amp;nbsp', '') # website error, ; missing
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, u'Sin&#243;pse:', '&lt;/td&gt;')
++        self.plot = string.replace(self.plot, u'\x93', '&quot;')
++        self.plot = string.replace(self.plot, u'\x94', '&quot;')
++
++    def get_year(self):
++        self.year = ''
++
++    def get_runtime(self):
++        self.runtime = gutils.clean(gutils.trim(self.page, u'Dura&#231;&#227;o:', '&lt;br'))
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, 'Categoria:', '&lt;br')
++
++    def get_cast(self):
++        self.cast = gutils.clean(gutils.trim(self.page, 'Protagonistas:', '&lt;br'))
++        # double replacement
++        self.cast = string.replace(self.cast, ', ', '\n')
++        self.cast = string.replace(self.cast, ',', '\n')
++
++    def get_classification(self):
++        self.classification = gutils.regextrim(self.page, u'Classifica&#231;&#227;o:', '&lt;br&gt;')
++
++    def get_studio(self):
++        self.studio = gutils.trim(self.page, 'Distribuidora:', '&lt;br&gt;')
++
++    def get_o_site(self):
++        self.o_site = gutils.trim(self.page, 'website.cdv?path=', &quot;'&quot;)
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = '<A HREF="http://www.clubedevideo.com/mods/mod_trailer.cdv?numero=%s">http://www.clubedevideo.com/mods/mod_trailer.cdv?numero=%s</A>' % self.movie_id
++
++    def get_country(self):
++        self.country = ''
++
++    def get_rating(self):
++        self.rating = 0
++        tmp = gutils.trim(self.page, 'Vota&#231;&#227;o:', '&lt;/td&gt;')
++        if tmp:
++            fullstars = string.split(tmp, 'star_on.gif')
++            halfstars = string.split(tmp, 'star_meia')
++            rating = 0
++            if fullstars:
++                rating = len(fullstars) - 1
++            if halfstars and len(halfstars) &gt; 1:
++                rating = rating + 0.5
++            try:
++                self.rating = round(rating * 2, 0)
++            except:
++                pass
++
++    def get_notes(self):
++        self.notes = ''
++
++    def get_screenplay(self):
++        self.screenplay = ''
++
++    def get_cameraman(self):
++        self.cameraman = ''
++
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search = '<A HREF="http://www.clubedevideo.com/mods/mod_pesquisa_if.cdv?area_pesquisa=nome_original&amp;submitButtonName=++OK++&amp;valor_pesquisa=">http://www.clubedevideo.com/mods/mod_pesquisa_if.cdv?area_pesquisa=nome_original&amp;submitButtonName=++OK++&amp;valor_pesquisa=</A>'
++        self.translated_url_search = '<A HREF="http://www.clubedevideo.com/mods/mod_pesquisa_if.cdv?area_pesquisa=nome&amp;submitButtonName=++OK++&amp;valor_pesquisa=">http://www.clubedevideo.com/mods/mod_pesquisa_if.cdv?area_pesquisa=nome&amp;submitButtonName=++OK++&amp;valor_pesquisa=</A>'
++        self.encode = 'iso-8859-1'
++        self.remove_accents = False
++
++    def search(self, parent_window):
++        self.open_search(parent_window)
++        return self.page
++
++    def get_searches(self):
++        elements = string.split(self.page, &quot;href='ficha_filme_if.cdv?numero_filme=&quot;)
++        for element in elements[1:]:
++            id = gutils.before(element, &quot;'&quot;)
++            title = gutils.trim(element, '&gt;', '&lt;/a&gt;')
++            if id and title:
++                self.ids.append(id)
++                self.titles.append(title)
++
++#
++# Plugin Test
++#
++
++
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky' : [ 9, 9 ]
++    }
++
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '9384' : {
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa - 2006',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Tony Burton\n\
++MiloVentimiglia',
++            'country'             : False,
++            'genre'               : 'Ac&#231;&#227;o',
++            'classification'      : 'M/12',
++            'studio'              : 'Lusomundo',
++            'o_site'              : '<A HREF="http://www.mgm.com/rocky/">http://www.mgm.com/rocky/</A>',
++            'site'                : '<A HREF="http://www.clubedevideo.com/mods/ficha_filme_if.cdv?numero_filme=9384">http://www.clubedevideo.com/mods/ficha_filme_if.cdv?numero_filme=9384</A>',
++            'trailer'             : '<A HREF="http://www.clubedevideo.com/mods/mod_trailer.cdv?numero=9384">http://www.clubedevideo.com/mods/mod_trailer.cdv?numero=9384</A>',
++            'year'                : False,
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 5,
++            'cameraman'           : False,
++            'screenplay'          : False
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/lib/test_movieplugins.py	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -75,6 +75,7 @@
+         'PluginMovieCinematografo',
+         'PluginMovieCineMovies',
+         'PluginMovieCineteka',
++        'PluginMovieClubedevideo',
+         'PluginMovieCulturalia',
+         'PluginMovieDVDEmpire',
+         'PluginMovieE-Pipoca',
+@@ -220,28 +221,36 @@
+ 
+         # check the fields
+         for i in results_expected:
+-            i_val = results_expected[i]
+-            if isinstance(i_val, bool):
+-                if i_val:
+-                    if not results.has_key(i) or len(results[i]) &lt; 1:
++            try:
++                i_val = results_expected[i]
++                if isinstance(i_val, bool):
++                    if i_val:
++                        if not results.has_key(i) or len(results[i]) &lt; 1:
++                            print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++                            logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
++                            result = False
++                    else:
++                        if results.has_key(i):
++                            if isinstance(results[i], int) and results[i] == 0:
++                                continue
++                            if not isinstance(results[i], int) and len(results[i]) &lt; 1:
++                                continue
++                            print &quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s&quot; % (movieplugin.movie_id, i, results[i])
++                            logFile.write(&quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s\n\n&quot; % (movieplugin.movie_id, i, results[i]))
++                            result = False
++                else:
++                    if not results.has_key(i):
+                         print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
+                         logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
+                         result = False
+-                else:
+-                    if results.has_key(i) and len(results[i]) &gt; 0:
+-                        print &quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s&quot; % (movieplugin.movie_id, i, results[i])
+-                        logFile.write(&quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s\n\n&quot; % (movieplugin.movie_id, i, results[i]))
+-                        result = False
+-            else:
+-                if not results.has_key(i):
+-                    print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
+-                    logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
+-                    result = False
+-                else:
+-                    if not results[i] == i_val:
+-                        print &quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s&quot; % (movieplugin.movie_id, i, i_val, results[i])
+-                        logFile.write(&quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n&quot; % (movieplugin.movie_id, i, i_val, results[i]))
+-                        result = False
++                    else:
++                        if not results[i] == i_val:
++                            print &quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s&quot; % (movieplugin.movie_id, i, i_val, results[i])
++                            logFile.write(&quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n&quot; % (movieplugin.movie_id, i, i_val, results[i]))
++                            result = False
++            except:
++                log.exception(i + ' - ' + str(i_val) + ' - ' + str(results[i]) + ' - ' + str(movieplugin))
++                result = False
+         return result
+ 
+     #
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-05-29 12:43:21 UTC (rev 1424)
++++ trunk/winpackage.iss	2010-06-07 20:04:57 UTC (rev 1425)
+@@ -88,6 +88,7 @@
+ Source: dist\lib\plugins\movie\PluginMovieCinematografo.py; DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Italian\Cinematografo
+ Source: dist\lib\plugins\movie\PluginMovieCineMovies.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\French\CineMovies
+ Source: dist\lib\plugins\movie\PluginMovieCineteka.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\Cineteka
++Source: dist\lib\plugins\movie\PluginMovieClubedevideo.py;  DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\Clubedevideo
+ Source: dist\lib\plugins\movie\PluginMovieCSFD.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Czech\CSFD
+ Source: dist\lib\plugins\movie\PluginMovieCulturalia.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Spanish\Culturalia
+ Source: dist\lib\plugins\movie\PluginMovieDVDEmpire.py;     DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\DVD_Empire
+@@ -200,6 +201,7 @@
+ Name: Movie_Import_Plugins\Portuguese;               Description: Portuguese Import Plugins; Types: full
+ Name: Movie_Import_Plugins\Portuguese\7arte;         Description: 7arte / 7arte.net; Types: full
+ Name: Movie_Import_Plugins\Portuguese\Cineteka;      Description: Cineteka / cineteka.com; Types: full
++Name: Movie_Import_Plugins\Portuguese\Clubedevideo;  Description: Clubedevideo / www.clubedevideo.com; Types: full
+ Name: Movie_Import_Plugins\Portuguese\PTGate;        Description: PTGate / cinema.ptgate.pt; Types: full
+ 
+ Name: Movie_Import_Plugins\Brazilian_Portuguese;          Description: Brazilian Portuguese Import Plugins; Types: full
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000888.html">[Griffith-svn] r1426 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#887">[ date ]</a>
+              <a href="thread.html#887">[ thread ]</a>
+              <a href="subject.html#887">[ subject ]</a>
+              <a href="author.html#887">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

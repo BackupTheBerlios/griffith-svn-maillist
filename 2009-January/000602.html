@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1127 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1127%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200901171919.n0HJJplE016276%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000601.html">
+   <LINK REL="Next"  HREF="000603.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1127 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1127%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200901171919.n0HJJplE016276%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1127 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 17 20:19:51 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000601.html">[Griffith-svn] r1126 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000603.html">[Griffith-svn] r1128 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#602">[ date ]</a>
+              <a href="thread.html#602">[ thread ]</a>
+              <a href="subject.html#602">[ subject ]</a>
+              <a href="author.html#602">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-01-17 20:19:50 +0100 (Sat, 17 Jan 2009)
+New Revision: 1127
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/edit.py
+Log:
+Use MediumBLOB on MySQL to store posters. Database has to be recreated if 0.10-beta1 was used to create it.
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-16 23:03:41 UTC (rev 1126)
++++ trunk/ChangeLog	2009-01-17 19:19:50 UTC (rev 1127)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-17  Piotr O&#380;arowski
++	* Use MediumBLOB on MySQL to store posters. Database has to be recreated if 0.10-beta1 was used to create it.
++
+ 2009-01-16  Piotr O&#380;arowski
+ 	* Print move details during startup in debug mode
+ 
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-01-16 23:03:41 UTC (rev 1126)
++++ trunk/lib/db.py	2009-01-17 19:19:50 UTC (rev 1127)
+@@ -265,7 +265,7 @@
+ 
+ posters_table = Table('posters', metadata,
+     Column('md5sum', Unicode(32), primary_key=True),
+-    Column('data', Binary, nullable=False))
++    Column('data', Binary(1048576), nullable=False))
+ 
+ filters_table = Table('filters', metadata,
+     Column('name', Unicode(64), primary_key=True),
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-01-16 23:03:41 UTC (rev 1126)
++++ trunk/lib/dbupgrade.py	2009-01-17 19:19:50 UTC (rev 1127)
+@@ -33,6 +33,7 @@
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
+     b = self.session.bind
+     if version == 0 or version is None:
++        log.info('Creating new database...')
+         # version is 0 or none only for new databases
+         db.metadata.create_all(b)
+         db.configuration_table.insert(bind=b).execute(param=u'version', value=unicode(self.version))
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-01-16 23:03:41 UTC (rev 1126)
++++ trunk/lib/edit.py	2009-01-17 19:19:50 UTC (rev 1127)
+@@ -140,7 +140,10 @@
+         gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+         return False
+     current_poster_md5 = movie.poster_md5
+-    current_poster = gutils.get_image_fname(current_poster_md5, self.db)
++    if current_poster_md5:
++        current_poster = gutils.get_image_fname(current_poster_md5, self.db)
++    else:
++        current_poster = None
+     amazon.setLicense(&quot;04GDDMMXX8X9CJ1B22G2&quot;)
+ 
+     locale = self.config.get('amazon_locale', 0, section='add')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000601.html">[Griffith-svn] r1126 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000603.html">[Griffith-svn] r1128 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#602">[ date ]</a>
+              <a href="thread.html#602">[ thread ]</a>
+              <a href="subject.html#602">[ subject ]</a>
+              <a href="author.html#602">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

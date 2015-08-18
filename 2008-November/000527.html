@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1049 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1049%20-%20trunk/lib&In-Reply-To=%3C200811161852.mAGIq9Qg002581%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000526.html">
+   <LINK REL="Next"  HREF="000528.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1049 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1049%20-%20trunk/lib&In-Reply-To=%3C200811161852.mAGIq9Qg002581%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1049 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 16 19:52:09 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000526.html">[Griffith-svn] r1048 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000528.html">[Griffith-svn] r1050 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#527">[ date ]</a>
+              <a href="thread.html#527">[ thread ]</a>
+              <a href="subject.html#527">[ subject ]</a>
+              <a href="author.html#527">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-16 19:52:08 +0100 (Sun, 16 Nov 2008)
+New Revision: 1049
+
+Modified:
+   trunk/lib/cover.py
+Log:
+print cover takes poster image from database again
+
+
+Modified: trunk/lib/cover.py
+===================================================================
+--- trunk/lib/cover.py	2008-11-16 18:39:58 UTC (rev 1048)
++++ trunk/lib/cover.py	2008-11-16 18:52:08 UTC (rev 1049)
+@@ -51,7 +51,7 @@
+     size = self.widgets['print_cover']['ci_size'].get_active()
+     print_number = self.widgets['print_cover']['ci_number'].get_active()
+ 
+-    if self.config.get('font', '')!='':
++    if self.config.get('font', '') != '':
+         fontName = &quot;custom_font&quot;
+         pdfmetrics.registerFont(TTFont(fontName,self.config.get('font', '')))
+     else:
+@@ -165,28 +165,28 @@
+         c.rotate(90)
+         c.drawString(60, (-pageWidth/2)-8, movie.o_title.encode('utf-8'))
+         c.rotate(-90)
+-        if movie.image is not None and movie.image != '':
+-            tmp_dest = self.locations['posters']
+-            image = str(os.path.join(tmp_dest, str(movie.image)+&quot;.jpg&quot;))
+-            c.drawImage(image, x=(pageWidth-30)/2, y=470, width=30, height=50)
++        if movie.poster_md5:
++            filename = gutils.get_image_fname(movie.poster_md5, self.db)
++            if filename:
++                c.drawImage(filename, x=(pageWidth-30)/2, y=470, width=30, height=50)
+         # print movie info
+         c.setFont(fontName, 8)
+         textObject = c.beginText()
+         textObject.setTextOrigin(pageWidth-cover_x, 300)
+         textObject.setFont(fontName, 8)
+-        textObject.textLine(_(&quot;Original Title&quot;).encode('utf-8')+': '+str(movie.o_title).encode('utf-8'))
+-        textObject.textLine(_(&quot;Title&quot;).encode('utf-8')+': '+str(movie.title).encode('utf-8'))
++        textObject.textLine(_(&quot;Original Title&quot;).encode('utf-8')+': '+ movie.o_title.encode('utf-8'))
++        textObject.textLine(_(&quot;Title&quot;).encode('utf-8')+': '+ movie.title.encode('utf-8'))
+         textObject.textLine(&quot;&quot;)
+-        textObject.textLine(_(&quot;Director&quot;).encode('utf-8')+': '+str(movie.director).encode('utf-8'))
++        textObject.textLine(_(&quot;Director&quot;).encode('utf-8')+': '+ movie.director.encode('utf-8'))
+         textObject.textLine(&quot;&quot;)
+         textObject.textLine(_(&quot;Running Time&quot;).encode('utf-8')+': '+str(movie.runtime).encode('utf-8')+ _(&quot; min&quot;).encode('utf-8'))
+-        textObject.textLine(_(&quot;Country&quot;).encode('utf-8')+': '+str(movie.country).encode('utf-8'))
+-        textObject.textLine(_(&quot;Genre&quot;).encode('utf-8')+': '+str(movie.genre).encode('utf-8'))
++        textObject.textLine(_(&quot;Country&quot;).encode('utf-8')+': ' + movie.country.encode('utf-8'))
++        textObject.textLine(_(&quot;Genre&quot;).encode('utf-8')+': '+ movie.genre.encode('utf-8'))
+         textObject.textLine(&quot;&quot;)
+         c.drawText(textObject)
+         # draw bigger poster image
+-        if poster == True and movie.image is not None:
+-            c.drawImage(image, x=(pageWidth-(pageWidth-cover_x)-235), y=(pageHeight/2)-125, width=180, height=250)
++        if poster and movie.poster_md5 and filename:
++            c.drawImage(filename, x=(pageWidth-(pageWidth-cover_x)-235), y=(pageHeight/2)-125, width=180, height=250)
+     c.showPage()
+     c.save()
+     self.widgets['print_cover']['window_simple'].hide()
+@@ -197,3 +197,4 @@
+         os.popen3(&quot;open -a Preview&quot; + &quot; &quot; + cover_file)
+     else:
+         os.popen3(self.pdf_reader + &quot; &quot; + cover_file)
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000526.html">[Griffith-svn] r1048 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000528.html">[Griffith-svn] r1050 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#527">[ date ]</a>
+              <a href="thread.html#527">[ thread ]</a>
+              <a href="subject.html#527">[ subject ]</a>
+              <a href="author.html#527">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

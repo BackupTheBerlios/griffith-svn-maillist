@@ -1,0 +1,289 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r995 - in trunk: . lib lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r995%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp&In-Reply-To=%3C200809092032.m89KWQef015403%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000476.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r995 - in trunk: . lib lib/plugins/imp</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r995%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp&In-Reply-To=%3C200809092032.m89KWQef015403%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r995 - in trunk: . lib lib/plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep  9 22:32:26 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000476.html">[Griffith-svn] r996 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#475">[ date ]</a>
+              <a href="thread.html#475">[ thread ]</a>
+              <a href="subject.html#475">[ subject ]</a>
+              <a href="author.html#475">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-09-09 22:32:25 +0200 (Tue, 09 Sep 2008)
+New Revision: 995
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/gutils.py
+   trunk/lib/plugins/imp/__init__.py
+   trunk/lib/sql.py
+Log:
+Add aspect ratio, cameraman and screenplay to the database
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-08-20 19:26:49 UTC (rev 994)
++++ trunk/ChangeLog	2008-09-09 20:32:25 UTC (rev 995)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-09-09  Piotr O&#380;arowski
++	* Add aspect ratio, cameraman and screenplay to the database
++
+ 2008-08-16  Michael Jahn
+ 	* fixed support for german umlauts in OFDb plugin
+ 	* added Amazon plugin (supports search by UPC/EAN)
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-08-20 19:26:49 UTC (rev 994)
++++ trunk/lib/db.py	2008-09-09 20:32:25 UTC (rev 995)
+@@ -111,6 +111,8 @@
+     pass
+ class Person(DBTable):
+     pass
++class Ratio(DBTable):
++    pass
+ class SubFormat(DBTable):
+     pass
+ class Tag(DBTable):
+@@ -172,6 +174,7 @@
+     Column('collection_id', Integer, ForeignKey('collections.collection_id')),
+     Column('volume_id', Integer, ForeignKey('volumes.volume_id')),
+     Column('medium_id', Integer, ForeignKey('media.medium_id')),
++    Column('ratio_id', Integer, ForeignKey('ratios.ratio_id')),
+     Column('vcodec_id', Integer, ForeignKey('vcodecs.vcodec_id')),
+     Column('loaned', Boolean, nullable=False, default=False),
+     Column('seen', Boolean, nullable=False, default=False),
+@@ -183,11 +186,13 @@
+     Column('media_num', SmallInteger),
+     Column('runtime', Integer),
+     Column('year', Integer),
+-    Column('o_title', Unicode(255)),
+-    Column('title', Unicode(255)),
+-    Column('director', Unicode(255)),
+-    Column('o_site', Unicode(255)),
+-    Column('site', Unicode(255)),
++    Column('o_title', Unicode(256)),
++    Column('title', Unicode(256)),
++    Column('director', Unicode(256)),
++    Column('screenplay', Unicode(256)),
++    Column('cameraman', Unicode(256)),
++    Column('o_site', Unicode(256)),
++    Column('site', Unicode(256)),
+     Column('trailer', Unicode(256)),
+     Column('country', Unicode(128)),
+     Column('genre', Unicode(128)),
+@@ -210,7 +215,7 @@
+ 
+ people_table = Table('people', metadata,
+     Column('person_id', Integer, primary_key=True),
+-    Column('name', Unicode(255), nullable=False, unique=True),
++    Column('name', Unicode(256), nullable=False, unique=True),
+     Column('email', Unicode(128)),
+     Column('phone', Unicode(64)))
+ 
+@@ -228,6 +233,10 @@
+     Column('medium_id', Integer, primary_key=True),
+     Column('name', Unicode(64), nullable=False, unique=True))
+ 
++ratios_table = Table('ratios', metadata,
++    Column('ratio_id', Integer, primary_key=True),
++    Column('name', Unicode(5), nullable=False, unique=True))
++
+ languages_table = Table('languages', metadata,
+     Column('lang_id', Integer, primary_key=True),
+     Column('name', Unicode(64), nullable=False, unique=True))
+@@ -281,6 +290,7 @@
+     'volumes':        volumes_table,
+     'collections':    collections_table,
+     'media':          media_table,
++    'ratios':         ratios_table,
+     'languages':      languages_table,
+     'vcodecs':        vcodecs_table,
+     'acodecs':        acodecs_table,
+@@ -301,6 +311,8 @@
+     'movies': relation(Movie, backref='collection')})
+ mapper(Medium, media_table, properties={
+     'movies': relation(Movie, backref='medium')})
++mapper(Ratio, media_table, properties={
++    'movies': relation(Movie, backref='ratios')})
+ mapper(VCodec, vcodecs_table, properties={
+     'movies': relation(Movie, backref='vcodec')})
+ mapper(Person, people_table, properties = {
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-08-20 19:26:49 UTC (rev 994)
++++ trunk/lib/dbupgrade.py	2008-09-09 20:32:25 UTC (rev 995)
+@@ -49,6 +49,8 @@
+         db.media_table.insert(bind=b).execute(name=u'VHS')
+         db.media_table.insert(bind=b).execute(name=u'BETACAM')
+         db.media_table.insert(bind=b).execute(name=u'LaserDisc')
++        db.ratios_table.insert(bind=b).execute(name=u'16:9')
++        db.ratios_table.insert(bind=b).execute(name=u'4:3')
+         db.acodecs_table.insert(bind=b).execute(name=u'AC-3 Dolby audio')
+         db.acodecs_table.insert(bind=b).execute(name=u'OGG')
+         db.acodecs_table.insert(bind=b).execute(name=u'MP3')
+@@ -113,20 +115,34 @@
+         self.session.add(db_version)
+         self.session.commit()
+     if version == 2:    # fix changes between v2 and v3
+-        e_type = self.session.bind.engine.dialect.name
++        #e_type = self.session.bind.engine.dialect.name
++        e_type = self.session.bind.name
+         version += 1
+         log.info(&quot;Upgrading database to version %d...&quot; % version)
+ 
+         # create new table
+         db.posters_table.create(checkfirst=True, bind=b)
++        db.ratios_table.create(checkfirst=True, bind=b)
++        db.ratios_table.insert(bind=b).execute(name=u'16:9')
++        db.ratios_table.insert(bind=b).execute(name=u'4:3')
+ 
+         log.info(&quot;... adding new columns&quot;)
+-        query = &quot;ALTER TABLE movies ADD COLUMN poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum)&quot; # SQLite, PostgreSQL
++        # SQLite, PostgreSQL
++        queries = {'poster_md5': 'ALTER TABLE movies ADD COLUMN poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum);',
++                   'ratio_id'  : 'ALTER TABLE movies ADD COLUMN ratio_id INTEGER NOT NULL REFERENCES ratios(ratio_id) DEFAULT 1;',
++                   'screenplay': 'ALTER TABLE movies ADD COLUMN screenplay VARCHAR(256) NULL;',
++                   'cameraman' : 'ALTER TABLE movies ADD COLUMN cameraman VARCHAR(256) NULL;'}
+         if e_type == 'mysql':
+             pass
+         elif e_type == 'mssql':
++            #queries['ratio_id'] = &quot;FIXME&quot;
+             pass
+-        self.session.bind.execute(query)
++        for key, query in queries.items():
++            try:
++                self.session.bind.execute(query)
++            except Exception, e:
++                log.error(&quot;Cannot add '%s' column: %s&quot; % (key, e.message))
++                return False
+         
+         log.info(&quot;... saving posters in database&quot;)
+         for movie in self.session.query(db.Movie).all():
+@@ -143,6 +159,8 @@
+                 self.session.add(movie)
+ 
+                 try:
++                    # yeah, we're commiting inside the loop,
++                    # it slows down the process a lot, but at least we can skip buggy posters
+                     self.session.commit()
+                 except Exception, e:
+                     self.session.rollback()
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-08-20 19:26:49 UTC (rev 994)
++++ trunk/lib/gutils.py	2008-09-09 20:32:25 UTC (rev 995)
+@@ -505,7 +505,7 @@
+ 
+ 
+ def html_encode(s):
+-    if not isinstance(s, str):
++    if not isinstance(s, basestring):
+         s = str(s)
+     s = s.replace('&amp;', '&amp;')
+     s = s.replace('&lt;', '&lt;')
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2008-08-20 19:26:49 UTC (rev 994)
++++ trunk/lib/plugins/imp/__init__.py	2008-09-09 20:32:25 UTC (rev 995)
+@@ -107,6 +107,11 @@
+ 
+         statement = Select([self.db.Movie.c.number])
+ 
++        # move some stuff outside the loop to speed it up
++        set_fraction = self.widgets['progressbar'].set_fraction
++        set_text = self.widgets['progressbar'].set_text
++        main_iteration = gtk.main_iteration
++
+         processed = 0
+         while self._abort is False:
+             details = self.get_movie_details()
+@@ -115,11 +120,11 @@
+ 
+             processed += 1
+             if processed in update_on:
+-                self.widgets['progressbar'].set_fraction(float(processed)/float(count))
+-                gtk.main_iteration()
+-                self.widgets['progressbar'].set_text(&quot;%s (%s/%s)&quot; % (str(self.imported), str(processed), str(count)))
+-                gtk.main_iteration()
+-                gtk.main_iteration() # extra iteration for abort button
++                set_fraction(float(processed)/float(count))
++                main_iteration()
++                set_text(&quot;%s (%s/%s)&quot; % (str(self.imported), str(processed), str(count)))
++                main_iteration()
++                main_iteration() # extra iteration for abort button
+ 
+             if (details.has_key('o_title') and details['o_title']) or (details.has_key('title') and details['title']):
+                 if details.has_key('o_title') and details['o_title']:
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-08-20 19:26:49 UTC (rev 994)
++++ trunk/lib/sql.py	2008-09-09 20:32:25 UTC (rev 995)
+@@ -142,4 +142,6 @@
+             v = int(v.value)
+         if v &lt; self.version:
+             from dbupgrade import upgrade_database
+-            upgrade_database(self, v)
++            if not upgrade_database(self, v):
++                import sys
++                sys.exit(1)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000476.html">[Griffith-svn] r996 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#475">[ date ]</a>
+              <a href="thread.html#475">[ thread ]</a>
+              <a href="subject.html#475">[ subject ]</a>
+              <a href="author.html#475">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

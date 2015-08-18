@@ -1,0 +1,351 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1024 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1024%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200811012209.mA1M9xcV026614%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000505.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1024 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1024%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200811012209.mA1M9xcV026614%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1024 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov  1 23:09:59 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000505.html">[Griffith-svn] r1025 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#504">[ date ]</a>
+              <a href="thread.html#504">[ thread ]</a>
+              <a href="subject.html#504">[ subject ]</a>
+              <a href="author.html#504">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-01 23:09:44 +0100 (Sat, 01 Nov 2008)
+New Revision: 1024
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+updated IMDB plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-10-30 10:54:36 UTC (rev 1023)
++++ branches/0.9.x/ChangeLog	2008-11-01 22:09:44 UTC (rev 1024)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-01  Michael Jahn
++	* updated IMDB plugin
++
+ 2008-10-26  Michael Jahn
+ 	* [#179618] During &quot;Get from Web &quot;, griffith window keeps stealing focus
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2008-10-30 10:54:36 UTC (rev 1023)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2008-11-01 22:09:44 UTC (rev 1024)
+@@ -52,12 +52,16 @@
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++		if self.o_title == '':
++			self.o_title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+ 	def get_title(self):	# same as get_o_title()
+ 		self.title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++		if self.title == '':
++			self.title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+ 	def get_director(self):
+-		pattern = re.compile('&lt;h5&gt;Directors?:&lt;/h5&gt;[\n\s\r]*(.*?)(?:&lt;br/&gt;)?(?:&lt;a[^&gt;]+&gt;more&lt;/a&gt;)?\n&lt;/div')
++		pattern = re.compile('&lt;h5&gt;Director[s]*?:&lt;/h5&gt;[\n\s\r]*(.*?)(?:&lt;br/&gt;)?(?:&lt;a[^&gt;]+&gt;more&lt;/a&gt;)?[\n]*&lt;/div')
+ 		result = pattern.search(self.page)
+ 		if result:
+ 			self.director = result.groups()[0]
+@@ -91,6 +95,7 @@
+ 		if self.cast == '':
+ 			self.cast = gutils.trim(self.page, '&lt;table class=&quot;cast&quot;&gt;', '&lt;/table&gt;')
+ 		self.cast = string.replace(self.cast, ' ... ', _(' as '))
++		self.cast = string.replace(self.cast, '...', _(' as '))
+ 		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr&gt;', &quot;\n&quot;)
+ 		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;even&quot;&gt;', &quot;\n&quot;)
+ 		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;odd&quot;&gt;', &quot;\n&quot;)
+@@ -116,12 +121,15 @@
+ 		self.country = gutils.trim(self.page, '&lt;h5&gt;Country:&lt;/h5&gt;', '&lt;/div&gt;')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '&lt;b&gt;User Rating:&lt;/b&gt; \n&lt;b&gt;', '/10')
+-		if self.rating and self.rating.find('awaiting') == -1:
+-			try:
+-				self.rating = float(self.rating)
+-			except Exception, e:
+-				self.rating = 0
++		pattern = re.compile('&gt;([0-9]([.][0-9])*)[/][0-9][0-9]&lt;')
++		result = pattern.search(self.page)
++		if result:
++			self.rating = result.groups()[0]
++			if self.rating:
++				try:
++					self.rating = float(self.rating)
++				except Exception, e:
++					self.rating = 0
+ 		else:
+ 			self.rating = 0
+ 
+@@ -129,13 +137,25 @@
+ 		self.notes = ''
+ 		language = gutils.trim(self.page, '&lt;h5&gt;Language:&lt;/h5&gt;', '&lt;/div&gt;')
+ 		language = gutils.strip_tags(language)
++		language = re.sub('[\n]+', '', language)
++		language = re.sub('[ ]+', ' ', language)
++		language = language.rstrip()
+ 		color = gutils.trim(self.page, '&lt;h5&gt;Color:&lt;/h5&gt;', '&lt;/div&gt;')
+ 		color = gutils.strip_tags(color)
++		color = re.sub('[\n]+', '', color)
++		color = re.sub('[ ]+', ' ', color)
++		color = color.rstrip()
+ 		sound = gutils.trim(self.page, '&lt;h5&gt;Sound Mix:&lt;/h5&gt;', '&lt;/div&gt;')
+ 		sound = gutils.strip_tags(sound)
++		sound = re.sub('[\n]+', '', sound)
++		sound = re.sub('[ ]+', ' ', sound)
++		sound = sound.rstrip()
+ 		tagline = gutils.trim(self.page, '&lt;h5&gt;Tagline:&lt;/h5&gt;', '&lt;/div&gt;')
+ 		tagline = self.__before_more(tagline)
+ 		tagline = gutils.strip_tags(tagline)
++		tagline = re.sub('[\n]+', '', tagline)
++		tagline = re.sub('[ ]+', ' ', tagline)
++		tagline = tagline.rstrip()
+ 		if len(language)&gt;0:
+ 			self.notes = &quot;%s: %s\n&quot; %(_('Language'), language)
+ 		if len(sound)&gt;0:
+@@ -152,22 +172,36 @@
+ 		return data
+ 
+ class SearchPlugin(movie.SearchMovie):
+-	PATTERN = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
++	PATTERN = re.compile(r&quot;&quot;&quot;&lt;A HREF=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/LI&gt;&quot;&quot;&quot;)
++	PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
++
+ 	def __init__(self):
+-		self.original_url_search	= '<A HREF="http://imdb.com/find?more=tt;q=">http://imdb.com/find?more=tt;q=</A>'
+-		self.translated_url_search	= '<A HREF="http://imdb.com/find?more=tt;q=">http://imdb.com/find?more=tt;q=</A>'
++		self.original_url_search	= '<A HREF="http://www.imdb.com/List?words=">http://www.imdb.com/List?words=</A>'
++		self.translated_url_search	= '<A HREF="http://www.imdb.com/find?more=tt;q=">http://www.imdb.com/find?more=tt;q=</A>'
+ 		self.encode = 'utf-8'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.page = gutils.trim(self.page, '(Displaying', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;');
++		tmp_page = gutils.trim(self.page, 'Here are the', '&lt;/TABLE&gt;')
++		if tmp_page == '':
++			self.page = gutils.trim(self.page, '(Displaying', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;')
++		else:
++			self.page = tmp_page
+ 		self.page = self.page.decode('iso-8859-1')
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		elements = string.split(self.page, '&lt;tr&gt;')
+-
+-		if len(elements):
++		elements = re.split('&lt;LI&gt;', self.page)
++		if len(elements) &lt; 2:
++			elements = string.split(self.page, '&lt;tr&gt;')
++			if len(elements):
++				for element in elements[1:]:
++					match = self.PATTERN2.findall(element)
++					if len(match):
++						tmp  = gutils.clean(match[0][1])
++						self.ids.append(match[0][0])
++						self.titles.append(tmp)
++		else:
+ 			for element in elements[1:]:
+ 				match = self.PATTERN.findall(element)
+ 				if len(match):
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-10-30 10:54:36 UTC (rev 1023)
++++ trunk/ChangeLog	2008-11-01 22:09:44 UTC (rev 1024)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-01  Michael Jahn
++	* updated IMDB plugin
++
+ 2008-10-26  Michael Jahn
+ 	* [#179618] During &quot;Get from Web &quot;, griffith window keeps stealing focus
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-10-30 10:54:36 UTC (rev 1023)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-11-01 22:09:44 UTC (rev 1024)
+@@ -53,12 +53,16 @@
+ 
+     def get_o_title(self):
+         self.o_title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++        if self.o_title == '':
++            self.o_title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+     def get_title(self):    # same as get_o_title()
+         self.title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++        if self.title == '':
++            self.title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+     def get_director(self):
+-        pattern = re.compile('&lt;h5&gt;Directors?:&lt;/h5&gt;[\n\s\r]*(.*?)(?:&lt;br/&gt;)?(?:&lt;a[^&gt;]+&gt;more&lt;/a&gt;)?\n&lt;/div')
++        pattern = re.compile('&lt;h5&gt;Director[s]*?:&lt;/h5&gt;[\n\s\r]*(.*?)(?:&lt;br/&gt;)?(?:&lt;a[^&gt;]+&gt;more&lt;/a&gt;)?[\n]*&lt;/div')
+         result = pattern.search(self.page)
+         if result:
+             self.director = result.groups()[0]
+@@ -92,6 +96,7 @@
+         if self.cast == '':
+             self.cast = gutils.trim(self.page, '&lt;table class=&quot;cast&quot;&gt;', '&lt;/table&gt;')
+         self.cast = string.replace(self.cast, ' ... ', _(' as '))
++        self.cast = string.replace(self.cast, '...', _(' as '))
+         self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr&gt;', &quot;\n&quot;)
+         self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;even&quot;&gt;', &quot;\n&quot;)
+         self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;odd&quot;&gt;', &quot;\n&quot;)
+@@ -117,12 +122,15 @@
+         self.country = gutils.trim(self.page, '&lt;h5&gt;Country:&lt;/h5&gt;', '&lt;/div&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, '&lt;b&gt;User Rating:&lt;/b&gt; \n&lt;b&gt;', '/10')
+-        if self.rating and self.rating.find('awaiting') == -1:
+-            try:
+-                self.rating = float(self.rating)
+-            except Exception, e:
+-                self.rating = 0
++        pattern = re.compile('&gt;([0-9]([.][0-9])*)[/][0-9][0-9]&lt;')
++        result = pattern.search(self.page)
++        if result:
++            self.rating = result.groups()[0]
++            if self.rating:
++                try:
++                    self.rating = float(self.rating)
++                except Exception, e:
++                    self.rating = 0
+         else:
+             self.rating = 0
+ 
+@@ -130,13 +138,25 @@
+         self.notes = ''
+         language = gutils.trim(self.page, '&lt;h5&gt;Language:&lt;/h5&gt;', '&lt;/div&gt;')
+         language = gutils.strip_tags(language)
++        language = re.sub('[\n]+', '', language)
++        language = re.sub('[ ]+', ' ', language)
++        language = language.rstrip()
+         color = gutils.trim(self.page, '&lt;h5&gt;Color:&lt;/h5&gt;', '&lt;/div&gt;')
+         color = gutils.strip_tags(color)
++        color = re.sub('[\n]+', '', color)
++        color = re.sub('[ ]+', ' ', color)
++        color = color.rstrip()
+         sound = gutils.trim(self.page, '&lt;h5&gt;Sound Mix:&lt;/h5&gt;', '&lt;/div&gt;')
+         sound = gutils.strip_tags(sound)
++        sound = re.sub('[\n]+', '', sound)
++        sound = re.sub('[ ]+', ' ', sound)
++        sound = sound.rstrip()
+         tagline = gutils.trim(self.page, '&lt;h5&gt;Tagline:&lt;/h5&gt;', '&lt;/div&gt;')
+         tagline = self.__before_more(tagline)
+         tagline = gutils.strip_tags(tagline)
++        tagline = re.sub('[\n]+', '', tagline)
++        tagline = re.sub('[ ]+', ' ', tagline)
++        tagline = tagline.rstrip()
+         if len(language)&gt;0:
+             self.notes = &quot;%s: %s\n&quot; %(_('Language'), language)
+         if len(sound)&gt;0:
+@@ -153,25 +173,39 @@
+         return data
+ 
+ class SearchPlugin(movie.SearchMovie):
+-    PATTERN = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
++    PATTERN = re.compile(r&quot;&quot;&quot;&lt;A HREF=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/LI&gt;&quot;&quot;&quot;)
++    PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
++
+     def __init__(self):
+-        self.original_url_search    = '<A HREF="http://imdb.com/find?more=tt;q=">http://imdb.com/find?more=tt;q=</A>'
+-        self.translated_url_search    = '<A HREF="http://imdb.com/find?more=tt;q=">http://imdb.com/find?more=tt;q=</A>'
++        self.original_url_search    = '<A HREF="http://www.imdb.com/List?words=">http://www.imdb.com/List?words=</A>'
++        self.translated_url_search	= '<A HREF="http://www.imdb.com/find?more=tt;q=">http://www.imdb.com/find?more=tt;q=</A>'
+         self.encode = 'utf-8'
+ 
+     def search(self,parent_window):
+         self.open_search(parent_window)
+-        self.page = gutils.trim(self.page, '(Displaying', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;');
++        tmp_page = gutils.trim(self.page, 'Here are the', '&lt;/TABLE&gt;')
++        if tmp_page == '':
++            self.page = gutils.trim(self.page, '(Displaying', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;')
++        else:
++            self.page = tmp_page
+         self.page = self.page.decode('iso-8859-1')
+         return self.page
+ 
+     def get_searches(self):
+-        elements = string.split(self.page, '&lt;tr&gt;')
+-
+-        if len(elements):
++        elements = re.split('&lt;LI&gt;', self.page)
++        if len(elements) &lt; 2:
++            elements = string.split(self.page, '&lt;tr&gt;')
++            if len(elements):
++                for element in elements[1:]:
++                    match = self.PATTERN.findall(element)
++                    if len(match):
++                        tmp = gutils.clean(match[0][1])
++                        self.ids.append(match[0][0])
++                        self.titles.append(tmp)
++        else:
+             for element in elements[1:]:
+                 match = self.PATTERN.findall(element)
+                 if len(match):
+-                    tmp  = gutils.clean(match[0][1])
++                    tmp = gutils.clean(match[0][1])
+                     self.ids.append(match[0][0])
+                     self.titles.append(tmp)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000505.html">[Griffith-svn] r1025 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#504">[ date ]</a>
+              <a href="thread.html#504">[ thread ]</a>
+              <a href="subject.html#504">[ subject ]</a>
+              <a href="author.html#504">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

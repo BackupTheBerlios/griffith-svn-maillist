@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1166 - in trunk: . debian lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1166%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200902122238.n1CMckWo010502%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000637.html">
+   <LINK REL="Next"  HREF="000639.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1166 - in trunk: . debian lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1166%20-%20in%20trunk%3A%20.%20debian%20lib&In-Reply-To=%3C200902122238.n1CMckWo010502%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1166 - in trunk: . debian lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb 12 23:38:46 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000637.html">[Griffith-svn] r1165 - in trunk/lib: . plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000639.html">[Griffith-svn] r1167 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#638">[ date ]</a>
+              <a href="thread.html#638">[ thread ]</a>
+              <a href="subject.html#638">[ subject ]</a>
+              <a href="author.html#638">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-02-12 23:38:44 +0100 (Thu, 12 Feb 2009)
+New Revision: 1166
+
+Modified:
+   trunk/ChangeLog
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/lib/backup.py
+   trunk/lib/dbupgrade.py
+Log:
+* Add new default tag: &quot;Buy me&quot;
+* Add docbook2x to Build-Depend-Indep
+* Backup: skip filters table as well as posters (BLOB issue)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-02-11 22:39:13 UTC (rev 1165)
++++ trunk/ChangeLog	2009-02-12 22:38:44 UTC (rev 1166)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-02-12  Piotr O&#380;arowski
++	* Add new default tag: &quot;Buy me&quot;
++
+ 2009-02-11  Piotr O&#380;arowski
+ 	* Version changed to 0.10-beta3~svn
+ 	* Backup function fixed
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2009-02-11 22:39:13 UTC (rev 1165)
++++ trunk/debian/changelog	2009-02-12 22:38:44 UTC (rev 1166)
+@@ -1,3 +1,9 @@
++griffith (0.10~beta3~svn-1) UNRELEASED; urgency=low
++
++  * Add docbook2x to Build-Depend-Indep
++
++ -- Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;  Thu, 12 Feb 2009 12:46:50 +0100
++
+ griffith (0.10~beta2-1) experimental; urgency=low
+ 
+   * New upstream snapshot
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2009-02-11 22:39:13 UTC (rev 1165)
++++ trunk/debian/control	2009-02-12 22:38:44 UTC (rev 1166)
+@@ -3,7 +3,7 @@
+ Priority: optional
+ Maintainer: Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;
+ Build-Depends: debhelper (&gt;= 5)
+-Build-Depends-Indep: python (&gt;= 2.3.5-11), python-central (&gt;= 0.5.6)
++Build-Depends-Indep: python (&gt;= 2.3.5-11), python-central (&gt;= 0.5.6), docbook2x
+ Standards-Version: 3.8.0
+ XS-Python-Version: &gt;=2.5
+ Vcs-Svn: <A HREF="svn://svn.berlios.de/griffith/trunk/debian">svn://svn.berlios.de/griffith/trunk/debian</A>
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-02-11 22:39:13 UTC (rev 1165)
++++ trunk/lib/backup.py	2009-02-12 22:38:44 UTC (rev 1166)
+@@ -88,7 +88,7 @@
+ 
+                 # SQLite doesn't care about foreign keys much so we can just copy the data
+                 for table in db.metadata.sorted_tables:
+-                    if table.name == 'posters':
++                    if table.name in ('posters', 'filters'):
+                         continue # see below
+                     data = table.select(bind=self.db.session.bind).execute().fetchall()
+                     if data:
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-02-11 22:39:13 UTC (rev 1165)
++++ trunk/lib/dbupgrade.py	2009-02-12 22:38:44 UTC (rev 1166)
+@@ -106,6 +106,7 @@
+         db.languages_table.insert(bind=b).execute(name=_('Swedish'))
+         db.languages_table.insert(bind=b).execute(name=_('Turkish'))
+         db.tags_table.insert(bind=b).execute(name=_('Favourite'))
++        db.tags_table.insert(bind=b).execute(name=_('Buy me'))
+         return True # upgrade process finished
+     #
+     # next steps are only for existing databases with an outdated structure
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000637.html">[Griffith-svn] r1165 - in trunk/lib: . plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000639.html">[Griffith-svn] r1167 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#638">[ date ]</a>
+              <a href="thread.html#638">[ thread ]</a>
+              <a href="subject.html#638">[ subject ]</a>
+              <a href="author.html#638">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1411 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1411%20-%20trunk/lib&In-Reply-To=%3C201003281223.o2SCNUbH004677%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000874.html">
+   <LINK REL="Next"  HREF="000876.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1411 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1411%20-%20trunk/lib&In-Reply-To=%3C201003281223.o2SCNUbH004677%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1411 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar 28 14:23:30 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000874.html">[Griffith-svn] r1410 - in trunk: . lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000876.html">[Griffith-svn] r1412 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#875">[ date ]</a>
+              <a href="thread.html#875">[ thread ]</a>
+              <a href="subject.html#875">[ subject ]</a>
+              <a href="author.html#875">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-03-28 14:23:21 +0200 (Sun, 28 Mar 2010)
+New Revision: 1411
+
+Modified:
+   trunk/lib/add.py
+Log:
+rating wasn't fetched if &quot;only empty fields&quot; is selected
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-03-27 21:11:21 UTC (rev 1410)
++++ trunk/lib/add.py	2010-03-28 12:23:21 UTC (rev 1411)
+@@ -195,7 +195,7 @@
+ 
+     if w['cb_only_empty'].get_active(): # only empty fields
+         details = get_details(self)
+-        fields_to_fetch = [i for i in fields_to_fetch if details[i] is None]
++        fields_to_fetch = [i for i in fields_to_fetch if details[i] is None or details[i] == 0.0]
+     self.movie.fields_to_fetch = fields_to_fetch
+ 
+     if not self.movie.get_movie(w['window']):
+@@ -671,6 +671,7 @@
+             if not gutils.question(_('Movie with that title already exists, are you sure you want to add?'), self.widgets['add']['window']):
+                 return False
+ 
++    new_poster_md5 = None
+     if details['image']:
+         tmp_image_path = os.path.join(self.locations['temp'], &quot;poster_%s.jpg&quot; % details['image'])
+         if os.path.isfile(tmp_image_path):
+@@ -707,8 +708,8 @@
+     myiter = self.treemodel.insert_after(None, insert_after)
+ 
+     image_path = ''
+-    if movie.poster_md5:
+-        image_path = gutils.get_image_fname(movie.poster_md5, self.db, 's')
++    if new_poster_md5:
++        image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
+     if not image_path or not os.path.isfile(image_path):
+         image_path = gutils.get_defaultthumbnail_fname(self)
+     handler = self.Image.set_from_file(image_path)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000874.html">[Griffith-svn] r1410 - in trunk: . lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000876.html">[Griffith-svn] r1412 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#875">[ date ]</a>
+              <a href="thread.html#875">[ thread ]</a>
+              <a href="subject.html#875">[ subject ]</a>
+              <a href="author.html#875">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

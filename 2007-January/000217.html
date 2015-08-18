@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r694 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r694%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701082341.l08NfWBP024043%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000216.html">
+   <LINK REL="Next"  HREF="000218.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r694 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r694%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701082341.l08NfWBP024043%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r694 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 00:41:32 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000216.html">[Griffith-svn] r693 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000218.html">[Griffith-svn] r695 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#217">[ date ]</a>
+              <a href="thread.html#217">[ thread ]</a>
+              <a href="subject.html#217">[ subject ]</a>
+              <a href="author.html#217">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-09 00:41:31 +0100 (Tue, 09 Jan 2007)
+New Revision: 694
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+Log:
+Don't save changes in old database while upgrading
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-08 16:28:37 UTC (rev 693)
++++ trunk/ChangeLog	2007-01-08 23:41:31 UTC (rev 694)
+@@ -6,6 +6,7 @@
+ 
+ 2007-01-08  Piotr O&#380;arowski
+ 	* Ignore bad entries in loans table
++	* Don't save changes in old database while upgrading
+ 
+ 2007-01-08  Vasco Nunes
+ 	* Italian translation updated (Thanks to Diego)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-01-08 16:28:37 UTC (rev 693)
++++ trunk/lib/dbupgrade.py	2007-01-08 23:41:31 UTC (rev 694)
+@@ -145,8 +145,7 @@
+ 		os.rename(destination_file, &quot;%s_%s&quot; % (destination_file, i))
+ 
+ 	try:
+-		#old_db = sqlite.connect(source_file,autocommit=0)
+-		old_db = sqlite.connect(source_file, isolation_level=None)
++		old_db = sqlite.connect(source_file)
+ 	except DatabaseError, e:
+ 		if str(e) == 'file is encrypted or is not a database':
+ 			print 'Your database is most probably in wrong SQLite format, please convert it to SQLite3:'
+@@ -178,13 +177,14 @@
+ 	old_cursor.execute(&quot;UPDATE movies SET media = '11' WHERE media = 'VHS';&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET media = '12' WHERE media = 'BETACAM';&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET year=NULL WHERE year&lt;1900 or year&gt;2007&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET rating=10 WHERE rating&gt;10&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET rating=0 WHERE rating&lt;0&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET rating=10 WHERE rating&gt;10&quot;)	# FIXME?
++	old_cursor.execute(&quot;UPDATE movies SET rating=0 WHERE rating&lt;0&quot;)		# FIXME?
+ 	old_cursor.execute(&quot;UPDATE movies SET volume_id=0 WHERE volume_id&lt;1&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET collection_id=0 WHERE collection_id&lt;1&quot;)
+ 	old_cursor.execute(&quot;UPDATE loans SET return_date=NULL WHERE return_date=''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE date='' OR date ISNULL&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id=0&quot;)
++	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id NOT IN (SELECT id FROM movies)&quot;)
+ 	#old_cursor.commit()
+ 	old_cursor.execute(&quot;UPDATE movies SET region=NULL WHERE region='' OR region='2' OR region&lt;0 OR region&gt;8&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET condition=NULL WHERE condition='' OR condition='3'&quot;)
+@@ -335,10 +335,7 @@
+ 	# loans
+ 	old_cursor.execute(&quot;SELECT person_id, movie_id, volume_id, collection_id, date, return_date FROM loans;&quot;)
+ 	for i in old_cursor.fetchall():
+-		try:
+-			m = new_db.Movie.get_by(movie_id=movie_mapper[i[1]])
+-		except:
+-			continue
++		m = new_db.Movie.get_by(movie_id=movie_mapper[i[1]])
+ 		o = new_db.Loan()
+ 		o.person_id = person_mapper[i[0]]
+ 		o.volume_id = volume_mapper[i[2]]
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000216.html">[Griffith-svn] r693 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000218.html">[Griffith-svn] r695 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#217">[ date ]</a>
+              <a href="thread.html#217">[ thread ]</a>
+              <a href="subject.html#217">[ subject ]</a>
+              <a href="author.html#217">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

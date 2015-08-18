@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1180 - in branches/0.9.x/lib: . sqlalchemy/databases
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1180%20-%20in%20branches/0.9.x/lib%3A%20.%20sqlalchemy/databases&In-Reply-To=%3C200904020947.n329luqO009310%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000653.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1180 - in branches/0.9.x/lib: . sqlalchemy/databases</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1180%20-%20in%20branches/0.9.x/lib%3A%20.%20sqlalchemy/databases&In-Reply-To=%3C200904020947.n329luqO009310%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1180 - in branches/0.9.x/lib: . sqlalchemy/databases">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr  2 11:47:56 CEST 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000653.html">[Griffith-svn] r1181 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#652">[ date ]</a>
+              <a href="thread.html#652">[ thread ]</a>
+              <a href="subject.html#652">[ subject ]</a>
+              <a href="author.html#652">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-02 11:47:45 +0200 (Thu, 02 Apr 2009)
+New Revision: 1180
+
+Modified:
+   branches/0.9.x/lib/sql.py
+   branches/0.9.x/lib/sqlalchemy/databases/sqlite.py
+Log:
+special fix for griffith 0.9.x and pysqlite 2.5.x because of the following error message
+&quot;You must not use 8-bit bytestrings unless you usea text_factory that can interpret 8-bit bytestrings
+(like text_factory = str). It is highly recommended that you instead just switch your application to Unicode strings ...&quot;
+backport of method bind_processor from sqlalchemy 0.4.x doesn't work
+possible fix for the following bug report:
+[#290979] can't save entry where cast member has extended ascii 
+
+Modified: branches/0.9.x/lib/sql.py
+===================================================================
+--- branches/0.9.x/lib/sql.py	2009-03-29 20:02:21 UTC (rev 1179)
++++ branches/0.9.x/lib/sql.py	2009-04-02 09:47:45 UTC (rev 1180)
+@@ -340,12 +340,16 @@
+ 			config.set('type', 'sqlite', section='database')
+ 			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+ 		try:
+-			self.metadata = BoundMetaData(url)
++			if config.get('type', section='database') == 'sqlite':
++				# use explicit convert_unicode because of changes since pysqlite 2.5
++				self.metadata = BoundMetaData(url, convert_unicode = True)
++			else:
++				self.metadata = BoundMetaData(url)
+ 		except Exception, e:	# InvalidRequestError, ImportError
+ 			debug.show(&quot;BoundMetaData: %s&quot; % e)
+ 			config.set('type', 'sqlite', section='database')
+ 			gutils.warning(self, &quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+-			self.metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db'))
++			self.metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db'), convert_unicode = True)
+ 
+ 		# try to establish a db connection
+ 		try:
+@@ -355,7 +359,7 @@
+ 			gutils.error(self, _('Database connection failed.'))
+ 			config.set('type', 'sqlite', section='database')
+ 			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+-			self.metadata = BoundMetaData(url)
++			self.metadata = BoundMetaData(url, convert_unicode = True)
+ 			self.metadata.engine.connect()
+ 		#}}}
+ 
+
+Modified: branches/0.9.x/lib/sqlalchemy/databases/sqlite.py
+===================================================================
+--- branches/0.9.x/lib/sqlalchemy/databases/sqlite.py	2009-03-29 20:02:21 UTC (rev 1179)
++++ branches/0.9.x/lib/sqlalchemy/databases/sqlite.py	2009-04-02 09:47:45 UTC (rev 1180)
+@@ -84,32 +84,50 @@
+ 
+ 
+ class SLUnicodeMixin(object):
+-   def bind_processor(self, dialect):
+-       if self.convert_unicode or dialect.convert_unicode:
+-           if self.assert_unicode is None:
++    def bind_processor(self, dialect):
++        if self.convert_unicode or dialect.convert_unicode:
++            if self.assert_unicode is None:
+                assert_unicode = dialect.assert_unicode
+-           else:
+-               assert_unicode = self.assert_unicode
++            else:
++                assert_unicode = self.assert_unicode
++                 
++            if not assert_unicode:
++                return None 
+                 
+-           if not assert_unicode:
+-               return None 
+-                
+-           def process(value):
+-               if not isinstance(value, (unicode, NoneType)):
+-                   if assert_unicode == 'warn':
+-                       util.warn(&quot;Unicode type received non-unicode bind &quot; 
++            def process(value):
++                if not isinstance(value, (unicode, NoneType)):
++                    if assert_unicode == 'warn':
++                        util.warn(&quot;Unicode type received non-unicode bind &quot;
+                                  &quot;param value %r&quot; % value)
+-                       return value 
+-                   else:
+-                       raise exc.InvalidRequestError(&quot;Unicode type received non-unicode bind param value %r&quot; % value)
+-               else:
+-                   return value
+-           return process
+-       else:
+-           return None 
++                        return value 
++                    else:
++                        raise exc.InvalidRequestError(&quot;Unicode type received non-unicode bind param value %r&quot; % value)
++                else:
++                    return value
++            return process
++        else:
++            return None
+ 
+-   def result_processor(self, dialect):
+-       return None 
++    def result_processor(self, dialect):
++       return None
++
++    # special fix for griffith 0.9.x and pysqlite 2.5.x because of the following error message
++    # You must not use 8-bit bytestrings unless you usea text_factory that can interpret 8-bit bytestrings
++    # (like text_factory = str). It is highly recommended that you instead just switch your application to Unicode strings
++    #
++    # backport of method bind_processor from sqlalchemy 0.4.x doesn't work
++    def convert_result_value(self, value, dialect):
++        if (self.convert_unicode or dialect.convert_unicode) and isinstance(value, unicode): 
++            return value.encode('utf8') 
++        else:
++            return value
++
++    def convert_bind_param(self, value, dialect):
++        if (self.convert_unicode or dialect.convert_unicode) and isinstance(value, basestring): 
++            # pass string values as unicode
++            return value.decode('utf8') 
++        else:
++            return value
+     
+ class SLText(SLUnicodeMixin, sqltypes.TEXT):
+ #class SLText(sqltypes.TEXT):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000653.html">[Griffith-svn] r1181 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#652">[ date ]</a>
+              <a href="thread.html#652">[ thread ]</a>
+              <a href="subject.html#652">[ subject ]</a>
+              <a href="author.html#652">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

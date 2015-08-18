@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r851 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r851%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200709021803.l82I3e3M019648%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000358.html">
+   <LINK REL="Next"  HREF="000359.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r851 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r851%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200709021803.l82I3e3M019648%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r851 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep  2 20:03:40 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000358.html">[Griffith-svn] r850 - in trunk: . debian
+</A></li>
+        <LI>Next message: <A HREF="000359.html">[Griffith-svn] r852 - in trunk: . export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#360">[ date ]</a>
+              <a href="thread.html#360">[ thread ]</a>
+              <a href="subject.html#360">[ subject ]</a>
+              <a href="author.html#360">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-09-02 20:03:02 +0200 (Sun, 02 Sep 2007)
+New Revision: 851
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/config.py
+Log:
+added &quot;auto-fixing&quot; of config file values for defaults section
+(old config files can have the value None for the key &quot;media&quot; and &quot;vcodec&quot; which causes errors when opening a movie for editing)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-09-02 09:26:38 UTC (rev 850)
++++ trunk/ChangeLog	2007-09-02 18:03:02 UTC (rev 851)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-09-02  Michael Jahn
++	* added &quot;auto-fixing&quot; of config file values for defaults section
++
+ 2007-09-01  Piotr O&#380;arowski
+ 	* Respect medium and video codec's default value in add window (closes: #11864)
+ 	* griffith.glade file converted to glade3 format
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2007-09-02 09:26:38 UTC (rev 850)
++++ trunk/lib/config.py	2007-09-02 18:03:02 UTC (rev 851)
+@@ -89,6 +89,42 @@
+ 			except:
+ 				print 'Cannot parse config file'
+ 				return False
++			# check values for number datatypes
++			# if current value could not be converted to number datatype
++			# the default is set instead
++			# some older config files need that correction but also in
++			# newer files is it possible, that the user inserts non-convertable
++			# values for number fields. The special problem is the string None.
++			tmp_value = self.get('color', 0, 'defaults')
++			try:
++				int(tmp_value)
++			except:
++				self.set('color', 0, 'defaults')
++			tmp_value = self.get('condition', 0, 'defaults')
++			try:
++				int(tmp_value)
++			except:
++				self.set('condition', 0, 'defaults')
++			tmp_value = self.get('layers', 0, 'defaults')
++			try:
++				int(tmp_value)
++			except:
++				self.set('layers', 0, 'defaults')
++			tmp_value = self.get('media', 0, 'defaults')
++			try:
++				int(tmp_value)
++			except:
++				self.set('media', 0, 'defaults')
++			tmp_value = self.get('region', 0, 'defaults')
++			try:
++				int(tmp_value)
++			except:
++				self.set('region', 0, 'defaults')
++			tmp_value = self.get('vcodec', 0, 'defaults')
++			try:
++				int(tmp_value)
++			except:
++				self.set('vcodec', 0, 'defaults')
+ 			return True
+ 		else:
+ 			return False
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000358.html">[Griffith-svn] r850 - in trunk: . debian
+</A></li>
+	<LI>Next message: <A HREF="000359.html">[Griffith-svn] r852 - in trunk: . export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#360">[ date ]</a>
+              <a href="thread.html#360">[ thread ]</a>
+              <a href="subject.html#360">[ subject ]</a>
+              <a href="author.html#360">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,425 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1616 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2012-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1616%20-%20trunk/lib&In-Reply-To=%3C20120123210754.B7C6F4824F3%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001071.html">
+   <LINK REL="Next"  HREF="001073.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1616 - trunk/lib</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1616%20-%20trunk/lib&In-Reply-To=%3C20120123210754.B7C6F4824F3%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1616 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 23 22:07:54 CET 2012</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001071.html">[Griffith-svn] r1615 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001073.html">[Griffith-svn] r1617 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1072">[ date ]</a>
+              <a href="thread.html#1072">[ thread ]</a>
+              <a href="subject.html#1072">[ subject ]</a>
+              <a href="author.html#1072">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2012-01-23 22:07:53 +0100 (Mon, 23 Jan 2012)
+New Revision: 1616
+
+Modified:
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+Log:
+cosmetics (PEP8 related)
+
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2012-01-10 20:58:15 UTC (rev 1615)
++++ trunk/lib/initialize.py	2012-01-23 21:07:53 UTC (rev 1616)
+@@ -50,14 +50,11 @@
+     if defaultEnc is None:
+         defaultEnc = 'UTF-8'
+     locations = {}
+-    locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0])) # deprecated
++    locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0]))  # deprecated
+     locations['lib'] = os.path.dirname(__file__)
+     locations['home'] = home_dir
+ 
+-    if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+-        import winshell
+-        from win32com.shell import shellcon, shell
+-
++    if os.name == 'nt' or os.name.startswith('win'):  # win32, win64
+         locations['movie_plugins'] = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+         locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+         locations['images'] = &quot;%s\\images&quot; % locations['exec']
+@@ -165,6 +162,7 @@
+         self.widgets['extensions']['toolbar_hb'].show()
+         self.widgets['menu']['ext_toolbar'].set_active(True)
+ 
++
+ def treeview(self):
+     import main_treeview
+     # set up the treeview to do multiple selection
+@@ -174,7 +172,7 @@
+     tree.set_headers_visible(True)
+     tree.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+     self.widgets['treeview'].get_selection().connect(&quot;changed&quot;, main_treeview.on_tree_selection, self)
+-    
++
+     # number column
+     renderer = gtk.CellRendererText()
+     self.number_column = gtk.TreeViewColumn(_('No.'), renderer, text=0)
+@@ -280,6 +278,7 @@
+     self.updated_column.set_alignment(0.5)
+     self.updated_column.set_reorderable(True)
+     self.widgets['treeview'].append_column(self.updated_column)
++
+     # reflect saved column order and column sizes
+     columnorder = self.config.get('columnorder', None, section='mainlist')
+     if columnorder:
+@@ -319,7 +318,7 @@
+     self.total = self.db.session.query(db.Movie).count()
+     self.widgets['treeview'].set_search_equal_func(search_func_treeview)
+     self.widgets['treeview'].show()
+-    
++
+     # adding some completion fields - TODO: move it to initialize
+     self.completion = gtk.EntryCompletion()
+     self.widgets['add']['o_title'].set_completion(self.completion)
+@@ -331,14 +330,15 @@
+     self.completion_t.set_model(self.treemodel)
+     self.completion_t.set_text_column(4)
+ 
++
+ def search_func_treeview(model, column, key, iter):
+-    return not (str(model.get_value(iter, 0)).startswith(key) or 
+-        str(model.get_value(iter, 2)).lower().startswith(key.lower()) or 
++    return not (str(model.get_value(iter, 0)).startswith(key) or
++        str(model.get_value(iter, 2)).lower().startswith(key.lower()) or
+         str(model.get_value(iter, 3)).lower().startswith(key.lower()))
+ 
+ 
+ def loans_treeview(self):
+-    self.loans_treemodel = gtk.TreeStore(str, str, str) # move to self.widgets
++    self.loans_treemodel = gtk.TreeStore(str, str, str)  # move to self.widgets
+     self.widgets['movie']['loan_history'].set_model(self.loans_treemodel)
+     self.widgets['movie']['loan_history'].set_headers_visible(True)
+     # loan date
+@@ -540,7 +540,7 @@
+     for i in fields_to_import:
+         j = j + 1
+         w['fields'][i] = gtk.CheckButton(self.field_names[i])
+-        w['fields'][i].set_active(True) # TODO: get from config
++        w['fields'][i].set_active(True)  # TODO: get from config
+         if j &lt;= k:
+             w['box_import_1'].add(w['fields'][i])
+         elif j &lt;= 2 * k:
+@@ -583,7 +583,6 @@
+ def extension_preferences(self, module, enabled):
+     # preferences window
+     p_vbox = self.widgets['extensions']['preferences_vbox']
+-
+     configwidgets = {}
+ 
+     label = &quot;%s v%s &lt;i&gt;(%s &lt;%s&gt;)&lt;/i&gt;&quot; % (module.name, module.version, module.author, module.email)
+@@ -665,7 +664,7 @@
+     if hasattr(self, 'extensions'):
+         for ext in self.extensions:
+             ext.clear()
+-    self.extensions = [] # deletes previous instances
++    self.extensions = []  # deletes previous instances
+ 
+     for ext_name in plugins.extensions.by_name:
+         ext_module = plugins.extensions.by_name[ext_name]
+@@ -730,7 +729,7 @@
+     pos_to_activate = 0
+     selected_criteria = self.config.get('criteria', None, section='mainlist')
+     self.search_criteria_sorted = sorted((self.field_names[criteria], criteria) for criteria in self.search_criteria)
+-    self.search_criteria_sorted.insert( 0, ( _('Any'), 'any' ) ) 
++    self.search_criteria_sorted.insert(0, (_('Any'), 'any'))
+     for (criterianame, criteria) in self.search_criteria_sorted:
+         self.widgets['filter']['criteria'].insert_text(i, criterianame)
+         if selected_criteria == criterianame:
+@@ -745,12 +744,12 @@
+             self.widgets['preferences']['sortby'].insert_text(i, _('Last added'))
+         i += 1
+     self.widgets['preferences']['sortby'].set_wrap_width(3)
+-    self.widgets['preferences']['sortby'].set_active(0) # Number
++    self.widgets['preferences']['sortby'].set_active(0)  # Number
+ 
+ 
+ def dictionaries(self):
+     &quot;&quot;&quot;initializes data filled dynamically by users&quot;&quot;&quot;
+-    self.am_tags = {} # dictionary for tag CheckBoxes
++    self.am_tags = {}  # dictionary for tag CheckBoxes
+     update_volume_combo_ids(self)
+     update_collection_combo_ids(self)
+     fill_volumes_combo(self)
+@@ -765,7 +764,7 @@
+     vcodec_combos(self)
+     media_combos(self)
+     create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+-    self.sort_criteria = [ # &quot;[]&quot; because of index()
++    self.sort_criteria = [  # &quot;[]&quot; because of index()
+         'number', 'o_title', 'title', 'director', 'year', 'runtime', 'country',
+         'genre', 'studio', 'media_num', 'rating', 'classification', 'collection_id',
+         'volume_id', 'cond', 'layers', 'region', 'movie_id']
+@@ -921,7 +920,7 @@
+ 
+ def fill_volumes_combo(self, default=0):
+     _tmp = self.initialized
+-    self.initialized = False # don't refresh main treeview
++    self.initialized = False  # don't refresh main treeview
+     self.widgets['add']['volume'].get_model().clear()
+     for i in self.volume_combo_ids:
+         vol_id = self.volume_combo_ids[i]
+@@ -940,7 +939,7 @@
+ 
+ def fill_collections_combo(self, default=0):
+     _tmp = self.initialized
+-    self.initialized = False # don't refresh main treeview
++    self.initialized = False  # don't refresh main treeview
+     self.widgets['add']['collection'].get_model().clear()
+     self.widgets['filter']['collection'].get_model().clear()
+     for i in self.collection_combo_ids:
+@@ -964,9 +963,9 @@
+ 
+ def fill_advfilter_combo(self):
+     _tmp = self.initialized
+-    self.initialized = False # don't refresh main treeview
++    self.initialized = False  # don't refresh main treeview
+     self.widgets['filter']['advfilter'].get_model().clear()
+-    self.widgets['filter']['advfilter'].insert_text(0, '') # empty one
++    self.widgets['filter']['advfilter'].insert_text(0, '')  # empty one
+     for i, item in enumerate(self.db.session.query(db.Filter.name).order_by(db.Filter.name).all()):
+         # add some white spaces to prevent scrollbar hides parts of the names
+         self.widgets['filter']['advfilter'].insert_text(i + 1, item.name + '   ')
+@@ -977,7 +976,7 @@
+ 
+ def fill_preferences_tags_combo(self):
+     _tmp = self.initialized
+-    self.initialized = False # don't refresh main treeview
++    self.initialized = False  # don't refresh main treeview
+     self.widgets['preferences']['tag_name'].get_model().clear()
+     self.tags_ids = {}
+     for i, tag in enumerate(self.db.session.query(db.Tag.name, db.Tag.tag_id).all()):
+@@ -990,7 +989,7 @@
+ 
+ def fill_resolutions_combo(self, default=0):
+     _tmp = self.initialized
+-    self.initialized = False # don't refresh main treeview
++    self.initialized = False  # don't refresh main treeview
+     self.widgets['add']['resolution'].get_model().clear()
+     #resolutions = [names[0] for names in db._movie.res_aliases.values()]
+     resolutions = [names[0] for (res, names) in db._movie.res_aliases.iteritems()]
+@@ -1086,7 +1085,7 @@
+     self.widgets['preferences']['media'].show_all()
+     if self.config.has_key('media', section='defaults'):
+         pos = gutils.findKey(self.config.get('media', section='defaults'), self.media_ids)
+-        if pos  is not None:
++        if pos is not None:
+             self.widgets['preferences']['media'].set_active(int(pos))
+         else:
+             self.widgets['preferences']['media'].set_active(0)
+@@ -1138,7 +1137,7 @@
+ 
+ 
+ def remove_hbox(self, widget, tab):
+-    number = len(widget.get_children())-1    # last box number
++    number = len(widget.get_children()) - 1  # last box number
+     try:
+         tab.pop()
+         widget.remove(widget.get_children().pop())
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2012-01-10 20:58:15 UTC (rev 1615)
++++ trunk/lib/main_treeview.py	2012-01-23 21:07:53 UTC (rev 1616)
+@@ -24,7 +24,6 @@
+ import logging
+ import os
+ import gtk
+-from sqlalchemy import select, desc
+ from sqlalchemy.sql.expression import Select
+ import db
+ import gutils
+@@ -32,12 +31,13 @@
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ def on_tree_selection(tree_selection, self):
+     counts = tree_selection.count_selected_rows()
+     treeview_selection_on_event(self, self.widgets['treeview'])
+     treemodel, selected = tree_selection.get_selected_rows()
+     self.selected_iter = [treemodel.get_iter(path) for path in selected]
+-    
++
+     if counts == 1:
+         # TODO: rewrite me
+         self.widgets['menu']['clone'].set_sensitive(True)
+@@ -62,14 +62,17 @@
+         self.widgets['popups']['print_cover'].set_sensitive(False)
+     treeview_clicked(self)
+ 
++
+ def foreach_treeview_selected(model, path, iter, selected):
+     selected.append(model.get_value(iter, 0))
+ 
+-def treeview_selection_on_event(self, treeview, iter = False):
++
++def treeview_selection_on_event(self, treeview, iter=False):
+     self.selected = []
+     treeview.get_selection().selected_foreach(foreach_treeview_selected, self.selected)
+     #return selected
+ 
++
+ def treeview_clicked(self):
+     if self.initialized is False:
+         return False
+@@ -89,7 +92,8 @@
+     else:
+         return False
+ 
+-def set_details(self, item=None):#{{{
++
++def set_details(self, item=None):  # {{{
+     if item is None:
+         item = {}
+     if 'movie_id' in item and item['movie_id']:
+@@ -127,7 +131,7 @@
+             w['resolution'].set_text(item['resolution'])
+         elif 'height' in item and item['height'] and 'width' in item and item['width']:
+             w['resolution'].set_text(&quot;%dx%d&quot; % (item['width'], item['height']))
+-        else: # fallback to 'resolution'
++        else:  # fallback to 'resolution'
+             w['resolution'].set_text(item['resolution'])
+     else:
+         w['resolution'].set_text('')
+@@ -172,10 +176,10 @@
+         else:
+             log.info(&quot;Wrong value in 'region' field (movie_id=%s, region=%s)&quot; % (item['movie_id'], item['region']))
+             w['region'].set_text('')
+-            self.widgets['tooltips'].set_tip(w['region'], self._regions[0]) # N/A
++            self.widgets['tooltips'].set_tip(w['region'], self._regions[0])  # N/A
+     else:
+         w['region'].set_text('')
+-        self.widgets['tooltips'].set_tip(w['region'], self._regions[0]) # N/A
++        self.widgets['tooltips'].set_tip(w['region'], self._regions[0])  # N/A
+     if 'layers' in item and item['layers']:
+         if str(item['layers']) in [str(i) for i in range(len(self._layers))]:
+             w['layers'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._layers[item['layers']])
+@@ -303,7 +307,7 @@
+             self.loan_date = str(item.loan_details.date)
+             w['loan_info'].set_use_markup(False)
+             w['loan_info'].set_label(_(&quot;This movie has been loaned to %s on %s&quot;) % (self.person_name, self.loan_date[:10]))
+-    if 'loaned' in item and not item['loaned']: # &quot;loaned&quot; status can be changed above, so don't use &quot;else:&quot; in this line
++    if 'loaned' in item and not item['loaned']:  # &quot;loaned&quot; status can be changed above, so don't use &quot;else:&quot; in this line
+         self.widgets['popups']['loan'].set_sensitive(True)
+         self.widgets['popups']['email'].set_sensitive(False)
+         self.widgets['popups']['return'].set_sensitive(False)
+@@ -358,7 +362,7 @@
+         i.destroy()
+     if 'languages' in item and len(item['languages']) &gt; 0:
+         for i in item['languages']:
+-            if i.type == 3: # subtitles
++            if i.type == 3:  # subtitles
+                 if i.subformat:
+                     tmp = &quot;%s - %s&quot; % (i.language.name, i.subformat.name)
+                 else:
+@@ -390,21 +394,21 @@
+         tmp = ''
+         for tag in item['tags']:
+             tmp += &quot;%s, &quot; % tag.name
+-        tmp = tmp[:-2] # cut last comma
++        tmp = tmp[:-2]  # cut last comma
+         w['tags'].set_text(tmp)
+     #}}}
+ 
+ 
+-def populate(self, movies=None, where=None, qf=True):#{{{
+-    if self.initialized is False: # dont try to fill movie list if Griffith is not initialized yet
++def populate(self, movies=None, where=None, qf=True):  # {{{
++    if self.initialized is False:  # dont try to fill movie list if Griffith is not initialized yet
+         return False
+ 
+-    if qf and movies is None or isinstance(movies, Select): # if &quot;.execute().fetchall()&quot; not invoked on movies yet
+-        if not where: # due to possible 'seen', 'loaned', 'collection_id' in where
++    if qf and movies is None or isinstance(movies, Select):  # if &quot;.execute().fetchall()&quot; not invoked on movies yet
++        if not where:  # due to possible 'seen', 'loaned', 'collection_id' in where
+             import advfilter
+ 
+             # saved in advfilter
+-            name = self.widgets['filter']['advfilter'].get_active_text()[:-3].decode('utf-8') # :-3 due to additional '   ' in the name
++            name = self.widgets['filter']['advfilter'].get_active_text()[:-3].decode('utf-8')  # :-3 due to additional '   ' in the name
+             if name:
+                 cond = self.db.session.query(db.Filter).filter_by(name=name).first()
+                 if not cond:
+@@ -529,13 +533,15 @@
+     self.count_statusbar()
+ #}}}
+ 
+-def addmovie(self, movie): #{{{
++
++def addmovie(self, movie):  # {{{
+     myiter = self.treemodel.append(None)
+     setmovie(self, movie, myiter)
+     return myiter
+ #}}}
+ 
+-def setmovie(self, movie, iter, treemodel = None): #{{{
++
++def setmovie(self, movie, iter, treemodel=None):  # {{{
+     if not treemodel:
+         treemodel = self.treemodel
+ 
+@@ -573,7 +579,8 @@
+     return iter
+ #}}}
+ 
+-def select(self, iter, ensurevisible = True): #{{{
++
++def select(self, iter, ensurevisible=True):  # {{{
+     if iter:
+         self.widgets['treeview'].get_selection().select_iter(iter)
+         if ensurevisible:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001071.html">[Griffith-svn] r1615 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001073.html">[Griffith-svn] r1617 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1072">[ date ]</a>
+              <a href="thread.html#1072">[ thread ]</a>
+              <a href="subject.html#1072">[ subject ]</a>
+              <a href="author.html#1072">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

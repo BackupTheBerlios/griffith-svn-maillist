@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r754 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r754%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200704151607.l3FG79lV020086%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000272.html">
+   <LINK REL="Next"  HREF="000274.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r754 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r754%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200704151607.l3FG79lV020086%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r754 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 15 18:07:09 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000272.html">[Griffith-svn] r753 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000274.html">[Griffith-svn] r755 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#273">[ date ]</a>
+              <a href="thread.html#273">[ thread ]</a>
+              <a href="subject.html#273">[ subject ]</a>
+              <a href="author.html#273">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-04-15 18:07:08 +0200 (Sun, 15 Apr 2007)
+New Revision: 754
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDB movie plugin updated to version 1.2
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-11 21:10:10 UTC (rev 753)
++++ trunk/ChangeLog	2007-04-15 16:07:08 UTC (rev 754)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-04-15  Piotr O&#380;arowski
++	* IMDB movie plugin updated to version 1.2
++
+ 2007-04-11  Piotr O&#380;arowski
+ 	* Fixed medium_id and vcodec_id column type in movies table
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-04-11 21:10:10 UTC (rev 753)
++++ trunk/NEWS	2007-04-15 16:07:08 UTC (rev 754)
+@@ -1,6 +1,6 @@
+ Griffith 0.9.3 - UNRELEASED
+ ===========================
+-* Updated movie plugins: Filmweb
++* Updated movie plugins: Filmweb, IMDb
+ * New configuration file format (human readable)
+ * New movie plugins: FilmDb, Zelluloid, IMDb-de
+ * Added Dutch translation (thanks to Marcel Dijkstra)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-11 21:10:10 UTC (rev 753)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-15 16:07:08 UTC (rev 754)
+@@ -22,9 +22,8 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
+-import gutils
+-import movie
+-import string
++import gutils, movie
++import string, re
+ 
+ plugin_name		= 'IMDb'
+ plugin_description	= 'Internet Movie Database'
+@@ -32,7 +31,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O&#380;arowski'
+ plugin_author_email	= '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+-plugin_version		= '1.1.1'
++plugin_version		= '1.2'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -54,8 +53,11 @@
+ 		self.title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,'&lt;h5&gt;Directed by&lt;/h5&gt;', '&lt;br/&gt;\n&lt;br/&gt;')
+-		self.director = self.director.replace('&lt;br/&gt;', ', ')
++		pattern = re.compile('&lt;h5&gt;Directors?:&lt;/h5&gt;[\n\s\r]*(.*?)(?:&lt;br/&gt;)?(?:&lt;a[^&gt;]+&gt;more&lt;/a&gt;)?\n&lt;/div')
++		result = pattern.search(self.page)
++		if result:
++			self.director = result.groups()[0]
++			self.director = self.director.replace('&lt;br/&gt;', ', ')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, '&lt;h5&gt;Plot Outline:&lt;/h5&gt;', '&lt;/div&gt;')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000272.html">[Griffith-svn] r753 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000274.html">[Griffith-svn] r755 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#273">[ date ]</a>
+              <a href="thread.html#273">[ thread ]</a>
+              <a href="subject.html#273">[ subject ]</a>
+              <a href="author.html#273">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

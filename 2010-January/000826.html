@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1359 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1359%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C201001032038.o03KcqVh029352%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000825.html">
+   <LINK REL="Next"  HREF="000827.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1359 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1359%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C201001032038.o03KcqVh029352%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1359 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  3 21:38:52 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000825.html">[Griffith-svn] r1358 - trunk/lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000827.html">[Griffith-svn] r1360 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#826">[ date ]</a>
+              <a href="thread.html#826">[ thread ]</a>
+              <a href="subject.html#826">[ subject ]</a>
+              <a href="author.html#826">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-03 21:38:41 +0100 (Sun, 03 Jan 2010)
+New Revision: 1359
+
+Modified:
+   trunk/griffith
+   trunk/lib/add.py
+Log:
+moved adding of new volumes, collections, medium and vcodec to the add modul because of re-using the functions within the import process
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-01-03 20:35:05 UTC (rev 1358)
++++ trunk/griffith	2010-01-03 20:38:41 UTC (rev 1359)
+@@ -421,32 +421,12 @@
+             self._selected_volume = self.volume_combo_ids[widget.get_active()]
+ 
+     def add_volume(self, widget):
+-        session = self.db.Session()
+         name = self.widgets['add']['volume'].get_active_text().decode('utf-8')
+-        vol = db.Volume(name=name)
+-        session.add(vol)
+-        try:
+-            session.commit()
+-        except Exception, e:
+-            session.rollback()
+-            log.warn(&quot;Cannot add volume: %s&quot;, e.message)
+-        else:
+-            initialize.update_volume_combo_ids(self)
+-            initialize.fill_volumes_combo(self, id)
++        add.add_volume(self, name)
+ 
+     def add_collection(self, widget):
+-        session = self.db.Session()
+         name = self.widgets['add']['collection'].get_active_text().decode('utf-8')
+-        col = db.Collection(name=name)
+-        session.add(col)
+-        try:
+-            session.commit()
+-        except Exception, e:
+-            session.rollback()
+-            log.warn(&quot;Cannot add collection: %s&quot;, e.message)
+-        else:
+-            initialize.update_collection_combo_ids(self)
+-            initialize.fill_collections_combo(self, id)
++        add.add_collection(self, name)
+ 
+     def remove_volume(self, widget):
+         session = self.db.Session()
+@@ -892,17 +872,8 @@
+ 
+     # media ------------------------------------------------------------{{{
+     def on_medium_add_clicked(self, widget):
+-        session = self.db.Session()
+-        medium = db.Medium()
+-        medium.name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
+-        session.add(medium)
+-        try:
+-            session.commit()
+-        except Exception, e:
+-            session.rollback()
+-            log.warn(&quot;Cannot add medium entry: %s&quot;, e.message)
+-        else:
+-            initialize.media_combos(self)
++        name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
++        add.add_medium(self, name)
+ 
+     def on_medium_remove_clicked(self, widget):
+         session = self.db.Session()
+@@ -950,17 +921,8 @@
+ 
+     # vcodecs -------------------------------------------------------------{{{
+     def on_vcodec_add_clicked(self, widget):
+-        session = self.db.Session()
+-        vcodec = db.VCodec()
+-        vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
+-        session.add(vcodec)
+-        try:
+-            session.commit()
+-        except Exception, e:
+-            session.rollback()
+-            log.warn(&quot;Cannot add video codec entry: %s&quot;, e.message)
+-        else:
+-            initialize.vcodec_combos(self)
++        name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
++        add.add_vcodec(self, name)
+ 
+     def on_vcodec_remove_clicked(self, widget):
+         session = self.db.Session()
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-01-03 20:35:05 UTC (rev 1358)
++++ trunk/lib/add.py	2010-01-03 20:38:41 UTC (rev 1359)
+@@ -31,6 +31,7 @@
+ import quick_filter
+ import db
+ import gutils
++import initialize
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -869,3 +870,61 @@
+         log.error(&quot;Unexpected problem: %s&quot;, e)
+         return False
+     return True
++
++
++def add_medium(self, name):
++    session = self.db.Session()
++    medium = db.Medium(name = name)
++    session.add(medium)
++    try:
++        session.commit()
++    except Exception, e:
++        session.rollback()
++        log.warn(&quot;Cannot add medium entry: %s&quot;, e.message)
++    else:
++        initialize.media_combos(self)
++    return medium.medium_id
++
++
++def add_vcodec(self, name):
++    session = self.db.Session()
++    vcodec = db.VCodec(name = name)
++    session.add(vcodec)
++    try:
++        session.commit()
++    except Exception, e:
++        session.rollback()
++        log.warn(&quot;Cannot add video codec entry: %s&quot;, e.message)
++    else:
++        initialize.vcodec_combos(self)
++    return vcodec.vcodec_id
++
++
++def add_volume(self, name):
++    session = self.db.Session()
++    vol = db.Volume(name = name)
++    session.add(vol)
++    try:
++        session.commit()
++    except Exception, e:
++        session.rollback()
++        log.warn(&quot;Cannot add volume: %s&quot;, e.message)
++    else:
++        initialize.update_volume_combo_ids(self)
++        initialize.fill_volumes_combo(self, vol.volume_id)
++    return vol.volume_id
++
++
++def add_collection(self, name):
++    session = self.db.Session()
++    col = db.Collection(name = name)
++    session.add(col)
++    try:
++        session.commit()
++    except Exception, e:
++        session.rollback()
++        log.warn(&quot;Cannot add collection: %s&quot;, e.message)
++    else:
++        initialize.update_collection_combo_ids(self)
++        initialize.fill_collections_combo(self, col.collection_id)
++    return col.collection_id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000825.html">[Griffith-svn] r1358 - trunk/lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000827.html">[Griffith-svn] r1360 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#826">[ date ]</a>
+              <a href="thread.html#826">[ thread ]</a>
+              <a href="subject.html#826">[ subject ]</a>
+              <a href="author.html#826">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

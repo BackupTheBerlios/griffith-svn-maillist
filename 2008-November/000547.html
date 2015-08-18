@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1072%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200811222046.mAMKkrHu014485%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000546.html">
+   <LINK REL="Next"  HREF="000548.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1072%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200811222046.mAMKkrHu014485%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 22 21:46:53 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000546.html">[Griffith-svn] r1071 - in online/trunk/webgriffith: controllers lib
+</A></li>
+        <LI>Next message: <A HREF="000548.html">[Griffith-svn] r1073 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#547">[ date ]</a>
+              <a href="thread.html#547">[ thread ]</a>
+              <a href="subject.html#547">[ subject ]</a>
+              <a href="author.html#547">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-22 21:46:29 +0100 (Sat, 22 Nov 2008)
+New Revision: 1072
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/add.py
+   branches/0.9.x/lib/main_treeview.py
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/main_treeview.py
+Log:
+fixed rating, runtime and year are not shown with MySQL backend
+(MySQL backend use long instead of int datatype for this fields)
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-11-22 17:54:53 UTC (rev 1071)
++++ branches/0.9.x/ChangeLog	2008-11-22 20:46:29 UTC (rev 1072)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-22  Michael Jahn
++	* fixed rating, runtime and year are not shown with MySQL backend
++
+ 2008-11-10  Michael Jahn
+ 	* optimized windows setup related code, added links to documentation files, forum and wiki to the installer
+ 
+
+Modified: branches/0.9.x/lib/add.py
+===================================================================
+--- branches/0.9.x/lib/add.py	2008-11-22 17:54:53 UTC (rev 1071)
++++ branches/0.9.x/lib/add.py	2008-11-22 20:46:29 UTC (rev 1072)
+@@ -441,7 +441,7 @@
+ 	if details['year'] is None:
+ 		self.treemodel.set_value(myiter, 7, '')
+ 	else:
+-		self.treemodel.set_value(myiter, 7, details['year'])
++		self.treemodel.set_value(myiter, 7, int(details['year']))
+ 	if details['runtime'] is None:
+ 		self.treemodel.set_value(myiter, 8, '')
+ 	else:
+@@ -449,7 +449,7 @@
+ 	if details['rating'] is None:
+ 		self.treemodel.set_value(myiter, 9, '')
+ 	else:
+-		self.treemodel.set_value(myiter, 9, details['rating'])
++		self.treemodel.set_value(myiter, 9, int(details['rating']))
+ 	#update statusbar
+ 	self.total += 1
+ 	self.count_statusbar()
+
+Modified: branches/0.9.x/lib/main_treeview.py
+===================================================================
+--- branches/0.9.x/lib/main_treeview.py	2008-11-22 17:54:53 UTC (rev 1071)
++++ branches/0.9.x/lib/main_treeview.py	2008-11-22 20:46:29 UTC (rev 1072)
+@@ -491,11 +491,11 @@
+ 		self.treemodel.set_value(myiter,4,movie.director)
+ 		self.treemodel.set_value(myiter,5,movie.genre)
+ 		self.treemodel.set_value(myiter,6,movie.seen)
+-		if movie.year is not None and isinstance(movie.year, int):
++		if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
+ 			self.treemodel.set_value(myiter,7,movie.year)
+-		if movie.runtime is not None and isinstance(movie.runtime, int):
++		if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
+ 			self.treemodel.set_value(myiter,8, '%003d' % movie.runtime + _(' min'))
+-		if movie.rating is not None and isinstance(movie.rating, int):
++		if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+ 			self.treemodel.set_value(myiter,9,movie.rating)
+ 		
+ 	# restore user sort column
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-11-22 17:54:53 UTC (rev 1071)
++++ trunk/ChangeLog	2008-11-22 20:46:29 UTC (rev 1072)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-22  Michael Jahn
++	* fixed rating, runtime and year are not shown with MySQL backend
++
+ 2008-11-10  Michael Jahn
+ 	* optimized windows setup related code, added links to documentation files, forum and wiki to the installer
+ 
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-11-22 17:54:53 UTC (rev 1071)
++++ trunk/lib/add.py	2008-11-22 20:46:29 UTC (rev 1072)
+@@ -694,7 +694,7 @@
+     if details['year'] is None:
+         self.treemodel.set_value(myiter, 7, '')
+     else:
+-        self.treemodel.set_value(myiter, 7, details['year'])
++        self.treemodel.set_value(myiter, 7, int(details['year']))
+     if details['runtime'] is None:
+         self.treemodel.set_value(myiter, 8, '')
+     else:
+@@ -702,7 +702,7 @@
+     if details['rating'] is None:
+         self.treemodel.set_value(myiter, 9, '')
+     else:
+-        self.treemodel.set_value(myiter, 9, details['rating'])
++        self.treemodel.set_value(myiter, 9, int(details['rating']))
+     #update statusbar
+     self.total += 1
+     self.count_statusbar()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-11-22 17:54:53 UTC (rev 1071)
++++ trunk/lib/main_treeview.py	2008-11-22 20:46:29 UTC (rev 1072)
+@@ -470,11 +470,11 @@
+         self.treemodel.set_value(myiter,4,movie.director)
+         self.treemodel.set_value(myiter,5,movie.genre)
+         self.treemodel.set_value(myiter,6,movie.seen)
+-        if movie.year is not None and isinstance(movie.year, int):
++        if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
+             self.treemodel.set_value(myiter,7,movie.year)
+-        if movie.runtime is not None and isinstance(movie.runtime, int):
++        if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
+             self.treemodel.set_value(myiter,8, '%003d' % movie.runtime + _(' min'))
+-        if movie.rating is not None and isinstance(movie.rating, int):
++        if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+             self.treemodel.set_value(myiter,9,movie.rating)
+ 
+     # restore user sort column
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000546.html">[Griffith-svn] r1071 - in online/trunk/webgriffith: controllers lib
+</A></li>
+	<LI>Next message: <A HREF="000548.html">[Griffith-svn] r1073 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#547">[ date ]</a>
+              <a href="thread.html#547">[ thread ]</a>
+              <a href="subject.html#547">[ subject ]</a>
+              <a href="author.html#547">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

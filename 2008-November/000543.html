@@ -1,0 +1,236 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1068 - branches/0.9.x trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1068%20-%20branches/0.9.x%20trunk&In-Reply-To=%3C200811192211.mAJMBVkI018782%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000542.html">
+   <LINK REL="Next"  HREF="000544.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1068 - branches/0.9.x trunk</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1068%20-%20branches/0.9.x%20trunk&In-Reply-To=%3C200811192211.mAJMBVkI018782%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1068 - branches/0.9.x trunk">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 19 23:11:31 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000542.html">[Griffith-svn] r1067 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000544.html">[Griffith-svn] r1069 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#543">[ date ]</a>
+              <a href="thread.html#543">[ thread ]</a>
+              <a href="subject.html#543">[ subject ]</a>
+              <a href="author.html#543">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-19 23:11:14 +0100 (Wed, 19 Nov 2008)
+New Revision: 1068
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/winpackage.iss
+   branches/0.9.x/winsetup.bat
+   branches/0.9.x/winsetup.py
+   trunk/ChangeLog
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+   trunk/winsetup.py
+Log:
+optimized windows setup related code, added links to documentation files, forum and wiki to the installer
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-11-18 21:05:30 UTC (rev 1067)
++++ branches/0.9.x/ChangeLog	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-10  Michael Jahn
++	* optimized windows setup related code, added links to documentation files, forum and wiki to the installer
++
+ ---- 0.9.8 ---
+ 
+ 2008-11-16  Piotr O&#380;arowski
+
+Modified: branches/0.9.x/winpackage.iss
+===================================================================
+--- branches/0.9.x/winpackage.iss	2008-11-18 21:05:30 UTC (rev 1067)
++++ branches/0.9.x/winpackage.iss	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -57,9 +57,20 @@
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+ [Icons]
+-Name: {group}\Griffith; Filename: {app}\griffith.exe
+-Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: <A HREF="http://griffith.cc">http://griffith.cc</A>
++Name: {group}\{cm:LaunchProgram,Griffith};    Filename: {app}\griffith.exe
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
++Name: {group}\{cm:ProgramOnTheWeb,Griffith};  Filename: <A HREF="http://griffith.cc">http://griffith.cc</A>
++Name: {group}\Doc\Griffith Forum;             Filename: <A HREF="http://griffith.cc/forum/">http://griffith.cc/forum/</A>
++Name: {group}\Doc\Griffith Wiki;              Filename: <A HREF="http://wiki.griffith.cc/">http://wiki.griffith.cc/</A>
++; some information files opened by iexplore which should work on most installations
++Name: {group}\Doc\INSTALL;     Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\INSTALL;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\NEWS;        Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\NEWS;        IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\AUTHORS;     Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\AUTHORS;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\THANKS;      Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\THANKS;      IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\License;     Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\COPYING;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\README;      Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\README;      IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\TRANSLATORS; Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\TRANSLATORS; IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++; desktop and quick launch icons
+ Name: {userdesktop}\Griffith; Filename: {app}\griffith.exe; Tasks: desktopicon
+ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Griffith; Filename: {app}\griffith.exe; Tasks: quicklaunchicon
+ 
+
+Modified: branches/0.9.x/winsetup.bat
+===================================================================
+--- branches/0.9.x/winsetup.bat	2008-11-18 21:05:30 UTC (rev 1067)
++++ branches/0.9.x/winsetup.bat	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -54,6 +54,12 @@
+ copy &quot;%GRIFFITHDIR%\THANKS&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
+ copy &quot;%GRIFFITHDIR%\TRANSLATORS&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+ 
++rem *** remove unnecessary files
++del /S /F /Q *.pyo
++del /S /F /Q *.a
++del /S /F /Q *.lib
++del /S /F /Q xml2Conf.sh
++
+ :END
+ 
+ rem **** pause so we can see the exit codes
+
+Modified: branches/0.9.x/winsetup.py
+===================================================================
+--- branches/0.9.x/winsetup.py	2008-11-18 21:05:30 UTC (rev 1067)
++++ branches/0.9.x/winsetup.py	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -46,7 +46,7 @@
+ 
+ opts = {
+     &quot;py2exe&quot;: {
+-        &quot;includes&quot;: &quot;pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*&quot;,
++        &quot;includes&quot;: &quot;pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*,ConfigParser&quot;,
+         &quot;optimize&quot;: 2,
+ 		&quot;dist_dir&quot;: &quot;dist&quot;,
+     }
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-11-18 21:05:30 UTC (rev 1067)
++++ trunk/ChangeLog	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-10  Michael Jahn
++	* optimized windows setup related code, added links to documentation files, forum and wiki to the installer
++
+ 2008-11-18  Piotr O&#380;arowski
+ 	* Version changed to 0.10-beta2~svn
+ 	* command line's search fixed
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2008-11-18 21:05:30 UTC (rev 1067)
++++ trunk/winpackage.iss	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -23,7 +23,7 @@
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+ AppVersion=0.10-beta1
+-VersionInfoVersion=0.10-beta1
++VersionInfoVersion=0.10.0
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -57,9 +57,20 @@
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+ [Icons]
+-Name: {group}\Griffith; Filename: {app}\griffith.exe
+-Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: <A HREF="http://griffith.cc">http://griffith.cc</A>
++Name: {group}\{cm:LaunchProgram,Griffith};    Filename: {app}\griffith.exe
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
++Name: {group}\{cm:ProgramOnTheWeb,Griffith};  Filename: <A HREF="http://griffith.cc">http://griffith.cc</A>
++Name: {group}\Doc\Griffith Forum;             Filename: <A HREF="http://griffith.cc/forum/">http://griffith.cc/forum/</A>
++Name: {group}\Doc\Griffith Wiki;              Filename: <A HREF="http://wiki.griffith.cc/">http://wiki.griffith.cc/</A>
++; some information files opened by iexplore which should work on most installations
++Name: {group}\Doc\INSTALL;     Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\INSTALL;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\NEWS;        Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\NEWS;        IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\AUTHORS;     Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\AUTHORS;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\THANKS;      Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\THANKS;      IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\License;     Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\COPYING;     IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\README;      Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\README;      IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++Name: {group}\Doc\TRANSLATORS; Filename: &quot;{pf}\Internet Explorer\iexplore.exe&quot;; Parameters: {app}\TRANSLATORS; IconFilename: %SystemRoot%\system32\SHELL32.dll; IconIndex: -152
++; desktop and quick launch icons
+ Name: {userdesktop}\Griffith; Filename: {app}\griffith.exe; Tasks: desktopicon
+ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Griffith; Filename: {app}\griffith.exe; Tasks: quicklaunchicon
+ 
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2008-11-18 21:05:30 UTC (rev 1067)
++++ trunk/winsetup.bat	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -54,6 +54,12 @@
+ copy &quot;%GRIFFITHDIR%\THANKS&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
+ copy &quot;%GRIFFITHDIR%\TRANSLATORS&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+ 
++rem *** remove unnecessary files
++del /S /F /Q *.pyo
++del /S /F /Q *.a
++del /S /F /Q *.lib
++del /S /F /Q xml2Conf.sh
++
+ :END
+ 
+ rem **** pause so we can see the exit codes
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2008-11-18 21:05:30 UTC (rev 1067)
++++ trunk/winsetup.py	2008-11-19 22:11:14 UTC (rev 1068)
+@@ -46,7 +46,7 @@
+ 
+ opts = {
+     &quot;py2exe&quot;: {
+-        &quot;includes&quot;: &quot;pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*&quot;,
++        &quot;includes&quot;: &quot;pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,sqlalchemy.sql.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*,ConfigParser,gtk.glade&quot;,
+         &quot;optimize&quot;: 2,
+         &quot;dist_dir&quot;: &quot;dist&quot;,
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000542.html">[Griffith-svn] r1067 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000544.html">[Griffith-svn] r1069 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#543">[ date ]</a>
+              <a href="thread.html#543">[ thread ]</a>
+              <a href="subject.html#543">[ subject ]</a>
+              <a href="author.html#543">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

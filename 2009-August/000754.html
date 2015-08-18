@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1286 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1286%20-%20trunk/lib&In-Reply-To=%3C200908171858.n7HIwlLp004939%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000753.html">
+   <LINK REL="Next"  HREF="000755.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1286 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1286%20-%20trunk/lib&In-Reply-To=%3C200908171858.n7HIwlLp004939%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1286 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug 17 20:58:47 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000753.html">[Griffith-svn] r1285 - trunk/lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000755.html">[Griffith-svn] r1287 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#754">[ date ]</a>
+              <a href="thread.html#754">[ thread ]</a>
+              <a href="subject.html#754">[ subject ]</a>
+              <a href="author.html#754">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-08-17 20:57:41 +0200 (Mon, 17 Aug 2009)
+New Revision: 1286
+
+Modified:
+   trunk/lib/movie.py
+Log:
+cleanup open file handles
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2009-08-13 22:21:26 UTC (rev 1285)
++++ trunk/lib/movie.py	2009-08-17 18:57:41 UTC (rev 1286)
+@@ -165,7 +165,10 @@
+         try:
+             if retriever.html:
+                 ifile = file(retriever.html[0], &quot;rb&quot;)
+-                data = ifile.read()
++                try:
++                    data = ifile.read()
++                finally:
++                    ifile.close()
+                 # check for gzip compressed pages before decoding to unicode
+                 if len(data) &gt; 2 and data[0:2] == '\037\213':
+                     data = gutils.decompress(data)
+@@ -326,7 +329,10 @@
+         try:
+             if retriever.html:
+                 ifile = file(retriever.html[0], 'rb')
+-                self.page = ifile.read()
++                try:
++                    self.page = ifile.read()
++                finally:
++                    ifile.close()
+                 # check for gzip compressed pages before decoding to unicode
+                 if len(self.page) &gt; 2 and self.page[0:2] == '\037\213':
+                     self.page = gutils.decompress(self.page)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000753.html">[Griffith-svn] r1285 - trunk/lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000755.html">[Griffith-svn] r1287 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#754">[ date ]</a>
+              <a href="thread.html#754">[ thread ]</a>
+              <a href="subject.html#754">[ subject ]</a>
+              <a href="author.html#754">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

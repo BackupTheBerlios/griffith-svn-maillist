@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1383 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1383%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201001052104.o05L4Am1028844%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000848.html">
+   <LINK REL="Next"  HREF="000850.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1383 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1383%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201001052104.o05L4Am1028844%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1383 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  5 22:04:10 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000848.html">[Griffith-svn] r1382 - trunk/lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000850.html">[Griffith-svn] r1384 - in trunk/lib: . plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#849">[ date ]</a>
+              <a href="thread.html#849">[ thread ]</a>
+              <a href="subject.html#849">[ subject ]</a>
+              <a href="author.html#849">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-05 22:04:00 +0100 (Tue, 05 Jan 2010)
+New Revision: 1383
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieStopklatka.py
+Log:
+updated movie plugin Stopklatka
+(result list doesn't work correct at the moment, every second movie is missing)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-05 20:30:30 UTC (rev 1382)
++++ trunk/ChangeLog	2010-01-05 21:04:00 UTC (rev 1383)
+@@ -7,6 +7,7 @@
+ 
+ 2010-01-05  Michael Jahn
+ 	* save and restore sorting column in main list
++	* updated movie plugin Stopklatka
+ 
+ 2010-01-04  Piotr O&#380;arowski
+ 	* Add Croatian translation (thanks to Davor I and nafterburner)
+
+Modified: trunk/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieStopklatka.py	2010-01-05 20:30:30 UTC (rev 1382)
++++ trunk/lib/plugins/movie/PluginMovieStopklatka.py	2010-01-05 21:04:00 UTC (rev 1383)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Piotr O&#380;arowski
++# Copyright (c) 2005-2010 Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -21,8 +21,10 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie
+-import string, re
++import gutils
++import movie
++import string
++import re
+ 
+ plugin_name         = 'Stopklatka'
+ plugin_description  = 'Internetowy Serwis Filmowy'
+@@ -32,20 +34,25 @@
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
+ plugin_version      = '1.11'
+ 
++
+ class Plugin(movie.Movie):
+     IMAGE_PATTERN = re.compile('(<A HREF="http://img.stopklatka.pl/film/.*?">http://img.stopklatka.pl/film/.*?</A>)&quot;')
+ 
+     def __init__(self, id):
+         self.movie_id = id
+         self.url = &quot;<A HREF="http://www.stopklatka.pl/film/film.asp?fi=%s">http://www.stopklatka.pl/film/film.asp?fi=%s</A>&quot; % str(self.movie_id)
+-        self.encode = 'utf-8' 
++        self.encode = 'utf-8'
+ 
+     def initialize(self):
+-        self.page = self.page.replace('\x9c','&#347;')
+-        self.page = self.page.replace('&#353;','&#261;')
++        self.page = self.page.replace(u'\x9c', u'&#347;')
++        self.page = self.page.replace(u'&#353;', u'&#261;')
+         self.res = re.findall(&quot;&quot;&quot;&lt;td class=&quot;middle_cell&quot;&gt;&lt;span class=&quot;bold&quot;&gt;(.*?)&lt;/span&gt;, (.*?), (.*?), (.*?) min&lt;/td&gt;&quot;&quot;&quot;, self.page)
+         if len(self.res) == 0:
+-            self.res = [( '','','','' )]
++            self.res = [('', '', '', '')]
++        url = &quot;<A HREF="http://www.stopklatka.pl/film/film.asp?fi=%s&amp;sekcja=osoby">http://www.stopklatka.pl/film/film.asp?fi=%s&amp;sekcja=osoby</A>&quot; % str(self.movie_id)
++        self.creditspage = self.open_page(self.parent_window, url=url)
++        self.creditspage = self.creditspage.replace(u'\x9c', u'&#347;')
++        self.creditspage = self.creditspage.replace(u'&#353;', u'&#261;')
+ 
+     def get_image(self):
+         image = self.IMAGE_PATTERN.findall(self.page)
+@@ -65,12 +72,16 @@
+             self.title = data
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, '&gt;re&#380;yseria: &lt;', '&lt;/span&gt;&lt;/a&gt;')
++        self.director = gutils.trim(self.creditspage, u're&#380;yseria: &lt;', '&lt;/tr&gt;')
+         self.director = gutils.after(self.director, '&gt;')
++        self.director = self.director.replace('&lt;br /&gt;', ', ')
++        self.director = gutils.clean(self.director)
++        if self.director.endswith(','):
++            self.director = self.director[:-1]
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '&lt;p&gt;', '&lt;/p&gt;')
+-        self.plot = gutils.before(self.plot, '&lt;b&gt;Wi&#281;cej ')
++        self.plot = gutils.before(self.plot, u'&lt;b&gt;Wi&#281;cej ')
+ 
+     def get_year(self):
+         self.year = self.res[0][2]
+@@ -82,10 +93,10 @@
+         self.genre = self.res[0][0]
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page, '&gt;obsada:&lt;', '&lt;/td&gt;&lt;/tr&gt;')
++        self.cast = gutils.trim(self.creditspage, 'obsada: &lt;', '&lt;/td&gt;&lt;/tr&gt;')
+         self.cast = gutils.after(self.cast, '&gt;')
+-        self.cast = string.replace(self.cast, ', ', &quot;\n&quot;)
+-        self.cast = gutils.before(self.cast, '&lt;b&gt;Wi&#281;cej')
++        self.cast = self.cast.replace(' jako ', _(' as '))
++        self.cast = string.replace(self.cast, '&lt;br /&gt;', &quot;\n&quot;)
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -94,8 +105,8 @@
+         self.studio = &quot;&quot;
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page,&quot;&gt;strona oficjalna:&lt;&quot;,&quot; target=_blank&quot;)
+-        self.o_site = gutils.after(self.o_site,&quot;href=&quot;)
++        self.o_site = gutils.trim(self.page, &quot;&gt;strona oficjalna:&lt;&quot;, &quot; target=_blank&quot;)
++        self.o_site = gutils.after(self.o_site, &quot;href=&quot;)
+ 
+     def get_site(self):
+         self.site = self.url
+@@ -107,29 +118,53 @@
+         self.country = self.res[0][1]
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page,'&lt;/script&gt;&lt;/span&gt; (',')')
++        self.rating = 0
++        tmp = re.search(u'Ocena u&#380;ytkownik&#243;w:[^(]+[(]([0-9]+[,]*[0-9]*)[)]', self.page)
++        if tmp:
++            try:
++                self.rating = int(round(float(tmp.group(1).replace(',', '.')), 0))
++            except:
++                pass
+ 
+     def get_notes(self):
+         self.notes = ''
+ 
++    def get_cameraman(self):
++        self.cameraman = gutils.regextrim(self.creditspage, u'zdj&#281;cia: &lt;', '(&lt;/tr&gt;|&lt;tr&gt;)')
++        self.cameraman = gutils.after(self.cameraman, '&gt;')
++        self.cameraman = self.cameraman.replace('&lt;br /&gt;', ', ')
++        self.cameraman = gutils.clean(self.cameraman)
++        if self.cameraman.endswith(','):
++            self.cameraman = self.cameraman[:-1]
++
++    def get_screenplay(self):
++        self.screenplay = gutils.trim(self.creditspage, u'scenariusz: &lt;', '&lt;/tr&gt;')
++        self.screenplay = gutils.after(self.screenplay, '&gt;')
++        self.screenplay = self.screenplay.replace('&lt;br /&gt;', ', ')
++        self.screenplay = gutils.clean(self.screenplay)
++        if self.screenplay.endswith(','):
++            self.screenplay = self.screenplay[:-1]
++
++
+ class SearchPlugin(movie.SearchMovie):
++
+     def __init__(self):
+-        self.encode='utf-8'
+-        self.original_url_search    = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
+-        self.translated_url_search    = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
++        self.encode = 'utf-8'
++        self.original_url_search = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
+ 
+-    def search(self,parent_window):
++    def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+-        self.page = gutils.trim(self.page, '&gt;Wyniki poszukiwania frazy:', '&lt;/div&gt;');
+-        self.page = self.page.replace('\x9c','&#347;')
+-        self.page = self.page.replace('&#353;','&#261;')
++        self.page = gutils.trim(self.page, '&gt;Wyniki poszukiwania frazy:', '&lt;/div&gt;')
++        self.page = self.page.replace(u'\x9c', u'&#347;')
++        self.page = self.page.replace(u'&#353;', u'&#261;')
+         return self.page
+ 
+     def get_searches(self):
+-        elements = re.findall(&quot;&quot;&quot;/film/film.asp\?fi=(\d+)&quot;&gt;.*?searchTitle\s*textB&quot;&gt;(.*?)&lt;/span&gt;.*?&quot;&gt; (.*?)&lt;/span&gt;&quot;&quot;&quot;, self.page)
++        elements = re.findall(&quot;&quot;&quot;/film/film.asp\?fi=(\d+)&quot;[^&gt;]*&gt;.*?searchTitle\s*textB&quot;&gt;(.*?)&lt;/span&gt;.*?&quot;&gt; (.*?)&lt;/span&gt;&quot;&quot;&quot;, self.page)
+         self.number_results = len(elements)
+ 
+         for element in elements:
+             self.ids.append(element[0])
+-            self.titles.append(element[1] + ' ' + element[2])
++            self.titles.append(gutils.clean(element[1]) + ' ' + element[2])
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000848.html">[Griffith-svn] r1382 - trunk/lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000850.html">[Griffith-svn] r1384 - in trunk/lib: . plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#849">[ date ]</a>
+              <a href="thread.html#849">[ thread ]</a>
+              <a href="subject.html#849">[ subject ]</a>
+              <a href="author.html#849">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

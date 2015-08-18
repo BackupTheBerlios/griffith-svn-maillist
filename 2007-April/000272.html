@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r753 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r753%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200704112110.l3BLABAp005073%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000273.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r753 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r753%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200704112110.l3BLABAp005073%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r753 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 11 23:10:11 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000273.html">[Griffith-svn] r754 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#272">[ date ]</a>
+              <a href="thread.html#272">[ thread ]</a>
+              <a href="subject.html#272">[ subject ]</a>
+              <a href="author.html#272">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-04-11 23:10:10 +0200 (Wed, 11 Apr 2007)
+New Revision: 753
+
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+Fixed medium_id and vcodec_id column type in movies table
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/AUTHORS	2007-04-11 21:10:10 UTC (rev 753)
+@@ -20,7 +20,7 @@
+ * CSFD movie plugin
+ 
+ Michael Jahn &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;
+-* Movie plugins: DVDEmpire, FilmDb,FilmeVonAZ, Kino.de, Zelluloid
++* Movie plugins: DVDEmpire, FilmDb, FilmeVonAZ, IMDb-de, Kino.de, Zelluloid
+ 
+ Jessica Katharina Parth &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&gt;
+ * OFDb movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/ChangeLog	2007-04-11 21:10:10 UTC (rev 753)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-04-11  Piotr O&#380;arowski
++	* Fixed medium_id and vcodec_id column type in movies table
++
+ 2007-04-01  Piotr O&#380;arowski
+ 	* Added Dutch translation (thanks to Marcel Dijkstra)
+ 
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/lib/preferences.py	2007-04-11 21:10:10 UTC (rev 753)
+@@ -83,12 +83,14 @@
+ 	w['region'].set_active( gutils.digits_only(self.config.get('region', 0), 8) )
+ 	w['layers'].set_active( gutils.digits_only(self.config.get('layers', 0), 4) )
+ 	w['color'].set_active( gutils.digits_only(self.config.get('color', 0), 3 ))
+-	if int(self.config.get('media', 0)) in self.media_ids:
++	tmp = self.config.get('media', 0)
++	if tmp is not None and int(tmp) in self.media_ids:
+ 		if int(self.config.get('media', 0)) &gt; 0:
+ 			w['media'].set_active( gutils.findKey(int(self.config.get('media', 0)), self.media_ids) )
+ 		else:
+ 			w['media'].set_active(0)
+-	if int(self.config.get('vcodec', 0)) in self.vcodecs_ids:
++	tmp = self.config.get('vcodec', 0)
++	if tmp is not None and int(tmp) in self.vcodecs_ids:
+ 		if int(self.config.get('vcodec', 0)) &gt; 0:
+ 			w['vcodec'].set_active(	int(gutils.findKey(int(self.config.get('vcodec', 0)), self.vcodecs_ids)) )
+ 		else:
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/lib/sql.py	2007-04-11 21:10:10 UTC (rev 753)
+@@ -347,8 +347,8 @@
+ 			Column('number', Integer, nullable=False, unique=True),
+ 			Column('collection_id', Integer, ForeignKey('collections.collection_id')),
+ 			Column('volume_id', Integer, ForeignKey('volumes.volume_id')),
+-			Column('medium_id', Smallinteger, ForeignKey('media.medium_id')),
+-			Column('vcodec_id', Smallinteger, ForeignKey('vcodecs.vcodec_id')),
++			Column('medium_id', Integer, ForeignKey('media.medium_id')),
++			Column('vcodec_id', Integer, ForeignKey('vcodecs.vcodec_id')),
+ 			Column('loaned', Boolean, nullable=False, default=False),
+ 			Column('seen', Boolean, nullable=False, default=False),
+ 			Column('rating', Smallinteger(2)),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000273.html">[Griffith-svn] r754 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#272">[ date ]</a>
+              <a href="thread.html#272">[ thread ]</a>
+              <a href="subject.html#272">[ subject ]</a>
+              <a href="author.html#272">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

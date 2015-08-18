@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r907 - branches/0.9.x/lib trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r907%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200801272123.m0RLN570019109%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000401.html">
+   <LINK REL="Next"  HREF="000403.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r907 - branches/0.9.x/lib trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r907%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200801272123.m0RLN570019109%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r907 - branches/0.9.x/lib trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 22:23:05 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000401.html">[Griffith-svn] r906 - branches/0.9.x trunk
+</A></li>
+        <LI>Next message: <A HREF="000403.html">[Griffith-svn] r911 - in trunk: . data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#402">[ date ]</a>
+              <a href="thread.html#402">[ thread ]</a>
+              <a href="subject.html#402">[ subject ]</a>
+              <a href="author.html#402">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-01-27 22:23:04 +0100 (Sun, 27 Jan 2008)
+New Revision: 907
+
+Modified:
+   branches/0.9.x/lib/about.py
+   trunk/lib/about.py
+Log:
+try to open /usr/share/doc/griffith/TRANSLATORS if it's not in locations['share']
+
+
+Modified: branches/0.9.x/lib/about.py
+===================================================================
+--- branches/0.9.x/lib/about.py	2008-01-27 20:14:26 UTC (rev 906)
++++ branches/0.9.x/lib/about.py	2008-01-27 21:23:04 UTC (rev 907)
+@@ -58,6 +58,12 @@
+ 		elif os.path.isfile(TRANSLATORS_FILE+'.gz'):
+ 			from gutils import decompress
+ 			data = decompress(open(TRANSLATORS_FILE + '.gz').read())
++		elif os.name == 'posix':
++			if os.path.isfile('/usr/share/doc/griffith/TRANSLATORS'):
++				data = open('/usr/share/doc/griffith/TRANSLATORS').read()
++			elif os.path.isfile('/usr/share/doc/griffith/TRANSLATORS.gz'):
++				from gutils import decompress
++				data = decompress(open('/usr/share/doc/griffith/TRANSLATORS.gz').read())
+ 		translator_credits = ''
+ 		if data:
+ 			for line in data.split('\n'):
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2008-01-27 20:14:26 UTC (rev 906)
++++ trunk/lib/about.py	2008-01-27 21:23:04 UTC (rev 907)
+@@ -58,6 +58,12 @@
+ 		elif os.path.isfile(TRANSLATORS_FILE+'.gz'):
+ 			from gutils import decompress
+ 			data = decompress(open(TRANSLATORS_FILE + '.gz').read())
++		elif os.name == 'posix':
++			if os.path.isfile('/usr/share/doc/griffith/TRANSLATORS'):
++				data = open('/usr/share/doc/griffith/TRANSLATORS').read()
++			elif os.path.isfile('/usr/share/doc/griffith/TRANSLATORS.gz'):
++				from gutils import decompress
++				data = decompress(open('/usr/share/doc/griffith/TRANSLATORS.gz').read())
+ 		translator_credits = ''
+ 		if data:
+ 			for line in data.split('\n'):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000401.html">[Griffith-svn] r906 - branches/0.9.x trunk
+</A></li>
+	<LI>Next message: <A HREF="000403.html">[Griffith-svn] r911 - in trunk: . data
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#402">[ date ]</a>
+              <a href="thread.html#402">[ thread ]</a>
+              <a href="subject.html#402">[ subject ]</a>
+              <a href="author.html#402">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

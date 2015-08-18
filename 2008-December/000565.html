@@ -1,0 +1,639 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1090 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1090%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200812162059.mBGKx3Qe024165%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000564.html">
+   <LINK REL="Next"  HREF="000566.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1090 - trunk/lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1090%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200812162059.mBGKx3Qe024165%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1090 - trunk/lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec 16 21:59:03 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000564.html">[Griffith-svn] r1089 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000566.html">[Griffith-svn] r1091 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#565">[ date ]</a>
+              <a href="thread.html#565">[ thread ]</a>
+              <a href="subject.html#565">[ subject ]</a>
+              <a href="author.html#565">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-12-16 21:59:02 +0100 (Tue, 16 Dec 2008)
+New Revision: 1090
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovie7arte.py
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/lib/plugins/movie/PluginMovieCineteka.py
+   trunk/lib/plugins/movie/PluginMovieCulturalia.py
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+   trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+   trunk/lib/plugins/movie/PluginMovieFDb.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieMediadis.py
+   trunk/lib/plugins/movie/PluginMovieMoviefone.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/plugins/movie/PluginMovieOnet.py
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+   trunk/lib/plugins/movie/PluginMovieStopklatka.py
+   trunk/lib/plugins/movie/PluginMovieTanukiAnime.py
+   trunk/lib/plugins/movie/PluginMovieWP.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Log:
+update movie plugins to handle open_search's return value correctly
+
+
+Modified: trunk/lib/plugins/movie/PluginMovie7arte.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovie7arte.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovie7arte.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -128,7 +128,8 @@
+ 
+     def search(self, parent_window):
+         &quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -109,7 +109,8 @@
+         self.translated_url_search    = &quot;<A HREF="http://www.allocine.fr/recherche/?motcle=">http://www.allocine.fr/recherche/?motcle=</A>&quot;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -147,7 +147,8 @@
+         self.translated_url_search    = '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=">http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=</A>'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.page = decompress(self.page)
+ 
+         tmp = string.find(self.page, '&lt;h1&gt;Anime List - Search for: ')
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -159,7 +159,8 @@
+         self.translated_url_search = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         return self.page
+ 
+     def get_searches(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -102,7 +102,8 @@
+         self.translated_url_search    = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?cherche=">http://www.cinemovies.fr/resultat_recherche.php?cherche=</A>&quot;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -131,7 +131,8 @@
+ 
+     def search(self, parent_window):
+         &quot;Perform the web search&quot;
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineteka.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieCineteka.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -127,7 +127,8 @@
+ 
+     def search(self, parent_window):
+         &quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCulturalia.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCulturalia.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieCulturalia.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -112,7 +112,8 @@
+         self.encode = 'iso-8859-15'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -135,7 +135,8 @@
+         self.encode = 'iso-8859-1'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         # short the content
+         tmp_page = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
+         #
+@@ -156,8 +157,9 @@
+             tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+             self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;page=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;string=&quot;
+             self.open_search(parent_window)
+-            tmp_page2 = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
+-            tmp_page = tmp_page + tmp_page2
++            if self.open_search(parent_window):
++                tmp_page2 = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
++                tmp_page = tmp_page + tmp_page2
+ 
+         self.page = tmp_page
+         return self.page
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -142,7 +142,8 @@
+         self.encode='iso-8859-1'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp_pagemovie = self.page
+         #
+         # try to get all result pages (not so nice, but it works)
+@@ -155,9 +156,9 @@
+         tmp_pagecountintcurrent = 1
+         while (tmp_pagecountint &gt; tmp_pagecountintcurrent and tmp_pagecountintcurrent &lt; 5):
+             self.url = &quot;<A HREF="http://www.dvd-palace.de/dvddatabase/dbsearch.php?action=1&amp;start=">http://www.dvd-palace.de/dvddatabase/dbsearch.php?action=1&amp;start=</A>&quot; + str(tmp_pagecountintcurrent * 20) + &quot;&amp;suchbegriff=&quot;
+-            self.open_search(parent_window)
+-            tmp_pagemovie = tmp_pagemovie + self.page
+-            tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++            if self.open_search(parent_window):
++                tmp_pagemovie = tmp_pagemovie + self.page
++                tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+         self.page = tmp_pagemovie
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -131,7 +131,8 @@
+ 
+     def search(self, parent_window):
+         &quot;Perform the web search&quot;
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFDb.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieFDb.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -140,7 +140,8 @@
+         self.translated_url_search    = '<A HREF="http://fdb.pl/szukaj.php?t=f&amp;s=">http://fdb.pl/szukaj.php?t=f&amp;s=</A>'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp = string.find(self.page,'&lt;div&gt;Wyniki wyszukiwania dla')
+         if tmp == -1:        # already a movie page
+             self.page = ''
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -127,7 +127,8 @@
+         self.encode = 'iso-8859-15'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         auxPage = self.page
+         self.sub_search()
+         if self.page &lt;&gt; '':
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -129,7 +129,8 @@
+         self.encode='iso-8859-1'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         return gutils.trim(self.page, &quot;&lt;span class=font_normal&gt;&quot;, &quot;&lt;table width=590&quot;)
+ 
+     def get_searches(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -114,7 +114,8 @@
+         self.encode='utf-8'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         # used for looking for subpages
+         tmp_page = gutils.trim(self.page, &quot;Treffer-Seite&quot;, &quot;chste Seite&quot;)
+         elements = string.split(tmp_page, '&quot; class=&quot;text_navi&quot;&gt;')
+@@ -127,11 +128,12 @@
+                 tmp_element = int(element)
+             except:
+                 tmp_element = 1
+-            if (tmp_element &lt;&gt; 1):
++            if tmp_element != 1:
+                 self.url = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=</A>&quot; + str(tmp_element) + &quot;&amp;wert=&quot;
+                 self.open_search(parent_window)
+-                tmp_page2 = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;Treffer-Seite&quot;)
+-                tmp_page = tmp_page + tmp_page2
++                if self.open_search(parent_window):
++                    tmp_page2 = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;Treffer-Seite&quot;)
++                    tmp_page = tmp_page + tmp_page2
+         self.page = tmp_page
+ 
+         return self.page
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -114,7 +114,8 @@
+         self.encode='iso-8859-1'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp_page = gutils.trim(self.page, 'Matchning', 'Hittade')
+         if tmp_page == '':
+             tmp_page = gutils.trim(self.page, 'Matchning', 'Visa fler')
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -145,7 +145,8 @@
+         self.translated_url_search = &quot;<A HREF="http://www.filmweb.pl/szukaj?c=film&amp;q=">http://www.filmweb.pl/szukaj?c=film&amp;q=</A>&quot;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         pos = string.find(self.page, 'Znaleziono &lt;b&gt;')
+         if pos == -1:    # movie page
+             self.page = None
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -203,7 +203,8 @@
+         self.remove_accents = False
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp = gutils.trim(self.page, ' angezeigt)', ' Treffergenauigkeit')
+         if tmp == '':
+             if self.PATTERN_POWERSEARCH.search(self.page) is None:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -142,7 +142,8 @@
+         self.encode = 'iso-8859-15'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -24,19 +24,19 @@
+ import gutils, movie
+ import string, re
+ 
+-plugin_name        = 'IMDb'
+-plugin_description    = 'Internet Movie Database'
+-plugin_url        = 'www.imdb.com'
+-plugin_language        = _('English')
+-plugin_author        = 'Vasco Nunes, Piotr O&#197;&#188;arowski'
+-plugin_author_email    = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+-plugin_version        = '1.5'
++plugin_name = 'IMDb'
++plugin_description = 'Internet Movie Database'
++plugin_url = 'www.imdb.com'
++plugin_language = _('English')
++plugin_author = 'Vasco Nunes, Piotr O&#197;&#188;arowski'
++plugin_author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++plugin_version = '1.6'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.encode = 'utf-8'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://imdb.com/title/tt%s">http://imdb.com/title/tt%s</A>&quot; % str(self.movie_id)
++        self.url = &quot;<A HREF="http://imdb.com/title/tt%s">http://imdb.com/title/tt%s</A>&quot; % self.movie_id
+ 
+     def initialize(self):
+         self.cast_page = self.open_page(url=self.url + '/fullcredits')
+@@ -166,7 +166,7 @@
+     
+     def __before_more(self, data):
+         tmp = string.find(data, '&gt;more&lt;')
+-        if tmp&gt;0:
++        if tmp &gt; 0:
+             data = data[:tmp] + '&gt;'
+         return data
+ 
+@@ -180,9 +180,10 @@
+         self.encode = 'utf-8'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp_page = gutils.trim(self.page, 'Here are the', '&lt;/TABLE&gt;')
+-        if tmp_page == '':
++        if not tmp_page:
+             self.page = gutils.trim(self.page, '(Displaying', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;')
+         else:
+             self.page = tmp_page
+
+Modified: trunk/lib/plugins/movie/PluginMovieMediadis.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMediadis.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieMediadis.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -92,7 +92,8 @@
+         self.translated_url_search    = &quot;<A HREF="http://www.mediadis.com/dvd/search.asp?t=1&amp;kw=">http://www.mediadis.com/dvd/search.asp?t=1&amp;kw=</A>&quot;;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieMoviefone.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMoviefone.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieMoviefone.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -81,7 +81,8 @@
+         self.translated_url_search    = &quot;<A HREF="http://movies.aol.com/search/encyresults.adp?query=">http://movies.aol.com/search/encyresults.adp?query=</A>&quot;;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -116,7 +116,8 @@
+         self.remove_accents = False
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.page = gutils.trim(self.page,&quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;, &quot;&lt;br&gt;&lt;br&gt;&lt;br&gt;&quot;);
+         self.page = string.replace( self.page, &quot;'&quot;, '&quot;' )
+         self.page = string.replace( self.page, '&lt;font size=&quot;1&quot;&gt;', '' )
+
+Modified: trunk/lib/plugins/movie/PluginMovieOnet.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOnet.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieOnet.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2006 Piotr O&#191;arowski
++# Copyright (c) 2005-2006 Piotr O&#197;&#188;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -28,7 +28,7 @@
+ plugin_description  = 'Onet Film'
+ plugin_url          = 'film.onet.pl'
+ plugin_language     = _('Polish')
+-plugin_author       = 'Piotr O&#191;arowski'
++plugin_author       = 'Piotr O&#197;&#188;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+ plugin_version      = '1.7'
+ 
+@@ -140,7 +140,8 @@
+         self.translated_url_search    = '<A HREF="http://film.onet.pl/filmoteka.html?O=1&amp;S=">http://film.onet.pl/filmoteka.html?O=1&amp;S=</A>'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.page = gutils.trim(self.page, '&gt;Wynik wyszukiwania&lt;', '&lt;TABLE border=0 cellpadding=0');
+         self.page = gutils.after(self.page, '&lt;/SPAN&gt;&lt;/DIV&gt;&lt;BR&gt;');
+         return self.page
+@@ -157,5 +158,3 @@
+                 self.titles.append(element)
+         else:
+             self.number_results = 0
+-
+-# vim: fenc=iso-8859-2
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -112,7 +112,8 @@
+         self.encode='iso-8859-1'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.sub_search()
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieStopklatka.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieStopklatka.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -119,7 +119,8 @@
+         self.translated_url_search    = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.page = gutils.trim(self.page, '&gt;Wyniki poszukiwania frazy:', '&lt;/div&gt;');
+         self.page = self.page.replace('\x9c','&#197;&#155;')
+         self.page = self.page.replace('&#197;&#161;','&#196;&#133;')
+
+Modified: trunk/lib/plugins/movie/PluginMovieTanukiAnime.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieTanukiAnime.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieTanukiAnime.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -133,7 +133,8 @@
+         self.translated_url_search = '<A HREF="http://anime.tanuki.pl/strony/anime/lista/title/1/?&amp;title=">http://anime.tanuki.pl/strony/anime/lista/title/1/?&amp;title=</A>'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp = string.find(self.page, &quot;&lt;table class=\&quot;animelist strippedlist\&quot;&quot;)
+         if tmp == -1:    # only one match!
+             self.page = ''
+
+Modified: trunk/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieWP.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieWP.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -132,7 +132,8 @@
+         self.translated_url_search    = '<A HREF="http://film.wp.pl/szukaj,%s,type,f,szukaj.html">http://film.wp.pl/szukaj,%s,type,f,szukaj.html</A>'
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         self.page = gutils.trim(self.page, '&lt;div id=&quot;filmUS&quot;', '&lt;div id=');
+         return self.page
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2008-12-16 20:36:29 UTC (rev 1089)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2008-12-16 20:59:02 UTC (rev 1090)
+@@ -156,7 +156,8 @@
+         self.remove_accents = False
+ 
+     def search(self,parent_window):
+-        self.open_search(parent_window)
++        if not self.open_search(parent_window):
++            return None
+         tmp = gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;)
+         return tmp
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000564.html">[Griffith-svn] r1089 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000566.html">[Griffith-svn] r1091 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#565">[ date ]</a>
+              <a href="thread.html#565">[ thread ]</a>
+              <a href="subject.html#565">[ subject ]</a>
+              <a href="author.html#565">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1352 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1352%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912282147.nBSLl7JF008489%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000818.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1352 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1352%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912282147.nBSLl7JF008489%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1352 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 28 22:47:07 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000818.html">[Griffith-svn] r1351 - in trunk: . lib/plugins/movie
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#819">[ date ]</a>
+              <a href="thread.html#819">[ thread ]</a>
+              <a href="subject.html#819">[ subject ]</a>
+              <a href="author.html#819">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-28 22:46:53 +0100 (Mon, 28 Dec 2009)
+New Revision: 1352
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+updated movie plugin Allocine
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-28 21:18:49 UTC (rev 1351)
++++ trunk/ChangeLog	2009-12-28 21:46:53 UTC (rev 1352)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-12-28  Michael Jahn
+-	* updated movie plugin Amazon, FilmDb
++	* updated movie plugin Allocine, Amazon, FilmDb
+ 	* updated import plugin CSV
+ 	  (optional auto-detect dialect settings, fixed pre-selection of encoding)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-12-28 21:18:49 UTC (rev 1351)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-12-28 21:46:53 UTC (rev 1352)
+@@ -23,7 +23,8 @@
+ 
+ import gutils
+ import movie
+-import string, re
++import string
++import re
+ 
+ plugin_name         = &quot;Allocine&quot;
+ plugin_description  = &quot;Internet Movie Database&quot;
+@@ -33,7 +34,10 @@
+ plugin_author_email = &quot;&quot;
+ plugin_version      = &quot;0.7&quot;
+ 
++
+ class Plugin(movie.Movie):
++    replace_tabs = re.compile('[\t\r\n]', re.M)
++
+     def __init__(self, id):
+         self.movie_id = id
+         self.url      = &quot;<A HREF="http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html">http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html</A>&quot; % str(self.movie_id)
+@@ -52,9 +56,8 @@
+                 break
+ 
+     def get_o_title(self):
+-        self.o_title = &quot;&quot;
+-        self.o_title = gutils.trim(self.page,&quot;Titre original : &lt;i&gt;&quot;,&quot;&lt;/i&gt;&quot;)
+-        if (self.o_title==''):
++        self.o_title = gutils.trim(self.page, &quot;Titre original : &lt;i&gt;&quot;, &quot;&lt;/i&gt;&quot;)
++        if (self.o_title == ''):
+             self.o_title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#233;', ''))
+ 
+     def get_title(self):
+@@ -72,11 +75,11 @@
+     def get_runtime(self):
+         self.runtime = gutils.clean(gutils.trim(self.page, u'Dur&#233;e :', 'min'))
+         if self.runtime:
+-            self.runtime = str (int(gutils.before(self.runtime,&quot;h&quot;))*60 + int(gutils.after(self.runtime,&quot;h&quot;)))
++            self.runtime = str(int(gutils.before(self.runtime, &quot;h&quot;)) * 60 + int(gutils.after(self.runtime, &quot;h&quot;)))
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, 'Genre : ', '&lt;/a')
+-        self.genre = gutils.strip_tags(self.genre)
++        self.genre = gutils.regextrim(self.page, 'Genre : ', '&lt;/a&gt;[^,]')
++        self.genre = string.replace(self.replace_tabs.sub('', gutils.clean(self.genre)), ',', ', ')
+ 
+     def get_cast(self):
+         self.cast = &quot;&quot;
+@@ -84,9 +87,14 @@
+         parts = string.split(casts, 'href=&quot;/personne/fichepersonne_gen_cpersonne=')
+         for index in range(1, len(parts), 1):
+             character = gutils.clean(gutils.trim(parts[index], 'R&#244;le :', '&lt;'))
++            if not character:
++                character = gutils.clean(gutils.trim(parts[index - 1], '&lt;td&gt;', '&lt;/td&gt;'))
+             actor = gutils.clean(gutils.trim(parts[index], '&gt;', '&lt;'))
+             if actor:
+-                self.cast = self.cast + actor + _(' as ') + character + '\n'
++                if character:
++                    self.cast = self.cast + actor + _(' as ') + character + '\n'
++                else:
++                    self.cast = self.cast + actor + '\n'
+ 
+     def get_classification(self):
+         self.classification = &quot;&quot;
+@@ -111,7 +119,7 @@
+         self.rating = gutils.trim(self.rating, 'class=&quot;stareval n', ' ')
+         if self.rating:
+             try:
+-                self.rating = str(round(float(int(self.rating)*.225)))
++                self.rating = str(round(float(int(self.rating) * .225)))
+             except:
+                 self.rating = 0
+ 
+@@ -121,6 +129,7 @@
+     def get_cameraman(self):
+         self.cameraman = gutils.clean(gutils.trim(self.page_cast, 'Directeur de la photographie', '&lt;/tr&gt;'))
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+@@ -128,7 +137,7 @@
+         self.translated_url_search = &quot;<A HREF="http://www.allocine.fr/recherche/?q=">http://www.allocine.fr/recherche/?q=</A>&quot;
+         self.encode                = 'utf-8'
+ 
+-    def search(self,parent_window):
++    def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+         self.sub_search()
+@@ -139,7 +148,7 @@
+ 
+     def get_searches(self):
+         elements = string.split(self.page, '&lt;a href=\'/film/fichefilm_gen_cfilm=')
+-        if (elements[0]&lt;&gt;''):
++        if (elements[0] &lt;&gt; ''):
+             for index in range(1, len(elements), 1):
+                 element = elements[index]
+                 title = gutils.clean(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;')))
+@@ -151,9 +160,12 @@
+                     else:
+                         self.titles.append(title)
+ 
++
+ #
+ # Plugin Test
+ #
++
++
+ class SearchPluginTest(SearchPlugin):
+     #
+     # Configuration for automated tests:
+@@ -163,6 +175,7 @@
+         'Le Prix &#224; payer' : [ 4, 4 ],
+     }
+ 
++
+ class PluginTest:
+     #
+     # Configuration for automated tests:
+@@ -201,4 +214,39 @@
+             'screenplay'          : u'Alexandra Lecl&#232;re',
+             'barcode'             : False
+         },
++        '309' : { 
++            'title'               : u'Terminator',
++            'o_title'             : u'Terminator',
++            'director'            : u'James Cameron',
++            'plot'                : True,
++            'cast'                : u'Arnold Schwarzenegger' + _(' as ') + 'le Terminator\n\
++Michael Biehn' + _(' as ') + 'Kyle Reese\n\
++Linda Hamilton' + _(' as ') + 'Sarah Connor\n\
++Lance Henriksen' + _(' as ') + 'l\'inspecteur Vukovich\n\
++Paul Winfield' + _(' as ') + 'le lieutenant Ed Traxler\n\
++Bess Motta' + _(' as ') + 'Ginger Ventura\n\
++Rick Rossovich' + _(' as ') + 'Matt Buchanan\n\
++Earl Boen' + _(' as ') + 'le Dr Peter Silberman\n\
++Dick Miller' + _(' as ') + 'le marchand d\'armes\n\
++Shawn Schepps' + _(' as ') + 'Nancy\n\
++Bill Paxton' + _(' as ') + 'le chef des punks\n\
++Brian Thompson' + _(' as ') + 'un punk\n\
++Marianne Muellerleile' + _(' as ') + 'la \'mauvaise\' Sarah Connor\n\
++Franco Columbu' + _(' as ') + 'le Terminator infiltrant le bunker dans le futur',
++            'country'             : u'am&#233;ricain',
++            'genre'               : u'Science fiction, Thriller',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.allocine.fr/film/fichefilm_gen_cfilm=309.html">http://www.allocine.fr/film/fichefilm_gen_cfilm=309.html</A>',
++            'trailer'             : '<A HREF="http://www.allocine.fr/film/video_gen_cfilm=309.html">http://www.allocine.fr/film/video_gen_cfilm=309.html</A>',
++            'year'                : 1984,
++            'notes'               : False,
++            'runtime'             : 108,
++            'image'               : True,
++            'rating'              : 8,
++            'cameraman'           : u'Adam Greenberg',
++            'screenplay'          : u'James Cameron',
++            'barcode'             : False
++        },
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000818.html">[Griffith-svn] r1351 - in trunk: . lib/plugins/movie
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#819">[ date ]</a>
+              <a href="thread.html#819">[ thread ]</a>
+              <a href="subject.html#819">[ subject ]</a>
+              <a href="author.html#819">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

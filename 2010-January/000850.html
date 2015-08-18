@@ -1,0 +1,1022 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1384 - in trunk/lib: . plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1384%20-%20in%20trunk/lib%3A%20.%20plugins/extensions&In-Reply-To=%3C201001052224.o05MOrtK004901%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000849.html">
+   <LINK REL="Next"  HREF="000851.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1384 - in trunk/lib: . plugins/extensions</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1384%20-%20in%20trunk/lib%3A%20.%20plugins/extensions&In-Reply-To=%3C201001052224.o05MOrtK004901%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1384 - in trunk/lib: . plugins/extensions">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  5 23:24:53 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000849.html">[Griffith-svn] r1383 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000851.html">[Griffith-svn] r1385 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#850">[ date ]</a>
+              <a href="thread.html#850">[ thread ]</a>
+              <a href="subject.html#850">[ subject ]</a>
+              <a href="author.html#850">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2010-01-05 23:24:53 +0100 (Tue, 05 Jan 2010)
+New Revision: 1384
+
+Modified:
+   trunk/lib/edit.py
+   trunk/lib/gutils.py
+   trunk/lib/plugins/extensions/ge_movieposterdb.py
+Log:
+* don't try to update poster if MD5 sum is the sam
+* cleanups
+* pep8ify
+
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2010-01-05 21:04:00 UTC (rev 1383)
++++ trunk/lib/edit.py	2010-01-05 22:24:53 UTC (rev 1384)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#380;arowski
++# Copyright &#169; 2005-2010 Vasco Nunes, Piotr O&#380;arowski
+ 
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -22,7 +22,6 @@
+ # GNU General Public License, version 2 or later
+ 
+ import logging
+-import os
+ 
+ import gtk
+ 
+@@ -32,6 +31,7 @@
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ def change_poster(self):
+     &quot;&quot;&quot;
+     changes movie poster image to a custom one
+@@ -40,17 +40,27 @@
+     picture = self.widgets['movie']['picture']
+     number = self.get_maintree_selection()[0]
+     if number is None:
+-        gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
++        gutils.error(self, _(&quot;You have no movies in your database&quot;), self.widgets['window'])
+         return False
+-    filename = gutils.file_chooser(_(&quot;Select image&quot;), action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK), name=&quot;&quot;, folder=self.locations['desktop'], picture=True)
++    filename = gutils.file_chooser(_(&quot;Select image&quot;),
++                                   action=gtk.FILE_CHOOSER_ACTION_OPEN,
++                                   buttons=(gtk.STOCK_CANCEL,
++                                            gtk.RESPONSE_CANCEL,
++                                            gtk.STOCK_OPEN,
++                                            gtk.RESPONSE_OK),
++                                   name='',
++                                   folder=self.locations['desktop'],
++                                   picture=True)
+     if filename and filename[0]:
+         filename = filename[0].decode('UTF-8')
+         update_image(self, number, filename)
+ 
++
+ def update_image(self, number, filename):
+     imagedata = file(filename, 'rb').read()
+     update_image_from_memory(self, number, imagedata)
+ 
++
+ def update_image_from_memory(self, number, data):
+     session = self.db.Session()
+     try:
+@@ -67,6 +77,10 @@
+     poster_md5 = gutils.md5sum(data)
+ 
+     movie = session.query(db.Movie).filter_by(number=number).one()
++    if poster_md5 == movie.poster_md5:
++        log.debug('same MD5 sum, no need to update poster')
++        return False
++
+     old_poster_md5 = movie.poster_md5
+ 
+     if session.query(db.Poster).filter_by(md5sum=poster_md5).count() == 0:
+@@ -75,9 +89,6 @@
+ 
+     # update the md5 *after* all other queries (so that UPDATE will not be invoked)
+     movie.poster_md5 = poster_md5
+-    
+-    if old_poster_md5:
+-        delete.delete_poster(self, old_poster_md5)
+ 
+     session.add(movie)
+     try:
+@@ -87,6 +98,9 @@
+         log.error(&quot;cannot add poster to database: %s&quot; % e)
+         return False
+ 
++    if old_poster_md5:
++        delete.delete_poster(self, old_poster_md5)
++
+     filename = gutils.get_image_fname(poster_md5, self.db, 's')
+     if filename:
+         update_tree_thumbnail(self, filename)
+@@ -96,6 +110,7 @@
+ 
+     self.update_statusbar(_(&quot;Image has been updated&quot;))
+ 
++
+ def delete_poster(self):
+     session = self.db.Session()
+     movie = session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+@@ -107,7 +122,7 @@
+         handler = self.widgets['movie']['picture'].set_from_pixbuf(gtk.gdk.pixbuf_new_from_file(image_path))
+         gutils.garbage(handler)
+         update_tree_thumbnail(self, gutils.get_defaultthumbnail_fname(self))
+-        
++
+         # update in database
+         delete.delete_poster(self, movie.poster_md5)
+         movie.poster_md5 = None
+@@ -126,6 +141,7 @@
+     else:
+         pass
+ 
++
+ def update_tree_thumbnail(self, t_image_path):
+     treeselection = self.widgets['treeview'].get_selection()
+     (tmp_model, tmp_iter) = treeselection.get_selected()
+@@ -134,4 +150,3 @@
+     # tmp_iter can be None while importing data
+     if tmp_iter:
+         self.treemodel.set_value(tmp_iter, 1, pixbuf)
+-
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-01-05 21:04:00 UTC (rev 1383)
++++ trunk/lib/gutils.py	2010-01-05 22:24:53 UTC (rev 1384)
+@@ -21,23 +21,26 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++import gzip
++import htmlentitydefs
++import logging
++import os
++import re
+ import string
+-import os
+ import sys
++import webbrowser
++from StringIO import StringIO
+ try:
+     import gtk
+     import db
+ except:
+     gtk = None
+     pass
+-import htmlentitydefs
+-import re
+-import webbrowser
+-import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ ENTITY = re.compile(r'\&amp;.\w*?\;')
+ 
++
+ def remove_accents(txt, encoding='iso-8859-1'):
+     d = {192: u'A', 193: u'A', 194: u'A', 195: u'A', 196: u'A', 197: u'A',
+          199: u'C', 200: u'E', 201: u'E', 202: u'E', 203: u'E', 204: u'I',
+@@ -51,9 +54,11 @@
+          255: u'y'}
+     return unicode(txt, encoding).translate(d)
+ 
++
+ def is_number(x):
+     return isinstance(x, int)
+ 
++
+ def find_next_available(gsql):
+     &quot;&quot;&quot;
+     finds next available movie number.
+@@ -77,19 +82,21 @@
+         number = first + 1
+         return number
+ 
++
+ def trim(text, key1, key2):
+     p1 = string.find(text, key1)
+     if p1 == -1:
+         return ''
+     else:
+-        p1 = p1+len(key1)
++        p1 = p1 + len(key1)
+     p2 = string.find(text[p1:], key2)
+     if p2 == -1:
+         return &quot;&quot;
+     else:
+-        p2 = p1+p2
++        p2 = p1 + p2
+     return text[p1:p2]
+ 
++
+ def regextrim(text, key1, key2):
+     obj = re.search(key1, text)
+     if obj is None:
+@@ -103,19 +110,23 @@
+         p2 = p1 + obj.start()
+     return text[p1:p2]
+ 
++
+ def after(text, key):
+-    p1 = string.find(text,key)
+-    return text[p1+len(key):]
++    p1 = string.find(text, key)
++    return text[p1 + len(key):]
+ 
++
+ def before(text, key):
+-    p1 = string.find(text,key)
++    p1 = string.find(text, key)
+     return text[:p1]
+ 
++
+ def gescape(text):
+-    text=string.replace(text,&quot;'&quot;, &quot;''&quot;)
+-    text=string.replace(text,&quot;--&quot;, &quot;-&quot;)
++    text = string.replace(text, &quot;'&quot;, &quot;''&quot;)
++    text = string.replace(text, &quot;--&quot;, &quot;-&quot;)
+     return text
+ 
++
+ def progress(blocks, size_block, size):
+     transfered = blocks * size_block
+     if size &gt; 0 and transfered &gt; size:
+@@ -126,6 +137,7 @@
+ 
+ # functions to handle comboboxentry stuff
+ 
++
+ def set_model_from_list(cb, items):
+     &quot;&quot;&quot;Setup a ComboBox or ComboBoxEntry based on a list of strings.&quot;&quot;&quot;
+     model = gtk.ListStore(str)
+@@ -139,6 +151,7 @@
+         cb.pack_start(cell, True)
+         cb.add_attribute(cell, 'text', 0)
+ 
++
+ def on_combo_box_entry_changed(widget):
+     model = widget.get_model()
+     m_iter = widget.get_active_iter()
+@@ -150,10 +163,13 @@
+     else:
+         return 0
+ 
++
+ def on_combo_box_entry_changed_name(widget):
+     return widget.get_active_text()
+ 
++
+ def convert_entities(text):
++
+     def conv(ents):
+         entities = htmlentitydefs.entitydefs
+         ents = ents.group(0)
+@@ -187,6 +203,7 @@
+         ctext = in_entity.re.sub(conv, text)
+         return ctext
+ 
++
+ def strip_tags(text):
+     if text is None:
+         return ''
+@@ -200,14 +217,16 @@
+             stop = text[start:].find(&quot;&gt;&quot;)
+             if stop &gt;= 0:
+                 # if it does, strip it, and continue loop
+-                text = text[:start] + text[start+stop+1:]
++                text = text[:start] + text[start + stop + 1:]
+                 finished = 0
+     return text
+ 
++
+ def save_pixmap(self, pixmap, filename):
+     &quot;&quot;&quot;XXX: deprecated&quot;&quot;&quot;
+-    pixmap.save(filename, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
++    pixmap.save(filename, 'jpeg', {'quality': '70'})
+ 
++
+ def clean(text):
+     t = strip_tags(text)
+     t = string.replace(t, '&nbsp;', ' ')
+@@ -215,6 +234,7 @@
+     t = string.replace(t, '&#160;', ' ')
+     return string.strip(t)
+ 
++
+ def gdecode(txt, encode):
+     try:
+         return txt.decode(encode)
+@@ -223,6 +243,7 @@
+ 
+ # Messages
+ 
++
+ def error(self, msg, parent=None):
+     dialog = gtk.MessageDialog(parent,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+@@ -231,6 +252,7 @@
+     dialog.run()
+     dialog.destroy()
+ 
++
+ def urllib_error(msg, parent=None):
+     dialog = gtk.MessageDialog(parent,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+@@ -239,6 +261,7 @@
+     dialog.run()
+     dialog.destroy()
+ 
++
+ def warning(msg, parent=None):
+     dialog = gtk.MessageDialog(parent,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+@@ -247,6 +270,7 @@
+     dialog.run()
+     dialog.destroy()
+ 
++
+ def info(msg, parent=None):
+     dialog = gtk.MessageDialog(parent,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+@@ -255,6 +279,7 @@
+     dialog.run()
+     dialog.destroy()
+ 
++
+ def question(msg, window=None):
+     dialog = gtk.MessageDialog(window,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+@@ -267,10 +292,12 @@
+     dialog.destroy()
+     return response in (gtk.RESPONSE_OK, gtk.RESPONSE_YES)
+ 
++
+ def popup_message(message):
+     &quot;&quot;&quot;shows popup message while executing decorated function&quot;&quot;&quot;
+ 
+     def wrap(f):
++
+         def wrapped_f(*args, **kwargs):
+             if gtk:
+                 window = gtk.Window()
+@@ -299,6 +326,7 @@
+         return wrapped_f
+     return wrap
+ 
++
+ def file_chooser(title, action=None, buttons=None, name='', folder=os.path.expanduser('~'), picture=False, backup=False):
+     dialog = gtk.FileChooserDialog(title=title, action=action, buttons=buttons)
+     dialog.set_default_response(gtk.RESPONSE_OK)
+@@ -344,6 +372,7 @@
+     dialog.destroy()
+     return filename, path
+ 
++
+ def update_preview_cb(file_chooser, preview):
+     filename = file_chooser.get_preview_filename()
+     try:
+@@ -355,25 +384,31 @@
+     file_chooser.set_preview_widget_active(have_preview)
+     return
+ 
++
+ def run_browser(url):
+     webbrowser.register('open', webbrowser.GenericBrowser(&quot;open '%s'&quot;))
+     webbrowser._tryorder.append('open')
+     webbrowser.open(url)
+ 
++
+ def read_plugins(prefix, directory):
+     &quot;&quot;&quot;returns available plugins&quot;&quot;&quot;
+ 
+     import glob
+-    return glob.glob(&quot;%s/%s*.py&quot; % (directory,prefix) )
++    return glob.glob(&quot;%s/%s*.py&quot; % (directory, prefix))
+ 
++
+ def findKey(val, dict):
+     for key, value in dict.items():
+-        if value == val: return key
++        if value == val:
++            return key
+     return None
+ 
++
+ def garbage(handler):
+     pass
+ 
++
+ def clean_posters_dir(self):
+     posters_dir = self.locations['posters']
+     counter = 0
+@@ -387,20 +422,20 @@
+             else:
+                 poster_md5 = md5sum(file(filepath, 'rb'))
+                 # lets check if this poster is orphan
+-                used = self.db.session.query(db.Poster).filter(db.Poster.md5sum==poster_md5).count()
++                used = self.db.session.query(db.Poster).filter(db.Poster.md5sum == poster_md5).count()
+                 if not used:
+                     counter += 1
+                     os.unlink(filepath)
+ 
+     if counter:
+-        print &quot;%d orphan files cleaned.&quot; %counter
++        print &quot;%d orphan files cleaned.&quot; % counter
+     else:
+         print &quot;No orphan files found.&quot;
+ 
++
+ def decompress(data):
+-    import gzip, StringIO
+     try:
+-        compressedStream = StringIO.StringIO(data)
++        compressedStream = StringIO(data)
+         gzipper = gzip.GzipFile(fileobj=compressedStream)
+         data = gzipper.read()
+     except Exception, e:
+@@ -408,19 +443,19 @@
+         pass
+     return data
+ 
++
+ def get_dependencies():
+     depend = []
+ 
+     # Python version
+     if sys.version_info[:2] &lt; (2, 5):
+         depend.append({'module': 'python',
+-            'version'    : '-'+'.'.join(map(str,sys.version_info)),
+-            'module_req' : '2.5',
+-            'url'        : '<A HREF="http://www.python.org/">http://www.python.org/</A>',
+-            'debian'     : 'python',
+-            'debian_req' : '2.5'
++            'version': '-' + '.'.join(map(str, sys.version_info)),
++            'module_req': '2.5',
++            'url': '<A HREF="http://www.python.org/">http://www.python.org/</A>',
++            'debian': 'python',
++            'debian_req': '2.5'})
+             # TODO: 'fedora', 'suse', etc.
+-        })
+ 
+     try:
+         import gtk
+@@ -430,13 +465,12 @@
+     except:
+         version = False
+     depend.append({'module': 'gtk',
+-        'version'    : version,
+-        'module_req' : '2.6',
+-        'url'        : '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
+-        'debian'     : 'python-gtk2',
+-        'debian_req' : '2.8.6-1'
++        'version': version,
++        'module_req': '2.6',
++        'url': '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
++        'debian': 'python-gtk2',
++        'debian_req': '2.8.6-1'})
+         # TODO: 'fedora', 'suse', etc.
+-    })
+ 
+     try:
+         import gtk.glade
+@@ -444,12 +478,11 @@
+     except:
+         version = False
+     depend.append({'module': 'gtk.glade',
+-        'version'    : version,
+-        'module_req' : '2.6',
+-        'url'        : '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
+-        'debian'     : 'python-glade2',
+-        'debian_req' : '2.8.6-1'
+-    })
++        'version': version,
++        'module_req': '2.6',
++        'url': '<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>',
++        'debian': 'python-glade2',
++        'debian_req': '2.8.6-1'})
+     try:
+         import sqlalchemy
+         if map(int, sqlalchemy.__version__.split('.')[:2]) &lt; [0, 5]:
+@@ -459,12 +492,11 @@
+     except:
+         version = False
+     depend.append({'module': 'sqlalchemy',
+-        'version'    : version,
+-        'module_req' : '0.5rc3',
+-        'url'        : '<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>',
+-        'debian'     : 'python-sqlalchemy',
+-        'debian_req' : '0.5~rc3'
+-    })
++        'version': version,
++        'module_req': '0.5rc3',
++        'url': '<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>',
++        'debian': 'python-sqlalchemy',
++        'debian_req': '0.5~rc3'})
+     try:
+         import sqlite3
+         version = sqlite3.version
+@@ -477,40 +509,36 @@
+         except:
+             version = False
+         depend.append({'module': 'pysqlite2',
+-            'version'    : version,
+-            'url'        : '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
+-            'debian'     : 'python-pysqlite2',
+-            'debian_req' : '2.3.0-1'
+-        })
++            'version': version,
++            'url': '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
++            'debian': 'python-pysqlite2',
++            'debian_req': '2.3.0-1'})
+     else:
+         depend.append({'module': 'sqlite3',
+-            'version'    : version,
+-            'url'        : '<A HREF="http://www.python.org">http://www.python.org</A>',
+-            'debian'     : 'python',
+-            'debian_req' : '2.5'
+-        })
++            'version': version,
++            'url': '<A HREF="http://www.python.org">http://www.python.org</A>',
++            'debian': 'python',
++            'debian_req': '2.5'})
+     try:
+         import reportlab
+         version = reportlab.Version
+     except:
+         version = False
+     depend.append({'module': 'reportlab',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://www.reportlab.org/">http://www.reportlab.org/</A>',
+-        'debian'     : 'python-reportlab',
+-        'debian_req' : '1.20debian-6'
+-    })
++        'version': version,
++        'url': '<A HREF="http://www.reportlab.org/">http://www.reportlab.org/</A>',
++        'debian': 'python-reportlab',
++        'debian_req': '1.20debian-6'})
+     try:
+         import PIL
+         version = True
+     except:
+         version = False
+     depend.append({'module': 'PIL',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://www.pythonware.com/products/pil/">http://www.pythonware.com/products/pil/</A>',
+-        'debian'     : 'python-imaging',
+-        'debian_req' : '1.1.5-6'
+-    })
++        'version': version,
++        'url': '<A HREF="http://www.pythonware.com/products/pil/">http://www.pythonware.com/products/pil/</A>',
++        'debian': 'python-imaging',
++        'debian_req': '1.1.5-6'})
+     # extra dependencies:
+     optional = []
+     try:
+@@ -519,44 +547,41 @@
+     except:
+         version = False
+     optional.append({'module': 'psycopg2',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>',
+-        'debian'     : 'python-psycopg2',
+-        'debian_req' : '1.1.21-6'
+-    })
++        'version': version,
++        'url': '<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>',
++        'debian': 'python-psycopg2',
++        'debian_req': '1.1.21-6'})
+     try:
+         import MySQLdb
+-        version    = '.'.join([str(i) for i in MySQLdb.version_info])
++        version = '.'.join([str(i) for i in MySQLdb.version_info])
+     except:
+         version = False
+     optional.append({'module': 'MySQLdb',
+-        'version'    : version,
+-        'url'        : '<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>',
+-        'debian'     : 'python-mysqldb',
+-        'debian_req' : '1.2.1-p2-2'
+-    })
++        'version': version,
++        'url': '<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>',
++        'debian': 'python-mysqldb',
++        'debian_req': '1.2.1-p2-2'})
+     try:
+         import chardet
+-        version    = chardet.__version__
++        version = chardet.__version__
+     except:
+         version = False
+     optional.append({'module': 'chardet',
+-        'version' : version,
+-        'url'     : '<A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A>',
+-        'debian'  : 'python-chardet'
+-    })
++        'version': version,
++        'url': '<A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A>',
++        'debian': 'python-chardet'})
+     try:
+         import sqlite
+-        version    = sqlite.version
++        version = sqlite.version
+     except:
+         version = False
+     optional.append({'module': 'sqlite',
+-        'version' : version,
+-        'url'     : '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
+-        'debian'  : 'python-sqlite'
+-    })
++        'version': version,
++        'url': '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
++        'debian': 'python-sqlite'})
+     return depend, optional
+ 
++
+ def html_encode(s):
+     if not isinstance(s, basestring):
+         s = str(s)
+@@ -566,10 +591,10 @@
+     s = s.replace('&quot;', '&quot;')
+     return s
+ 
++
+ def digits_only(s, maximum=None):
+     if s is None:
+         return 0
+-    import string, re
+     match = re.compile(r&quot;\d+&quot;)
+     a = match.findall(str(s))
+     if len(a):
+@@ -584,6 +609,7 @@
+         else:
+             return s
+ 
++
+ def copytree(src, dst, symlinks=False):
+     &quot;&quot;&quot;Recursively copy a directory tree using copy2().
+ 
+@@ -612,13 +638,15 @@
+         except EnvironmentError, err:
+             errors.extend(err.args[0])
+     if errors:
+-        raise EnvironmentError, errors
++        raise EnvironmentError(errors)
+ 
++
+ def is_windows_system():
+     if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+         return True
+     return False
+ 
++
+ def md5sum(fobj):
+     &quot;&quot;&quot;Returns an md5 hash for an object with read() method.&quot;&quot;&quot;
+     try:
+@@ -637,40 +665,43 @@
+         m.update(fobj)
+     return unicode(m.hexdigest())
+ 
++
+ def create_image_cache(md5sum, gsql):
+-    poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
++    session = gsql.Session()
++    poster = session.query(db.Poster).filter_by(md5sum=md5sum).first()
+     if not poster:
+         log.warn(&quot;poster not available: %s&quot;, md5sum)
+         return False
+     if not poster.data:
+         log.warn(&quot;poster data not available: %s&quot;, md5sum)
+         return False
+-    
+-    fn_big    = os.path.join(gsql.data_dir, 'posters', md5sum+'.jpg')
+-    fn_medium = os.path.join(gsql.data_dir, 'posters', md5sum+'_m.jpg')
+-    fn_small  = os.path.join(gsql.data_dir, 'posters', md5sum+'_s.jpg')
+ 
++    fn_big = os.path.join(gsql.data_dir, 'posters', md5sum + '.jpg')
++    fn_medium = os.path.join(gsql.data_dir, 'posters', md5sum + '_m.jpg')
++    fn_small = os.path.join(gsql.data_dir, 'posters', md5sum + '_s.jpg')
++
+     if not os.path.isfile(fn_big):
+         f = file(fn_big, 'wb')
+         f.write(poster.data)
+         f.close()
+-    
++
+     image = gtk.Image()
+     image.set_from_file(fn_big)
+ 
+     if not os.path.isfile(fn_medium):
+         pixbuf = image.get_pixbuf()
+         pixbuf = pixbuf.scale_simple(100, 140, 'bilinear')
+-        pixbuf.save(fn_medium, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
+-    
++        pixbuf.save(fn_medium, 'jpeg', {'quality': '70'})
++
+     if not os.path.isfile(fn_small):
+         pixbuf = image.get_pixbuf()
+         pixbuf = pixbuf.scale_simple(30, 40, 'bilinear')
+-        pixbuf.save(fn_small, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
++        pixbuf.save(fn_small, 'jpeg', {'quality': '70'})
+ 
+     return True
+ 
+-def create_imagefile(destdir, md5sum, gsql, destfilename = None):
++
++def create_imagefile(destdir, md5sum, gsql, destfilename=None):
+     poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
+     if not poster:
+         log.warn(&quot;poster not available: %s&quot;, md5sum)
+@@ -678,7 +709,7 @@
+     if not poster.data:
+         log.warn(&quot;poster data not available: %s&quot;, md5sum)
+         return False
+-    
++
+     if destfilename:
+         fulldestpath = os.path.join(destdir, destfilename + '.jpg')
+     else:
+@@ -692,6 +723,7 @@
+ 
+     return True
+ 
++
+ def get_image_fname(md5sum, gsql, size=None):
+     &quot;&quot;&quot;size: s - small; m - medium, b or None - big&quot;&quot;&quot;
+     if size not in (None, 's', 'm', 'b'):
+@@ -699,18 +731,22 @@
+     if not md5sum:
+         raise TypeError(&quot;md5sum not set&quot;)
+ 
+-    if not size or size=='b': size=''
+-    else: size = &quot;_%s&quot; % size
++    if not size or size == 'b':
++        size = ''
++    else:
++        size = &quot;_%s&quot; % size
+ 
+-    file_name = os.path.join(gsql.data_dir, 'posters', md5sum+size+'.jpg')
++    file_name = os.path.join(gsql.data_dir, 'posters', md5sum + size + '.jpg')
+ 
+     if not os.path.isfile(file_name) and not create_image_cache(md5sum, gsql):
+         log.warn(&quot;Can't create image file %s for md5sum %s&quot; % (file_name, md5sum))
+         return False
+     return file_name
+ 
++
+ def get_defaultimage_fname(self):
+     return os.path.join(self.locations['images'], 'default.png')
+ 
++
+ def get_defaultthumbnail_fname(self):
+     return os.path.join(self.locations['images'], 'default_thumbnail.png')
+
+Modified: trunk/lib/plugins/extensions/ge_movieposterdb.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_movieposterdb.py	2010-01-05 21:04:00 UTC (rev 1383)
++++ trunk/lib/plugins/extensions/ge_movieposterdb.py	2010-01-05 22:24:53 UTC (rev 1384)
+@@ -48,7 +48,6 @@
+     baseurltitleyear = '<A HREF="http://www.movieposterdb.com/embed.inc.php?movie_title=%s[%s">http://www.movieposterdb.com/embed.inc.php?movie_title=%s[%s</A>]'
+ 
+     progress = None
+-    encode = 'iso8859-1'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         log.info('fetching poster from MoviePosterDB.com...')
+@@ -58,13 +57,13 @@
+         o_title = None
+         title = None
+         if movie.o_title:
+-            if movie.o_title[-5:] == ', The':
+-                o_title = u'The ' + movie.o_title[:-5]
++            if movie.o_title.endswith(', The'):
++                o_title = u&quot;The %s&quot; % movie.o_title[:-5]
+             else:
+                 o_title = movie.o_title
+         if movie.title:
+-            if movie.title[-5:] == ', The':
+-                title = u'The ' + movie.title[:-5]
++            if movie.title.endswith(', The'):
++                title = u&quot;The %s&quot; % movie.title[:-5]
+             else:
+                 title = movie.title
+ 
+@@ -73,107 +72,92 @@
+         #  original title + year, original title only, title + year, title only)
+         try:
+             largeurl = None
+-            result = False
+-            self.encode = 'iso8859-1'
++            data = False
+             if o_title:
+                 if movie.year:
+                     url = self.baseurltitleyear % (quote(o_title), movie.year)
+-                    result = self.search(url, self.widgets['window'])
+-                    largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+-                if not result or not largeurl:
++                    data = self._get(url, self.widgets['window'])
++                    if data:
++                        largeurl = gutils.trim(data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
++                if not data or not largeurl:
+                     url = self.baseurltitle % quote(o_title)
+-                    result = self.search(url, self.widgets['window'])
+-                    largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+-            if not result or not largeurl and title and title != o_title:
++                    data = self._get(url, self.widgets['window'])
++                    if data:
++                        largeurl = gutils.trim(data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
++            if not data or not largeurl and title and title != o_title:
+                 if movie.year:
+                     url = self.baseurltitleyear % (quote(title), movie.year)
+-                    result = self.search(url, self.widgets['window'])
+-                    largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+-                if not result or not largeurl:
++                    data = self._get(url, self.widgets['window'])
++                    if data:
++                        largeurl = gutils.trim(data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
++                if not data or not largeurl:
+                     url = self.baseurltitle % quote(title)
+-                    result = self.search(url, self.widgets['window'])
+-                    largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
++                    data = self._get(url, self.widgets['window'])
++                    if data:
++                        largeurl = gutils.trim(data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+         except:
+             log.exception('')
+             gutils.warning(_('No posters found for this movie.'))
+             return
+ 
+-        if not result or not largeurl:
++        if not data or not largeurl:
+             gutils.warning(_('No posters found for this movie.'))
+             return
+ 
+         # got the url for a large poster, fetch the data, show preview and update the
+         # movie entry if the user want it
+-        self.encode = None
+-        if not self.search(largeurl, self.widgets['window']):
++        data = self._get(largeurl, self.widgets['window'], decode=False)
++        if not data:
+             gutils.warning(_('No posters found for this movie.'))
+             return
+ 
+-        if self.show_preview():
+-            update_image_from_memory(self.app, movie.number, self.data)
++        if self._show_preview(data):
++            update_image_from_memory(self.app, movie.number, data)
+ 
+-    def show_preview(self):
++    def _show_preview(self, data):
+         loader = gtk.gdk.PixbufLoader()
+-        loader.write(self.data, len(self.data))
++        loader.write(data, len(data))
+         loader.close()
+         handler = self.widgets['big_poster'].set_from_pixbuf(loader.get_pixbuf())
+         self.widgets['poster_window'].show()
+-        self.widgets['poster_window'].move(0, 0)
+         result = gutils.question(_(&quot;Do you want to use this poster instead?&quot;), self.widgets['window'])
+         self.widgets['poster_window'].hide()
+         return result
+ 
+-    def search(self, url, parent_window):
+-        try:
+-            #
+-            # initialize the progress dialog once for the following search process
+-            #
+-            if self.progress is None:
+-                self.progress = Progress(parent_window)
+-            self.progress.set_data(parent_window, _(&quot;Searching&quot;), _(&quot;Wait a moment&quot;), True)
+-            #
+-            # call the plugin specific search method
+-            #
+-            return self._search(url, parent_window)
+-        finally:
+-            # dont forget to hide the progress dialog
+-            if self.progress:
+-                self.progress.hide()
++    def _get(self, url, parent_window, decode=True):
++        # initialize the progress dialog once for the following search process
++        if not self.progress:
++            self.progress = Progress(parent_window)
+ 
+-    def _search(self, url, parent_window):
+-        result = False
++        data = None
++        url = url.encode('utf-8', 'replace')
++        log.debug('Using url &lt;%s&gt;', url)
++        self.progress.set_data(parent_window, _('Searching'), _('Wait a moment'), True)
+         try:
+-            if self.encode:
+-                url = url.encode(self.encode)
+-            else:
+-                url = url.encode('iso8859-1')
+-        except UnicodeEncodeError:
+-            url = url.encode('utf-8')
+-        log.debug('Using url &lt;%s&gt;' % url)
+-        self.progress.set_data(parent_window, _(&quot;Searching&quot;), _(&quot;Wait a moment&quot;), False)
+-        retriever = Retriever(url, parent_window, self.progress)
+-        retriever.start()
+-        while retriever.isAlive():
+-            self.progress.pulse()
+-            if self.progress.status:
+-                retriever.join()
+-            while gtk.events_pending():
+-                gtk.main_iteration()
+-        try:
+-            if retriever.html:
+-                ifile = file(retriever.html[0], 'rb')
+-                try:
+-                    self.data = ifile.read()
+-                finally:
+-                    ifile.close()
+-                # check for gzip compressed pages before decoding to unicode
+-                if len(self.data) &gt; 2 and self.data[0:2] == '\037\213':
+-                    self.data = gutils.decompress(self.data)
+-                if self.encode:
+-                    self.data = self.data.decode(self.encode, 'replace')
+-                result = True
+-                os.remove(retriever.html[0])
+-        except IOError:
+-            log.exception('')
++            retriever = Retriever(url, parent_window, self.progress)
++            retriever.start()
++            while retriever.isAlive():
++                self.progress.pulse()
++                if self.progress.status:
++                    retriever.join()
++                while gtk.events_pending():
++                    gtk.main_iteration()
++            try:
++                if retriever.html:
++                    ifile = file(retriever.html[0], 'rb')
++                    try:
++                        data = ifile.read()
++                    finally:
++                        ifile.close()
++                    # check for gzip compressed pages before decoding to unicode
++                    if len(data) &gt; 2 and data[0:2] == '\037\213':
++                        data = gutils.decompress(data)
++                    if decode:
++                        data = data.decode('utf-8', 'replace')
++                    os.remove(retriever.html[0])
++            except IOError:
++                log.exception('')
++        finally:
++            self.progress.hide()
+         urlcleanup()
+-        return result
++        return data
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000849.html">[Griffith-svn] r1383 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000851.html">[Griffith-svn] r1385 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#850">[ date ]</a>
+              <a href="thread.html#850">[ thread ]</a>
+              <a href="subject.html#850">[ subject ]</a>
+              <a href="author.html#850">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

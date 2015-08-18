@@ -1,0 +1,2006 @@
+From mikej06 at mail.berlios.de  Tue Mar  2 21:48:22 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 2 Mar 2010 21:48:22 +0100
+Subject: [Griffith-svn] r1403 - in trunk: . lib
+Message-ID: <201003022048.o22KmMBB031510@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-02 21:48:08 +0100 (Tue, 02 Mar 2010)
+New Revision: 1403
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/main_treeview.py
+Log:
+[#525039] crashed while adding films wont reboot linux mint 8
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-02-09 20:49:41 UTC (rev 1402)
++++ trunk/ChangeLog	2010-03-02 20:48:08 UTC (rev 1403)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-03-02  Michael Jahn
++	* [#525039] crashed while adding films wont reboot linux mint 8
++
+ 2010-01-17  Michael Jahn
+ 	* Scope movie plugin added
+ 
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2010-02-09 20:49:41 UTC (rev 1402)
++++ trunk/lib/main_treeview.py	2010-03-02 20:48:08 UTC (rev 1403)
+@@ -491,8 +491,11 @@
+                 filename = os.path.join(self.locations['images'], 'default_thumbnail.png')
+ 
+             self.Image.set_from_file(filename)
+-            pixbuf = self.Image.get_pixbuf()
+-            self.treemodel.set_value(myiter, 1, pixbuf)
++            try:
++                pixbuf = self.Image.get_pixbuf()
++                self.treemodel.set_value(myiter, 1, pixbuf)
++            except:
++                log.exception("can't load the image %s" % filename)
+         self.treemodel.set_value(myiter, 2, movie.o_title)
+         self.treemodel.set_value(myiter, 3, movie.title)
+         self.treemodel.set_value(myiter, 4, movie.director)
+
+
+
+From mikej06 at mail.berlios.de  Tue Mar  2 22:09:34 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 2 Mar 2010 22:09:34 +0100
+Subject: [Griffith-svn] r1404 - in trunk: . lib/plugins/movie
+Message-ID: <201003022109.o22L9YjP000216@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-02 22:09:19 +0100 (Tue, 02 Mar 2010)
+New Revision: 1404
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+[#525869] Plugin FilmAffinity (ES) doesn't import genre
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-02 20:48:08 UTC (rev 1403)
++++ trunk/ChangeLog	2010-03-02 21:09:19 UTC (rev 1404)
+@@ -7,6 +7,7 @@
+ 
+ 2010-03-02  Michael Jahn
+ 	* [#525039] crashed while adding films wont reboot linux mint 8
++	* [#525869] Plugin FilmAffinity (ES) doesn't import genre
+ 
+ 2010-01-17  Michael Jahn
+ 	* Scope movie plugin added
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2010-03-02 20:48:08 UTC (rev 1403)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2010-03-02 21:09:19 UTC (rev 1404)
+@@ -63,11 +63,7 @@
+         self.director = gutils.trim(self.page,'<b>DIRECTOR</b></td>', '</td>')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, u'<b>G?NERO Y CR?TICA</b>', '</tr>')
+-        if self.plot == '':
+-            self.plot = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '</tr>')
+-        self.plot = gutils.after(self.plot, '<td valign="top">')
+-        self.plot = gutils.after(self.plot, 'SINOPSIS:')
++        self.plot = gutils.trim(self.page, u'<b>SINOPSIS</b>', '</tr>')
+         self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+         self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+@@ -83,13 +79,13 @@
+ 
+     def get_genre(self):
+         self.genre = ''
+-        tmp = gutils.trim(self.page, u'<b>G?NERO Y CR?TICA</b>', ' / SINOPSIS')
++        tmp = gutils.trim(self.page, u'<b>G?NERO</b>', '<b>SINOPSIS</b>')
+         if tmp == '':
+-            tmp = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', ' / SINOPSIS')
++            tmp = gutils.trim(self.page, '<b>G&Eacute;NERO</b>', '<b>SINOPSIS</b>')
+         tmp = gutils.after(tmp, '<td valign="top">')
+         if tmp:
+-            tmp = tmp.split(' / ')
+-            self.genre = tmp[len(tmp) - 1]
++            self.genre = gutils.clean(string.replace(tmp, ' | ', '. '))
++            self.genre = re.sub('[.][ \t]+', '. ', self.genre)
+ 
+     def get_cast(self):
+         self.cast = ''
+@@ -185,7 +181,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 10, 10 ],
++        'Rocky' : [ 11, 11 ],
+     }
+ 
+ class PluginTest:
+@@ -213,7 +209,7 @@
+ Geraldine Hughes\n\
+ Mike Tyson',
+             'country'             : 'Estados Unidos',
+-            'genre'               : u'Acci?n. Drama. Deporte (Boxeo)',
++            'genre'               : u'Acci?n. Drama. Deporte. Boxeo',
+             'classification'      : False,
+             'studio'              : 'MGM / UA / Columbia Pictures / Revolution Studios',
+             'o_site'              : 'http://www.rockythemovie.com',
+@@ -228,7 +224,7 @@
+             'screenplay'          : 'Sylvester Stallone (Personajes: Sylvester Stallone)',
+             'barcode'             : False
+         },
+-        '373499' : { 
++        '373499' : {
+             'title'               : 'Camino',
+             'o_title'             : 'Camino',
+             'director'            : 'Javier Fesser',
+@@ -261,7 +257,7 @@
+             'screenplay'          : 'Javier Fesser',
+             'barcode'             : False
+         },
+-        '580875' : { 
++        '580875' : {
+             'title'               : 'El gato negro (Masters of Horror Series)',
+             'o_title'             : 'Black Cat (Masters of Horror Series), The',
+             'director'            : 'Stuart Gordon',
+@@ -286,7 +282,7 @@
+             'screenplay'          : 'Dennis Paoli, Stuart Gordon (Historia corta: Edgar Allan Poe)',
+             'barcode'             : False
+         },
+-        '826399' : { 
++        '826399' : {
+             'title'               : 'Surcadores del cielo (The Sky Crawlers)',
+             'o_title'             : 'Sukai kurora (The Sky Crawlers)',
+             'director'            : 'Mamoru Oshii',
+
+
+
+From mikej06 at mail.berlios.de  Tue Mar  2 22:26:49 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 2 Mar 2010 22:26:49 +0100
+Subject: [Griffith-svn] r1405 - trunk/lib/plugins/movie
+Message-ID: <201003022126.o22LQnva001091@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-02 22:26:35 +0100 (Tue, 02 Mar 2010)
+New Revision: 1405
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieScope.py
+Log:
+svn keyword Id added, small update
+
+Modified: trunk/lib/plugins/movie/PluginMovieScope.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieScope.py	2010-03-02 21:09:19 UTC (rev 1404)
++++ trunk/lib/plugins/movie/PluginMovieScope.py	2010-03-02 21:26:35 UTC (rev 1405)
+@@ -61,6 +61,7 @@
+         self.plot = gutils.trim(self.page, '<div id="film-top-middle">', '</div>')
+         if self.plot:
+             self.plot = string.replace(self.plot, '?', "'")
++            self.plot = string.replace(self.plot, '???', "'")
+             self.plot = gutils.convert_entities(self.plot)
+ 
+     def get_year(self):
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieScope.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+
+From mikej06 at mail.berlios.de  Tue Mar  2 22:55:00 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 2 Mar 2010 22:55:00 +0100
+Subject: [Griffith-svn] r1406 - in trunk: . lib/plugins/movie
+Message-ID: <201003022155.o22Lt0r6002986@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-02 22:54:44 +0100 (Tue, 02 Mar 2010)
+New Revision: 1406
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDb movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-02 21:26:35 UTC (rev 1405)
++++ trunk/ChangeLog	2010-03-02 21:54:44 UTC (rev 1406)
+@@ -8,6 +8,7 @@
+ 2010-03-02  Michael Jahn
+ 	* [#525039] crashed while adding films wont reboot linux mint 8
+ 	* [#525869] Plugin FilmAffinity (ES) doesn't import genre
++	* IMDb movie plugin updated
+ 
+ 2010-01-17  Michael Jahn
+ 	* Scope movie plugin added
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-03-02 21:26:35 UTC (rev 1405)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-03-02 21:54:44 UTC (rev 1406)
+@@ -80,7 +80,7 @@
+                     self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n\n'
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>')
++        self.year = gutils.trim(self.page, '<a href="/year/', '</a>')
+         self.year = gutils.after(self.year, '">')
+ 
+     def get_runtime(self):
+@@ -254,8 +254,8 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 17, 17 ],
+-        'Ein gl?ckliches Jahr' : [ 24, 24 ]
++        'Rocky Balboa'         : [ 18, 18 ],
++        'Ein gl?ckliches Jahr' : [ 25, 25 ]
+     }
+ 
+ class PluginTest:
+@@ -267,7 +267,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '0138097' : { 
++        '0138097' : {
+             'title'             : 'Shakespeare in Love',
+             'o_title'           : 'Shakespeare in Love',
+             'director'          : 'John Madden',
+@@ -325,7 +325,8 @@
+ Martin Neely' + _(' as ') + 'Paris / Lady Montague (as Martin Neeley)\n\
+ The Choir of St. George\'s School in Windsor' + _(' as ') + 'Choir (as The Choir of St. George\'s School, Windsor) rest of cast listed alphabetically:\n\
+ Jason Canning' + _(' as ') + 'Nobleman (uncredited)\n\
+-Rupert Everett' + _(' as ') + 'Christopher Marlowe (uncredited)',
++Rupert Everett' + _(' as ') + 'Christopher Marlowe (uncredited)\n\
++John Inman' + _(' as ') + 'Character player (uncredited)',
+             'country'           : 'USA | UK',
+             'genre'             : 'Comedy | Drama | Romance',
+             'classification'    : 'R',
+
+
+
+From mikej06 at mail.berlios.de  Thu Mar  4 23:45:29 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 4 Mar 2010 23:45:29 +0100
+Subject: [Griffith-svn] r1407 - trunk/lib/plugins/imp
+Message-ID: <201003042245.o24MjT8o029214@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-04 23:45:09 +0100 (Thu, 04 Mar 2010)
+New Revision: 1407
+
+Modified:
+   trunk/lib/plugins/imp/__init__.py
+Log:
+importing files with non-ascii characters in filename
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2010-03-02 21:54:44 UTC (rev 1406)
++++ trunk/lib/plugins/imp/__init__.py	2010-03-04 22:45:09 UTC (rev 1407)
+@@ -104,6 +104,7 @@
+         from sqlalchemy import select
+         import gtk
+ 
++        name = name.decode('utf-8')
+         if not self.set_source(name):
+             log.info("Can't read data from file %s", name)
+             return False
+
+
+
+From mikej06 at mail.berlios.de  Thu Mar  4 23:48:22 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 4 Mar 2010 23:48:22 +0100
+Subject: [Griffith-svn] r1408 - in trunk: . lib/plugins/imp
+Message-ID: <201003042248.o24MmMsx029704@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-04 23:47:58 +0100 (Thu, 04 Mar 2010)
+New Revision: 1408
+
+Added:
+   trunk/lib/plugins/imp/GriffithXML.py
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+Log:
+new import plugin: GriffithXML
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-04 22:45:09 UTC (rev 1407)
++++ trunk/ChangeLog	2010-03-04 22:47:58 UTC (rev 1408)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-03-04  Michael Jahn
++	* new import plugin: GriffithXML
++
+ 2010-03-02  Michael Jahn
+ 	* [#525039] crashed while adding films wont reboot linux mint 8
+ 	* [#525869] Plugin FilmAffinity (ES) doesn't import genre
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2010-03-04 22:45:09 UTC (rev 1407)
++++ trunk/NEWS	2010-03-04 22:47:58 UTC (rev 1408)
+@@ -1,3 +1,9 @@
++Griffith 0.12
++=============
++* New import plugins:
++   - Griffith XML
++
++
+ Griffith 0.11
+ =============
+ * Griffith extensions feature added. You can add your own extensions in
+
+Added: trunk/lib/plugins/imp/GriffithXML.py
+===================================================================
+--- trunk/lib/plugins/imp/GriffithXML.py	2010-03-04 22:45:09 UTC (rev 1407)
++++ trunk/lib/plugins/imp/GriffithXML.py	2010-03-04 22:47:58 UTC (rev 1408)
+@@ -0,0 +1,197 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2010
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import gutils
++import string
++from xml.dom import minidom, Node
++
++import logging
++log = logging.getLogger("Griffith")
++
++
++class ImportPlugin(IP):
++    description  = 'Griffith XML'
++    author       = 'Michael Jahn'
++    email        = 'griffith-private at lists.berlios.de'
++    version      = '1.0'
++    file_filters = '*.[xX][mM][lL]'
++    mime_types   = None
++
++    fileversion  = None
++    filedom      = None
++    items        = None
++    itemindex    = 0
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(_('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        """Returns number of movies in file which is about to be imported"""
++        count = 0
++        if self.filedom:
++            try:
++                rootElement = self.filedom.getElementsByTagName('root')[0]
++                for element in rootElement.childNodes:
++                    if element.nodeType == Node.ELEMENT_NODE and element.nodeName == 'movie':
++                        count = count + 1
++                log.info('GriffithXML Import: %s movies for import' % count)
++            except:
++                log.exception('')
++        else:
++            log.error('GriffithXML Import: No filedom object.')
++        return count
++
++    def get_movie_details(self):
++        """Returns dictionary with movie details"""
++        if not self.filedom:
++            self.filedom = minidom.parse(self.filename)
++        if not self.items:
++            rootElement = self.filedom.getElementsByTagName('root')[0]
++            self.items = rootElement.childNodes
++            self.itemindex = 0
++        if not self.items or len(self.items) < 1:
++            return None
++        if len(self.items) <= self.itemindex:
++            return None
++        item = self.items[self.itemindex]
++        while not (item.nodeType == Node.ELEMENT_NODE and item.nodeName == 'movie') and len(self.items) > self.itemindex + 1:
++            self.itemindex = self.itemindex + 1
++            item = self.items[self.itemindex]
++        if len(self.items) <= self.itemindex:
++            return None
++        if not len(item.childNodes):
++            return None
++
++        details = {}
++        try:
++            for node in item.childNodes:
++                if node.nodeType == Node.ELEMENT_NODE and len(node.childNodes) > 0:
++                    if node.nodeName == 'number':
++                        details['number'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'collection_id' or node.nodeName == 'collection_name':
++                        details['collection_id'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'volume_id' or node.nodeName == 'volume_name':
++                        details['volume_id'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'medium_id' or node.nodeName == 'medium_name':
++                        details['medium_id'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'vcodec_id' or node.nodeName == 'vcodec_name':
++                        details['vcodec_id'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'loaned':
++                        details['loaned'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'seen':
++                        details['seen'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'rating':
++                        details['rating'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'color':
++                        details['color'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'cond':
++                        details['cond'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'layers':
++                        details['layers'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'region':
++                        details['region'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'media_num':
++                        details['media_num'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'runtime':
++                        details['runtime'] = node.childNodes[0].data.strip()
++                        try:
++                            details['runtime'] = int(details['runtime'])
++                        except:
++                            details['runtime'] = 0
++                    elif node.nodeName == 'year':
++                        details['year'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'o_title':
++                        details['o_title'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'title':
++                        details['title'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'director':
++                        details['director'] = string.replace(node.childNodes[0].data.strip(), '\n', '')
++                    elif node.nodeName == 'o_site':
++                        details['o_site'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'site':
++                        details['site'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'trailer':
++                        details['trailer'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'country':
++                        details['country'] = string.replace(node.childNodes[0].data.strip(), '\n', '')
++                    elif node.nodeName == 'genre':
++                        details['genre'] = string.replace(node.childNodes[0].data.strip(), '\n', '')
++                    elif node.nodeName == 'image':
++                        details['poster'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'studio':
++                        details['studio'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'classification':
++                        details['classification'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'cast':
++                        details['cast'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'plot':
++                        details['plot'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'notes':
++                        details['notes'] = node.childNodes[0].data.strip()
++        except EOFError:
++            details = None
++        except Exception, e:
++            log.exception('')
++            details = None
++        self.itemindex = self.itemindex + 1
++        return details
++
++    def clear(self):
++        """clear plugin before next source file"""
++        IP.clear(self)
++        if self.filedom:
++            self.filedom.unlink()
++            self.filedom = None
++            self.fileversion = None
++            self.items = None
++            self.itemindex = 0
++
++    def destroy(self):
++        """close all resources"""
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        self.filedom = minidom.parse(self.filename)
++        try:
++            rootElement = self.filedom.getElementsByTagName('root')[0]
++            movieElements = rootElement.getElementsByTagName('movie')
++            version = 1.0
++        except Exception, e:
++            log.error(str(e))
++            self.filedom.unlink()
++            self.filedom = None
++        return version
+
+
+Property changes on: trunk/lib/plugins/imp/GriffithXML.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+
+From mikej06 at mail.berlios.de  Fri Mar 12 22:22:36 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 12 Mar 2010 22:22:36 +0100
+Subject: [Griffith-svn] r1409 - in trunk: . lib/plugins/movie
+Message-ID: <201003122122.o2CLMaFP001209@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-12 22:22:28 +0100 (Fri, 12 Mar 2010)
+New Revision: 1409
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+Log:
+updated movie plugin DVDPalace
+(shows now Blu-Rays, fixed plot)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-04 22:47:58 UTC (rev 1408)
++++ trunk/ChangeLog	2010-03-12 21:22:28 UTC (rev 1409)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-03-12  Michael Jahn
++	* updated movie plugin DVDPalace
++
+ 2010-03-04  Michael Jahn
+ 	* new import plugin: GriffithXML
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDPalace.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2010-03-04 22:47:58 UTC (rev 1408)
++++ trunk/lib/plugins/movie/PluginMovieDVDPalace.py	2010-03-12 21:22:28 UTC (rev 1409)
+@@ -32,7 +32,7 @@
+ plugin_language     = _("German")
+ plugin_author       = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version      = "1.1"
++plugin_version      = "1.2"
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -59,11 +59,9 @@
+ 
+     def get_plot(self):
+         self.plot = re.sub(
+-            '[0-9 ]+Views', '',
+-            re.sub(
+-                '[?]', '-',
++                u'[?]', '-',
+                 re.sub(
+-                    '[\x93?]', '"', gutils.regextrim(self.page, 'showcover.php[^>]*>', '</td>'))))
++                    u'[\x93?]', '"', gutils.regextrim(self.page, '[0-9 ]+Views', '</td>')))
+ 
+     def get_year(self):
+         self.year = gutils.after(gutils.trim(gutils.trim(self.page, 'Originaltitel', '</TR>'), '(', ')'), ' ')
+@@ -163,15 +161,20 @@
+         return self.page
+ 
+     def get_searches(self):
+-        elements1 = re.split('&nbsp;<a title="[^"]+" href="/dvd-datenbank/', self.page)
+-        elements1[0] = None
+-        for element in elements1:
++        elements = re.split('&nbsp;<a title="[^"]+" href="(/dvd-datenbank/|/datenbank/blu-ray/)', self.page)
++        elements[0] = None
++        for index in range(1, len(elements), 2):
++            element = elements[index + 1]
++            if elements[index] == '/datenbank/blu-ray/':
++                medium = 'Blu-Ray'
++            else:
++                medium = 'DVD'
+             if element <> None:
+                 self.ids.append(gutils.before(element,'"'))
+                 self.titles.append(
+                     gutils.trim(element, '>', '</a>') +
+-                    gutils.strip_tags(
+-                        ' (' +
++                    gutils.clean(
++                        '(' + medium + ' - ' +
+                         re.sub('[ \t\n]+', ' ',
+                         string.replace(
+                         string.replace(
+
+
+
+From mikej06 at mail.berlios.de  Sat Mar 27 22:11:37 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat, 27 Mar 2010 22:11:37 +0100
+Subject: [Griffith-svn] r1410 - in trunk: . lib lib/plugins/movie
+Message-ID: <201003272111.o2RLBbDr001561@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-27 22:11:21 +0100 (Sat, 27 Mar 2010)
+New Revision: 1410
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+   trunk/lib/test_movieplugins.py
+Log:
+updated movie plugin IMDb-de, IMDb-es, Zelluloid
+plugin test data updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/ChangeLog	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2010-03-27  Michael Jahn
++	* updated movie plugin IMDb-de, IMDb-es, Zelluloid
++
+ 2010-03-12  Michael Jahn
+ 	* updated movie plugin DVDPalace
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -210,7 +210,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '110585' : { 
++        '110585' : {
+             'title'               : u'Le Prix ?? payer',
+             'o_title'             : u'Le Prix ?? payer',
+             'director'            : u'Alexandra Lecl??re',
+@@ -239,7 +239,7 @@
+             'screenplay'          : u'Alexandra Lecl??re',
+             'barcode'             : False
+         },
+-        '309' : { 
++        '309' : {
+             'title'               : u'Terminator',
+             'o_title'             : u'Terminator',
+             'director'            : u'James Cameron',
+@@ -259,7 +259,7 @@
+ Marianne Muellerleile' + _(' as ') + 'la \'mauvaise\' Sarah Connor\n\
+ Franco Columbu' + _(' as ') + 'le Terminator infiltrant le bunker dans le futur',
+             'country'             : u'am??ricain',
+-            'genre'               : u'Science fiction, Thriller',
++            'genre'               : u'Science fiction',
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -397,7 +397,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 17, 17 ],
++        'Rocky Balboa'         : [ 19, 19 ],
+         'Arahan'               : [  7,  7 ],
+         'Ein gl??ckliches Jahr' : [  3,  3 ]
+     }
+@@ -412,7 +412,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        'B000TIQMMI' : { 
++        'B000TIQMMI' : {
+             'title'               : 'Rocky Balboa',
+             'o_title'             : 'Rocky Balboa',
+             'director'            : '',
+@@ -434,7 +434,7 @@
+             'rating'              : 9,
+             'barcode'             : '4045167004504'
+         },
+-        'B0009NSASM' : { 
++        'B0009NSASM' : {
+             'title'               : 'Ein gl??ckliches Jahr',
+             'o_title'             : 'Ein gl??ckliches Jahr',
+             'director'            : 'Claude Lelouch',
+@@ -456,7 +456,7 @@
+             'rating'              : 10,
+             'barcode'             : '7321921998843'
+         },
+-        'B000BSNOD6' : { 
++        'B000BSNOD6' : {
+             'title'               : 'Arahan (Vanilla-DVD)',
+             'o_title'             : 'Arahan (Vanilla-DVD)',
+             'director'            : 'Ryoo Seung-wan',
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -234,7 +234,7 @@
+     test_configuration = {
+         'Rocky'      : [12, 12],
+         'per??'       : [6, 6],
+-        'il ritorno' : [97, 97]}
++        'il ritorno' : [98, 98]}
+ 
+ 
+ class PluginTest:
+@@ -251,7 +251,7 @@
+             'o_title'           : 'Amor non ho, per??... per??...',
+             'director'          : 'Giorgio Bianchi',
+             'plot'              : True,
+-            'cast'              : 'Renato Rascel' + _(' as ') + 'Teodoro\n\
++            'cast'              : u'Renato Rascel' + _(' as ') + 'Teodoro\n\
+ Gina Lollobrigida' + _(' as ') + 'Gina\n\
+ Luigi Pavese' + _(' as ') + 'Antonio Scutipizzo\n\
+ Aroldo Tieri' + _(' as ') + 'Giuliano\n\
+@@ -261,18 +261,18 @@
+ Strelsa Brown' + _(' as ') + 'Mabel\n\
+ Virgilio Riento' + _(' as ') + 'Il contadino\n\
+ Gabriele Tinti' + _(' as ') + '(Gastone Tinti) Un componente dell\'orchestra\n\
+-Guglielmo Barnab??' + _(' as ') + '\n\
++Guido Barbarisi' + _(' as ') + '\n\
+ Giuseppe De Martino' + _(' as ') + '\n\
++Maria Carla Vittone' + _(' as ') + '\n\
+ Raimondo Vianello' + _(' as ') + '(Riccardo Vianello) \n\
+-Maria Carla Vittone' + _(' as ') + '\n\
+ Marco Tulli' + _(' as ') + '\n\
+ Giuseppe Ricagno' + _(' as ') + '\n\
+ Luciano Rebeggiani' + _(' as ') + '\n\
++Giovanni Lesa' + _(' as ') + '\n\
+ Kurt Lary' + _(' as ') + '\n\
+-Giovanni Lesa' + _(' as ') + '\n\
+ Riccardo Ferri' + _(' as ') + '\n\
+ Pia De Doses' + _(' as ') + '\n\
+-Guido Barbarisi' + _(' as ') + '\n\
++Guglielmo Barnab??' + _(' as ') + '\n\
+ Galeazzo Benti as',
+             'country'           : 'Italia',
+             'genre'             : 'Commedia',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -209,7 +209,7 @@
+ Geraldine Hughes\n\
+ Mike Tyson',
+             'country'             : 'Estados Unidos',
+-            'genre'               : u'Acci?n. Drama. Deporte. Boxeo',
++            'genre'               : u'Acci?n. Drama. Deporte. Boxeo. Secuela',
+             'classification'      : False,
+             'studio'              : 'MGM / UA / Columbia Pictures / Revolution Studios',
+             'o_site'              : 'http://www.rockythemovie.com',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -154,7 +154,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 15, 15 ],
++        'Rocky' : [ 16, 16 ],
+     }
+ 
+ class PluginTest:
+@@ -166,7 +166,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        'rocky-balboa.html' : { 
++        'rocky-balboa.html' : {
+             'title'               : 'Rocky Balboa',
+             'o_title'             : 'Rocky Balboa',
+             'director'            : 'Sylvester Stallone',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -26,21 +26,22 @@
+ 
+ plugin_name         = 'IMDb-de'
+ plugin_description  = 'Internet Movie Database German'
+-plugin_url          = 'german.imdb.com'
++plugin_url          = 'www.imdb.de'
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = 'mikej06 at hotmail.com'
+-plugin_version      = '1.6'
++plugin_version      = '1.7'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.encode   = 'iso8859-1'
+         self.movie_id = id
+-        self.url      = "http://german.imdb.com/title/tt%s" % str(self.movie_id)
++        self.url      = "http://www.imdb.de/title/tt%s" % str(self.movie_id)
+ 
+     def initialize(self):
+         self.cast_page = self.open_page(url=self.url + '/fullcredits')
+         self.plot_page = self.open_page(url=self.url + '/plotsummary')
++        self.comp_page = self.open_page(url=self.url + '/companycredits')
+         # looking for the original imdb page
+         self.imdb_page = self.open_page(url="http://www.imdb.com/title/tt%s" % str(self.movie_id))
+         self.imdb_plot_page = self.open_page(url="http://www.imdb.com/title/tt%s/plotsummary" % str(self.movie_id))
+@@ -48,6 +49,7 @@
+         self.page = gutils.convert_entities(self.page)
+         self.cast_page = gutils.convert_entities(self.cast_page)
+         self.plot_page = gutils.convert_entities(self.plot_page)
++        self.comp_page = gutils.convert_entities(self.comp_page)
+         self.imdb_page = gutils.convert_entities(self.imdb_page)
+         self.imdb_plot_page = gutils.convert_entities(self.imdb_plot_page)
+ 
+@@ -142,17 +144,20 @@
+         self.classification = gutils.trim(gutils.trim(self.page, 'Altersfreigabe:', '</div>'), 'Deutschland:', '|')
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '<h5>Firma:</h5>', '</div>')
+-        self.studio = self.__before_more(self.studio)
++        self.studio = gutils.trim(self.comp_page, '<h2>Produktionsfirmen</h2>', '</ul>')
++        self.studio = string.replace(self.studio, '</li><li>', ', ')
++        if not self.studio:
++            self.studio = gutils.trim(self.page, '<h5>Firma:</h5>', '</div>')
++            self.studio = self.__before_more(self.studio)
+ 
+     def get_o_site(self):
+         self.o_site = ''
+ 
+     def get_site(self):
+-        self.site = "http://german.imdb.com/title/tt%s" % self.movie_id
++        self.site = "http://www.imdb.de/title/tt%s" % self.movie_id
+ 
+     def get_trailer(self):
+-        self.trailer = "http://german.imdb.com/title/tt%s/trailers" % self.movie_id
++        self.trailer = "http://www.imdb.de/title/tt%s/trailers" % self.movie_id
+ 
+     def get_country(self):
+         self.country = gutils.trim(self.page, '<h5>Land:</h5>', '</div>')
+@@ -211,11 +216,32 @@
+             self.notes += "%s: %s\n" %(_('Color').encode('utf8'), color)
+         if len(tagline)>0:
+             self.notes += "%s: %s\n" %('Tagline', tagline)
+-    
++
++    def get_screenplay(self):
++        self.screenplay = ''
++        parts = re.split('<a href=', gutils.trim(self.cast_page, '>Buch<', '</table>'))
++        if len(parts) > 1:
++            for part in parts[1:]:
++                screenplay = gutils.trim(part, '>', '<')
++                if screenplay == 'WGA':
++                    continue
++                screenplay = screenplay.replace(' (geschrieben von)', '')
++                screenplay = screenplay.replace(' (original scenario)', '')
++                screenplay = screenplay.replace(' und<', '<')
++                self.screenplay = self.screenplay + screenplay + ', '
++            if len(self.screenplay) > 2:
++                self.screenplay = self.screenplay[0:len(self.screenplay) - 2]
++
++    def get_cameraman(self):
++        self.cameraman = '<' + gutils.trim(self.cast_page, '>Kamera<', '</table>')
++        self.cameraman = string.replace(self.cameraman, '(Kamera)', '')
++        self.cameraman = string.replace(self.cameraman, '(nicht im Abspann)', '')
++
+     def __before_more(self, data):
+-        tmp = string.find(data, '>mehr<')
+-        if tmp>0:
+-            data = data[:tmp] + '>'
++        for element in ['>Mehr ansehen<', '>mehr<', '>Full summary<', '>Full synopsis<']:
++            tmp = string.find(data, element)
++            if tmp>0:
++                data = data[:tmp] + '>'
+         return data
+ 
+ class SearchPlugin(movie.SearchMovie):
+@@ -223,8 +249,8 @@
+     PATTERN_POWERSEARCH = re.compile(r"""Here are the [0-9]+ matching titles""")
+ 
+     def __init__(self):
+-        self.original_url_search   = 'http://german.imdb.com/find?more=tt&q='
+-        self.translated_url_search = 'http://german.imdb.com/find?more=tt&q='
++        self.original_url_search   = 'http://www.imdb.de/find?more=tt&q='
++        self.translated_url_search = 'http://www.imdb.de/find?more=tt&q='
+         self.encode                = 'utf8'
+         self.remove_accents        = False
+ 
+@@ -236,7 +262,7 @@
+             if self.PATTERN_POWERSEARCH.search(self.page) is None:
+                 self.page = ''
+         else:
+-            self.page = tmp 
++            self.page = tmp
+         # correction of all &#xxx entities
+         self.page = self.page.decode('iso8859-1')
+         self.page = gutils.convert_entities(self.page)
+@@ -265,7 +291,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 18, 18 ],
++        'Rocky Balboa'         : [ 20, 20 ],
+         'Ein gl??ckliches Jahr' : [  6,  6 ]
+     }
+ 
+@@ -278,7 +304,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '0479143' : { 
++        '0479143' : {
+             'title'             : 'Rocky Balboa',
+             'o_title'           : 'Rocky Balboa',
+             'director'          : 'Sylvester Stallone',
+@@ -339,15 +365,20 @@
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (Sprechrolle)\n\
+ Gary Compton' + _(' as ') + 'Sicherheitsbediensteter ??brige Besetzung in alphabetischer Reihenfolge:\n\
+-Michael Ahl' + _(' as ') + 'Restaurant patron (nicht im Abspann)\n\
++Vale Anoai' + _(' as ') + 'Shopper in Italian Market\n\
++Michael Ahl' + _(' as ') + 'Restaurant Patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
+ Lacy Bevis' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Tim Brooks' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
++D.T. Carney' + _(' as ') + 'High Roller (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+-Rennie Cowan' + _(' as ') + 'Boxing spectator (nicht im Abspann)\n\
+-Deon Derrico' + _(' as ') + 'High roller at limo (nicht im Abspann)\n\
++Rennie Cowan' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
++Peter Defeo' + _(' as ') + 'Vendor (nicht im Abspann)\n\
++Deon Derrico' + _(' as ') + 'High Roller at Limo (nicht im Abspann)\n\
++Jacob \'Stitch\' Duran' + _(' as ') + 'Dixon\'s Trainer (nicht im Abspann)\n\
+ Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (nicht im Abspann)\n\
+ David Gere' + _(' as ') + 'Patron at Adrian\'s (nicht im Abspann)\n\
++Noah Jacobs' + _(' as ') + 'Boxing Fan (nicht im Abspann)\n\
+ Mark J. Kilbane' + _(' as ') + 'Businessman (nicht im Abspann)\n\
+ Zach Klinefelter' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ David Kneeream' + _(' as ') + 'Adrian\'s Patron (nicht im Abspann)\n\
+@@ -362,23 +393,25 @@
+ Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
+ Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)\n\
+-Kimberly Villanova' + _(' as ') + 'Business woman (nicht im Abspann)',
++Kimberly Villanova' + _(' as ') + 'Businesswoman (nicht im Abspann)',
+             'country'           : 'USA',
+             'genre'             : 'Drama | Sport',
+             'classification'    : False,
+-            'studio'            : 'Metro-Goldwyn-Mayer (MGM)',
++            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
+             'o_site'            : False,
+-            'site'              : 'http://german.imdb.com/title/tt0479143',
+-            'trailer'           : 'http://german.imdb.com/title/tt0479143/trailers',
++            'site'              : 'http://www.imdb.de/title/tt0479143',
++            'trailer'           : 'http://www.imdb.de/title/tt0479143/trailers',
+             'year'              : 2006,
+             'notes'             : _('Language') + ': Englisch | Spanisch\n'\
+ + _('Audio') + ': DTS | Dolby Digital | SDDS\n'\
+ + _('Color') + ': Farbe',
+             'runtime'           : 102,
+             'image'             : True,
+-            'rating'            : 7
++            'rating'            : 7,
++            'screenplay'        : 'Sylvester Stallone, Sylvester Stallone',
++            'cameraman'         : 'Clark Mathis'
+         },
+-        '0069815' : { 
++        '0069815' : {
+             'title'             : 'Ein gl??ckliches Jahr',
+             'o_title'           : 'La bonne ann??e',
+             'director'          : 'Claude Lelouch',
+@@ -410,17 +443,19 @@
+ Jean-Louis Trintignant' + _(' as ') + 'Un homme (Archivmaterial) (nicht im Abspann)',
+             'country'            : 'Frankreich | Italien',
+             'genre'              : 'Kom??die',
+-            'classification'     : False,
+-            'studio'             : 'Les Films 13',
++            'classification'     : '12 (f)',
++            'studio'             : 'Les Films 13, Rizzoli Film',
+             'o_site'             : False,
+-            'site'               : 'http://german.imdb.com/title/tt0069815',
+-            'trailer'            : 'http://german.imdb.com/title/tt0069815/trailers',
++            'site'               : 'http://www.imdb.de/title/tt0069815',
++            'trailer'            : 'http://www.imdb.de/title/tt0069815/trailers',
+             'year'               : 1973,
+             'notes'              : _('Language') + ': Franz??sisch\n'\
+ + _('Audio') + ': Mono\n'\
+ + _('Color') + ': Farbe (Eastmancolor)',
+             'runtime'            : 90,
+             'image'              : True,
+-            'rating'             : 7
++            'rating'             : 7,
++            'screenplay'         : 'Claude Lelouch, Pierre Uytterhoeven, Claude Lelouch',
++            'cameraman'          : 'Claude Lelouch'
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -24,21 +24,37 @@
+ import gutils
+ import movie
+ import string
++import re
+ 
+-plugin_name        = 'IMDb-es'
+-plugin_description    = 'Internet Movie Database Spanish'
+-plugin_url        = 'spanish.imdb.com'
+-plugin_language        = _('Spanish')
+-plugin_author        = 'Pedro D. S?nchez'
+-plugin_author_email    = '<pedrodav at gmail.com>'
+-plugin_version        = '0.2'
++plugin_name         = 'IMDb-es'
++plugin_description  = 'Internet Movie Database Spanish'
++plugin_url          = 'www.imdb.es'
++plugin_language     = _('Spanish')
++plugin_author       = 'Pedro D. S?nchez'
++plugin_author_email = '<pedrodav at gmail.com>'
++plugin_version      = '0.3'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.encode='iso-8859-15'
+         self.movie_id = id
+-        self.url = "http://spanish.imdb.com/title/tt%s" % str(self.movie_id)
++        self.url = "http://www.imdb.es/title/tt%s" % str(self.movie_id)
+ 
++    def initialize(self):
++        self.cast_page = self.open_page(url=self.url + '/fullcredits')
++        self.plot_page = self.open_page(url=self.url + '/plotsummary')
++        self.comp_page = self.open_page(url=self.url + '/companycredits')
++        # looking for the original imdb page
++        self.imdb_page = self.open_page(url="http://www.imdb.com/title/tt%s" % str(self.movie_id))
++        self.imdb_plot_page = self.open_page(url="http://www.imdb.com/title/tt%s/plotsummary" % str(self.movie_id))
++        # correction of all &#xxx entities
++        self.page = gutils.convert_entities(self.page)
++        self.cast_page = gutils.convert_entities(self.cast_page)
++        self.plot_page = gutils.convert_entities(self.plot_page)
++        self.comp_page = gutils.convert_entities(self.comp_page)
++        self.imdb_page = gutils.convert_entities(self.imdb_page)
++        self.imdb_plot_page = gutils.convert_entities(self.imdb_plot_page)
++
+     def get_image(self):
+         tmp = string.find(self.page, 'a name="poster"')
+         if tmp == -1:        # poster not available
+@@ -47,7 +63,7 @@
+             self.image_url = gutils.trim(self.page[tmp:], 'src="', '"')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '<strong class="title">', ' <small>')
++        self.o_title = gutils.trim(self.page, '<h1>', '<')
+ 
+     def get_title(self):
+         tmp = 0
+@@ -71,74 +87,131 @@
+             self.title = self.o_title
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page,'Dirigida por</b><br>', '<br>')
++        self.director = '<' + gutils.trim(self.cast_page,'>Dirigida por<', '</table>')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '<b class="ch">Resumen', '<a href="/rg/title-tease/plot')
+         self.plot = gutils.after(self.plot, ':</b> ')
+ 
++        self.plot = gutils.trim(self.page, '<h5>Trama:</h5>', '</div>')
++        self.plot = self.__before_more(self.plot)
++        tmp = gutils.trim(self.plot_page, '<div id="swiki.2.1">', '</div>')
++        if tmp:
++            self.plot = tmp
++        elements = string.split(self.plot_page, '<p class="plotpar">')
++        if len(elements) > 1:
++            self.plot = self.plot + '\n\n'
++            elements[0] = ''
++            for element in elements:
++                if element != '':
++                    self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n'
++        if not self.plot:
++            # nothing in spanish found, try original
++            self.plot = gutils.regextrim(self.imdb_page, '<h5>Plot:</h5>', '(</div>|<a href.*)')
++            self.plot = self.__before_more(self.plot)
++            elements = string.split(self.imdb_plot_page, '<p class="plotpar">')
++            if len(elements) > 1:
++                self.plot = self.plot + '\n\n'
++                elements[0] = ''
++                for element in elements:
++                    if element <> '':
++                        self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n\n'
++
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>)</small>')
+-        self.year = gutils.after(self.year, '">')
++        self.year = gutils.trim(self.page, '<h1>', ' <span class')
++        self.year = gutils.trim(self.year, '(', ')')
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, '<b class="ch">Duraci?n:</b>', ' min')
++        self.runtime = gutils.trim(self.page, u'<h5>Duraci?n:</h5>', ' min')
+         if self.runtime == '':
+-            self.runtime = gutils.trim(self.page, '<b class="ch">Duraci&oacute;n:</b>', ' min')
++            self.runtime = gutils.trim(self.page, '<h5>Duraci&oacute;n:</h5>', ' min')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, '<a href="/Sections/Genres/', '<br>')
+-        self.genre = gutils.after(self.genre, '/">')
+-        self.genre = string.replace(self.genre, '(m?s)', '')
++        self.genre = gutils.trim(self.page, u'<h5>G?nero:</h5>', '</div>')
++        self.genre = string.replace(self.genre, u'(m?s)', '')
+         self.genre = string.replace(self.genre, '(m&aacute;s)', '')
+ 
+     def get_cast(self):
+         self.cast = ''
+-        self.cast = gutils.trim(self.page, 'Cast overview, first billed only:', '<a href="fullcredits">')
+-        if (self.cast==''):
+-            self.cast = gutils.trim(self.page, 'cast: ','<a href="fullcredits">')
+-        self.cast = string.replace(self.cast, ' .... ', _(' as '))
++        self.cast = gutils.trim(self.cast_page, '<table class="cast">', '</table>')
++        if self.cast == '':
++            self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
++        self.cast = string.replace(self.cast, ' ... ', _(' as ').encode('utf8'))
++        self.cast = string.replace(self.cast, '...', _(' as ').encode('utf8'))
+         self.cast = string.replace(self.cast, '</tr><tr>', "\n")
+-        self.cast = string.replace(self.cast, '</tr><tr bgcolor="#FFFFFF">', "\n")
+-        self.cast = string.replace(self.cast, '</tr><tr bgcolor="#F0F0F0">', "\n")
+-        self.cast = string.strip(gutils.strip_tags(self.cast))
++        self.cast = re.sub('</tr>[ \t]*<tr[ \t]*class="even">', "\n", self.cast)
++        self.cast = re.sub('</tr>[ \t]*<tr[ \t]*class="odd">', "\n", self.cast)
++        self.cast = self.__before_more(self.cast)
++        self.cast = re.sub('[ ]+', ' ', self.cast)
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page, '<a href="/List?certificates=Spain:', '</a>')
+-        self.classification = gutils.after(self.classification, '">Spain:')
+-        #self.classification = gutils.trim(self.page, 'MPAA</a>:</b> ', '<br>')
+-        #self.classification = ''
++        self.classification = gutils.trim(self.page, u'<h5>Clasificaci?n:</h5>', '</div>')
+ 
+     def get_studio(self):
+-        self.studio = ''
++        self.studio = gutils.trim(self.comp_page, u'<h2>Compa??as Productores</h2>', '</ul>')
++        self.studio = string.replace(self.studio, '</li><li>', ', ')
+ 
+     def get_o_site(self):
+         self.o_site = ''
+ 
+     def get_site(self):
+-        self.site = "http://spanish.imdb.com/title/tt%s" % self.movie_id
++        self.site = "http://www.imdb.es/title/tt%s" % self.movie_id
+ 
+     def get_trailer(self):
+-        self.trailer = "http://spanish.imdb.com/title/tt%s/trailers" % self.movie_id
++        self.trailer = "http://www.imdb.es/title/tt%s/trailers" % self.movie_id
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '<b class="ch">Pa?s:</b>', '</a>')
++        self.country = gutils.trim(self.page, u'<h5>Pa?s:</h5>', '</div>')
+         if self.country == '':
+-            self.country = gutils.trim(self.page, '<b class="ch">Pa&iacute;s:</b>', '</a>')
+-        self.country = gutils.after(self.country, '/">')
++            self.country = gutils.trim(self.page, '<h5>Pa&iacute;s:</h5>', '</a>')
++        self.country = self.__before_more(self.country)
++        self.country = re.sub('[\n]+', '', self.country)
++        self.country = re.sub('[ ]+', ' ', self.country)
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, '<b class="ch">Calificaci?n de los usuarios:</b>', '/10</b> (')
++        self.rating = gutils.trim(self.page, u'<h5>Calificaci?n:</h5>', '/10</b>')
+         if self.rating == '':
+-            self.rating = gutils.trim(self.page, '<b class="ch">Calificaci&oacute;n de los usuarios:</b>', '/10</b> (')
++            self.rating = gutils.trim(self.page, '<h5>Calificaci&oacute;n de los usuarios:</h5>', '/10</b>')
+         if self.rating:
+-            self.rating = str(float(gutils.clean(self.rating)))
++            try:
++                tmp = re.findall('[0-9.,]+', gutils.clean(self.rating))
++                if tmp and len(tmp) > 0:
++                    self.rating = round(float(tmp[0].replace(',', '.')))
++            except:
++                self.rating = 0
++        else:
++            self.rating = 0
+ 
++    def get_screenplay(self):
++        self.screenplay = ''
++        parts = re.split('<a href=', gutils.trim(self.cast_page, u'>Cr?ditos del gui?n<', '</table>'))
++        if len(parts) > 1:
++            for part in parts[1:]:
++                screenplay = gutils.trim(part, '>', '<')
++                if screenplay == 'WGA':
++                    continue
++                screenplay = screenplay.replace(' (escrito por)', '')
++                screenplay = screenplay.replace(' and<', '<')
++                self.screenplay = self.screenplay + screenplay + ', '
++            if len(self.screenplay) > 2:
++                self.screenplay = self.screenplay[0:len(self.screenplay) - 2]
++
++    def get_cameraman(self):
++        self.cameraman = string.replace('<' + gutils.trim(self.cast_page, u'>Fotograf?a por<', '</table>'), u'(director de fotograf?a) ', '')
++
++    def __before_more(self, data):
++        for element in [u'>Ver m?s<', '>Full summary<', '>Full synopsis<']:
++            tmp = string.find(data, element)
++            if tmp>0:
++                data = data[:tmp] + '>'
++        return data
++
+ class SearchPlugin(movie.SearchMovie):
++    PATTERN = re.compile(r"""<a href=['"]/title/tt([0-9]+)/["'](.*?)</tr>""", re.IGNORECASE)
+ 
+     def __init__(self):
+-        self.original_url_search    = 'http://spanish.imdb.com/find?more=tt;q='
+-        self.translated_url_search    = 'http://spanish.imdb.com/find?more=tt;q='
++        self.original_url_search = 'http://www.imdb.es/find?more=tt;q='
++        self.translated_url_search = 'http://www.imdb.es/find?more=tt;q='
+         self.encode = 'iso-8859-15'
+ 
+     def search(self,parent_window):
+@@ -148,13 +221,148 @@
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.trim(self.page, '</b> found the following results:', '<b>Suggestions For Improving Your Results</b>');
++        self.page = gutils.regextrim(self.page, ' resultado[s]*[)]', 'Sugerencias Para Mejorar Sus Resultados');
+         self.page = self.page.decode('iso-8859-15')
++        # correction of all &#xxx entities
++        self.page = gutils.convert_entities(self.page)
+ 
+     def get_searches(self):
+-        elements = string.split(self.page, '<li>')
++        elements = string.split(self.page, '<tr>')
++        if len(elements) < 2:
++            elements = string.split(self.page, '<TR>')
+ 
+-        if (elements[0]<>''):
+-            for element in elements:
+-                self.ids.append(gutils.trim(element, '/title/tt','/?fr='))
+-                self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, ';fm=1">', '</li>'))))
++        if len(elements):
++            for element in elements[1:]:
++                match = self.PATTERN.findall(element)
++                for entry in match:
++                    tmp  = re.sub('^[0-9]+[.]', '', gutils.clean(gutils.after(entry[1], '>')))
++                    self.ids.append(entry[0])
++                    self.titles.append(tmp)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa'         : [ 20, 20 ]
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> dict { arribute -> value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '0479143' : {
++            'title'             : 'Rocky Balboa',
++            'o_title'           : 'Rocky Balboa',
++            'director'          : 'Sylvester Stallone',
++            'plot'              : True,
++            'cast'              : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Robert Balboa Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian (tomas de archivo)\n\
++Lou DiBella' + _(' as ') + u'?l Mismo\n\
++Mike Tyson' + _(' as ') + u'?l Mismo\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Ana Gerena' + _(' as ') + 'Isabel\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Louis Giansante' + _(' as ') + 'Bar Thug\n\
++Maureen Schilling' + _(' as ') + 'Lucky\'s Bartender\n\
++Lahmard J. Tate' + _(' as ') + 'X-Cell (como Lahmard Tate)\n\
++Woody Paige' + _(' as ') + 'ESPN Commentator (como Woodrow W. Paige)\n\
++Skip Bayless' + _(' as ') + 'ESPN Commentator\n\
++Jay Crawford' + _(' as ') + 'ESPN Commentator\n\
++Brian Kenny' + _(' as ') + 'ESPN Host\n\
++Dana Jacobson' + _(' as ') + 'ESPN Host\n\
++Charles Johnson' + _(' as ') + 'ESPN Host (como Chuck Johnson)\n\
++James Binns' + _(' as ') + 'Commissioner (como James J. Binns)\n\
++Johnnie Hobbs Jr.' + _(' as ') + 'Commissioner\n\
++Barney Fitzpatrick' + _(' as ') + 'Commissioner\n\
++Jim Lampley' + _(' as ') + 'HBO Commentator\n\
++Larry Merchant' + _(' as ') + 'HBO Commentator\n\
++Max Kellerman' + _(' as ') + 'HBO Commentator\n\
++LeRoy Neiman' + _(' as ') + u'?l Mismo\n\
++Bert Randolph Sugar' + _(' as ') + u'Ring Magazine Reporter\n\
++Bernard Fern?ndez' + _(' as ') + 'Boxing Association of America Writer (como Bernard Fernandez)\n\
++Gunnar Peterson' + _(' as ') + 'Weightlifting Trainer\n\
++Yahya' + _(' as ') + 'Dixon\'s Opponent\n\
++Marc Ratner' + _(' as ') + 'Weigh-In Official\n\
++Anthony Lato Jr.' + _(' as ') + 'Rocky\'s Inspector\n\
++Jack Lazzarado' + _(' as ') + 'Dixon\'s Inspector\n\
++Michael Buffer' + _(' as ') + 'Ring Announcer\n\
++Joe Cortez' + _(' as ') + u'?rbitro\n\
++Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
++Vinod Kumar' + _(' as ') + 'Ravi\n\
++Fran Pultro' + _(' as ') + 'Father at Restaurant\n\
++Frank Stallone' + _(' as ') + 'Dinner Patron (como Frank Stallone Jr.)\n\
++Jody Giambelluca' + _(' as ') + 'Dinner Patron\n\
++Tobias Segal' + _(' as ') + 'Robert\'s Friend\n\
++Tim Carr' + _(' as ') + 'Robert\'s Friend\n\
++Matt Frack' + _(' as ') + 'Robert\'s Friend #3\n\
++Paul Dion Monte' + _(' as ') + 'Robert\'s Friend\n\
++Kevin King Templeton' + _(' as ') + 'Robert\'s Friend (como Kevin King-Templeton)\n\
++Robert Michael Kelly' + _(' as ') + 'Mr. Tomilson\n\
++Rick Buchborn' + _(' as ') + 'Rocky Fan\n\
++Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
++Don Sherman' + _(' as ') + 'Andy\n\
++Stu Nahan' + _(' as ') + 'Computer Fight Commentator (voz)\n\
++Gary Compton' + _(' as ') + u'Oficial de Seguridad listado alfab?tico del resto del reparto:\n\
++Vale Anoai' + _(' as ') + 'Shopper in Italian Market\n\
++Michael Ahl' + _(' as ') + 'Restaurant Patron (sin acreditar)\n\
++Andrew Aninsman' + _(' as ') + 'Promoter (sin acreditar)\n\
++Lacy Bevis' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++Tim Brooks' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++D.T. Carney' + _(' as ') + 'High Roller (sin acreditar)\n\
++Ricky Cavazos' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++Rennie Cowan' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++Peter Defeo' + _(' as ') + 'Vendor (sin acreditar)\n\
++Deon Derrico' + _(' as ') + 'High Roller at Limo (sin acreditar)\n\
++Jacob \'Stitch\' Duran' + _(' as ') + 'Dixon\'s Trainer (sin acreditar)\n\
++Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (sin acreditar)\n\
++David Gere' + _(' as ') + 'Patron at Adrian\'s (sin acreditar)\n\
++Noah Jacobs' + _(' as ') + 'Boxing Fan (sin acreditar)\n\
++Mark J. Kilbane' + _(' as ') + 'Businessman (sin acreditar)\n\
++Zach Klinefelter' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++David Kneeream' + _(' as ') + 'Adrian\'s Patron (sin acreditar)\n\
++Dolph Lundgren' + _(' as ') + 'Captain Ivan Drago (tomas de archivo) (sin acreditar)\n\
++Dean Mauro' + _(' as ') + 'Sports Journalist (sin acreditar) (sin confirmar)\n\
++Burgess Meredith' + _(' as ') + 'Mickey Goldmill (tomas de archivo) (sin acreditar)\n\
++Dan Montero' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++Keith Moyer' + _(' as ') + 'Administrador del Bar (sin acreditar)\n\
++Mr. T' + _(' as ') + 'Clubber Lang (tomas de archivo) (sin acreditar)\n\
++Jacqueline Olivia' + _(' as ') + 'Chica (sin acreditar)\n\
++Brian H. Scott' + _(' as ') + 'Ringside Cop #1 (sin acreditar)\n\
++Jackie Sereni' + _(' as ') + 'Girl on Steps (sin acreditar)\n\
++Keyon Smith' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
++Frank Traynor' + _(' as ') + 'Abogado (sin acreditar)\n\
++Kimberly Villanova' + _(' as ') + 'Businesswoman (sin acreditar)',
++            'country'           : 'Estados Unidos',
++            'genre'             : 'Drama | Deporte',
++            'classification'    : u'Estados Unidos:PG  | Singapur:PG  | Finlandia:K-11  | Reino Unido:12A  | Canad?:G (British Columbia) | Australia:M  | Irlanda:PG  | Hong Kong:IIA  | M?xico:A  | Noruega:11  | Suiza:12 (canton of Geneva) | Suiza:12 (canton of Vaud) | Brasil:12  | Argentina:Atp  | Malasia:U  | Filipinas:PG-13 (MTRCB) | Portugal:M/12  | Corea del Sur:12  | Suecia:11  | Nueva Zelanda:M',
++            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
++            'o_site'            : False,
++            'site'              : 'http://www.imdb.es/title/tt0479143',
++            'trailer'           : 'http://www.imdb.es/title/tt0479143/trailers',
++            'year'              : 2006,
++            'notes'             : False,
++            'runtime'           : 102,
++            'image'             : True,
++            'rating'            : 7,
++            'screenplay'        : 'Sylvester Stallone, Sylvester Stallone',
++            'cameraman'         : 'Clark Mathis',
++        },
++    }
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -185,9 +185,10 @@
+         self.cameraman = ''
+ 
+     def __before_more(self, data):
+-        tmp = string.find(data, '>more<')
+-        if tmp > 0:
+-            data = data[:tmp] + '>'
++        for element in ['>See more<', '>more<', '>Full summary<', '>Full synopsis<']:
++            tmp = string.find(data, element)
++            if tmp>0:
++                data = data[:tmp] + '>'
+         return data
+ 
+ class SearchPlugin(movie.SearchMovie):
+@@ -254,8 +255,8 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 18, 18 ],
+-        'Ein gl??ckliches Jahr' : [ 25, 25 ]
++        'Rocky Balboa'         : [ 20, 20 ],
++        'Ein gl??ckliches Jahr' : [ 41, 41 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -364,7 +364,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        'K_rocky-balboa/96132.html' : { 
++        'K_rocky-balboa/96132.html' : {
+             'title'               : 'Rocky Balboa',
+             'o_title'             : 'Rocky Balboa',
+             'director'            : 'Sylvester Stallone',
+@@ -392,7 +392,7 @@
+             'cameraman'           : 'J. Clark Mathis',
+             'screenplay'          : 'Sylvester Stallone'
+         },
+-        'K_ein-glueckliches-jahr/28675.html' : { 
++        'K_ein-glueckliches-jahr/28675.html' : {
+             'title'               : 'Ein gl??ckliches Jahr',
+             'o_title'             : 'La bonne ann??e',
+             'director'            : 'Claude Lelouch',
+@@ -416,7 +416,7 @@
+             'cameraman'           : 'Jean Collomb',
+             'screenplay'          : 'Claude Lelouch'
+         },
+-        'V_ein-glueckliches-jahr-dvd/85546.html' : { 
++        'V_ein-glueckliches-jahr-dvd/85546.html' : {
+             'title'               : 'Ein gl??ckliches Jahr',
+             'o_title'             : 'La bonne ann??e',
+             'director'            : 'Claude Lelouch',
+@@ -427,7 +427,7 @@
+ Andr?? Falcon',
+             'country'             : 'Frankreich/Italien',
+             'genre'               : 'Drama',
+-            'classification'      : 'ab 12 Jahren',
++            'classification'      : 'ab 12',
+             'studio'              : 'Warner Home Video',
+             'o_site'              : False,
+             'site'                : 'http://www.video.de/videofilm/ein-glueckliches-jahr-dvd/85546.html',
+@@ -447,7 +447,7 @@
+             'cameraman'           : 'Jean Collomb',
+             'screenplay'          : 'Claude Lelouch'
+         },
+-        'V_arahan-vanilla-dvd/90405.html' : { 
++        'V_arahan-vanilla-dvd/90405.html' : {
+             'title'               : 'Arahan',
+             'o_title'             : 'Arahan jangpung dae jakjeon',
+             'director'            : 'Ryoo Seung-wan',
+@@ -459,7 +459,7 @@
+ Yun Ju-sang' + _(' as ') + 'Mu-woon',
+             'country'             : 'S??dkorea',
+             'genre'               : 'Action/ Kom??die',
+-            'classification'      : 'ab 16 Jahren',
++            'classification'      : 'ab 16',
+             'studio'              : 'WVG Medien',
+             'o_site'              : False,
+             'site'                : 'http://www.video.de/videofilm/arahan-vanilla-dvd/90405.html',
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -39,7 +39,7 @@
+ 
+     def get_image(self):
+         self.image_url = "http://img.ofdb.de/film/" + gutils.trim(self.page, 'img src="http://img.ofdb.de/film/', '"' )
+-        
++
+     def get_o_title(self):
+         self.o_title = gutils.clean(gutils.trim(self.page, 'Originaltitel:', '</tr>'))
+         if self.o_title == '':
+@@ -168,11 +168,11 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        'film/103013,Rocky%20Balboa' : { 
+-            'title'             : 'Rocky Balboa',
++        'film/103013,Rocky%20Balboa' : {
++            'title'               : 'Rocky Balboa',
+             'o_title'             : 'Rocky Balboa',
+             'director'            : 'Sylvester Stallone',
+-            'plot'                 : True,
++            'plot'                : True,
+             'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
+ Burt Young' + _(' as ') + 'Paulie\n\
+ Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+@@ -229,24 +229,24 @@
+ Lou DiBella\n\
+ Joe Cortez\n\
+ Ricky Cavazos',
+-            'country'            : 'USA',
+-            'genre'                : 'Action, Drama, Sportfilm',
+-            'classification'    : False,
+-            'studio'            : 'Metro-Goldwyn-Mayer (MGM)',
+-            'o_site'            : False,
++            'country'             : 'USA',
++            'genre'               : 'Action, Drama, Sportfilm',
++            'classification'      : False,
++            'studio'              : 'Metro-Goldwyn-Mayer (MGM)',
++            'o_site'              : False,
+             'site'                : 'http://www.ofdb.de/film/103013,Rocky%20Balboa',
+-            'trailer'            : False,
++            'trailer'             : False,
+             'year'                : 2006,
+-            'notes'                : False,
+-            'runtime'            : 102,
+-            'image'                : True,
+-            'rating'            : 8
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 8
+         },
+-        'film/22489,Ein-Gl%C3%BCckliches-Jahr' : { 
+-            'title'             : 'Gl??ckliches Jahr, Ein',
++        'film/22489,Ein-Gl%C3%BCckliches-Jahr' : {
++            'title'               : 'Gl??ckliches Jahr, Ein',
+             'o_title'             : 'Bonne ann??e, La',
+             'director'            : 'Claude Lelouch',
+-            'plot'                 : False,
++            'plot'                : False,
+             'cast'                : 'Lino Ventura' + _(' as ') + 'Simon \n\
+ Fran??oise Fabian' + _(' as ') + 'Fran??oise\n\
+ Charles G??rard' + _(' as ') + 'Charlot\n\
+@@ -256,7 +256,7 @@
+ Claude Mann\n\
+ Fr??d??ric de Pasquale\n\
+ G??rard Sire\n\
+-Silvano Tranquilli\n\
++Silvano Tranquilli' + _(' as ') + 'L\'amant italien \n\
+ Andr?? Barello\n\
+ Michel Bertay\n\
+ Norman de la Chesnaye\n\
+@@ -269,20 +269,20 @@
+ Jacques Villedieu\n\
+ Harry Walter\n\
+ Elie Chouraqui',
+-            'country'            : 'Frankreich',
+-            'genre'                : 'Kom??die, Krimi',
+-            'classification'    : False,
+-            'studio'            : 'Les Films 13',
+-            'o_site'            : False,
++            'country'             : 'Frankreich',
++            'genre'               : 'Kom??die, Krimi',
++            'classification'      : '12 (f)',
++            'studio'              : 'Les Films 13',
++            'o_site'              : False,
+             'site'                : 'http://www.ofdb.de/film/22489,Ein-Gl%C3%BCckliches-Jahr',
+-            'trailer'            : False,
++            'trailer'             : False,
+             'year'                : 1973,
+-            'notes'                : False,
+-            'runtime'            : 90,
+-            'image'                : True,
+-            'rating'            : 6
++            'notes'               : False,
++            'runtime'             : 90,
++            'image'               : True,
++            'rating'              : 6
+         },
+-        'film/54088,Arahan' : { 
++        'film/54088,Arahan' : {
+             'title'             : 'Arahan',
+             'o_title'             : 'Arahan jangpung daejakjeon',
+             'director'            : 'Ryoo Seung-wan',
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -36,7 +36,7 @@
+ 
+ class Plugin(movie.Movie):
+     index_url = 'http://www.zelluloid.de/filme/index.php3?id='
+-    
++
+     def __init__(self, id):
+         self.encode='iso-8859-1'
+         self.movie_id = id
+@@ -63,7 +63,9 @@
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '<DIV CLASS=bigtext>', '</DIV>')
+-        
++        if not self.plot:
++            self.plot = gutils.trim(self.page, '<div class="bigtext">', '</div>')
++
+     def get_year(self):
+         self.year = ''
+         elements = string.split(self.detail_page, '/directory/az.php3?j')
+@@ -115,7 +117,7 @@
+         self.studio = self.studio.replace('<tr>', ', ')
+         self.studio = gutils.strip_tags(self.studio)
+         self.studio = re.sub('((^, )|(, $))', '', self.studio)
+-        
++
+     def get_o_site(self):
+         self.o_site = ""
+ 
+@@ -198,7 +200,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '2835' : { 
++        '2835' : {
+             'title'             : 'Rocky Balboa',
+             'o_title'           : 'Rocky Balboa',
+             'director'          : 'Sylvester Stallone',
+@@ -229,7 +231,7 @@
+             'rating'            : 8.0,
+             'screenplay'        : 'Sylvester Stallone'
+         },
+-        '6342' : { 
++        '6342' : {
+             'title'             : 'Die wilden H??hner',
+             'o_title'           : 'Die wilden H??hner',
+             'director'          : 'Vivian Naefe',
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-03-12 21:22:28 UTC (rev 1409)
++++ trunk/lib/test_movieplugins.py	2010-03-27 21:11:21 UTC (rev 1410)
+@@ -83,6 +83,7 @@
+         'PluginMovieFilmtipset',
+         'PluginMovieIMDB',
+         'PluginMovieIMDB-de',
++        'PluginMovieIMDB-es',
+         'PluginMovieKinoDe',
+         'PluginMovieMovieMeter',
+         'PluginMovieOFDb',
+@@ -138,14 +139,14 @@
+     #
+     def do_test_searchplugin(self, plugin_name, domsgbox=True):
+         result = True
+-        
++
+         plugin = __import__(plugin_name)
+         try:
+             pluginTestConfig = plugin.SearchPluginTest()
+         except:
+             print "Warning: SearchPlugin test could not be executed for %s because of missing configuration class SearchPluginTest." % plugin_name
+             pluginTestConfig = None
+-        
++
+         if not pluginTestConfig == None:
+             logFile = open(plugin_name + '-searchtest.txt', 'w+')
+             try:
+@@ -156,13 +157,13 @@
+                     sleep(1) # needed for amazon
+             finally:
+                 logFile.close()
+-        
++
+         if domsgbox:
+             if not result:
+                 gutils.error('SearchPluginTest %s: Test NOT successful !' % plugin_name)
+             else:
+                 gutils.info('SearchPluginTest %s: Test successful !' % plugin_name)
+-        
++
+         return result
+ 
+     #
+@@ -183,7 +184,7 @@
+                 'resolution', 'barcode']
+ 
+         self.movie.fields_to_fetch = fields_to_fetch
+-    
++
+         self.movie.get_movie(None)
+         self.movie.parse_movie()
+ 
+@@ -215,7 +216,7 @@
+         # other fields
+         for i in fields_to_fetch:
+             results[i] = gutils.convert_entities(self.movie[i])
+-            
++
+         # check the fields
+         for i in results_expected:
+             i_val = results_expected[i]
+@@ -241,20 +242,20 @@
+                         logFile.write("Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n" % (movieplugin.movie_id, i, i_val, results[i]))
+                         result = False
+         return result
+-    
++
+     #
+     # check every configured movie
+     #
+     def do_test_plugin(self, plugin_name, domsgbox=True):
+         result = True
+-        
++
+         plugin = __import__(plugin_name)
+         try:
+             pluginTestConfig = plugin.PluginTest()
+         except:
+             print "Warning: Plugin test could not be executed for %s because of missing configuration class PluginTest." % plugin_name
+             pluginTestConfig = None
+-        
++
+         if not pluginTestConfig == None:
+             logFile = open(plugin_name + '-loadtest.txt', 'w+')
+             try:
+@@ -265,13 +266,13 @@
+                     sleep(1) # needed for amazon
+             finally:
+                 logFile.close()
+-        
++
+         if domsgbox:
+             if not result:
+                 gutils.error('PluginTest %s: Test NOT successful !' % plugin_name)
+             else:
+                 gutils.info('PluginTest %s: Test successful !' % plugin_name)
+-        
++
+         return result
+ 
+     #
+
+
+
+From mikej06 at mail.berlios.de  Sun Mar 28 14:23:30 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 28 Mar 2010 14:23:30 +0200
+Subject: [Griffith-svn] r1411 - trunk/lib
+Message-ID: <201003281223.o2SCNUbH004677@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-28 14:23:21 +0200 (Sun, 28 Mar 2010)
+New Revision: 1411
+
+Modified:
+   trunk/lib/add.py
+Log:
+rating wasn't fetched if "only empty fields" is selected
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-03-27 21:11:21 UTC (rev 1410)
++++ trunk/lib/add.py	2010-03-28 12:23:21 UTC (rev 1411)
+@@ -195,7 +195,7 @@
+ 
+     if w['cb_only_empty'].get_active(): # only empty fields
+         details = get_details(self)
+-        fields_to_fetch = [i for i in fields_to_fetch if details[i] is None]
++        fields_to_fetch = [i for i in fields_to_fetch if details[i] is None or details[i] == 0.0]
+     self.movie.fields_to_fetch = fields_to_fetch
+ 
+     if not self.movie.get_movie(w['window']):
+@@ -671,6 +671,7 @@
+             if not gutils.question(_('Movie with that title already exists, are you sure you want to add?'), self.widgets['add']['window']):
+                 return False
+ 
++    new_poster_md5 = None
+     if details['image']:
+         tmp_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
+         if os.path.isfile(tmp_image_path):
+@@ -707,8 +708,8 @@
+     myiter = self.treemodel.insert_after(None, insert_after)
+ 
+     image_path = ''
+-    if movie.poster_md5:
+-        image_path = gutils.get_image_fname(movie.poster_md5, self.db, 's')
++    if new_poster_md5:
++        image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
+     if not image_path or not os.path.isfile(image_path):
+         image_path = gutils.get_defaultthumbnail_fname(self)
+     handler = self.Image.set_from_file(image_path)
+
+
+
+From mikej06 at mail.berlios.de  Sun Mar 28 22:19:09 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 28 Mar 2010 22:19:09 +0200
+Subject: [Griffith-svn] r1412 - in trunk: . lib/plugins/movie
+Message-ID: <201003282019.o2SKJ9Vi003695@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-03-28 22:18:54 +0200 (Sun, 28 Mar 2010)
+New Revision: 1412
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieWP.py
+Log:
+updated movie plugin WP
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-28 12:23:21 UTC (rev 1411)
++++ trunk/ChangeLog	2010-03-28 20:18:54 UTC (rev 1412)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-03-28  Michael Jahn
++	* updated movie plugin WP
++
+ 2010-03-27  Michael Jahn
+ 	* updated movie plugin IMDb-de, IMDb-es, Zelluloid
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieWP.py	2010-03-28 12:23:21 UTC (rev 1411)
++++ trunk/lib/plugins/movie/PluginMovieWP.py	2010-03-28 20:18:54 UTC (rev 1412)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Piotr O?arowski
++# Copyright (c) 2005-2010 Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = '<ozarow+griffith at gmail.com>'
+-plugin_version      = '2.3'
++plugin_version      = '2.4'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -42,19 +42,18 @@
+     def initialize(self):
+         self.page = gutils.trim(self.page, '<h1 class="mp0">', '</div>\n</div>')
+         self.cast_page = self.open_page(url="http://film.wp.pl/id,%s,film_obsada_i_tworcy.html" % self.movie_id)
+-        self.cast_page = gutils.trim(self.cast_page, '<h1 class="mp0">', "</div>\r\n</div>\r\n")
+ 
+     def get_image(self):
+         self.image_url = gutils.trim(self.page, '<img src="', '" name="o')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '<b>Tytu\xB3 orygina\xB3u:</b>', "\t\t</div><div")
++        self.o_title = gutils.trim(self.page, u'<b>Tytu? orygina?u:</b>', "\t\t</div><div")
+         self.o_title = gutils.clean(self.o_title)
+         if self.o_title == '':
+             self.o_title = gutils.trim(self.page, '</h1>', '<div')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '<b>Tytu\xB3 polski:</b>', "\t\t</div><div")
++        self.title = gutils.trim(self.page, u'<b>Tytu? polski:</b>', "\t\t</div><div")
+         if self.title == '':
+             self.title = gutils.before(self.page, '</h1>')
+             pos = string.find(self.title, '(')
+@@ -62,11 +61,11 @@
+                 self.title = self.title[:pos]
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.cast_page, '>re\xBFyser\t</div>', '</div>')
++        self.director = gutils.regextrim(self.cast_page, u'>re?yser[^/]+/div>', '</div>')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, ' />', '\t\t<div class="clr">')
+-        pos = string.find(self.plot, "<br>Zobacz tak\xBFe:<br>")
++        pos = string.find(self.plot, u"<br>Zobacz tak\xBFe:<br>")
+         if pos > 0:
+             self.plot = self.plot[:pos]
+         self.plot = string.replace(self.plot,"\r\n\r\n", '')
+@@ -89,19 +88,23 @@
+         self.genre = string.replace(self.genre, '<br />', ' / ')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.cast_page, '<h2>OBSADA:</h2>', '<div class="b')
+-        self.cast = gutils.after(self.cast, '<div class="clr"></div>')
+-        self.cast = string.replace(self.cast, '\t', '')
+-        self.cast = string.replace(self.cast, '\n</div>\n<', _(' as ')+'<')
+-        self.cast = gutils.strip_tags(self.cast)
+-        self.cast = string.replace(self.cast,  "%s\n" % _(' as '), "\n")
++        self.cast = ''
++        tmp = gutils.trim(self.cast_page, '<h2>OBSADA:</h2>', '<div class="b')
++        parts = string.split(tmp, '<a href="/id')
++        for part in parts[1:]:
++            actor = self.cast + gutils.trim(part, '>', '<')
++            role = gutils.after(gutils.trim(part, '<div ', '</div>'), '>')
++            if role:
++                self.cast = actor + _(' as ') + role + '\n'
++            else:
++                self.cast = actor + '\n'
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page, '<b>Przedzia\xB3 wiekowy:</b>', "\t\t</div><div")
++        self.classification = gutils.regextrim(self.page, u'<b>Przedzia? wiekowy:</b>', '</div>[^/]+/div>[^<]+<div')
+         self.classification = gutils.trim(self.classification, 'od ', ' ')
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '<b>Wytw\xF3rnia:</b>', "\t\t</div><div")
++        self.studio = gutils.regextrim(self.page, u'<b>Wytw?rnia:</b>', '</div>[^/]+/div>[^<]+<div')
+ 
+     def get_o_site(self):
+         self.o_site = ''
+@@ -125,11 +128,17 @@
+     def get_notes(self):
+         self.notes = ''
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.regextrim(self.cast_page, u'>scenarzysta[^/]+/div>', '</div>')
++
++    def get_cameraman(self):
++        self.cameraman = gutils.regextrim(self.cast_page, u'>zdj?cia[^/]+/div>', '</div>')
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode='iso-8859-2'
+-        self.original_url_search    = 'http://film.wp.pl/szukaj,%s,type,f,szukaj.html'
+-        self.translated_url_search    = 'http://film.wp.pl/szukaj,%s,type,f,szukaj.html'
++        self.original_url_search = 'http://film.wp.pl/szukaj,%s,type,f,szukaj.html'
++        self.translated_url_search = 'http://film.wp.pl/szukaj,%s,type,f,szukaj.html'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -143,7 +152,7 @@
+ 
+         if elements[0] != '':
+             for element in elements:
+-                tmp_id = gutils.trim(element,'<div class="rgt"><a href="id,', ',')
++                tmp_id = gutils.trim(element,'<div class="rgt"><a href="/id,', ',')
+                 self.ids.append(tmp_id)
+                 tmp_title = gutils.trim(element, 'html"><b>', '</b>')
+                 self.titles.append(tmp_title)
+
+
+

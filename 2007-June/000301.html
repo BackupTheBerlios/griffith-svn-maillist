@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r785 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r785%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200706282208.l5SM8XHb029903%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000300.html">
+   <LINK REL="Next"  HREF="000302.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r785 - in trunk: . lib lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r785%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200706282208.l5SM8XHb029903%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r785 - in trunk: . lib lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 29 00:08:33 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000300.html">[Griffith-svn] r784 - extra_artwork/images
+</A></li>
+        <LI>Next message: <A HREF="000302.html">[Griffith-svn] r786 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#301">[ date ]</a>
+              <a href="thread.html#301">[ thread ]</a>
+              <a href="subject.html#301">[ subject ]</a>
+              <a href="author.html#301">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-06-29 00:08:30 +0200 (Fri, 29 Jun 2007)
+New Revision: 785
+
+Modified:
+   trunk/ChangeLog
+   trunk/TRANSLATORS
+   trunk/lib/about.py
+   trunk/lib/gutils.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieStopklatka.py
+Log:
+IMDb movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-27 09:37:23 UTC (rev 784)
++++ trunk/ChangeLog	2007-06-28 22:08:30 UTC (rev 785)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
++2007-06-20  Piotr O&#197;&#188;arowski
++	* IMDb movie plugin updated
++
+ 2007-06-27  Michael Jahn
+ 	* Kino.de movie plugin updated
+ 	* DVD-Palace movie plugin added
+
+Modified: trunk/TRANSLATORS
+===================================================================
+--- trunk/TRANSLATORS	2007-06-27 09:37:23 UTC (rev 784)
++++ trunk/TRANSLATORS	2007-06-28 22:08:30 UTC (rev 785)
+@@ -8,6 +8,9 @@
+ Blondak &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">blondak at neser.cz</A>&gt;
+ Ondra 'Kepi' Kudl&#237;k &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">kepi at igloonet.cz</A>&gt;
+ 
++* Danish translation
++Joe Dalton &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joedalton2 at yahoo.dk</A>&gt;
++
+ * Dutch translation
+ Marcel Dijkstra
+ 
+@@ -34,6 +37,3 @@
+ 
+ * Swedish translation
+ Daniel Nylander &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">po at danielnylander.se</A>&gt;
+-
+-* Danish translation
+-Joe Dalton &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joedalton2 at yahoo.dk</A>&gt;
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2007-06-27 09:37:23 UTC (rev 784)
++++ trunk/lib/about.py	2007-06-28 22:08:30 UTC (rev 785)
+@@ -58,6 +58,8 @@
+ 			_(&quot;Czech&quot;) + &quot;:\n\t&quot; + \
+ 				&quot;Blondak &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">blondak at neser.cz</A>&gt;,\n\t&quot; + \
+ 				&quot;Ondra 'Kepi' Kudl&#195;&#173;k &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">kepi at igloonet.cz</A>&gt;\n&quot; + \
++			_(&quot;Danish&quot;) + &quot;:\n\t&quot; + \
++				&quot;Joe Dalton &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joedalton2 at yahoo.dk</A>&gt;\n&quot; \
+ 			_(&quot;Dutch&quot;) + &quot;:\n\t&quot; + \
+ 				&quot;Marcel Dijkstra &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mdtje at hotmail.com</A>&gt;\n&quot; + \
+ 			_(&quot;French&quot;) + &quot;:\n\t&quot; + \
+@@ -79,8 +81,6 @@
+ 				&quot;Daniel Ucero &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">escaranbujo at gmail.com</A>&gt;\n&quot; + \
+ 			_(&quot;Swedish&quot;) + &quot;:\n\t&quot; + \
+ 				&quot;Daniel Nylander &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">po at danielnylander.se</A>&gt;\n&quot; + \
+-			_(&quot;Danish&quot;) + &quot;:\n\t&quot; + \
+-				&quot;Joe Dalton &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joedalton2 at yahoo.dk</A>&gt;\n&quot; \
+ 		)
+ 		logo_file = os.path.abspath(os.path.join(images_dir, 'griffith.png'))
+ 		logo = gtk.gdk.pixbuf_new_from_file(logo_file)
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2007-06-27 09:37:23 UTC (rev 784)
++++ trunk/lib/gutils.py	2007-06-28 22:08:30 UTC (rev 785)
+@@ -189,8 +189,9 @@
+ 
+ def clean(text):
+ 	t = strip_tags(text)
+-	t = string.replace(t, &quot;&nbsp;&quot;, &quot; &quot;)
+-	t = string.replace(t,'&#34;',&quot;&quot;)
++	t = string.replace(t, '&nbsp;', ' ')
++	t = string.replace(t, '&#34;', '')
++	t = string.replace(t, '&#160;', ' ')
+ 	return string.strip(t)
+ 
+ def gdecode(txt, encode):
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-06-27 09:37:23 UTC (rev 784)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-06-28 22:08:30 UTC (rev 785)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O&#197;&#188;arowski'
+ plugin_author_email	= '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+-plugin_version		= '1.4'
++plugin_version		= '1.5'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -152,7 +152,7 @@
+ 		return data
+ 
+ class SearchPlugin(movie.SearchMovie):
+-
++	PATTERN = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
+ 	def __init__(self):
+ 		self.original_url_search	= '<A HREF="http://imdb.com/find?more=tt;q=">http://imdb.com/find?more=tt;q=</A>'
+ 		self.translated_url_search	= '<A HREF="http://imdb.com/find?more=tt;q=">http://imdb.com/find?more=tt;q=</A>'
+@@ -160,17 +160,17 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.sub_search()
++		self.page = gutils.trim(self.page, '(Displaying', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;');
++		self.page = self.page.decode('iso-8859-1')
+ 		return self.page
+ 
+-	def sub_search(self):
+-		self.page = gutils.trim(self.page, '&lt;/b&gt; found the following results:', '&lt;b&gt;Suggestions For Improving Your Results&lt;/b&gt;');
+-		self.page = self.page.decode('iso-8859-1')
+-
+ 	def get_searches(self):
+-		elements = string.split(self.page, '&lt;li&gt;')
++		elements = string.split(self.page, '&lt;tr&gt;')
+ 
+-		if (elements[0]&lt;&gt;''):
+-			for element in elements:
+-				self.ids.append(gutils.trim(element, '/title/tt','/?fr='))
+-				self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, ';fm=1&quot;&gt;', '&lt;/li&gt;'))))
++		if len(elements):
++			for element in elements[1:]:
++				match = self.PATTERN.findall(element)
++				if len(match):
++					tmp  = gutils.clean(match[0][1])
++					self.ids.append(match[0][0])
++					self.titles.append(tmp)
+
+Modified: trunk/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieStopklatka.py	2007-06-27 09:37:23 UTC (rev 784)
++++ trunk/lib/plugins/movie/PluginMovieStopklatka.py	2007-06-28 22:08:30 UTC (rev 785)
+@@ -123,21 +123,18 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.sub_search()
+-		return self.page
+-
+-	def sub_search(self):
+-		self.page = gutils.trim(self.page,&quot;&lt;blockquote&gt;&quot;, &quot;&lt;/blockquote&gt;&quot;);
++		self.page = gutils.trim(self.page, '&lt;ul&gt;', '&lt;/ul&gt;');
+ 		self.page = self.page.replace('\x9c','&#197;&#155;')
+ 		self.page = self.page.replace('&#197;&#161;','&#196;&#133;')
++		return self.page
+ 
+ 	def get_searches(self):
+-		elements = string.split(self.page,&quot;&lt;li&gt;&quot;)
++		elements = string.split(self.page, '&lt;li&gt;')
+ 		self.number_results = elements[-1]
+ 
+-		if (elements[0]&lt;&gt;''):
++		if len(elements):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element,&quot;/film/film.asp?fi=&quot;,&quot;\&quot;&gt;&lt;b&gt;&quot;))
+-				self.titles.append(gutils.convert_entities(gutils.trim(element,&quot;&lt;b&gt;&quot;,&quot;&lt;/b&gt;&lt;/a&gt;&quot;)))
++				self.ids.append(gutils.trim(element,&quot;/film/film.asp?fi=&quot;, '&quot;&gt;&lt;'))
++				self.titles.append(gutils.convert_entities(gutils.trim(element, '&quot;bold&quot;&gt;', '&lt;/span&gt;')))
+ 		else:
+ 			self.number_results = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000300.html">[Griffith-svn] r784 - extra_artwork/images
+</A></li>
+	<LI>Next message: <A HREF="000302.html">[Griffith-svn] r786 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#301">[ date ]</a>
+              <a href="thread.html#301">[ thread ]</a>
+              <a href="subject.html#301">[ subject ]</a>
+              <a href="author.html#301">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

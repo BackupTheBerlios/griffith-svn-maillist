@@ -1,0 +1,476 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1318 - in trunk: . lib/plugins/extensions	lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1318%20-%20in%20trunk%3A%20.%20lib/plugins/extensions%0A%09lib/plugins/movie&In-Reply-To=%3C200911062207.nA6M7JDw025977%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000785.html">
+   <LINK REL="Next"  HREF="000787.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1318 - in trunk: . lib/plugins/extensions	lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1318%20-%20in%20trunk%3A%20.%20lib/plugins/extensions%0A%09lib/plugins/movie&In-Reply-To=%3C200911062207.nA6M7JDw025977%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1318 - in trunk: . lib/plugins/extensions	lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov  6 23:07:19 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000785.html">[Griffith-svn] r1317 - in trunk: . lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000787.html">[Griffith-svn] r1319 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#786">[ date ]</a>
+              <a href="thread.html#786">[ thread ]</a>
+              <a href="subject.html#786">[ subject ]</a>
+              <a href="author.html#786">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-11-06 23:06:46 +0100 (Fri, 06 Nov 2009)
+New Revision: 1318
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/extensions/amazon.py
+   trunk/lib/plugins/extensions/ge_amazon.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+Log:
+fixed amazon binding (generation of signed urls added but every user needs an amazon account for the access key and secret key)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/ChangeLog	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -7,6 +7,8 @@
+ 
+ 2009-11-06  Michael Jahn
+ 	* Personal Video Database import plugin added
++	* fixed amazon binding (generation of signed urls added but
++	  every user needs an amazon account for the access key and secret key)
+ 
+ 2009-10-16  Michael Jahn
+ 	* eXtreme Movie Manager import plugin added
+
+Modified: trunk/lib/plugins/extensions/amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/amazon.py	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/lib/plugins/extensions/amazon.py	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -1,3 +1,4 @@
++# -*- coding: UTF-8 -*-
+ __all__ = []
+ &quot;&quot;&quot;Python wrapper
+ 
+@@ -74,7 +75,10 @@
+ # Support for BlendedSearch contributed by Alex Choo
+ 
+ from xml.dom import minidom
+-import os, sys, getopt, cgi, urllib, string
++import os, sys, getopt, cgi, urllib, string, time
++import base64
++import hmac
++from hashlib import sha256
+ try:
+     import timeoutsocket # <A HREF="http://www.timo-tasi.org/python/timeoutsocket.py">http://www.timo-tasi.org/python/timeoutsocket.py</A>
+     timeoutsocket.setDefaultSocketTimeout(10)
+@@ -84,11 +88,12 @@
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ LICENSE_KEY = &quot;&quot;
++SECRET_KEY = &quot;&quot;
+ ASSOCIATE = &quot;webservices-20&quot;
+ HTTP_PROXY = None
+ LOCALE = &quot;us&quot;
+ # default API version is from 2005-10-05
+-APIVERSION='2008-06-26'
++APIVERSION='2009-03-31'
+ 
+ # don't touch the rest of these constants
+ class AmazonError(Exception): pass
+@@ -107,12 +112,12 @@
+     (lambda key: _contentsOf(_getScriptDir(), _amazonfile2), '%s in the amazon.py directory' % _amazonfile2)
+     )
+ _supportedLocales = {
+-        &quot;us&quot; : (None, &quot;ecs.amazonaws.com/onca/xml?Service=AWSECommerceService&quot;),   
+-        &quot;uk&quot; : (&quot;uk&quot;, &quot;ecs.amazonaws.co.uk/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;de&quot; : (&quot;de&quot;, &quot;ecs.amazonaws.de/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;ca&quot; : (&quot;ca&quot;, &quot;ecs.amazonaws.ca/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;fr&quot; : (&quot;fr&quot;, &quot;ecs.amazonaws.fr/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;jp&quot; : (&quot;jp&quot;, &quot;ecs.amazonaws.jp/onca/xml?Service=AWSECommerceService&quot;)
++        &quot;us&quot; : (None, &quot;ecs.amazonaws.com/onca/xml&quot;),   
++        &quot;uk&quot; : (&quot;uk&quot;, &quot;ecs.amazonaws.co.uk/onca/xml&quot;),
++        &quot;de&quot; : (&quot;de&quot;, &quot;ecs.amazonaws.de/onca/xml&quot;),
++        &quot;ca&quot; : (&quot;ca&quot;, &quot;ecs.amazonaws.ca/onca/xml&quot;),
++        &quot;fr&quot; : (&quot;fr&quot;, &quot;ecs.amazonaws.fr/onca/xml&quot;),
++        &quot;jp&quot; : (&quot;jp&quot;, &quot;ecs.amazonaws.jp/onca/xml&quot;)
+     }
+ 
+ ## administrative functions
+@@ -146,10 +151,12 @@
+     &quot;&quot;&quot;get locale&quot;&quot;&quot;
+     return locale or LOCALE
+ 
+-def setLicense(license_key):
++def setLicense(license_key, secret_key):
+     &quot;&quot;&quot;set license key&quot;&quot;&quot;
+-    global LICENSE_KEY
++    global LICENSE_KEY, SECRET_KEY, HMAC
+     LICENSE_KEY = license_key
++    SECRET_KEY = secret_key
++    HMAC = hmac.new(SECRET_KEY, digestmod=sha256)
+ 
+ def getLicense(license_key = None):
+     &quot;&quot;&quot;get license key
+@@ -224,37 +231,89 @@
+             rc = int(rc)
+     return rc
+ 
+-def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate):
++def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate, timestamp = None):
+     _checkLocaleSupported(locale)
+     if isinstance(searchvalue, unicode):
+         searchvalue = searchvalue.encode('utf-8') # needed for urllib.quote
+     url = &quot;<A HREF="http://">http://</A>&quot; + _supportedLocales[locale][1]
+     if search_type == 'ItemLookup':
+-        url += &quot;&amp;AssociateTag=%s&quot; % associate
+-        url += &quot;&amp;AWSAccessKeyId=%s&quot; % license_key.strip()
+-        url += &quot;&amp;ResponseGroup=%s&quot; % type
++        params = dict(
++            Service='AWSECommerceService',
++            AWSAccessKeyId=license_key,
++            Operation=search_type,
++            ResponseGroup=type,
++            IdType=searchfield,
++            ItemId=urllib.quote(searchvalue))
+         if product_line:
+-            url += &quot;&amp;SearchIndex=%s&quot; % product_line
+-        url += &quot;&amp;Operation=%s&quot; % search_type
+-        url += &quot;&amp;IdType=%s&quot; % searchfield
+-        url += &quot;&amp;ItemId=%s&quot; % searchvalue
++            params['SearchIndex'] = product_line
+     else:
+-        url += &quot;&amp;AssociateTag=%s&quot; % associate
+-        url += &quot;&amp;AWSAccessKeyId=%s&quot; % license_key.strip()
+-        url += &quot;&amp;ResponseGroup=%s&quot; % type
++        params = dict(
++            Service='AWSECommerceService',
++            AWSAccessKeyId=license_key,
++            Operation=search_type,
++            ResponseGroup=type,
++            Sort='titlerank')
++        params[searchfield] = urllib.quote(searchvalue)
+         if page:
+-            url += &quot;&amp;ItemPage=%s&quot; % page
++            params['ItemPage'] = str(page)
+         if product_line:
+-            url += &quot;&amp;SearchIndex=%s&quot; % product_line
+-        url += &quot;&amp;Operation=%s&quot; % search_type
+-        url += &quot;&amp;%s=%s&quot; % (searchfield, urllib.quote(searchvalue))
+-        url += &quot;&amp;Sort=titlerank&quot;
+-    if not APIVERSION is None:
+-        url += &quot;&amp;Version=%s&quot; % APIVERSION
++            params['SearchIndex'] = product_line
++    if APIVERSION:
++        params['Version'] = APIVERSION
++    log.info(params)
++    url = getSignedUrl(url, params, timestamp)
+     log.info('URL: ' + url)
+     return url
+ 
++def getSignedUrl(base_url, params, timestamp = None):
++    global HMAC
++    hmac = HMAC.copy()
++    
++    # Add a ISO 8601 compliant timestamp (in GMT)
++    if timestamp:
++        params['Timestamp'] = timestamp
++    else:
++        params['Timestamp'] = time.strftime(&quot;%Y-%m-%dT%H:%M:%S&quot;, time.gmtime())
++    #params['SignatureVersion']='1'
++    
++    # Sort the URL parameters by key
++    keys = params.keys()
++    #keys.sort(cmp = lambda x, y: cmp(x.lower(), y.lower()))
++    keys.sort()
++    
++    # Reconstruct the URL parameters and encode them
++    pairs = []
++    for key in keys:
++        #val = urllib.quote(params[key])
++        val = params[key]
++        pairs.append(key + '=' + val)
++    url_string = '&amp;'.join(pairs)
++    url_string = url_string.replace('+', &quot;%20&quot;)
++    url_string = url_string.replace(':', &quot;%3A&quot;)
++    
++    #Construct the string to sign
++    urlparts = base_url.split('/')
++    string_to_sign = &quot;&quot;&quot;GET
++%s
++/%s/%s
++%s&quot;&quot;&quot; % (urlparts[2], urlparts[3], urlparts[4], url_string)
++    url_string = url_string.replace(';', urllib.quote(';'))
++    
++    # Sign the request
++    hmac.update(string_to_sign)
++    signature = hmac.digest()
++    
++    # Base64 encode the signature
++    signature = base64.encodestring(signature).strip()
++    signature = signature.replace('+','%2B');
++    signature = signature.replace('=','%3D');
++    signature = signature.replace('/','%2F');
+ 
++    # Make the signature URL safe
++    url_string += &quot;&amp;Signature=%s&quot; % signature
++    return &quot;%s?%s&quot; % (base_url, url_string)
++
++
+ ## main functions
+ 
+ 
+@@ -395,3 +454,17 @@
+ 
+ def searchByBlended(keyword, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+     return search(&quot;BlendedSearch&quot;, 'Keywords', keyword, None, type, page, license_key, http_proxy, locale, associate)
++
++if __name__ == &quot;__main__&quot;:
++    # check the generation of a sample url
++    expectedUrl = '<A HREF="http://ecs.amazonaws.de/onca/xml?AWSAccessKeyId=ABCDEFGHIJKLMNOPQRST&amp;AssociateTag=webservices-20&amp;IdType=Title&amp;ItemId=Prison%C2%A0Break&amp;ItemPage=1&amp;Operation=ItemSearch&amp;ResponseGroup=Large&amp;SearchIndex=DVD&amp;Service=AWSECommerceService&amp;Sort=titlerank&amp;Timestamp=2009-11-04T13%3A12%3A51&amp;Title=Prison%C2%A0Break&amp;Version=2008-06-26&amp;Signature=zCHdyoI5busTseJrYcVO%2Bz6u9pmULHBp3E%2F%2FGAdAM2g%3D">http://ecs.amazonaws.de/onca/xml?AWSAccessKeyId=ABCDEFGHIJKLMNOPQRST&amp;AssociateTag=webservices-20&amp;IdType=Title&amp;ItemId=Prison%C2%A0Break&amp;ItemPage=1&amp;Operation=ItemSearch&amp;ResponseGroup=Large&amp;SearchIndex=DVD&amp;Service=AWSECommerceService&amp;Sort=titlerank&amp;Timestamp=2009-11-04T13%3A12%3A51&amp;Title=Prison%C2%A0Break&amp;Version=2008-06-26&amp;Signature=zCHdyoI5busTseJrYcVO%2Bz6u9pmULHBp3E%2F%2FGAdAM2g%3D</A>'
++    setLicense('ABCDEFGHIJKLMNOPQRST', 'ancnhH/kdfsk739/dfsjkjikJHFJKJHRih7hHZgd')
++    url = buildURL('ItemSearch', 'Title', 'Prison&#160;Break', 'DVD', 'Large', 1, 'ABCDEFGHIJKLMNOPQRST', 'de', 'webservices-20', '2009-11-04T13%3A12%3A51')
++    # compare with a generated one from <A HREF="http://associates-amazon.s3.amazonaws.com/signed-requests/helper/index.html">http://associates-amazon.s3.amazonaws.com/signed-requests/helper/index.html</A>
++    result = cmp(url, expectedUrl)
++    if result == 0:
++        print 'Signed URL generation seems to be ok.'
++    else:
++        print url
++        print expectedUrl
++        print 'Something seems to be wrong with the signed URL generation.'
+
+Modified: trunk/lib/plugins/extensions/ge_amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_amazon.py	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/lib/plugins/extensions/ge_amazon.py	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -37,7 +37,6 @@
+ import amazon
+ 
+ log = logging.getLogger('Griffith')
+-amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
+ 
+ class GriffithExtension(Base):
+     name = 'Amazon'
+@@ -48,24 +47,40 @@
+     api = 1
+ 
+     preferences = {'locale': {'name': _('Select source'),
+-                              'type': (u'US', u'UK', u'DE', u'CA', u'FR', u'JP')}}
++                              'default': u'US',
++                              'type': (u'US', u'UK', u'DE', u'CA', u'FR', u'JP')},
++                   'accesskey': {'name': _('Access Key ID'),
++                                 'hint': u'<A HREF="https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html">https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html</A>',
++                                 'default': u'',
++                                 'type': unicode},
++                   'secretkey': {'name': _('Secret Key'),
++                                 'hint': u'<A HREF="https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html">https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html</A>',
++                                 'default': u'',
++                                 'type': unicode}}
+     toolbar_icon = 'gtk-network'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         log.info('fetching poster from Amazon...')
+         self.movie = movie
+ 
++        locale = self.get_config_value('locale', 'US').lower()
++        accesskey = self.get_config_value('accesskey')
++        secretkey = self.get_config_value('secretkey')
++
++        if not accesskey or not secretkey:
++            gutils.error(self.app, _('Please configure you Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++            return False
++
+         if movie is None:
+             gutils.error(self.app, _('You have no movies in your database'), self.widgets['window'])
+             return False
+ 
+-        locale = self.get_config_value('locale', 'US').lower()
+-
+         keyword = movie.o_title
+         if locale == 'de':
+             keyword = movie.title
+ 
+         try:
++            amazon.setLicense(accesskey, secretkey)
+             result = amazon.searchByTitle(keyword, type='Large', product_line='DVD', locale=locale)
+             if hasattr(result, 'TotalPages'):
+                 # get next result pages
+@@ -89,6 +104,7 @@
+             self._result = result
+             log.info(&quot;... %s posters found&quot; % result.TotalResults)
+         except:
++            log.exception('')
+             gutils.warning(_('No posters found for this movie.'))
+             return
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -39,7 +39,7 @@
+ plugin_language     = _(&quot;International&quot;)
+ plugin_author       = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version      = &quot;1.1&quot;
++plugin_version      = &quot;1.2&quot;
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -53,7 +53,14 @@
+         # use the Amazon Web API
+         self.parent_window = parent_window
+         try:
+-            locale = self.config.get('amazon_locale', 0, section='add')
++            accesskey = self.config.get('amazon_accesskey', None, section='extensions')
++            secretkey = self.config.get('amazon_secretkey', None, section='extensions')
++            if not accesskey or not secretkey:
++                gutils.error(self.app, _('Please configure you Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++                return False
++            amazon.setLicense(accesskey, secretkey)
++
++            locale = self.config.get('amazon_locale', 0, section='extensions')
+             if locale == '1':
+                 locale = 'uk'
+             elif locale == '2':
+@@ -76,7 +83,7 @@
+         except:
+             self.page = ''
+             try:
+-                log.error(&quot;Error retrieving results from amazon.&quot;)
++                log.exception('Error retrieving results from amazon.')
+                 log.error(retriever.result.Request.Errors.Error.Message)
+             except:
+                 pass
+@@ -240,7 +247,14 @@
+         self.titles = [&quot;&quot;]
+         self.ids = [&quot;&quot;]
+         try:
+-            locale = self.config.get('amazon_locale', 0, section='add')
++            accesskey = self.config.get('amazon_accesskey', None, section='extensions')
++            secretkey = self.config.get('amazon_secretkey', None, section='extensions')
++            if not accesskey or not secretkey:
++                gutils.error(self.app, _('Please configure you Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++                return False
++            amazon.setLicense(accesskey, secretkey)
++
++            locale = self.config.get('amazon_locale', 0, section='extensions')
+             if locale == '1':
+                 locale = 'uk'
+             elif locale == '2':
+@@ -262,7 +276,7 @@
+             self.page = retriever.result
+         except:
+             try:
+-                log.error(&quot;Error retrieving results from amazon.&quot;)
++                log.exception('Error retrieving results from amazon.')
+                 log.error(retriever.result.Request.Errors.Error.Message)
+             except:
+                 pass
+@@ -323,7 +337,6 @@
+     def run_search(self):
+         self.result = []
+         try:
+-            amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
+             try:
+                 tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=1)
+                 self.result.append(tmp)
+@@ -334,8 +347,8 @@
+                         tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=page)
+                         self.result.append(tmp)
+                         page = page + 1
+-            except amazon.AmazonError, e:
+-                log.error(e.Message)
++            except amazon.AmazonError:
++                log.exception('Error retrieving results from amazon.')
+             # if all digits then try to find an EAN / UPC
+             if self.title.isdigit():
+                 if len(self.title) == 13:
+@@ -343,32 +356,34 @@
+                         tmp = amazon.searchByEAN(self.title, type='ItemAttributes', product_line='Video', locale=self.locale)
+                         self.result.append(tmp)
+                     except amazon.AmazonError, e:
+-                        log.error(e.Message)
++                        log.exception('Error retrieving results from amazon.')
+                 elif len(self.title) == 12:
+                     try:
+                         tmp = amazon.searchByUPC(self.title, type='ItemAttributes', product_line='Video', locale=self.locale)
+                         self.result.append(tmp)
+                     except amazon.AmazonError, e:
+-                        log.error(e.Message)
++                        log.exception('Error retrieving results from amazon.')
+         except IOError:
+-            self.progress.dialog.hide()
+-            gutils.urllib_error(_('Connection error'), self.parent_window)
+-            self.suspend()
++            log.exception('Error retrieving results from amazon.')
++            #self.progress.dialog.hide()
++            #gutils.urllib_error(_('Connection error'), self.parent_window)
++            #self.suspend()
+ 
+     def run_get(self):
+         self.result = None
+         try:
+-            amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
+             # get by ASIN
+             try:
+                 self.result = amazon.searchByASIN(self.title, type='Large', locale=self.locale)
+             except amazon.AmazonError, e:
+-                log.error(e.Message)
++                log.exception('Error retrieving results from amazon.')
+         except IOError:
+-            self.progress.dialog.hide()
+-            gutils.urllib_error(_('Connection error'), self.parent_window)
+-            self.suspend()
++            log.exception('Error retrieving results from amazon.')
++            #self.progress.dialog.hide()
++            #gutils.urllib_error(_('Connection error'), self.parent_window)
++            #self.suspend()
+ 
++
+ #
+ # Plugin Test
+ #
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000785.html">[Griffith-svn] r1317 - in trunk: . lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000787.html">[Griffith-svn] r1319 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#786">[ date ]</a>
+              <a href="thread.html#786">[ thread ]</a>
+              <a href="subject.html#786">[ subject ]</a>
+              <a href="author.html#786">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

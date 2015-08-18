@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1360 - trunk/lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1360%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C201001032041.o03Kflsj029659%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000826.html">
+   <LINK REL="Next"  HREF="000828.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1360 - trunk/lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1360%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C201001032041.o03Kflsj029659%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1360 - trunk/lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  3 21:41:47 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000826.html">[Griffith-svn] r1359 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000828.html">[Griffith-svn] r1361 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#827">[ date ]</a>
+              <a href="thread.html#827">[ thread ]</a>
+              <a href="subject.html#827">[ subject ]</a>
+              <a href="author.html#827">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-03 21:41:40 +0100 (Sun, 03 Jan 2010)
+New Revision: 1360
+
+Modified:
+   trunk/lib/plugins/imp/__init__.py
+Log:
+added support of adding new collections, volumes, medium and vcodecs while importing data
+generalized mapping of lookup data
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2010-01-03 20:38:41 UTC (rev 1359)
++++ trunk/lib/plugins/imp/__init__.py	2010-01-03 20:41:40 UTC (rev 1360)
+@@ -28,6 +28,7 @@
+ import gc
+ import struct
+ from tempfile import mkstemp
++import add
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -55,10 +56,10 @@
+ 
+     previous_dir = None
+ 
+-    # mapping dicts name to id
+-    mediummap = None
++    # maps foreign key column names to mappings dicts name to id
++    foreignkeymaps = None
++    # mappings tag names to id
+     tagmap = None
+-    vcodecsmap = None
+ 
+     def __init__(self, parent, fields_to_import):
+         self.parent = parent
+@@ -74,32 +75,6 @@
+         self.fields_to_import = fields_to_import
+         self._continue = True
+ 
+-    def loadmappings(self):
+-        self.mediummap = {}
+-        self.tagmap = {}
+-        self.vcodecsmap = {}
+-        # medium
+-        for medium in self.db.session.query(db.Medium.medium_id, db.Medium.name).all():
+-            # original name
+-            mediumname = medium.name.lower()
+-            if not mediumname in self.mediummap:
+-                self.mediummap[mediumname] = medium.medium_id
+-            # normalized name
+-            mediumname = mediumname.replace('-', '')
+-            mediumname = mediumname.replace(' ', '')
+-            if not mediumname in self.mediummap:
+-                self.mediummap[mediumname] = medium.medium_id
+-        # tags
+-        for tag in self.db.session.query(db.Tag.tag_id, db.Tag.name).all():
+-            tagname = tag.name.lower()
+-            if not tagname in self.tagmap:
+-                self.tagmap[tagname] = tag.tag_id
+-        # vcodecs
+-        for vcodec in self.db.session.query(db.VCodec.vcodec_id, db.VCodec.name).all():
+-            vcodecname = vcodec.name.lower()
+-            if not vcodecname in self.vcodecsmap:
+-                self.vcodecsmap[vcodecname] = vcodec.vcodec_id
+-
+     def initialize(self):
+         &quot;&quot;&quot;Initializes plugin (get all parameters from user, etc.)&quot;&quot;&quot;
+         self.imported = 0
+@@ -191,8 +166,8 @@
+                     elif title_lower and title_lower in titles: # o_title is not available so lets check title only
+                         log.info(&quot;movie already exists (title=%s)&quot;, details['title'])
+                         continue
+-                    validate_details(details, self.fields_to_import)
+                     if self.edit: # XXX: not used for now
++                        validate_details(details, self.fields_to_import)
+                         response = edit_movie(self.parent, details)    # FIXME: wait until save or cancel button pressed
+                         if response == 1:
+                             self.imported += 1
+@@ -201,8 +176,6 @@
+                         while number in numbers:
+                             number += 1
+                         details['number'] = number
+-                        #movie = db.Movie()
+-                        #movie.add_to_db(details)
+                         if 'tags' in details:
+                             tags = details.pop('tags')
+                         else:
+@@ -213,35 +186,25 @@
+                             poster = None
+                         try:
+                             # optional: do mapping of lookup data
+-                            # (TODO: perhaps adding new lookup values?)
+-                            try:
+-                                if 'medium_id' in details:
+-                                    medium_id = int(details['medium_id'])
+-                            except:
++                            if not self.foreignkeymaps:
++                                self._loadmappings()
++                            for fkcolumnname in self.foreignkeymaps:
+                                 try:
+-                                    if self.mediummap is None:
+-                                        self.loadmappings()
+-                                    medium_id = details['medium_id'].lower()
+-                                    if medium_id in self.mediummap:
+-                                        details['medium_id'] = self.mediummap[medium_id]
+-                                    else:
+-                                        details['medium_id'] = None
++                                    if fkcolumnname in details and details[fkcolumnname]:
++                                        fkcolumn_id = int(details[fkcolumnname])
+                                 except:
+-                                    details['medium_id'] = None
+-                            try:
+-                                if 'vcodec_id' in details:
+-                                    vcodec_id = int(details['vcodec_id'])
+-                            except:
+-                                try:
+-                                    if self.vcodecsmap is None:
+-                                        self.loadmappings()
+-                                    vcodec_id = details['vcodec_id'].lower()
+-                                    if vcodec_id in self.vcodecsmap:
+-                                        details['vcodec_id'] = self.vcodecsmap[vcodec_id]
+-                                    else:
+-                                        details['vcodec_id'] = None
+-                                except:
+-                                    details['vcodec_id'] = None
++                                    try:
++                                        fkcolumn_id = self.normalizename(details[fkcolumnname])
++                                        currentmap = self.foreignkeymaps[fkcolumnname]
++                                        if fkcolumn_id in currentmap:
++                                            details[fkcolumnname] = currentmap[fkcolumn_id]
++                                        else:
++                                            details[fkcolumnname] = self._addmappingvalue(fkcolumnname, details[fkcolumnname])
++                                    except:
++                                        log.exception(fkcolumnname)
++                                        details[fkcolumnname] = None
++                            # validation before insertion
++                            validate_details(details, self.fields_to_import)
+                             # insert the movie in the database
+                             movie = db.tables.movies.insert(bind=self.db.session.bind).execute(details)
+                             self.imported += 1
+@@ -279,7 +242,7 @@
+                                                 os.remove(posterfilename)
+                                     else:
+                                         edit.update_image(self.parent, number, poster)
+-                        except Exception, e:
++                        except Exception:
+                             log.exception(&quot;movie details are not unique, skipping&quot;)
+                         numbers.add(number)
+                 else:
+@@ -304,7 +267,77 @@
+         &quot;&quot;&quot;close all resources&quot;&quot;&quot;
+         pass
+ 
++    def _loadmappings(self):
++        # add all lookup mapping lists to a list which maps by foreign key column name
++        self.foreignkeymaps = {}
++        self.foreignkeymaps['medium_id'] = self._loadmappingmedium()
++        self.foreignkeymaps['vcodec_id'] = self._loadmappingvcodecs()
++        self.foreignkeymaps['collection_id'] = self._loadmappingcollections()
++        self.foreignkeymaps['volume_id'] = self._loadmappingvolumes()
++        # tags are no foreign key lookup data; it's an intersection
++        self.tagmap = {}
++        for tag in self.db.session.query(db.Tag.tag_id, db.Tag.name).all():
++            tagname = self.normalizename(tag.name)
++            if not tagname in self.tagmap:
++                self.tagmap[tagname] = tag.tag_id
+ 
++    def _loadmappingmedium(self):
++        mediummap = {}
++        for medium in self.db.session.query(db.Medium.medium_id, db.Medium.name).all():
++            mediumname = self.normalizename(medium.name)
++            if not mediumname in mediummap:
++                mediummap[mediumname] = medium.medium_id
++        return mediummap
++
++    def _loadmappingvcodecs(self):
++        vcodecsmap = {}
++        for vcodec in self.db.session.query(db.VCodec.vcodec_id, db.VCodec.name).all():
++            vcodecname = self.normalizename(vcodec.name)
++            if not vcodecname in vcodecsmap:
++                vcodecsmap[vcodecname] = vcodec.vcodec_id
++        return vcodecsmap
++
++    def _loadmappingcollections(self):
++        collectionsmap = {}
++        for collection in self.db.session.query(db.Collection.collection_id, db.Collection.name).all():
++            collectionname = self.normalizename(collection.name)
++            if not collectionname in collectionsmap:
++                collectionsmap[collectionname] = collection.collection_id
++        return collectionsmap
++
++    def _loadmappingvolumes(self):
++        volumesmap = {}
++        for volume in self.db.session.query(db.Volume.volume_id, db.Volume.name).all():
++            volumename = self.normalizename(volume.name)
++            if not volumename in volumesmap:
++                volumesmap[volumename] = volume.volume_id
++        return volumesmap
++
++    def _addmappingvalue(self, fkcolumnname, newname):
++        id = None
++        log.debug(&quot;Adding &lt;%s&gt; for &lt;%s&gt;&quot;, newname, fkcolumnname)
++        if fkcolumnname == 'medium_id':
++            id = add.add_medium(self.parent, newname)
++            self.foreignkeymaps['medium_id'] = self._loadmappingmedium()
++        elif fkcolumnname == 'vcodec_id':
++            id = add.add_vcodec(self.parent, newname)
++            self.foreignkeymaps['vcodec_id'] = self._loadmappingvcodecs()
++        elif fkcolumnname == 'collection_id':
++            id = add.add_collection(self.parent, newname)
++            self.foreignkeymaps['collection_id'] = self._loadmappingcollections()
++        elif fkcolumnname == 'volume_id':
++            id = add.add_volume(self.parent, newname)
++            self.foreignkeymaps['volume_id'] = self._loadmappingvolumes()
++        return id
++
++    def normalizename(self, name):
++        name = name.replace('-', '')
++        name = name.replace('_', '')
++        name = name.replace(' ', '')
++        name = name.replace(u'\xa0', '') # unicode whitespace from XML data (&amp;x160;)
++        return name.lower().strip()
++
++
+ def on_import_plugin_changed(combobox, widgets, *args):
+     from gtk import FileFilter
+     import plugins.imp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000826.html">[Griffith-svn] r1359 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000828.html">[Griffith-svn] r1361 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#827">[ date ]</a>
+              <a href="thread.html#827">[ thread ]</a>
+              <a href="subject.html#827">[ subject ]</a>
+              <a href="author.html#827">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

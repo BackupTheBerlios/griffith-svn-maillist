@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1561 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1561%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110622233137.15E5D4812E0%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001019.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1561 - in trunk: . lib lib/plugins/movie</H1>
+    <B>filosottile at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1561%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110622233137.15E5D4812E0%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1561 - in trunk: . lib lib/plugins/movie">filosottile at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 23 01:31:36 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001019.html">[Griffith-svn] r1560 - in trunk: . lib/plugins/movie
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1020">[ date ]</a>
+              <a href="thread.html#1020">[ thread ]</a>
+              <a href="subject.html#1020">[ subject ]</a>
+              <a href="author.html#1020">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: filosottile
+Date: 2011-06-23 01:31:36 +0200 (Thu, 23 Jun 2011)
+New Revision: 1561
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/gutils.py
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+Log:
+Fixed and completed PluginMovieMyMoviesIt
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-20 22:34:07 UTC (rev 1560)
++++ trunk/ChangeLog	2011-06-22 23:31:36 UTC (rev 1561)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2011-06-22  Filippo Valsorda
++    * Fixed and completed PluginMovieMyMoviesIt (hidden bug)
++    * Added gutils.rtrim (think at string.rfind)
++
+ 2011-06-20  Filippo Valsorda
+     * Refresh IMDB-it plugin
+ 
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-06-20 22:34:07 UTC (rev 1560)
++++ trunk/lib/gutils.py	2011-06-22 23:31:36 UTC (rev 1561)
+@@ -106,6 +106,16 @@
+         p2 = p1 + p2
+     return text[p1:p2]
+ 
++def rtrim(text, key1, key2):
++    p1 = string.rfind(text, key2)
++    if p1 == -1:
++        return ''
++    p2 = string.rfind(text[:p1], key1)
++    if p2 == -1:
++        return &quot;&quot;
++    else:
++        p2 = p2 + len(key1)
++    return text[p2:p1]
+ 
+ def regextrim(text, key1, key2):
+     obj = re.search(key1, text)
+@@ -818,4 +828,4 @@
+     if pagesize &lt; 1024:
+         pagesize = 1024
+ 
+-    return pagesize
+\ No newline at end of file
++    return pagesize
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-06-20 22:34:07 UTC (rev 1560)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-06-22 23:31:36 UTC (rev 1561)
+@@ -102,10 +102,9 @@
+         self.studio = ''
+ 
+     def get_o_site(self):
+-        self.o_site = ''
+-        #tmp = gutils.trim(self.page, '<A HREF="http://www.imdb.com">http://www.imdb.com</A>', '&quot;')
+-        #if tmp != '':
+-        #    self.o_site = '<A HREF="http://www.imdb.com">http://www.imdb.com</A>' + tmp
++        self.o_site = gutils.rtrim(self.page, '&lt;a href=&quot;', '&quot;&gt;Sito italiano&lt;/a&gt;')
++        if not self.o_site:
++            self.o_site = gutils.rtrim(self.page, '&lt;a href=&quot;', '&quot;&gt;Sito ufficiale&lt;/a&gt;')
+ 
+     def get_site(self):
+         self.site = self.url
+@@ -114,21 +113,19 @@
+         self.trailer = &quot;<A HREF="http://www.mymovies.it/trailer/?id=%s">http://www.mymovies.it/trailer/?id=%s</A>&quot; % self.movie_id
+ 
+     def get_country(self):
+-        pos = string.find(self.page, ' min.')
+-        self.country = gutils.trim(self.page[pos+2:], '- ', '  &lt;')
++        obj = re.search('&lt;strong&gt; &lt;a title=&quot;Film [0-9]+&quot; href=&quot;<A HREF="http://www.mymovies.it/film/[0-9">http://www.mymovies.it/film/[0-9</A>]+/&quot;&gt;', self.page)
++        if obj:
++            pos = self.page[:obj.start()].rfind('- ')
++            self.country = self.page[pos+2:obj.start()]
+ 
+     def get_rating(self):
+-        rat = gutils.trim(self.page, '&lt;div style=&quot;text-align:center; font-size:23px; font-weight:bold; letter-spacing:1px; margin:0px 11px 7px 11px&quot;&gt;&lt;span class=&quot;rating&quot;&gt;', '&lt;/span&gt;&lt;span style=&quot;font-size:11px&quot;&gt;/5&lt;/span&gt;&lt;/div&gt;')
++        rat = gutils.trim(self.page, '&lt;span itemprop=&quot;average&quot;&gt;', '&lt;/span&gt;')
+         if rat != '':
+             self.rating = int(round(float(rat.replace(',', '.'))*2, 0))
+         else:
+             self.rating = 0
+ 
+     def get_notes(self):
+-        #self.notes = ''
+-        #tmp = gutils.trim(self.page, 'Alt. titel:', '&lt;/span&gt;')
+-        #if tmp:
+-        #    self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
+         self.notes = ''
+ 
+     def get_screenplay(self):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001019.html">[Griffith-svn] r1560 - in trunk: . lib/plugins/movie
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1020">[ date ]</a>
+              <a href="thread.html#1020">[ thread ]</a>
+              <a href="subject.html#1020">[ subject ]</a>
+              <a href="author.html#1020">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

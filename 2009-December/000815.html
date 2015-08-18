@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1348 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1348%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912281450.nBSEocBp022917%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000814.html">
+   <LINK REL="Next"  HREF="000816.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1348 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1348%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912281450.nBSEocBp022917%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1348 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 28 15:50:38 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000814.html">[Griffith-svn] r1347 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000816.html">[Griffith-svn] r1349 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#815">[ date ]</a>
+              <a href="thread.html#815">[ thread ]</a>
+              <a href="subject.html#815">[ subject ]</a>
+              <a href="author.html#815">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-28 15:50:21 +0100 (Mon, 28 Dec 2009)
+New Revision: 1348
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+Log:
+updated movie plugin Amazon (locale was not used)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-26 21:11:03 UTC (rev 1347)
++++ trunk/ChangeLog	2009-12-28 14:50:21 UTC (rev 1348)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-12-28  Michael Jahn
++	* updated movie plugin Amazon
++
+ 2009-12-23  Michael Jahn
+ 	* updated movie plugin Cinematografo
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-12-26 21:11:03 UTC (rev 1347)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-12-28 14:50:21 UTC (rev 1348)
+@@ -41,6 +41,7 @@
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+ plugin_version      = &quot;1.2&quot;
+ 
++
+ class Plugin(movie.Movie):
+ 
+     def __init__(self, id):
+@@ -61,15 +62,15 @@
+             amazon.setLicense(accesskey, secretkey)
+ 
+             locale = self.config.get('amazon_locale', 0, section='extensions')
+-            if locale == '1':
++            if locale == '1' or locale == 'UK':
+                 locale = 'uk'
+-            elif locale == '2':
++            elif locale == '2' or locale == 'DE':
+                 locale = 'de'
+-            elif locale == '3':
++            elif locale == '3' or locale == 'CA':
+                 locale = 'ca'
+-            elif locale == '4':
++            elif locale == '4' or locale == 'FR':
+                 locale = 'fr'
+-            elif locale == '5':
++            elif locale == '5' or locale == 'JP':
+                 locale = 'jp'
+             else:
+                 locale = None
+@@ -233,6 +234,7 @@
+             if hasattr(self.page.ItemAttributes, 'EAN'):
+                 self.barcode = self.page.ItemAttributes.EAN
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+@@ -241,7 +243,7 @@
+         self.encode                = 'utf8'
+         self.remove_accents        = False
+ 
+-    def search(self,parent_window):
++    def search(self, parent_window):
+         # dont use base functionality
+         # use the Amazon Web API
+         self.titles = [&quot;&quot;]
+@@ -255,15 +257,15 @@
+             amazon.setLicense(accesskey, secretkey)
+ 
+             locale = self.config.get('amazon_locale', 0, section='extensions')
+-            if locale == '1':
++            if locale == '1' or locale == 'UK':
+                 locale = 'uk'
+-            elif locale == '2':
++            elif locale == '2' or locale == 'DE':
+                 locale = 'de'
+-            elif locale == '3':
++            elif locale == '3' or locale == 'CA':
+                 locale = 'ca'
+-            elif locale == '4':
++            elif locale == '4' or locale == 'FR':
+                 locale = 'fr'
+-            elif locale == '5':
++            elif locale == '5' or locale == 'JP':
+                 locale = 'jp'
+             else:
+                 locale = None
+@@ -313,6 +315,7 @@
+             theatricalReleaseDate = ''
+         self.titles.append(&quot;%s%s%s (ASIN: %s)&quot; % (productGroup, title, theatricalReleaseDate, item.ASIN))
+ 
++
+ class AmazonRetriever(threading.Thread):
+ 
+     def __init__(self, title, locale, parent_window, progress, lookuptype='Search', destination=None):
+@@ -387,17 +390,20 @@
+ #
+ # Plugin Test
+ #
++# Amazon test data for DE locale only
++#
+ class SearchPluginTest(SearchPlugin):
+     #
+     # Configuration for automated tests:
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 16, 16 ],
++        'Rocky Balboa'         : [ 17, 17 ],
+         'Arahan'               : [  7,  7 ],
+-        'Ein gl&#252;ckliches Jahr' : [  2,  2 ]
++        'Ein gl&#252;ckliches Jahr' : [  3,  3 ]
+     }
+ 
++
+ class PluginTest:
+     #
+     # Configuration for automated tests:
+@@ -460,7 +466,7 @@
+ Yoon So-yi\n\
+ Ahn Sung-kee',
+             'country'             : 'S&#252;dkorea',
+-            'genre'               : 'Actionkom&#246;die, Abenteuer- &amp; Actionkom&#246;die, Fantasykom&#246;die, General AAS, Action, Kom&#246;die, Action, Fantasy, Kom&#246;die, Korea, Unter 10 EUR',
++            'genre'               : 'Actionkom&#246;die, Abenteuer- &amp; Actionkom&#246;die, Fantasykom&#246;die, General AAS, Action, Kom&#246;die, Action, Fantasy, Kom&#246;die, Korea',
+             'classification'      : 'Freigegeben ab 16 Jahren',
+             'o_site'              : False,
+             'site'                : '<A HREF="http://www.amazon.de/dp/B000BSNOD6">http://www.amazon.de/dp/B000BSNOD6</A>',
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000814.html">[Griffith-svn] r1347 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000816.html">[Griffith-svn] r1349 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#815">[ date ]</a>
+              <a href="thread.html#815">[ thread ]</a>
+              <a href="subject.html#815">[ subject ]</a>
+              <a href="author.html#815">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

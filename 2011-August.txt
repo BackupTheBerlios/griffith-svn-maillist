@@ -1,0 +1,2150 @@
+From mikej06 at mail.berlios.de  Mon Aug  1 23:04:43 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon,  1 Aug 2011 23:04:43 +0200
+Subject: [Griffith-svn] r1565 - in trunk: . lib
+Message-ID: <20110801210444.022FF4833B0@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-01 23:04:43 +0200 (Mon, 01 Aug 2011)
+New Revision: 1565
+
+Modified:
+   trunk/griffith
+   trunk/lib/preferences.py
+Log:
+refreshing mainlist after changing preferences
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-07-18 20:36:34 UTC (rev 1564)
++++ trunk/griffith	2011-08-01 21:04:43 UTC (rev 1565)
+@@ -1143,6 +1143,9 @@
+         if not bool(self.config.get('filter_on_enter', False, section='main')):
+             quick_filter.change_filter(self)
+ 
++    def filter_txt_forced(self, *args):
++        quick_filter.change_filter(self)
++
+     def filter_txt_key_release(self, widget, event, *args):
+         if bool(self.config.get('filter_on_enter', False, section='main')):
+             keyname = gtk.gdk.keyval_name(event.keyval)
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2011-07-18 20:36:34 UTC (rev 1564)
++++ trunk/lib/preferences.py	2011-08-01 21:04:43 UTC (rev 1565)
+@@ -519,7 +519,7 @@
+         people_treeview(self, False)
+         self.initialized = True
+     self.clear_details()
+-    self.filter_txt(None)
++    self.filter_txt_forced()
+     c.save()
+ 
+     # reload extensions
+
+
+
+From piotrek at mail.berlios.de  Tue Aug  2 21:04:57 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue,  2 Aug 2011 21:04:57 +0200
+Subject: [Griffith-svn] r1566 - in trunk/debian: . source
+Message-ID: <20110802190457.A4A954833B3@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-08-02 21:04:57 +0200 (Tue, 02 Aug 2011)
+New Revision: 1566
+
+Added:
+   trunk/debian/source/
+   trunk/debian/source/format
+Removed:
+   trunk/debian/preinst
+Modified:
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/debian/rules
+Log:
+Debian packaging:
+* VCS-* fields updated
+* preinst script removed (no need to clean after pycentral anymore)
+* Switch from dh_pysupport to dh_python2
+* Source format changed to 3.0 (quilt)
+* Bump Standards-Version to 3.9.2 (no changes needed)
+
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/changelog	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -1,3 +1,15 @@
++griffith (0.12.1-2) unstable; urgency=low
++
++  * cherry-pick SQLAlchemy 0.7 compatibility from SVN repo
++  * movie plugins updated to latest SVN version
++  * VCS-* fields updated
++  * preinst script removed (no need to clean after pycentral anymore)
++  * Switch from dh_pysupport to dh_python2
++  * Source format changed to 3.0 (quilt)
++  * Bump Standards-Version to 3.9.2 (no changes needed)
++
++ -- Piotr O?arowski <piotr at debian.org>  Tue, 02 Aug 2011 20:42:17 +0200
++
+ griffith (0.12.1-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/control	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -3,11 +3,11 @@
+ Priority: optional
+ Maintainer: Piotr O?arowski <piotr at debian.org>
+ Build-Depends: debhelper (>= 5)
+-Build-Depends-Indep: python (>= 2.3.5-11), python-support (>= 0.6.4), docbook2x
+-Standards-Version: 3.9.1
++Build-Depends-Indep: python (>= 2.6.3-3), docbook2x
++Standards-Version: 3.9.2
+ XS-Python-Version: >=2.5
+-Vcs-Svn: svn://svn.berlios.de/griffith/trunk/debian
+-Vcs-Browser: http://svn.berlios.de/wsvn/griffith/debian/?sc=1
++Vcs-Svn: svn://svn.berlios.de/griffith/trunk/
++Vcs-Browser: http://svn.berlios.de/wsvn/griffith/trunk/
+ Homepage: http://www.griffith.cc/
+ 
+ Package: griffith
+
+Deleted: trunk/debian/preinst
+===================================================================
+--- trunk/debian/preinst	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/preinst	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -1,15 +0,0 @@
+-#!/bin/sh
+-# TODO: remove this file after releasing Squeeze
+-set -e
+-if [ "$1" = upgrade ]
+-then
+-   if dpkg --compare-versions "$2" lt 0.9.10-1 ||
+-     (dpkg --compare-versions "$2" gt 0.10~ && 
+-      dpkg --compare-versions "$2" lt 0.10~beta3-1~)
+-   then
+-	pycentral pkgremove griffith || true
+-	rm -rf /usr/share/griffith/lib
+-   fi
+-fi
+-
+-#DEBHELPER#
+
+Modified: trunk/debian/rules
+===================================================================
+--- trunk/debian/rules	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/rules	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -25,7 +25,7 @@
+ 	dh_link usr/share/griffith/lib/griffith /usr/bin/griffith
+ 	dh_compress -i
+ 	dh_fixperms -i
+-	dh_pysupport -i
++	dh_python2 -i
+ 	dh_installdeb -i
+ 	dh_gencontrol -i
+ 	dh_md5sums -i
+
+Added: trunk/debian/source/format
+===================================================================
+--- trunk/debian/source/format	                        (rev 0)
++++ trunk/debian/source/format	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -0,0 +1 @@
++3.0 (quilt)
+
+
+
+From piotrek at mail.berlios.de  Tue Aug  2 21:16:54 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue,  2 Aug 2011 21:16:54 +0200
+Subject: [Griffith-svn] r1567 - trunk/debian
+Message-ID: <20110802191654.D0C3B4833B3@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-08-02 21:16:54 +0200 (Tue, 02 Aug 2011)
+New Revision: 1567
+
+Modified:
+   trunk/debian/changelog
+   trunk/debian/rules
+Log:
+Add build-arch and build-indep targets
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2011-08-02 19:04:57 UTC (rev 1566)
++++ trunk/debian/changelog	2011-08-02 19:16:54 UTC (rev 1567)
+@@ -6,6 +6,7 @@
+   * preinst script removed (no need to clean after pycentral anymore)
+   * Switch from dh_pysupport to dh_python2
+   * Source format changed to 3.0 (quilt)
++  * Add build-arch and build-indep targets
+   * Bump Standards-Version to 3.9.2 (no changes needed)
+ 
+  -- Piotr O?arowski <piotr at debian.org>  Tue, 02 Aug 2011 20:42:17 +0200
+
+Modified: trunk/debian/rules
+===================================================================
+--- trunk/debian/rules	2011-08-02 19:04:57 UTC (rev 1566)
++++ trunk/debian/rules	2011-08-02 19:16:54 UTC (rev 1567)
+@@ -4,6 +4,8 @@
+ #export DH_VERBOSE=1
+ 
+ build:
++build-arch:
++build-indep:
+ 
+ clean:
+ 	dh_testdir
+
+
+
+From mikej06 at mail.berlios.de  Wed Aug 10 22:08:12 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 10 Aug 2011 22:08:12 +0200
+Subject: [Griffith-svn] r1568 - in trunk: . images lib/plugins/extensions
+Message-ID: <20110810200812.DFA3B483398@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-10 22:08:12 +0200 (Wed, 10 Aug 2011)
+New Revision: 1568
+
+Added:
+   trunk/images/ge_amazon.png
+   trunk/images/ge_mark_seen.png
+   trunk/images/ge_movieposterdb.png
+   trunk/images/ge_player.png
+   trunk/images/ge_remover.png
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/extensions/ge_amazon.py
+   trunk/lib/plugins/extensions/ge_mark_seen.py
+   trunk/lib/plugins/extensions/ge_movieposterdb.py
+   trunk/lib/plugins/extensions/ge_player.py
+   trunk/lib/plugins/extensions/ge_remover.py
+Log:
+added new icons for the extensions (thanks to Cin?\195?\169phOli)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-02 19:16:54 UTC (rev 1567)
++++ trunk/ChangeLog	2011-08-10 20:08:12 UTC (rev 1568)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-08-10  Michael Jahn
++	* added new icons for the extensions (thanks to Cin?phOli)
++
+ 2011-07-18  Michael Jahn
+ 	* configurable default value for field "seen it"
+ 	* ability to switch the behaviour of the live search that it queries only after
+
+Added: trunk/images/ge_amazon.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/images/ge_amazon.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Added: trunk/images/ge_mark_seen.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/images/ge_mark_seen.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Added: trunk/images/ge_movieposterdb.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/images/ge_movieposterdb.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Added: trunk/images/ge_player.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/images/ge_player.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Added: trunk/images/ge_remover.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/images/ge_remover.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Modified: trunk/lib/plugins/extensions/ge_amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_amazon.py	2011-08-02 19:16:54 UTC (rev 1567)
++++ trunk/lib/plugins/extensions/ge_amazon.py	2011-08-10 20:08:12 UTC (rev 1568)
+@@ -59,7 +59,7 @@
+                                  'hint': _('Get your Secret Key from ') + u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
+                                  'default': u'',
+                                  'type': unicode}}
+-    toolbar_icon = 'gtk-network'
++    toolbar_icon = 'ge_amazon.png'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         log.info('fetching poster from Amazon...')
+
+Modified: trunk/lib/plugins/extensions/ge_mark_seen.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_mark_seen.py	2011-08-02 19:16:54 UTC (rev 1567)
++++ trunk/lib/plugins/extensions/ge_mark_seen.py	2011-08-10 20:08:12 UTC (rev 1568)
+@@ -41,7 +41,7 @@
+     api = 1
+     enabled = False # disabled by default
+ 
+-    toolbar_icon = 'seen.png'
++    toolbar_icon = 'ge_mark_seen.png'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         if question(_('Are you sure you want to update %d movies?') % self.app.total):
+
+Modified: trunk/lib/plugins/extensions/ge_movieposterdb.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_movieposterdb.py	2011-08-02 19:16:54 UTC (rev 1567)
++++ trunk/lib/plugins/extensions/ge_movieposterdb.py	2011-08-10 20:08:12 UTC (rev 1568)
+@@ -42,7 +42,7 @@
+     api = 1
+     enabled = True
+ 
+-    toolbar_icon = 'gtk-network'
++    toolbar_icon = 'ge_movieposterdb.png'
+ 
+     baseurltitle = 'http://www.movieposterdb.com/embed.inc.php?movie_title=%s'
+     baseurltitleyear = 'http://www.movieposterdb.com/embed.inc.php?movie_title=%s[%s]'
+@@ -75,23 +75,23 @@
+             data = False
+             if o_title:
+                 if movie.year:
+-                    url = self.baseurltitleyear % (quote(o_title), movie.year)
++                    url = self.baseurltitleyear % (o_title, movie.year)
+                     data = self._get(url, self.widgets['window'])
+                     if data:
+                         largeurl = gutils.trim(data, 'src=\\"', '\\"').replace('/t_', '/l_')
+                 if not data or not largeurl:
+-                    url = self.baseurltitle % quote(o_title)
++                    url = self.baseurltitle % o_title
+                     data = self._get(url, self.widgets['window'])
+                     if data:
+                         largeurl = gutils.trim(data, 'src=\\"', '\\"').replace('/t_', '/l_')
+             if not data or not largeurl and title and title != o_title:
+                 if movie.year:
+-                    url = self.baseurltitleyear % (quote(title), movie.year)
++                    url = self.baseurltitleyear % (title, movie.year)
+                     data = self._get(url, self.widgets['window'])
+                     if data:
+                         largeurl = gutils.trim(data, 'src=\\"', '\\"').replace('/t_', '/l_')
+                 if not data or not largeurl:
+-                    url = self.baseurltitle % quote(title)
++                    url = self.baseurltitle % title
+                     data = self._get(url, self.widgets['window'])
+                     if data:
+                         largeurl = gutils.trim(data, 'src=\\"', '\\"').replace('/t_', '/l_')
+
+Modified: trunk/lib/plugins/extensions/ge_player.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_player.py	2011-08-02 19:16:54 UTC (rev 1567)
++++ trunk/lib/plugins/extensions/ge_player.py	2011-08-10 20:08:12 UTC (rev 1568)
+@@ -46,7 +46,7 @@
+     if is_windows_system():
+         preferences['command']['default'] = ''
+ 
+-    toolbar_icon = 'gtk-open'
++    toolbar_icon = 'ge_player.png'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         if not movie or not movie.trailer:
+
+Modified: trunk/lib/plugins/extensions/ge_remover.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_remover.py	2011-08-02 19:16:54 UTC (rev 1567)
++++ trunk/lib/plugins/extensions/ge_remover.py	2011-08-10 20:08:12 UTC (rev 1568)
+@@ -43,7 +43,7 @@
+     api = 1
+     enabled = True # TODO: disable it by default
+ 
+-    toolbar_icon = 'gtk-delete'
++    toolbar_icon = 'ge_remover.png'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         if question(_('Are you sure you want to remove %d movies?') % self.app.total):
+
+
+
+From mikej06 at mail.berlios.de  Mon Aug 15 21:53:58 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 15 Aug 2011 21:53:58 +0200
+Subject: [Griffith-svn] r1569 - trunk/images
+Message-ID: <20110815195358.8FD454812CE@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-15 21:53:58 +0200 (Mon, 15 Aug 2011)
+New Revision: 1569
+
+Modified:
+   trunk/images/ge_amazon.png
+   trunk/images/ge_mark_seen.png
+   trunk/images/ge_movieposterdb.png
+   trunk/images/ge_player.png
+   trunk/images/ge_remover.png
+Log:
+extension icons all with the same height of 16px
+
+Modified: trunk/images/ge_amazon.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/images/ge_mark_seen.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/images/ge_movieposterdb.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/images/ge_player.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/images/ge_remover.png
+===================================================================
+(Binary files differ)
+
+
+
+From mikej06 at mail.berlios.de  Sat Aug 20 00:07:37 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat, 20 Aug 2011 00:07:37 +0200
+Subject: [Griffith-svn] r1570 - in trunk: . lib/plugins/movie
+Message-ID: <20110819220737.9640C481309@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-20 00:07:37 +0200 (Sat, 20 Aug 2011)
+New Revision: 1570
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+updated KinoDe plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-15 19:53:58 UTC (rev 1569)
++++ trunk/ChangeLog	2011-08-19 22:07:37 UTC (rev 1570)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-08-20  Michael Jahn
++	* updated KinoDe plugin
++
+ 2011-08-10  Michael Jahn
+ 	* added new icons for the extensions (thanks to Cin?phOli)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-08-15 19:53:58 UTC (rev 1569)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-08-19 22:07:37 UTC (rev 1570)
+@@ -32,7 +32,7 @@
+ plugin_language     = _("German")
+ plugin_author       = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version      = "1.15"
++plugin_version      = "1.16"
+ 
+ class Plugin(movie.Movie):
+     url_to_use_base = 'http://www.kino.de/'
+@@ -59,6 +59,12 @@
+             self.creditspage = self.open_page(self.parent_window, url=url)
+         else:
+             self.creditspage = ''
++        videopageforkinourl = gutils.trim(self.page, 'class="videode"', 'Zum Film auf video.de')
++        if videopageforkinourl:
++            url = gutils.trim(videopageforkinourl, 'href="', '"')
++            self.videopage = self.open_page(self.parent_window, url=url)
++        else:
++            self.videopage = None
+ 
+     def get_image(self):
+         self.image_url = ''
+@@ -77,20 +83,31 @@
+                     self.image_url = 'http://images.kino.de/s/' + gutils.before(tmpparts[2], '"')
+                 elif len(tmpparts) > 1:
+                     self.image_url = 'http://images.kino.de/s/' + gutils.before(tmpparts[1], '"')
++        if not self.image_url and self.videopage:
++            tmpdata = gutils.regextrim(self.videopage, '<div class="cover-area">', '</div>')
++            if tmpdata:
++                # video page
++                tmpdata = re.search('(http[:][/][/][^/]+[/]flbilder[/][^"\']+)', tmpdata)
++                if tmpdata:
++                    self.image_url = tmpdata.group(1)
+ 
++
+     def get_o_title(self):
+         self.o_title = gutils.trim(self.page, '<p>Originaltitel: ', '</p>')
+         if not self.o_title:
+-            self.o_title = gutils.trim(self.page, '<span class="standardsmall">(', ')')
++            self.o_title = gutils.trim(self.page, '<h1(', ')')
+             if not self.o_title:
+                 self.o_title = gutils.trim(self.page, '<div class="teaser">', '</')
+                 if not self.o_title:
+-                    self.o_title = gutils.regextrim(self.page, '<title>', '([|]|</title>)')
++                    if self.videopage:
++                        self.o_title = gutils.trim(self.videopage, '<p>Originaltitel: ', '</p>')
++                    if not self.o_title:
++                        self.o_title = gutils.regextrim(self.page, '<h1>', '</h1>')
+ 
+     def get_title(self):
+         self.title = gutils.trim(self.page, '<div class="teaser">', '</')
+         if not self.title:
+-            self.title = gutils.regextrim(self.page, '<title>', '([|]|</title>)')
++            self.title = gutils.regextrim(self.page, '<h1>', '</h1>')
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page, '<th>Regie:', '<th>')
+@@ -99,6 +116,11 @@
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '<div class="yui-content">', '<div class="footer">')
++        if not self.plot:
++            # kino page
++            self.plot = gutils.trim(self.page, '<span style="line-height: 15px;">', '<table')
++        if not self.plot and self.videopage:
++            self.plot = gutils.trim(self.videopage, '<div class="yui-content">', '<div class="footer">')
+         if self.plot:
+             # video page
+             self.plot = re.sub('<script type="text/javascript">[^<]+</script>', '', self.plot)
+@@ -115,9 +137,6 @@
+             self.plot = compiledmultiline.sub('', self.plot)
+             compiledmultiline = re.compile("^[\n]+$", re.MULTILINE)
+             self.plot = compiledmultiline.sub("\n", self.plot)
+-        else:
+-            # kino page
+-            self.plot = gutils.trim(self.page, '<span style="line-height: 15px;">', '<table')
+ 
+     def get_year(self):
+         self.year = ''
+@@ -134,6 +153,12 @@
+                     srchyear = re.search('([0-9]{4})', tmp)
+                     if srchyear:
+                         self.year = srchyear.group(1)
++        if not self.year and self.videopage:
++            tmp = gutils.trim(self.videopage, '<div class="description">', '</div>')
++            if tmp:
++                searchyearandcountry = re.search('([0-9]{4})<br', tmp)
++                if searchyearandcountry:
++                    self.year = searchyearandcountry.group(1)
+ 
+     def get_runtime(self):
+         self.runtime = ''
+@@ -144,11 +169,17 @@
+             srchresult = re.search('>([0-9]+)[ \t]Min[.]<', self.page)
+             if srchresult <> None:
+                 self.runtime = srchresult.group(1)
++        if not self.runtime and self.videopage:
++            srchresult = re.search('Laufzeit: ([0-9]+)[ \t]Min[.]<', self.videopage)
++            if srchresult <> None:
++                self.runtime = srchresult.group(1)
+ 
+     def get_genre(self):
+         self.genre = gutils.trim(self.page,'<p class="genre">', '</p>')
+         if not self.genre:
+-            self.genre = gutils.trim(self.page, '<span class="standardsmall"><strong>', '</strong>')
++            self.genre = gutils.trim(self.page, 'title="Zur Genreliste: Drama">', '<')
++        if not self.genre and self.videopage:
++            self.genre = gutils.trim(self.videopage,'<p class="genre">', '</p>')
+ 
+     def get_cast(self):
+         self.cast = ''
+@@ -176,7 +207,9 @@
+                         self.cast = self.cast + name + '\n'
+ 
+     def get_classification(self):
+-        self.classification = gutils.regextrim(self.page,'FSK: ', '<')
++        self.classification = gutils.regextrim(self.page, 'FSK: ', '<')
++        if not self.classification and self.videopage:
++            self.classification = gutils.regextrim(self.videopage, 'FSK: ', '<')
+ 
+     def get_studio(self):
+         self.studio = ''
+@@ -184,9 +217,15 @@
+         if tmp:
+             tmp = gutils.trim(tmp, 'Regie:', '</p>')
+             if tmp:
+-                self.studio = gutils.after(tmp, '<br/>')
++                self.studio = string.replace(gutils.after(tmp, '<br/>'), 'Verleih: ', '')
+         if not self.studio:
+             self.studio = gutils.trim(self.page, 'Verleih: ', '<')
++        if not self.studio and self.videopage:
++            tmp = gutils.trim(self.videopage, '<div class="description">', '</div>')
++            if tmp:
++                tmp = gutils.trim(tmp, 'Regie:', '</p>')
++                if tmp:
++                    self.studio = string.replace(gutils.after(tmp, '<br/>'), 'Verleih: ', '')
+ 
+     def get_o_site(self):
+         self.o_site = ""
+@@ -219,6 +258,12 @@
+                 tmp = gutils.trim(tmp, '<strong>', '</strong>')
+                 if tmp:
+                     self.country = gutils.before(tmp, ' ')
++        if not self.country and self.videopage:
++            tmp = gutils.trim(self.videopage, '<div class="description">', '</div>')
++            if tmp:
++                searchyearandcountry = re.search('([^>0-9]+)[0-9]{4}<br', tmp)
++                if searchyearandcountry:
++                    self.country = searchyearandcountry.group(1)
+ 
+     def get_rating(self):
+         self.rating = 0
+@@ -252,7 +297,7 @@
+     def get_screenplay(self):
+         self.screenplay = gutils.regextrim(self.page, '<th>Buch:', '<th>')
+         if not self.screenplay:
+-            self.screenplay= gutils.trim(self.creditspage, 'Drehbuch&nbsp;', '</tr>')
++            self.screenplay= gutils.trim(self.creditspage, 'Drehbuch:&nbsp;', '</tr>')
+ 
+     def get_cameraman(self):
+         self.cameraman = gutils.regextrim(self.page, '<th>Kamera:', '(<th>|</table>)')
+@@ -262,8 +307,8 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search   = 'http://www.kino.de/search.php?mode=megaSearch&searchCategory=film&inputSearch='
+-        self.translated_url_search = 'http://www.kino.de/search.php?mode=megaSearch&searchCategory=film&inputSearch='
++        self.original_url_search   = 'http://www.kino.de/suche/film?hitsPerPage=50&searchString='
++        self.translated_url_search = 'http://www.kino.de/suche/film?hitsPerPage=50&searchString='
+         self.encode='iso-8859-1'
+         self.remove_accents = False
+ 
+@@ -271,75 +316,44 @@
+         self.open_search(parent_window)
+         pagemovie = self.page
+         #
+-        # try to get all result pages (not so nice, but it works)
+-        #
+-        pagecount = gutils.clean(gutils.trim(pagemovie, '>von', '</a>'))
+-        try:
+-            pagecountint = int(pagecount)
+-        except:
+-            pagecountint = 1
+-        pagecountintcurrent = 1
+-        while (pagecountint > pagecountintcurrent and pagecountintcurrent < 5):
+-            pagecountintcurrent = pagecountintcurrent + 1
+-            self.url = 'http://www.kino.de/search.php?mode=megaSearch&searchCategory=film&page=' + str(pagecountintcurrent) + "&inputSearch="
+-            self.open_search(parent_window)
+-            pagemovie = pagemovie + self.page
+-        #
+         # Look for DVD and VHS
+         #
+-        self.url = "http://www.kino.de/search.php?mode=megaSearch&searchCategory=video&inputSearch="
++        self.url = "http://www.kino.de/suche/video?hitsPerPage=50&searchString="
+         self.open_search(parent_window)
+-        pagevideo = pagemovie + self.page
+-        #
+-        # try to get all result pages (not so nice, but it works)
+-        #
+-        pagecount = gutils.clean(gutils.trim(self.page, '>von', '</a>'))
+-        try:
+-            pagecountint = int(pagecount)
+-        except:
+-            pagecountint = 1
+-        pagecountintcurrent = 1
+-        while (pagecountint > pagecountintcurrent and pagecountintcurrent < 5):
+-            pagecountintcurrent = pagecountintcurrent + 1
+-            self.url = "http://www.kino.de/search.php?mode=megaSearch&searchCategory=video&page=" + str(pagecountintcurrent) + "&inputSearch="
+-            self.open_search(parent_window)
+-            pagevideo = pagevideo + self.page
++        self.page = pagemovie + self.page
+ 
+-        self.page = pagevideo
+         return self.page
+ 
+     def get_searches(self):
+-        elements1 = re.split('headline3"[^>]*>[ \t\r\n]*<a href="(?:http://www.kino.de)*/kinofilm/', self.page)
++        elements1 = re.split('href="/kinofilm/', self.page)
+         elements1[0] = None
+         for element in elements1:
+             if element <> None:
+-                self.ids.append("K_" + re.sub('[?].*', '', gutils.before(element,'"')))
+-                self.titles.append('Kino: ' + string.replace(string.replace(
+-                    gutils.strip_tags(
+-                        gutils.trim(element,'>','</a>') + ' (' +
+-                        string.replace(
+-                            gutils.trim(element, '<span class="standardsmall">', "</span>"),
+-                            '<br />', ' - ')
+-                        + ')'
+-                    ),
+-                    '( - (', '('), '))', ')')
+-                )
++                title = gutils.clean(gutils.trim(element,'>','</a>')) + string.replace(' (' +
++                            gutils.clean(gutils.trim(element, '<p>', "<br />")) + ')', '()', '')
++                if title != ' ':
++                    self.ids.append("K_" + re.sub('[?].*', '', gutils.before(element,'"')))
++                    self.titles.append('Kino: ' + title)
+ 
+-        elements2 = re.split('headline3"[^>]*>[ \t\r\n]*<a href="(?:http://www.video.de)*/videofilm/', self.page)
++        elements2 = re.split('href="http://www.video.de/videofilm/', self.page)
+         elements2[0] = None
+         for element in elements2:
+             if element <> None:
+-                self.ids.append("V_" + re.sub('[?].*', '', gutils.before(element,'"')))
+-                self.titles.append('Video: ' + string.replace(string.replace(
+-                    gutils.strip_tags(
+-                        gutils.trim(element,'>','</a>') + ' (' +
+-                        string.replace(
+-                            gutils.trim(element, '<span class="standardsmall">', '</span>'),
+-                            '<br />', ' - ')
+-                        + ')'
+-                    ),
+-                    '( - (', '('), '))', ')')
+-                )
++                title = gutils.clean(gutils.trim(element,'>','</a>')) + string.replace(' (' +
++                            gutils.clean(gutils.trim(element, '<p>', "<br />")) + ')', '()', '')
++                if title != ' ':
++                    id = re.sub('[?].*', '', gutils.before(element,'"'))
++                    self.ids.append("V_" + id)
++                    type = ''
++                    if 'blu-ray-disc-kauf' in id:
++                        type = ' (Bluray-Kauf)'
++                    if 'blu-ray-disc-leih' in id:
++                        type = ' (Bluray-Verleih)'
++                    if 'dvd-leih' in id:
++                        type = ' (DVD-Verleih)'
++                    if 'dvd-kauf' in id:
++                        type = ' (DVD-Kauf)'
++                    self.titles.append('Video: ' + title + type)
+ 
+ #
+ # Plugin Test
+@@ -351,7 +365,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 9, 9 ],
+-        'Arahan'               : [ 6, 6 ],
++        'Arahan'               : [ 9, 9 ],
+         'Ein gl?ckliches Jahr' : [ 4, 4 ]
+     }
+ 
+@@ -379,7 +393,7 @@
+ A.J. Benza' + _(' as ') + 'L.C.',
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+-            'classification'      : 'Freigegeben ab 12 Jahren',
++            'classification'      : 'ab 12 Jahre',
+             'studio'              : 'Fox',
+             'o_site'              : False,
+             'site'                : 'http://www.kino.de/kinofilm/rocky-balboa/96132.html',
+@@ -396,21 +410,21 @@
+             'title'               : 'Ein gl?ckliches Jahr',
+             'o_title'             : 'La bonne ann?e',
+             'director'            : 'Claude Lelouch',
+-            'plot'                : False,
++            'plot'                : True,
+             'cast'                : 'Lino Ventura\n\
+ Fran?oise Fabian\n\
+ Charles G?rard\n\
+ Andr? Falcon',
+             'country'             : 'Frankreich/Italien',
+             'genre'               : 'Drama',
+-            'classification'      : 'Freigegeben ab 12 Jahren',
+-            'studio'              : 'Columbia TriStar',
++            'classification'      : 'ab 12',
++            'studio'              : 'Black Hill Pictures',
+             'o_site'              : False,
+             'site'                : 'http://www.kino.de/kinofilm/ein-glueckliches-jahr/28675.html',
+             'trailer'             : 'http://www.kino.de/kinofilm/ein-glueckliches-jahr/trailer/28675.html',
+             'year'                : 1973,
+             'notes'               : False,
+-            'runtime'             : 115,
++            'runtime'             : 110,
+             'image'               : True,
+             'rating'              : False,
+             'cameraman'           : 'Jean Collomb',
+@@ -428,7 +442,7 @@
+             'country'             : 'Frankreich/Italien',
+             'genre'               : 'Drama',
+             'classification'      : 'ab 12',
+-            'studio'              : 'Warner Home Video',
++            'studio'              : 'Black Hill Pictures',
+             'o_site'              : False,
+             'site'                : 'http://www.video.de/videofilm/ein-glueckliches-jahr-dvd/85546.html',
+             'trailer'             : False,
+@@ -460,7 +474,7 @@
+             'country'             : 'S?dkorea',
+             'genre'               : 'Action/ Kom?die',
+             'classification'      : 'ab 16',
+-            'studio'              : 'WVG Medien',
++            'studio'              : 'Splendid Film',
+             'o_site'              : False,
+             'site'                : 'http://www.video.de/videofilm/arahan-vanilla-dvd/90405.html',
+             'trailer'             : False,
+
+
+
+From mikej06 at mail.berlios.de  Sat Aug 20 09:23:30 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat, 20 Aug 2011 09:23:30 +0200
+Subject: [Griffith-svn] r1571 - in trunk: . glade
+Message-ID: <20110820072330.D0BD648138D@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-20 09:23:30 +0200 (Sat, 20 Aug 2011)
+New Revision: 1571
+
+Added:
+   trunk/glade/add_poster.png
+   trunk/glade/delete_poster.png
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+Log:
+new icons for loading and removing posters (toolbar and menu are now the same icons)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-19 22:07:37 UTC (rev 1570)
++++ trunk/ChangeLog	2011-08-20 07:23:30 UTC (rev 1571)
+@@ -7,6 +7,7 @@
+ 
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
++	* new icons for loading and removing posters (toolbar and menu are now the same icons)
+ 
+ 2011-08-10  Michael Jahn
+ 	* added new icons for the extensions (thanks to Cin?phOli)
+
+Added: trunk/glade/add_poster.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/glade/add_poster.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Added: trunk/glade/delete_poster.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/glade/delete_poster.png
+___________________________________________________________________
+Added: svn:needs-lock
+   + *
+Added: svn:mime-type
+   + image/png
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-08-19 22:07:37 UTC (rev 1570)
++++ trunk/glade/griffith.glade	2011-08-20 07:23:30 UTC (rev 1571)
+@@ -220,20 +220,32 @@
+                           <widget class="GtkMenu" id="poster1_menu">
+                             <child>
+                               <widget class="GtkImageMenuItem" id="open_poster">
++                                <property name="label" translatable="yes">Load poster from disk</property>
+                                 <property name="visible">True</property>
+-                                <property name="label">gtk-open</property>
++                                <property name="use_stock">False</property>
+                                 <property name="use_underline">True</property>
+-                                <property name="use_stock">True</property>
+                                 <signal name="activate" handler="on_open_poster_clicked"/>
++                                <child internal-child="image">
++                                  <widget class="GtkImage" id="image2">
++                                    <property name="visible">True</property>
++                                    <property name="pixbuf">add_poster.png</property>
++                                  </widget>
++                                </child>
+                               </widget>
+                             </child>
+                             <child>
+                               <widget class="GtkImageMenuItem" id="delete_poster">
++                                <property name="label" translatable="yes">Remove poster</property>
+                                 <property name="visible">True</property>
+-                                <property name="label">gtk-delete</property>
++                                <property name="use_stock">False</property>
+                                 <property name="use_underline">True</property>
+-                                <property name="use_stock">True</property>
+                                 <signal name="activate" handler="on_delete_poster_clicked"/>
++                                <child internal-child="image">
++                                  <widget class="GtkImage" id="image1">
++                                    <property name="visible">True</property>
++                                    <property name="pixbuf">delete_poster.png</property>
++                                  </widget>
++                                </child>
+                               </widget>
+                             </child>
+                           </widget>
+@@ -655,7 +667,7 @@
+                       <widget class="GtkToolButton" id="toolbutton7">
+                         <property name="visible">True</property>
+                         <property name="tooltip" translatable="yes">Load poster from disk</property>
+-                        <property name="stock_id">gtk-open</property>
++                        <property name="icon">add_poster.png</property>
+                         <signal name="clicked" handler="on_open_poster_clicked"/>
+                       </widget>
+                       <packing>
+@@ -666,7 +678,7 @@
+                       <widget class="GtkToolButton" id="t_delete_poster">
+                         <property name="visible">True</property>
+                         <property name="tooltip" translatable="yes">Remove poster</property>
+-                        <property name="stock_id">gtk-clear</property>
++                        <property name="icon">delete_poster.png</property>
+                         <signal name="clicked" handler="on_delete_poster_clicked"/>
+                       </widget>
+                       <packing>
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 23 20:47:22 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Aug 2011 20:47:22 +0200
+Subject: [Griffith-svn] r1572 - in trunk: . glade lib
+Message-ID: <20110823184723.1007A480EA9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-23 20:47:22 +0200 (Tue, 23 Aug 2011)
+New Revision: 1572
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/edit.py
+   trunk/lib/main_treeview.py
+   trunk/lib/widgets.py
+Log:
+* added buttons to remove and add a poster within the movie edit dialog
+* fixed issue which occurs if an edited movie is saved after the selection of the main tree was changed
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/ChangeLog	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-08-23  Michael Jahn
++	* added buttons to remove and add a poster within the movie edit dialog
++
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
+ 	* new icons for loading and removing posters (toolbar and menu are now the same icons)
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/glade/griffith.glade	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -6271,14 +6271,83 @@
+                         <property name="border_width">4</property>
+                         <property name="spacing">4</property>
+                         <child>
+-                          <widget class="GtkImage" id="am_image">
+-                            <property name="width_request">40</property>
+-                            <property name="height_request">140</property>
++                          <widget class="GtkHBox" id="hbox46">
+                             <property name="visible">True</property>
+-                            <property name="stock">gtk-missing-image</property>
++                            <property name="spacing">8</property>
++                            <child>
++                              <widget class="GtkImage" id="am_image">
++                                <property name="width_request">40</property>
++                                <property name="height_request">140</property>
++                                <property name="visible">True</property>
++                                <property name="stock">gtk-missing-image</property>
++                              </widget>
++                              <packing>
++                                <property name="expand">True</property>
++                                <property name="position">1</property>
++                              </packing>
++                            </child>
++                            <child>
++                              <widget class="GtkVBox" id="vbox25">
++                                <property name="visible">True</property>
++                                <property name="border_width">4</property>
++                                <property name="spacing">4</property>
++                                <child>
++                                  <widget class="GtkButton" id="aadd_poster">
++                                    <property name="visible">True</property>
++                                    <property name="can_focus">True</property>
++                                    <property name="width_request">30</property>
++                                    <property name="height_request">30</property>
++                                    <property name="tooltip" translatable="yes">Load poster from disk</property>
++                                    <property name="use_stock">False</property>
++                                    <signal name="clicked" handler="on_a_open_poster_clicked"/>
++                                    <child>
++                                      <widget class="GtkImage" id="aadd_poster_image">
++                                        <property name="width_request">16</property>
++                                        <property name="height_request">16</property>
++                                        <property name="visible">True</property>
++                                        <property name="pixbuf">add_poster.png</property>
++                                      </widget>
++                                    </child>
++                                  </widget>
++                                  <packing>
++                                    <property name="position">1</property>
++                                    <property name="expand">False</property>
++                                    <property name="fill">False</property>
++                                  </packing>
++                                </child>
++                                <child>
++                                  <widget class="GtkButton" id="aremove_poster">
++                                    <property name="visible">True</property>
++                                    <property name="can_focus">True</property>
++                                    <property name="width_request">30</property>
++                                    <property name="height_request">30</property>
++                                    <property name="tooltip" translatable="yes">Remove poster</property>
++                                    <property name="use_stock">False</property>
++                                    <signal name="clicked" handler="on_a_delete_poster_clicked"/>
++                                    <child>
++                                      <widget class="GtkImage" id="aremove_poster_image">
++                                        <property name="width_request">16</property>
++                                        <property name="height_request">16</property>
++                                        <property name="visible">True</property>
++                                        <property name="pixbuf">delete_poster.png</property>
++                                      </widget>
++                                    </child>
++                                  </widget>
++                                  <packing>
++                                    <property name="position">2</property>
++                                    <property name="expand">False</property>
++                                    <property name="fill">False</property>
++                                  </packing>
++                                </child>
++                              </widget>
++                              <packing>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
+                           </widget>
+                           <packing>
+-                            <property name="expand">False</property>
++                            <property name="position">2</property>
+                           </packing>
+                         </child>
+                         <child>
+@@ -6289,7 +6358,7 @@
+                             <property name="expand">False</property>
+                             <property name="fill">False</property>
+                             <property name="padding">4</property>
+-                            <property name="position">1</property>
++                            <property name="position">4</property>
+                           </packing>
+                         </child>
+                         <child>
+@@ -6301,7 +6370,7 @@
+                           <packing>
+                             <property name="expand">False</property>
+                             <property name="fill">False</property>
+-                            <property name="position">2</property>
++                            <property name="position">5</property>
+                           </packing>
+                         </child>
+                         <child>
+@@ -6333,7 +6402,7 @@
+                           <packing>
+                             <property name="expand">False</property>
+                             <property name="fill">False</property>
+-                            <property name="position">3</property>
++                            <property name="position">6</property>
+                           </packing>
+                         </child>
+                         <child>
+@@ -6345,7 +6414,7 @@
+                           <packing>
+                             <property name="expand">False</property>
+                             <property name="fill">False</property>
+-                            <property name="position">4</property>
++                            <property name="position">7</property>
+                           </packing>
+                         </child>
+                         <child>
+@@ -6393,7 +6462,7 @@
+                           <packing>
+                             <property name="expand">False</property>
+                             <property name="fill">False</property>
+-                            <property name="position">5</property>
++                            <property name="position">8</property>
+                           </packing>
+                         </child>
+                         <child>
+@@ -6408,7 +6477,7 @@
+                           <packing>
+                             <property name="expand">False</property>
+                             <property name="fill">False</property>
+-                            <property name="position">6</property>
++                            <property name="position">9</property>
+                           </packing>
+                         </child>
+                       </widget>
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/griffith	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -383,6 +383,14 @@
+         from edit import delete_poster
+         delete_poster(self)
+ 
++    def a_change_poster(self, *args):
++        from add import change_poster
++        change_poster(self)
++
++    def a_del_poster(self, *args):
++        from add import delete_poster
++        delete_poster(self)
++
+     def z_poster(self, *args):
+         if self.widgets['poster_window'].flags() & gtk.VISIBLE == gtk.VISIBLE:
+             self.widgets['poster_window'].hide()
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/add.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -60,6 +60,7 @@
+ def edit_movie(self, details={}):
+     if not 'number' in details:
+         details['number'] = gutils.find_next_available(self.db)
++    self.selected_iter_edit = self.selected_iter
+     set_details(self, details)
+     self.widgets['add']['add_button'].hide()
+     self.widgets['add']['add_close_button'].hide()
+@@ -85,8 +86,10 @@
+     new_poster_md5 = None
+     if details['image']:
+         if old_poster_md5 != details['image']: # details["image"] can contain MD5 or file path
+-            new_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
++            new_image_path = details['image']
+             if not os.path.isfile(new_image_path):
++                new_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
++            if not os.path.isfile(new_image_path):
+                 log.warn("cannot read temporary file: %s", new_image_path)
+             else:
+                 new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+@@ -116,8 +119,7 @@
+ 
+     session.add(movie)
+     if commit(session):
+-        treeselection = self.widgets['treeview'].get_selection()
+-        main_treeview.setmovie(self, movie, self.selected_iter[0], self.treemodel)
++        main_treeview.setmovie(self, movie, self.selected_iter_edit[0], self.treemodel)
+ 
+         # close add window
+         self.widgets['add']['window'].hide()
+@@ -215,15 +217,18 @@
+                 pixbuf = self.Image.get_pixbuf()
+                 w['picture'].set_from_pixbuf(pixbuf.scale_simple(100, 140, 3))
+                 w['image'].set_text(self.movie.image)
++                w['aremove_poster'].set_sensitive(True)
+             except:
+                 image = gutils.get_defaultimage_fname(self)
+                 handler = self.Image.set_from_file(image)
+                 w['picture'].set_from_pixbuf(self.Image.get_pixbuf())
++                w['aremove_poster'].set_sensitive(False)
+         else:
+             image = gutils.get_defaultimage_fname(self)
+             handler = self.Image.set_from_file(image)
+             Pixbuf = self.Image.get_pixbuf()
+             w['picture'].set_from_pixbuf(Pixbuf)
++            w['aremove_poster'].set_sensitive(False)
+         fields_to_fetch.pop(fields_to_fetch.index('image'))
+     # other fields
+     for i in fields_to_fetch:
+@@ -600,16 +605,19 @@
+         for i in item['languages']:
+             self.create_language_row(i)
+     # poster
++    w['aremove_poster'].set_sensitive(True)
+     if 'poster_md5' in item and item['poster_md5']:
+         image_path = gutils.get_image_fname(item["poster_md5"], self.db, 'm')
+         if not image_path:
+             image_path = '' # isfile doesn't like bool
++            w['aremove_poster'].set_sensitive(False)
+         w['image'].set_text(item['poster_md5'])
+     elif 'image' in item and item['image']:
+         if len(item['image']) == 32: # md5
+             image_path = gutils.get_image_fname(item["image"], self.db, 'm')
+             if not image_path:
+                 image_path = '' # isfile doesn't like bool
++                w['aremove_poster'].set_sensitive(False)
+             else:
+                 w['image'].set_text(item['image'])
+         else:
+@@ -618,8 +626,10 @@
+     else:
+         w['image'].set_text('')
+         image_path = gutils.get_defaultimage_fname(self)
++        w['aremove_poster'].set_sensitive(False)
+     if not os.path.isfile(image_path):
+         image_path = gutils.get_defaultimage_fname(self)
++        w['aremove_poster'].set_sensitive(False)
+     w['picture'].set_from_file(image_path)
+ 
+     w['notebook'].set_current_page(0)
+@@ -670,7 +680,9 @@
+ 
+     new_poster_md5 = None
+     if details['image']:
+-        tmp_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
++        tmp_image_path = details['image']
++        if not os.path.isfile(tmp_image_path):
++            tmp_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
+         if os.path.isfile(tmp_image_path):
+             new_poster_md5 = gutils.md5sum(file(tmp_image_path, 'rb'))
+ 
+@@ -687,7 +699,8 @@
+             else:
+                 details["poster_md5"] = new_poster_md5
+             try:
+-                os.remove(tmp_image_path)
++                if not tmp_image_path == details['image']:
++                    os.remove(tmp_image_path)
+             except Exception, e:
+                 log.warn("cannot remove temporary file %s", tmp_image_path)
+         else:
+@@ -897,3 +910,33 @@
+         initialize.update_collection_combo_ids(self)
+         initialize.fill_collections_combo(self, col.collection_id)
+     return col.collection_id
++
++
++def change_poster(self):
++    from edit import change_poster_select_file
++    if change_poster_select_file(self, -1, change_poster_new_movie):
++        self.widgets['add']['aremove_poster'].set_sensitive(True)
++
++
++def change_poster_new_movie(self, number, filename):
++    try:
++        handler = self.Image.set_from_file(filename)
++        pixbuf = self.Image.get_pixbuf()
++        handler = self.widgets['add']['picture'].set_from_pixbuf(pixbuf.scale_simple(100, 140, 3))
++        gutils.garbage(handler)
++        self.widgets['add']['image'].set_text(filename)
++        return True
++    except:
++        image = gutils.get_defaultimage_fname(self)
++        handler = self.Image.set_from_file(image)
++        handler = self.widgets['add']['picture'].set_from_pixbuf(self.Image.get_pixbuf())
++        gutils.garbage(handler)
++        return False
++
++
++def delete_poster(self):
++    w = self.widgets['add']
++    w['image'].set_text('')
++    image_path = gutils.get_defaultimage_fname(self)
++    w['picture'].set_from_file(image_path)
++    w['aremove_poster'].set_sensitive(False)
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/edit.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright ? 2005-2010 Vasco Nunes, Piotr O?arowski
++# Copyright ? 2005-2011 Vasco Nunes, Piotr O?arowski
+ 
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -42,6 +42,13 @@
+     if number is None:
+         gutils.error(_("You have no movies in your database"), self.widgets['window'])
+         return False
++    return change_poster_select_file(self, number)
++
++def update_image(self, number, filename):
++    imagedata = file(filename, 'rb').read()
++    return update_image_from_memory(self, number, imagedata)
++
++def change_poster_select_file(self, number, handler = update_image):
+     filename = gutils.file_chooser(_("Select image"),
+                                    action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                                    buttons=(gtk.STOCK_CANCEL,
+@@ -53,14 +60,10 @@
+                                    picture=True)
+     if filename and filename[0]:
+         filename = filename[0].decode('UTF-8')
+-        update_image(self, number, filename)
++        if handler:
++            return handler(self, number, filename)
++    return False
+ 
+-
+-def update_image(self, number, filename):
+-    imagedata = file(filename, 'rb').read()
+-    update_image_from_memory(self, number, imagedata)
+-
+-
+ def update_image_from_memory(self, number, data):
+     session = self.db.Session()
+     try:
+@@ -109,20 +112,17 @@
+     self.widgets['add']['delete_poster'].set_sensitive(True)
+ 
+     self.update_statusbar(_("Image has been updated"))
++    return True
+ 
+-
+-def delete_poster(self):
++def delete_poster(self, movie_id = None):
++    if movie_id is None:
++        movie_id = self._movie_id
+     session = self.db.Session()
+-    movie = session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
++    movie = session.query(db.Movie).filter_by(movie_id=movie_id).first()
+     if not movie:
+         log.error("Cannot delete unknown movie's poster!")
+         return False
+     if gutils.question(_("Are you sure you want to delete this poster?"), self.widgets['window']):
+-        image_path = gutils.get_defaultimage_fname(self)
+-        handler = self.widgets['movie']['picture'].set_from_pixbuf(gtk.gdk.pixbuf_new_from_file(image_path))
+-        gutils.garbage(handler)
+-        update_tree_thumbnail(self, gutils.get_defaultthumbnail_fname(self))
+-
+         # update in database
+         delete.delete_poster(self, movie.poster_md5)
+         movie.poster_md5 = None
+@@ -134,14 +134,21 @@
+             log.error("cannot delete poster: %s" % e)
+             return False
+ 
++        if self._movie_id == movie_id:
++            # only if the current selected movie is the same like that one for removing poster
++            image_path = gutils.get_defaultimage_fname(self)
++            handler = self.widgets['movie']['picture'].set_from_pixbuf(gtk.gdk.pixbuf_new_from_file(image_path))
++            gutils.garbage(handler)
++            self.widgets['add']['delete_poster'].set_sensitive(False)
++            self.widgets['movie']['picture_button'].set_sensitive(False)
++        # always refresh the treeview entry
++        update_tree_thumbnail(self, gutils.get_defaultthumbnail_fname(self))
++
+         self.update_statusbar(_("Image has been updated"))
+ 
+-        self.widgets['add']['delete_poster'].set_sensitive(False)
+-        self.widgets['movie']['picture_button'].set_sensitive(False)
+-    else:
+-        pass
++        return True
++    return False
+ 
+-
+ def update_tree_thumbnail(self, t_image_path):
+     self.Image.set_from_file(t_image_path)
+     pixbuf = self.Image.get_pixbuf()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/main_treeview.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -266,6 +266,7 @@
+             w['picture_button'].set_sensitive(False)
+     else:
+         image_path = gutils.get_defaultimage_fname(self)
++        self.widgets['add']['delete_poster'].set_sensitive(False)
+         w['picture_button'].set_sensitive(False)
+     w['picture'].set_from_file(image_path)
+     # ratig
+@@ -324,8 +325,9 @@
+                 self.loans_treemodel.set_value(myiter, 1, str(loan.return_date)[:10])
+             else:
+                 self.loans_treemodel.set_value(myiter, 1, "---")
+-            person = self.db.session.query(db.Person.name).filter_by(person_id=loan.person.person_id).first()
+-            self.loans_treemodel.set_value(myiter, 2, person.name)
++            if loan.person:
++                person = self.db.session.query(db.Person.name).filter_by(person_id=loan.person.person_id).first()
++                self.loans_treemodel.set_value(myiter, 2, person.name)
+ 
+     # volumes/collections
+     if 'volume_id' in item and item['volume_id'] > 0:
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/widgets.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -3,7 +3,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr O?arowski
++# Copyright (c) 2005-2011 Vasco Nunes, Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -145,12 +145,16 @@
+         'clear_button': get('am_clear_button'),
+         'save_button': get('am_save_button'),
+         'cb_only_empty': get('am_cb_only_empty'),
++        'aremove_poster': get('aremove_poster'),
++        'aadd_poster': get('aadd_poster'),
+     }
+     self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+     self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
+     self.widgets['add']['o_title'].connect('activate', self.on_enter)
+     self.widgets['add']['title'].connect('activate', self.on_enter)
+     self.widgets['add']['window'].set_transient_for(self.widgets['window'])
++    self.widgets['add']['aadd_poster'].connect('button_press_event', self.a_change_poster)
++    self.widgets['add']['aremove_poster'].connect('button_press_event', self.a_del_poster)
+ 
+     #}}}
+ 
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 23 20:48:41 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Aug 2011 20:48:41 +0200
+Subject: [Griffith-svn] r1573 - trunk/lib/plugins/movie
+Message-ID: <20110823184841.E1D33480EA9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-23 20:48:41 +0200 (Tue, 23 Aug 2011)
+New Revision: 1573
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+Log:
+NoneType issue within plugin CSFD
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-23 18:47:22 UTC (rev 1572)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-23 18:48:41 UTC (rev 1573)
+@@ -145,15 +145,15 @@
+             self.trailer = ""
+ 
+     def get_rating(self):
++        self.rating = ""
+         a = re.sub("\t", "", self.page)
+         a = re.sub("\n", "", a)
+-        self.rating = re.search(r"[\s]*([\d]+)%[\s]*</h2>", a).group()[:-6]
++        search = re.search(r"[\s]*([\d]+)%[\s]*</h2>", a)
++        if search:
++            self.rating = search.group()[:-6]
++            if self.rating:
++                self.rating = str(float(self.rating) / 10)
+ 
+-        if self.rating:
+-            self.rating = str(float(self.rating) / 10)
+-        else:
+-            self.rating = ""
+-
+     def get_o_site(self):
+         try:
+             self.o_site = gutils.before("http://" + re.findall(r'<li><a\ href="http://([^> ]*)', self.page)[1], '"')
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 23 20:52:04 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Aug 2011 20:52:04 +0200
+Subject: [Griffith-svn] r1574 - trunk/lib
+Message-ID: <20110823185205.41B43481429@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-23 20:52:04 +0200 (Tue, 23 Aug 2011)
+New Revision: 1574
+
+Modified:
+   trunk/lib/initialize.py
+Log:
+extension icons can be svg now
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-08-23 18:48:41 UTC (rev 1573)
++++ trunk/lib/initialize.py	2011-08-23 18:52:04 UTC (rev 1574)
+@@ -562,7 +562,7 @@
+             return [None, None]
+         if module.toolbar_icon:
+             toolbar = self.widgets['extensions']['toolbar']
+-            if module.toolbar_icon.endswith('.png'):
++            if module.toolbar_icon.endswith('.png') or module.toolbar_icon.endswith('.svg'):
+                 icon_path = os.path.join(os.path.dirname(module.__file__), 'data', module.toolbar_icon)
+                 if not os.path.isfile(icon_path):
+                     icon_path = os.path.join(self.locations['images'], module.toolbar_icon)
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 23 21:45:27 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Aug 2011 21:45:27 +0200
+Subject: [Griffith-svn] r1575 - in trunk: . lib/plugins/extensions
+Message-ID: <20110823194527.99085481462@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-23 21:45:27 +0200 (Tue, 23 Aug 2011)
+New Revision: 1575
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/extensions/ge_remover.py
+Log:
+fixed bug in extension "remover", it doesn't work if a criteria is required
+(f.e. adv filter with "required tag" did only remove the tags not the movie entries)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-23 18:52:04 UTC (rev 1574)
++++ trunk/ChangeLog	2011-08-23 19:45:27 UTC (rev 1575)
+@@ -7,6 +7,8 @@
+ 
+ 2011-08-23  Michael Jahn
+ 	* added buttons to remove and add a poster within the movie edit dialog
++	* fixed bug in extension "remover", it doesn't work if a criteria is required
++	  (f.e. adv filter with "required tag" did only remove the tags not the movie entries)
+ 
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
+
+Modified: trunk/lib/plugins/extensions/ge_remover.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 18:52:04 UTC (rev 1574)
++++ trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 19:45:27 UTC (rev 1575)
+@@ -54,23 +54,29 @@
+             # FIXME: self.app._search_conditions contains advfilter conditions only (no other filters)
+             query = update_whereclause(query, self.app._search_conditions)
+             query = query.where(movies_table.c.loaned==False) # don't delete loaned movies
++            log.debug(query)
++            movie_ids = []
+             for movie_entry in session.execute(query):
++                movie_ids.append(movie_entry.movie_id)
+                 # tags
+                 query_movie_tags = delete(movie_tag_table)
+                 query_movie_tags = query_movie_tags.where(movie_tag_table.c.movie_id==movie_entry.movie_id)
++                log.debug(query_movie_tags)
+                 session.execute(query_movie_tags)
+                 # languages
+                 query_movie_lang = delete(movie_lang_table)
+                 query_movie_lang = query_movie_lang.where(movie_lang_table.c.movie_id==movie_entry.movie_id)
++                log.debug(query_movie_lang)
+                 session.execute(query_movie_lang)
+                 # TODO: removing posters if no longer used by another movie?
+ 
+             # second: remove the movie entries
+             query = delete(movies_table)
+-            # FIXME: self.app._search_conditions contains advfilter conditions only (no other filters)
+-            query = update_whereclause(query, self.app._search_conditions)
+-            query = query.where(movies_table.c.loaned==False) # don't delete loaned movies
++            # use the collected movie ids because other conditions are not true anymore
++            # (f.e. tags are already deleted)
++            query = query.where(movies_table.c.movie_id.in_(movie_ids))
+ 
++            log.debug(query)
+             session.execute(query)
+             session.commit()
+ 
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 23 22:20:12 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Aug 2011 22:20:12 +0200
+Subject: [Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions
+Message-ID: <20110823202013.17B4B481462@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-23 22:20:12 +0200 (Tue, 23 Aug 2011)
+New Revision: 1576
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/plugins/extensions/ge_remover.py
+   trunk/lib/quick_filter.py
+Log:
+extension remover now respects the simple filter condition
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/ChangeLog	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -9,6 +9,7 @@
+ 	* added buttons to remove and add a poster within the movie edit dialog
+ 	* fixed bug in extension "remover", it doesn't work if a criteria is required
+ 	  (f.e. adv filter with "required tag" did only remove the tags not the movie entries)
++	* extension remover now respects the simple filter condition
+ 
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/griffith	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -1137,6 +1137,9 @@
+ 
+     def on_af_find_clicked(self, *args):
+         from advfilter import create_select_query, hide_window
++        # remove the simple filter conditions because adv filter takes effect
++        self.clear_filter()
++        # now filtering in advanced
+         movies = create_select_query(self, None, None, None).execute().fetchall()
+         main_treeview.populate(self, movies, qf=False)
+ 
+
+Modified: trunk/lib/plugins/extensions/ge_remover.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -31,6 +31,7 @@
+ from gutils import question
+ from plugins.extensions import GriffithExtensionBase as Base
+ from sql import update_whereclause
++from quick_filter import change_filter_update_whereclause
+ 
+ log = logging.getLogger('Griffith')
+ 
+@@ -51,7 +52,9 @@
+ 
+             # first: remove all dependend data (associated tags, languages, ...)
+             query = select([movies_table.c.movie_id])
+-            # FIXME: self.app._search_conditions contains advfilter conditions only (no other filters)
++            # add conditions from simple filter
++            change_filter_update_whereclause(self.app, query)
++            # add conditions from adv filter
+             query = update_whereclause(query, self.app._search_conditions)
+             query = query.where(movies_table.c.loaned==False) # don't delete loaned movies
+             log.debug(query)
+@@ -71,13 +74,14 @@
+                 # TODO: removing posters if no longer used by another movie?
+ 
+             # second: remove the movie entries
+-            query = delete(movies_table)
+-            # use the collected movie ids because other conditions are not true anymore
+-            # (f.e. tags are already deleted)
+-            query = query.where(movies_table.c.movie_id.in_(movie_ids))
++            if len(movie_ids):
++                query = delete(movies_table)
++                # use the collected movie ids because other conditions are not true anymore
++                # (f.e. tags are already deleted)
++                query = query.where(movies_table.c.movie_id.in_(movie_ids))
+ 
+-            log.debug(query)
+-            session.execute(query)
++                log.debug(query)
++                session.execute(query)
+             session.commit()
+ 
+             self.app.populate_treeview()
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/lib/quick_filter.py	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -25,13 +25,16 @@
+ import db
+ 
+ def change_filter(self):
+-    x = 0
+-    text = gutils.gescape(self.widgets['filter']['text'].get_text().decode('utf-8'))
+-    
+     from sqlalchemy import select, or_
+     from sqlalchemy.orm.util import class_mapper, object_mapper
+     statement = select(db.tables.movies.columns, bind=self.db.session.bind)
+     
++    change_filter_update_whereclause(self, statement)
++    self.populate_treeview(statement)
++
++
++def change_filter_update_whereclause(self, statement):
++    text = gutils.gescape(self.widgets['filter']['text'].get_text().decode('utf-8'))
+     if text:
+         (criterianame, criteria) = self.search_criteria_sorted[self.widgets['filter']['criteria'].get_active()]
+         if criteria in ('year', 'runtime', 'media_num', 'rating'):
+@@ -48,8 +51,8 @@
+             limit = int(self.config.get('limit', 0, section='mainlist'))
+             if limit > 0:
+                 statement.limit = limit
+-    self.populate_treeview(statement)
+ 
++    
+ def clear_filter(self, populate=True):
+     # prevent multiple treeview updates
+     self.initialized = False
+@@ -59,4 +62,3 @@
+     self.initialized = True
+     if populate:
+         self.populate_treeview()
+-
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 30 23:13:26 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 30 Aug 2011 23:13:26 +0200
+Subject: [Griffith-svn] r1577 - in trunk: . lib lib/plugins/movie
+Message-ID: <20110830211327.209984811BB@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-30 23:13:26 +0200 (Tue, 30 Aug 2011)
+New Revision: 1577
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/plugins/movie/PluginMovieAllRovi.py
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/lib/plugins/movie/PluginMovieCineteka.py
+   trunk/lib/plugins/movie/PluginMovieCulturalia.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Log:
+updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
+test data refreshed
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/ChangeLog	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2011-08-30  Michael Jahn
++	* updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
++
+ 2011-08-23  Michael Jahn
+ 	* added buttons to remove and add a poster within the movie edit dialog
+ 	* fixed bug in extension "remover", it doesn't work if a criteria is required
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/add.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -311,6 +311,7 @@
+                     self.search_movie.get_searches()
+             self.show_search_results(self.search_movie)
+         except:
++            log.exception('')
+             gutils.error(_("Connection failed."))
+     else:
+         gutils.error(_("You should fill the original title\nor the movie title."))
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllRovi.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -46,10 +46,10 @@
+         self.image_url = gutils.trim(self.page, '<img class="cover-art" src="', '"')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '<div class="page-heading">', '</div>')
++        self.o_title = gutils.regextrim(self.page, '<div class="page-heading">', '(</div>|<span>)')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '<div class="page-heading">', '</div>')
++        self.title = gutils.regextrim(self.page, '<div class="page-heading">', '(</div>|<span>)')
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page, '<dt>directed by</dt>', '</ul>')
+@@ -78,7 +78,7 @@
+         self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '<dt>produced by</dt>', '</div>')
++        self.studio = gutils.regextrim(self.page, '<dt>produced by</dt>', '(</div>|<dt>)')
+ 
+     def get_o_site(self):
+         self.o_site = ''
+@@ -90,10 +90,10 @@
+         self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '<dt>countries</dt>', '</div>')
++        self.country = gutils.regextrim(self.page, '<dt>countries</dt>', '(</div>|<dt>)')
+ 
+     def get_rating(self):
+-        self.rating = len(string.split(gutils.trim(self.page, '<dt>rovi rating</dt>', '</div>'), '<li>')) * 2
++        self.rating = (len(string.split(gutils.trim(self.page, '<dt>rovi rating</dt>', '</div>'), '"star full"')) - 1) * 2
+ 
+     def get_notes(self):
+         self.notes = ''
+@@ -151,7 +151,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 56, 56 ],
++        'Rocky' : [ 57, 57 ],
+     }
+ 
+ class PluginTest:
+@@ -195,7 +195,7 @@
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+             'classification'      : False,
+-            'studio'              : 'Columbia Pictures, Chartoff Winkler Productions, MGM, Revolution Studios',
++            'studio'              : 'Chartoff Winkler Productions, MGM, Revolution Studios, Columbia Pictures',
+             'o_site'              : False,
+             'site'                : 'http://www.allrovi.com/movies/movie/rocky-balboa-v337682',
+             'trailer'             : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -86,7 +86,10 @@
+     def get_year(self):
+         self.year = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
+         if self.year:
+-            self.year = self.year.group()[18:-7].split(", ")[-2]
++            try:
++                self.year = self.year.group()[18:-7].split(", ")[-2]
++            except:
++                self.year = ""
+         else:
+             self.year = ""
+ 
+@@ -145,20 +148,26 @@
+             self.trailer = ""
+ 
+     def get_rating(self):
+-        self.rating = ""
+         a = re.sub("\t", "", self.page)
+         a = re.sub("\n", "", a)
+-        search = re.search(r"[\s]*([\d]+)%[\s]*</h2>", a)
+-        if search:
+-            self.rating = search.group()[:-6]
+-            if self.rating:
+-                self.rating = str(float(self.rating) / 10)
++        self.rating = re.search(r"[\s]*([\d]+)%[\s]*</h2>", a).group()[:-6]
+ 
++        if self.rating:
++            self.rating = str(float(self.rating) / 10)
++        else:
++            self.rating = ""
++
+     def get_o_site(self):
++        self.o_site = ""
+         try:
+-            self.o_site = gutils.before("http://" + re.findall(r'<li><a\ href="http://([^> ]*)', self.page)[1], '"')
++            index = string.rfind(self.page, u'title="ofici??ln?? web"')
++            if index > 0:
++                tmp = gutils.before(self.page, u'title="ofici??ln?? web"')
++                index = string.rfind(tmp, 'href="')
++                if index > 0:
++                    self.o_site = gutils.trim(tmp[index:], '"', '"')
+         except:
+-            self.o_site = ""
++            pass
+ 
+     def get_notes(self):
+         self.notes = ""
+@@ -275,7 +284,7 @@
+             'genre'          : 'Ak??n?? / Dobrodru??n?? / Thriller',
+             'classification' : False,
+             'studio'         : False,
+-            'o_site'         : 'http://www.popron.cz/cliffhanger-dvd/s-368398/?_actionnumber=9045',
++            'o_site'         : False,
+             'site'           : 'http://www.imdb.com/title/tt0106582/',
+             'trailer'        : 'http://www.csfd.cz/film/4155-cliffhanger/videa',
+             'year'           : 1993,
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -105,7 +105,7 @@
+ 
+     def get_rating(self):
+         # site's rating, not users'
+-        self.rating = gutils.trim(self.page, '<div class=number3>', '</div>')
++        self.rating = gutils.clean(gutils.trim(self.page, '<div class=number3>', '</div>'))
+ 
+     def get_screenplay(self):
+         self.screenplay = gutils.clean(gutils.trim(self.page_cast, u'Sc??nario de</h2> :', '<div id="cast_film">'))
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineteka.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCineteka.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -147,13 +147,14 @@
+ 
+     def get_searches(self):
+         """Try to find both id and film title for each search result"""
+-        elements = re.split('index[.]php[?]op=Movie&id=([0-9]+)">', self.page)
++        elements = re.split('index[.]php[?]op=Movie&id=([0-9]+)" ', self.page)
+         
+         for index in range(2, len(elements), 2):
+             id = elements[index - 1]
+-            title = gutils.before(elements[index], '<')
+-            self.ids.append(id)
+-            self.titles.append(gutils.strip_tags(gutils.convert_entities(title)))
++            title = gutils.clean(gutils.trim(elements[index], '>', '</'))
++            if id and title:
++                self.ids.append(id)
++                self.titles.append(gutils.strip_tags(gutils.convert_entities(title)))
+ 
+ #
+ # Plugin Test
+@@ -164,7 +165,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa' : [ 1, 1 ],
++        'Rocky Balboa' : [ 3, 3 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieCulturalia.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCulturalia.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCulturalia.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -179,7 +179,7 @@
+ Maureen Schilling',
+             'country'             : 'USA',
+             'genre'               : 'Drama / Deportes',
+-            'classification'      : False,
++            'classification'      : u'No recom. menores de 7 a?os',
+             'studio'              : False,
+             'o_site'              : False,
+             'site'                : 'http://www.culturalianet.com/art/ver.php?art=27039',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -198,8 +198,8 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 14, 14 ],
+-        'Darkness' : [51, 51 ]
++        'Rocky' : [ 16, 16 ],
++        'Darkness' : [56, 56 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -182,7 +182,7 @@
+     test_configuration = {
+         'Rocky Balboa' : [  1,  1 ],
+         'Arahan'       : [  1,  1 ],
+-        'M??rchen'      : [ 23, 23 ]
++        'M??rchen'      : [ 24, 24 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -293,8 +293,8 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 24, 24 ],
+-        'Ein gl??ckliches Jahr' : [  6,  6 ]
++        'Rocky Balboa'         : [ 25, 25 ],
++        'Ein gl??ckliches Jahr' : [ 47, 47 ]
+     }
+ 
+ class PluginTest:
+@@ -400,9 +400,9 @@
+ Ryan Tygh' + _(' as ') + 'Ring Photographer (nicht im Abspann)\n\
+ Kimberly Villanova' + _(' as ') + 'Businesswoman (nicht im Abspann)',
+             'country'           : 'USA',
+-            'genre'             : 'Drama | Sport',
++            'genre'             : 'Action | Drama | Romanze | Sport',
+             'classification'    : False,
+-            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
++            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Rogue Marble',
+             'o_site'            : False,
+             'site'              : 'http://www.imdb.de/title/tt0479143',
+             'trailer'           : 'http://www.imdb.com/title/tt0479143/trailers',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -248,7 +248,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 24, 24 ]
++        'Rocky Balboa'         : [ 25, 25 ]
+     }
+ 
+ class PluginTest:
+@@ -354,9 +354,9 @@
+ Ryan Tygh' + _(' as ') + 'Ring Photographer (sin acreditar)\n\
+ Kimberly Villanova' + _(' as ') + 'Businesswoman (sin acreditar)',
+             'country'           : 'Estados Unidos',
+-            'genre'             : 'Drama | Deporte',
+-            'classification'    : u'Estados Unidos:PG  | Singapur:PG  | Finlandia:K-11  | Reino Unido:12A  | Canad?:G (British Columbia) | Australia:M  | Irlanda:PG  | Hong Kong:IIA  | M?xico:A  | Noruega:11  | Suiza:12 (canton of Vaud) | Suiza:12 (canton of Geneva) | Brasil:12  | Argentina:Atp  | Malasia:U  | Filipinas:PG-13 (MTRCB) | Portugal:M/12  | Corea del Sur:12  | Suecia:11  | Nueva Zelanda:M',
+-            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
++            'genre'             : u'Acci?n | Drama | Romance | Deporte',
++            'classification'    : u'Estados Unidos:PG  | Singapur:PG  | Finlandia:K-11  | Reino Unido:12A  | Canad?:G (British Columbia) | Australia:M  | Irlanda:PG  | Hong Kong:IIA  | M?xico:A  | Noruega:11  | Suiza:12 (canton of Geneva) | Suiza:12 (canton of Vaud) | Brasil:12  | Argentina:Atp  | Malasia:U  | Filipinas:PG-13 (MTRCB) | Portugal:M/12  | Corea del Sur:12  | Suecia:11  | Nueva Zelanda:M',
++            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Rogue Marble',
+             'o_site'            : False,
+             'site'              : 'http://www.imdb.es/title/tt0479143',
+             'trailer'           : 'http://www.imdb.es/title/tt0479143/trailers',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -132,7 +132,7 @@
+         self.country = re.sub('[\n]+', '', self.country)
+ 
+     def get_rating(self):
+-        pattern = re.compile('>([0-9]([.][0-9])*)<[/][^/]+>[/][0-9][0-9]<')
++        pattern = re.compile('>([0-9]([.][0-9])*)(<[^>]+>)+[/](<[^>]+>)[0-9][0-9]<')
+         result = pattern.search(self.page)
+         if result:
+             self.rating = result.groups()[0]
+@@ -277,8 +277,8 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 24, 24 ],
+-        'Ein gl??ckliches Jahr' : [ 45, 45 ]
++        'Rocky Balboa'         : [ 25, 25 ],
++        'Ein gl??ckliches Jahr' : [ 47, 47 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -230,7 +230,7 @@
+             'genre'          : 'Sportivo',
+             'classification' : False,
+             'studio'         : False,
+-            'o_site'         : False,
++            'o_site'         : 'http://www.mgm.com/rocky_balboa/',
+             'site'           : 'http://www.mymovies.it/dizionario/recensione.asp?id=44566',
+             'trailer'        : 'http://www.mymovies.it/trailer/?id=44566',
+             'year'           : 2006,
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -166,17 +166,23 @@
+         if not self.open_search(parent_window):
+             return None
+         tmp = gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>")
++        if not tmp:
++            return self.page
+         return tmp
+ 
+     def get_searches(self):
+-        elements = string.split(self.page, "hit.php3?hit=")
+-        elements[0] = ''
+-        for element in elements:
+-            if element <> '':
+-                id = gutils.trim(element, 'movie-', '-')
+-                if id <> '':
+-                    self.ids.append(id)
+-                    self.titles.append(gutils.strip_tags(string.replace(gutils.regextrim(element, '>', '</[Aa]>'), '<br />', ' - ')))
++        if string.find(self.page, '<title>Suche') > 0:
++            elements = string.split(self.page, "hit.php3?hit=")
++            elements[0] = ''
++            for element in elements:
++                if element <> '':
++                    id = gutils.trim(element, 'movie-', '-')
++                    if id <> '':
++                        self.ids.append(id)
++                        self.titles.append(gutils.strip_tags(string.replace(gutils.regextrim(element, '>', '</[Aa]>'), '<br />', ' - ')))
++        else:
++            id = gutils.regextrim(self.page, 'index[.]php3[?]id=', '("|;|\')')
++            self.ids.append(id)
+ 
+ #
+ # Plugin Test
+
+
+
+From mikej06 at mail.berlios.de  Tue Aug 30 23:17:33 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 30 Aug 2011 23:17:33 +0200
+Subject: [Griffith-svn] r1578 - trunk/lib
+Message-ID: <20110830211733.D435E4811BB@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-08-30 23:17:33 +0200 (Tue, 30 Aug 2011)
+New Revision: 1578
+
+Modified:
+   trunk/lib/initialize.py
+Log:
+module.toolbar_icon.endswith(('.png', '.svg'))
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-08-30 21:13:26 UTC (rev 1577)
++++ trunk/lib/initialize.py	2011-08-30 21:17:33 UTC (rev 1578)
+@@ -562,7 +562,7 @@
+             return [None, None]
+         if module.toolbar_icon:
+             toolbar = self.widgets['extensions']['toolbar']
+-            if module.toolbar_icon.endswith('.png') or module.toolbar_icon.endswith('.svg'):
++            if module.toolbar_icon.endswith(('.png', '.svg')):
+                 icon_path = os.path.join(os.path.dirname(module.__file__), 'data', module.toolbar_icon)
+                 if not os.path.isfile(icon_path):
+                     icon_path = os.path.join(self.locations['images'], module.toolbar_icon)
+
+
+

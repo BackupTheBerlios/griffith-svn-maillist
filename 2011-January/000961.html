@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1500 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1500%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110117210435.2E9AD48129D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000960.html">
+   <LINK REL="Next"  HREF="000962.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1500 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1500%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110117210435.2E9AD48129D%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1500 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 17 22:04:34 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000960.html">[Griffith-svn] r1499 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000962.html">[Griffith-svn] r1501 - in trunk: . lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#961">[ date ]</a>
+              <a href="thread.html#961">[ thread ]</a>
+              <a href="subject.html#961">[ subject ]</a>
+              <a href="author.html#961">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-01-17 22:04:34 +0100 (Mon, 17 Jan 2011)
+New Revision: 1500
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+[#703728] FilmAffinity: incomplete list of results
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-16 19:08:31 UTC (rev 1499)
++++ trunk/ChangeLog	2011-01-17 21:04:34 UTC (rev 1500)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2011-01-17  Michael Jahn
++	* [#703728] FilmAffinity: incomplete list of results
++
+ 2011-01-16  Michael Jahn
+ 	* [#697018] CSV import not working when number field not checked
+ 	* [#702495] griffith start interrupts with &quot;TypeError: value is of the wrong type for this column&quot;
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-01-16 19:08:31 UTC (rev 1499)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-01-17 21:04:34 UTC (rev 1500)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Spanish')
+ plugin_author       = 'Pedro D. S&#225;nchez'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version      = '0.4'
++plugin_version      = '0.5'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -144,22 +144,35 @@
+         self.translated_url_search = '<A HREF="http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=">http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=</A>'
+         self.encode                = 'iso-8859-1'
+ 
+-    def search(self,parent_window):
++    def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+         auxPage = self.page
+-        self.sub_search()
++        self.sub_search(parent_window)
+         if self.page &lt;&gt; '':
+             return self.page
+         auxPage = gutils.trim(auxPage, u'&lt;b&gt;TU CR&#205;TICA&lt;/b&gt;&lt;/div&gt;', '&lt;/a&gt;')
+         self.page = gutils.trim(auxPage, 'movie_id=', '&quot;&gt;')
+         return self.page
+ 
+-    def sub_search(self):
+-        self.page = gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
+-        #self.page = gutils.after(self.page, '&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;')
+-        #self.page = self.page.decode('iso-8859-15')
++    def sub_search(self, parent_window):
++        moviepage = gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
++        nextpage = self.get_nextpage_url()
++        while nextpage:
++            self.url = nextpage
++            self.open_search(parent_window)
++            moviepage = moviepage + gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
++            nextpage = self.get_nextpage_url()
++        self.page = moviepage
+ 
++    def get_nextpage_url(self):
++        match = re.search('(siguientes &gt;&gt;|siguientes &gt;&gt;)', self.page)
++        if match:
++            start = string.rfind(self.page, '&lt;a href=&quot;', 0, match.start())
++            if start &gt;= 0:
++                return '<A HREF="http://www.filmaffinity.com/es/">http://www.filmaffinity.com/es/</A>' + gutils.before(self.page[start + 9:match.start()], '&quot;')
++        return None
++
+     def get_searches(self):
+         if len(self.page) &lt; 20:    # immidietly redirection to movie page
+             self.number_results = 1
+@@ -184,6 +197,7 @@
+     #
+     test_configuration = {
+         'Rocky' : [ 13, 13 ],
++        'Darkness' : [47, 47 ]
+     }
+ 
+ class PluginTest:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000960.html">[Griffith-svn] r1499 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000962.html">[Griffith-svn] r1501 - in trunk: . lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#961">[ date ]</a>
+              <a href="thread.html#961">[ thread ]</a>
+              <a href="subject.html#961">[ subject ]</a>
+              <a href="author.html#961">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

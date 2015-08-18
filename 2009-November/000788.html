@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1320%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/extensions&In-Reply-To=%3C200911172108.nAHL8Gpw016920%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000787.html">
+   <LINK REL="Next"  HREF="000789.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1320%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/extensions&In-Reply-To=%3C200911172108.nAHL8Gpw016920%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 17 22:08:16 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000787.html">[Griffith-svn] r1319 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000789.html">[Griffith-svn] r1321 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#788">[ date ]</a>
+              <a href="thread.html#788">[ thread ]</a>
+              <a href="subject.html#788">[ subject ]</a>
+              <a href="author.html#788">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-11-17 22:07:29 +0100 (Tue, 17 Nov 2009)
+New Revision: 1320
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/plugins/extensions/__init__.py
+   trunk/lib/preferences.py
+Log:
+load and save of extensions preferences
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/ChangeLog	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-11-17  Michael Jahn
++	* load and save of extensions preferences
++
+ 2009-11-10  Michael Jahn
+ 	* updated movie plugins Allocine and FilmAffinity
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/lib/initialize.py	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -486,7 +486,7 @@
+         except (NotImplementedError, DeprecationWarning), e:
+             log.warning('extension skipped: %s', e.message)
+             log.debug('extension skipped: %s', module.__file__)
+-            return False
++            return [None, None]
+         if module.toolbar_icon:
+             toolbar = self.widgets['extensions']['toolbar']
+             if module.toolbar_icon.endswith('.png'):
+@@ -508,6 +508,8 @@
+ 
+     p_vbox = self.widgets['extensions']['preferences_vbox']
+ 
++    configwidgets = {}
++
+     label = &quot;%s v%s &lt;i&gt;(%s &lt;%s&gt;)&lt;/i&gt;&quot; % (module.name, module.version, module.author, module.email)
+     expander = gtk.Expander(label=label)
+     expander.get_label_widget().set_tooltip_markup(module.description)
+@@ -519,13 +521,14 @@
+     vbox.pack_start(hbox, expand=False)
+     enabled_cb = gtk.CheckButton(label=_('use this extension'))
+     enabled_cb.set_active(enabled)
++    configwidgets['enabled'] = enabled_cb
+     vbox.pack_start(enabled_cb, expand=False)
+ 
+     for pref_name in module.preferences:
+         name = module.preferences[pref_name].get('name', pref_name)
+         hint = module.preferences[pref_name].get('hint')
+         value = module.preferences[pref_name].get('default')
+-        #TODO: get value from config
++        value = self.config.get(&quot;%s_%s&quot; % (module.name, pref_name), value, section='extensions')
+         type_ = module.preferences[pref_name].get('type', unicode)
+ 
+         hbox = gtk.HBox()
+@@ -538,16 +541,26 @@
+         # elif type is int: # TODO
+         elif isinstance(type_, (list, tuple, dict)):
+             model = gtk.TreeStore(str, str)
+-            myiter = model.append(None, None)
+             if isinstance(type_, dict):
+                 iterable = type_.iteritems()
+             else:
+                 iterable = enumerate(type_)
+-            for code, value in iterable:
++            pos = None
++            count = 0
++            for code, codevalue in iterable:
++                myiter = model.append(None, None)
+                 model.set_value(myiter, 0, unicode(code))
+-                model.set_value(myiter, 1, unicode(value))
++                model.set_value(myiter, 1, unicode(codevalue))
++                if value and value == codevalue:
++                    pos = count
++                count = count + 1
++            # combobox with complex binding to a model needs cell renderer
+             w = gtk.ComboBox(model=model)
+-            # TODO: select default value
++            renderer=gtk.CellRendererText()
++            w.pack_start(renderer)
++            w.add_attribute(renderer, 'text', 1);
++            if pos is not None:
++                w.set_active(int(pos))
+         else:
+             log.error('type not recognized %s', type(type_))
+             continue
+@@ -558,11 +571,13 @@
+ 
+         vbox.pack_start(hbox, expand=False)
+ 
++        configwidgets[pref_name] = w
++
+     expander.add(vbox)
+     p_vbox.pack_start(expander, expand=False)
+     p_vbox.show_all()
+ 
+-    return ext
++    return [ext, configwidgets]
+ 
+ def extensions(self):
+     import plugins.extensions
+@@ -574,14 +589,16 @@
+         for ext in self.extensions:
+             ext.clear()
+     self.extensions = [] # deletes previous instances
++    self.extensionsconfigwidgets = {}
+ 
+     for ext_name in plugins.extensions.by_name:
+         ext_module = plugins.extensions.by_name[ext_name]
+-        enabled = ext_module.enabled
+-        # TODO: get list of disabled extensions from config
+-        ext = extension(self, ext_module, enabled)
++        enabled = self.config.get(&quot;%s_enabled&quot; % ext_name, ext_module.enabled, section='extensions')
++        ext, configwidgets = extension(self, ext_module, enabled)
+         if ext:
+             self.extensions.append(ext)
++        if configwidgets:
++            self.extensionsconfigwidgets[ext_name] = configwidgets
+ 
+ def people_treeview(self, create=True):
+     row = None
+
+Modified: trunk/lib/plugins/extensions/__init__.py
+===================================================================
+--- trunk/lib/plugins/extensions/__init__.py	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/lib/plugins/extensions/__init__.py	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -80,6 +80,10 @@
+     def get_config_value(self, key, default=None):
+         return self.config.get(&quot;%s_%s&quot; % (self.id, key), default, section='extensions')
+ 
++    def set_config_value(self, key, value=None):
++        self.config.set(&quot;%s_%s&quot; % (self.id, key), value, section='extensions')
++        self.config.save()
++
+     def _on_toolbar_icon_clicked(self, button_widget):
+         session = self.db.Session()
+         movie = session.query(db.Movie).filter(db.Movie.movie_id==self.app._movie_id).first()
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/lib/preferences.py	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -23,6 +23,7 @@
+ 
+ import logging
+ import os
++import gtk
+ 
+ import db
+ import gutils
+@@ -407,6 +408,24 @@
+                 pass
+     self.pdf_reader = save_reader
+ 
++    # extensions settings
++    for extname in self.extensionsconfigwidgets:
++        configwidgets = self.extensionsconfigwidgets[extname]
++        for prefname in configwidgets:
++            widget = configwidgets[prefname]
++            if isinstance(widget, gtk.CheckButton):
++                value = widget.get_active()
++            elif isinstance(widget, gtk.Entry):
++                value = widget.get_text()
++            elif isinstance(widget, gtk.ComboBox):
++                iter = widget.get_active_iter()
++                if iter:
++                    value = widget.get_model().get_value(iter, 1)
++            else:
++                log.error('widget type not supported %s', type(widget))
++                continue
++            c.set(&quot;%s_%s&quot; % (extname, prefname), value, section='extensions')
++
+     # database
+     old = c.to_dict(section='database')
+     
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000787.html">[Griffith-svn] r1319 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000789.html">[Griffith-svn] r1321 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#788">[ date ]</a>
+              <a href="thread.html#788">[ thread ]</a>
+              <a href="subject.html#788">[ subject ]</a>
+              <a href="author.html#788">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

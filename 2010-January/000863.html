@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1399 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1399%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C201001171936.o0HJajed014199%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000862.html">
+   <LINK REL="Next"  HREF="000864.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1399 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1399%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C201001171936.o0HJajed014199%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1399 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 17 20:36:45 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000862.html">[Griffith-svn] r1398 - in trunk: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="000864.html">[Griffith-svn] r1400 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#863">[ date ]</a>
+              <a href="thread.html#863">[ thread ]</a>
+              <a href="subject.html#863">[ subject ]</a>
+              <a href="author.html#863">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-17 20:36:32 +0100 (Sun, 17 Jan 2010)
+New Revision: 1399
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieScope.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/test_movieplugins.py
+   trunk/winpackage.iss
+Log:
+Scope movie plugin added
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-14 20:52:44 UTC (rev 1398)
++++ trunk/ChangeLog	2010-01-17 19:36:32 UTC (rev 1399)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-01-17  Michael Jahn
++	* Scope movie plugin added
++
+ 2010-01-05  Michael Jahn
+ 	* delete button added to the advanced filter dialog
+ 	* updated movie plugin Cinematografo (year added to result list entries)
+
+Added: trunk/lib/plugins/movie/PluginMovieScope.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieScope.py	2010-01-14 20:52:44 UTC (rev 1398)
++++ trunk/lib/plugins/movie/PluginMovieScope.py	2010-01-17 19:36:32 UTC (rev 1399)
+@@ -0,0 +1,219 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2010
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = &quot;Scope&quot;
++plugin_description  = &quot;Danmarks st&#248;rste filmguide&quot;
++plugin_url          = &quot;www.scope.dk&quot;
++plugin_language     = _(&quot;Danish&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mike at griffith.cc</A>&quot;
++plugin_version      = &quot;1.0&quot;
++
++
++class Plugin(movie.Movie):
++
++    def __init__(self, id):
++        self.encode = 'iso-8859-1'
++        self.movie_id = id
++        self.url = '<A HREF="http://www.scope.dk/film/">http://www.scope.dk/film/</A>' + str(self.movie_id)
++
++    def get_image(self):
++        self.image_url = ''
++        tmp = gutils.trim(self.page, '&lt;img src=&quot;<A HREF="http://www.scope.dk/images/">http://www.scope.dk/images/</A>', '&quot;')
++        if tmp:
++            self.image_url = '<A HREF="http://www.scope.dk/images/">http://www.scope.dk/images/</A>' + tmp
++
++    def get_o_title(self):
++        self.o_title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
++
++    def get_title(self):
++        self.title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
++
++    def get_director(self):
++        self.director = gutils.trim(self.page, 'Instruktion&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, '&lt;div id=&quot;film-top-middle&quot;&gt;', '&lt;/div&gt;')
++        if self.plot:
++            self.plot = string.replace(self.plot, '&#8217;', &quot;'&quot;)
++            self.plot = gutils.convert_entities(self.plot)
++
++    def get_year(self):
++        self.year = gutils.trim(self.page, 'Produktions&#229;r&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, 'Spilletid&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, 'Genre&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_cast(self):
++        self.cast = ''
++        tmp = gutils.trim(self.page, 'colspan=&quot;2&quot;&gt;Medvirkende&lt;/th&gt;', '&lt;tr style')
++        if tmp:
++            tmpparts = string.split(tmp, '&lt;tr')
++            for tmppart in tmpparts[1:]:
++                name = '&lt;th' + gutils.trim(tmppart, '&lt;td', '&lt;/')
++                role = '&lt;th' + gutils.trim(tmppart, '&lt;th', '&lt;/')
++                if name:
++                    if role:
++                        self.cast = self.cast + name + _(' as ') + role + '\n'
++                    else:
++                        self.cast = self.cast + name + '\n'
++
++    def get_classification(self):
++        self.classification = gutils.regextrim(self.page, 'Censur&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_studio(self):
++        self.studio = gutils.trim(self.page, 'Selskab&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_o_site(self):
++        self.o_site = ''
++        tmp = gutils.trim(self.page, 'Link&lt;/th&gt;', '&lt;/td&gt;')
++        if tmp:
++            self.o_site = gutils.trim(tmp, 'href=&quot;', '&quot;')
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = ''
++        tmp = gutils.trim(self.page, 'Trailer&lt;/th&gt;', '&lt;/td&gt;')
++        if tmp:
++            self.trailer = gutils.trim(tmp, 'href=&quot;', '&quot;')
++
++    def get_country(self):
++        self.country = gutils.trim(self.page, 'Land&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_rating(self):
++        self.rating = 0
++        tmp = gutils.trim(self.page, 'Scope-score&lt;/th&gt;', '&lt;/td&gt;')
++        if tmp:
++            fullstars = string.split(tmp, 'gul.gif')
++            halfstars = string.split(tmp, 'gul_halv.gif')
++            rating = 0
++            if fullstars:
++                rating = len(fullstars) - 1
++            if halfstars and len(halfstars) &gt; 1:
++                rating = rating + 0.5
++            try:
++                self.rating = round(rating / 0.6, 0)
++            except:
++                pass
++
++    def get_notes(self):
++        self.notes = ''
++
++    def get_screenplay(self):
++        self.screenplay = gutils.regextrim(self.page, 'Manuskript&lt;/th&gt;', '&lt;/td&gt;')
++
++    def get_cameraman(self):
++        self.cameraman = gutils.regextrim(self.page, 'Fotografi&lt;/th&gt;', '&lt;/td&gt;')
++
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search = '<A HREF="http://www.scope.dk/sogning_film.php?id=&amp;filmtitel=">http://www.scope.dk/sogning_film.php?id=&amp;filmtitel=</A>'
++        self.translated_url_search = '<A HREF="http://www.scope.dk/sogning_film.php?id=&amp;filmtitel=">http://www.scope.dk/sogning_film.php?id=&amp;filmtitel=</A>'
++        self.encode = 'iso-8859-1'
++        self.remove_accents = False
++
++    def search(self, parent_window):
++        self.open_search(parent_window)
++        self.page = gutils.trim(self.page, '&lt;table class=&quot;table-list&quot;&gt;', '&lt;/table&gt;')
++        return self.page
++
++    def get_searches(self):
++        elements = string.split(self.page, 'href=&quot;film/')
++        for element in elements[1:]:
++            id = gutils.before(element, '&quot;')
++            title = gutils.trim(element, '&gt;', '&lt;/a&gt;')
++            if id and title:
++                self.ids.append(id)
++                year = gutils.trim(element, '&lt;td&gt;', '&lt;/td&gt;')
++                if year:
++                    self.titles.append(title + ' (' + year + ')')
++                else:
++                    self.titles.append(title)
++
++#
++# Plugin Test
++#
++
++
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky'                : [ 8, 8 ]
++    }
++
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '4834-rocky-balboa' : {
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Talia Shire' + _(' as ') + 'Adrian\n\
++Mike Tyson' + _(' as ') + 'Sig selv',
++            'country'             : 'USA',
++            'genre'               : 'Action, Drama',
++            'classification'      : 'Tilladt for b&#248;rn over 11 &#229;r',
++            'studio'              : 'United Artists, Revolution Studios, Chartoff-Winkler Productions',
++            'o_site'              : '<A HREF="http://www.mgm.com/rocky">http://www.mgm.com/rocky</A>',
++            'site'                : '<A HREF="http://www.scope.dk/film/4834-rocky-balboa">http://www.scope.dk/film/4834-rocky-balboa</A>',
++            'trailer'             : '<A HREF="http://www.imdb.com/title/tt0479143/trailers">http://www.imdb.com/title/tt0479143/trailers</A>',
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 7,
++            'cameraman'           : 'J. Clark Mathis',
++            'screenplay'          : 'Sylvester Stallone'
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-01-14 20:52:44 UTC (rev 1398)
++++ trunk/lib/test_movieplugins.py	2010-01-17 19:36:32 UTC (rev 1399)
+@@ -86,6 +86,7 @@
+         'PluginMovieKinoDe',
+         'PluginMovieMovieMeter',
+         'PluginMovieOFDb',
++        'PluginMovieScope',
+         'PluginMovieZelluloid',
+     ]
+ 
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-01-14 20:52:44 UTC (rev 1398)
++++ trunk/winpackage.iss	2010-01-17 19:36:32 UTC (rev 1399)
+@@ -110,6 +110,7 @@
+ Source: dist\lib\plugins\movie\PluginMovieOFDb.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\German\OFDb
+ Source: dist\lib\plugins\movie\PluginMovieOnet.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Polish\Onet
+ Source: dist\lib\plugins\movie\PluginMoviePTGate.py;        DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\PTGate
++Source: dist\lib\plugins\movie\PluginMovieScope.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Danish\Scope
+ Source: dist\lib\plugins\movie\PluginMovieStopklatka.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Polish\Stopklatka
+ Source: dist\lib\plugins\movie\PluginMovieTanukiAnime.py;   DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Polish\Tanuki_Anime
+ Source: dist\lib\plugins\movie\PluginMovieWP.py;            DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Polish\Wirtualna_Polska
+@@ -162,6 +163,9 @@
+ Name: Movie_Import_Plugins\English\Mediadis;         Description: Mediadis / www.mediadis.com; Types: full
+ Name: Movie_Import_Plugins\English\Moviefone;        Description: Moviefone / www.moviefone.com; Types: full
+ 
++Name: Movie_Import_Plugins\Danish;                   Description: Danish Import Plugins; Types: full
++Name: Movie_Import_Plugins\Danish\Scope;             Description: Scope / www.scope.dk; Types: full
++
+ Name: Movie_Import_Plugins\Dutch;                    Description: Dutch Import Plugins; Types: full
+ Name: Movie_Import_Plugins\Dutch\MovieMeter;         Description: MovieMeter / www.moviemeter.nl; Types: full
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000862.html">[Griffith-svn] r1398 - in trunk: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="000864.html">[Griffith-svn] r1400 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#863">[ date ]</a>
+              <a href="thread.html#863">[ thread ]</a>
+              <a href="subject.html#863">[ subject ]</a>
+              <a href="author.html#863">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1414 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1414%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C201004211923.o3LJNQPu023518%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000877.html">
+   <LINK REL="Next"  HREF="000879.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1414 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1414%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C201004211923.o3LJNQPu023518%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1414 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 21 21:23:26 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000877.html">[Griffith-svn] r1413 - trunk/lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000879.html">[Griffith-svn] r1415 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#878">[ date ]</a>
+              <a href="thread.html#878">[ thread ]</a>
+              <a href="subject.html#878">[ subject ]</a>
+              <a href="author.html#878">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-04-21 21:23:17 +0200 (Wed, 21 Apr 2010)
+New Revision: 1414
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/lib/test_movieplugins.py
+Log:
+updated movie plugin AniDB
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-04-18 19:46:26 UTC (rev 1413)
++++ trunk/ChangeLog	2010-04-21 19:23:17 UTC (rev 1414)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-04-21  Michael Jahn
++	* updated movie plugin AniDB
++
+ 2010-03-28  Michael Jahn
+ 	* updated movie plugin WP
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2010-04-18 19:46:26 UTC (rev 1413)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2010-04-21 19:23:17 UTC (rev 1414)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O&#380;arowski'
+ plugin_author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at griffith.cc</A>'
+-plugin_version      = '2.7'
++plugin_version      = '2.8'
+ 
+ aid_pattern = re.compile('[?&amp;;]aid=(\d+)')
+ 
+@@ -74,11 +74,11 @@
+         self.title = gutils.trim(self.page, '&lt;h1 class=&quot;anime&quot;&gt;Anime: ', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, '&lt;a title=&quot;Direction (&amp;#x76E3;&amp;#x7763;)&quot; href=', 'a&gt;')
+-        self.director = gutils.trim(self.director, '&gt;', '&lt;/')
++        self.director = gutils.trim(self.page, '&gt;Direction (&amp;#x76E3;&amp;#x7763;', '&lt;/tr&gt;')
++        self.director = gutils.after(gutils.trim(self.director, '&lt;a ', '&lt;/a&gt;'), '&gt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, 'class=&quot;desc&quot;&gt;', '&lt;/div&gt;')
++        self.plot = gutils.regextrim(self.page, 'class=&quot;(g_bubble )*desc&quot;&gt;', '&lt;/div&gt;')
+         self.plot = self.plot.replace('&lt;br/&gt;', '\n')
+ 
+     def get_year(self):
+@@ -170,6 +170,10 @@
+                 airdate = gutils.clean(gutils.trim(part, 'class=&quot;date airdate&quot;&gt;', '&lt;/td&gt;'))
+                 self.notes += '\n' + nr + ': ' + title + ' (' + duration + ', ' + airdate + ')'
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.trim(self.page, 'Script/Screenplay (&amp;#x811A;&amp;#x672C;', '&lt;/tr&gt;')
++        self.screenplay = gutils.after(gutils.trim(self.screenplay, '&lt;a ', '&lt;/a&gt;'), '&gt;')
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode = 'utf-8'
+@@ -213,3 +217,83 @@
+             else:
+                 self.number_results = 0
+ 
++#
++# Plugin Test
++#
++
++
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Hellsing' : [ 8, 8 ]
++    }
++
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '32' : {
++            'title'               : 'Hellsing',
++            'o_title'             : u'&#12504;&#12523;&#12471;&#12531;&#12464;',
++            'director'            : 'Urata Yasunori',
++            'plot'                : True,
++            'cast'                : u'Characters:\n\
++---------------\n\
++\n\
++[Alucard] voiced by Nakata Jouji\n\
++male; main character in; appears in episodes: -\n\
++\n\
++[Incognito] voiced by Yamazaki Takumi\n\
++-; main character in; appears in episodes: 8-13\n\
++\n\
++[Seras Victoria] voiced by Orikasa Fumiko\n\
++female; main character in; appears in episodes: -\n\
++\n\
++[Sir Integral Fairbrook Wingates Hellsing] voiced by Sakakibara Yoshiko\n\
++22, female; main character in; appears in episodes: -\n\
++\n\
++[Alexander Anderson] voiced by Nozawa Nachi\n\
++male; secondary cast in; appears in episodes: -\n\
++\n\
++[Enrico Maxwell] voiced by Tanaka Hideyuki\n\
++male; secondary cast in; appears in episodes: -\n\
++\n\
++[Helena] voiced by Hiramatsu Akiko\n\
++female; secondary cast in; appears in episodes: 8, 11\n\
++\n\
++[Walter C. Dornez] voiced by Kiyokawa Motomu\n\
++male; secondary cast in; appears in episodes: -\n\
++\n\
++[Hellsing Organization] voiced by \n\
++Organisation; appears in; appears in episodes: -\n\
++\n\
++[Iscariot Organization] voiced by \n\
++Organisation; appears in; appears in episodes: -\n\
++\n\
++[Police Officer inside Heli (&#12504;&#12522;&#27231;&#20869;&#35686;&#23519;&#23448;)] voiced by Andy Holyfield\n\
++-; appears in; appears in episodes: 8',
++            'country'             : False,
++            'genre'               : 'Action, Contemporary Fantasy, Cops, Fantasy, Gunfights, Horror, Law and Order, Seinen, Special Squads, Vampires, Violence',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : '<A HREF="http://www.gonzo.co.jp/works/0102.html">http://www.gonzo.co.jp/works/0102.html</A>',
++            'site'                : '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=32">http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=32</A>',
++            'trailer'             : False,
++            'year'                : 2002,
++            'notes'               : True,
++            'runtime'             : 0,
++            'image'               : True,
++            'rating'              : 8,
++            'cameraman'           : False,
++            'screenplay'          : 'Konaka Chiaki'
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2010-04-18 19:46:26 UTC (rev 1413)
++++ trunk/lib/test_movieplugins.py	2010-04-21 19:23:17 UTC (rev 1414)
+@@ -71,6 +71,7 @@
+         'PluginMovieAllocine',
+         'PluginMovieAllMovie',
+         'PluginMovieAmazon',
++        'PluginMovieAniDB',
+         'PluginMovieCinematografo',
+         'PluginMovieCineMovies',
+         'PluginMovieCineteka',
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000877.html">[Griffith-svn] r1413 - trunk/lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000879.html">[Griffith-svn] r1415 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#878">[ date ]</a>
+              <a href="thread.html#878">[ thread ]</a>
+              <a href="subject.html#878">[ subject ]</a>
+              <a href="author.html#878">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

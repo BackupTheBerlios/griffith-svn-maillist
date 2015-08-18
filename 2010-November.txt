@@ -1,0 +1,366 @@
+From mikej06 at mail.berlios.de  Tue Nov 16 22:31:31 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 16 Nov 2010 22:31:31 +0100
+Subject: [Griffith-svn] r1476 - in trunk: . export_templates/csv
+	export_templates/html_table export_templates/html_tables
+	export_templates/latex export_templates/xml lib/plugins/export
+Message-ID: <20101116213131.747C7480EEA@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-11-16 22:31:31 +0100 (Tue, 16 Nov 2010)
+New Revision: 1476
+
+Modified:
+   trunk/ChangeLog
+   trunk/export_templates/csv/page.tpl
+   trunk/export_templates/html_table/page.tpl
+   trunk/export_templates/html_tables/page.tpl
+   trunk/export_templates/latex/page.tpl
+   trunk/export_templates/xml/page.tpl
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+added fields screenplay, cameraman, width, height and barcode to the html export plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/ChangeLog	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-11-16  Michael Jahn
++	* added fields screenplay, cameraman, width, height and barcode to the html export plugin
++
+ ---- 0.12.1 ----
+ 
+ 2010-10-18  Piotr O?arowski
+
+Modified: trunk/export_templates/csv/page.tpl
+===================================================================
+--- trunk/export_templates/csv/page.tpl	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/export_templates/csv/page.tpl	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -1,3 +1,3 @@
+-"ID"<@movies_image>,"@TITLE@"</@movies_image><@movies_title>,"@TITLE@"</@movies_title><@movies_o_title>,"@TITLE@"</@movies_o_title><@movies_number>,"@TITLE@"</@movies_number><@movies_year>,"@TITLE@"</@movies_year><@movies_director>,"@TITLE@"</@movies_director><@movies_rating>,"@TITLE@"</@movies_rating><@movies_runtime>,"@TITLE@"</@movies_runtime><@movies_country>,"@TITLE@"</@movies_country><@movies_genre>,"@TITLE@"</@movies_genre><@movies_site>,"@TITLE@"</@movies_site><@movies_o_site>,"@TITLE@"</@movies_o_site><@movies_trailer>,"@TITLE@"</@movies_trailer><@movies_media_num>,"@TITLE@"</@movies_media_num><@movies_seen>,"@TITLE@"</@movies_seen><@movies_loaned>,"@TITLE@"</@movies_loaned><@movies_classification>,"@TITLE@"</@movies_classification><@movies_studio>,"@TITLE@"</@movies_studio><@movies_cast>,"@TITLE@"</@movies_cast><@movies_plot>,"@TITLE@"</@movies_plot><@movies_notes>,"@TITLE@"</@movies_notes><@vcodecs_name>,"@TITLE@"</@vcodecs_name>
+-<!-- ITEMS --><@item>"@DATA@"</@item><@movies_image><@item>,</@item>"@DATA@"</@movies_image><@movies_title>,"@DATA@"</@movies_title><@movies_o_title>,"@DATA@"</@movies_o_title><@movies_number>,"@DATA@"</@movies_number><@movies_year>,"@DATA@"</@movies_year><@movies_director>,"@DATA@"</@movies_director><@movies_rating>,"@DATA@"</@movies_rating><@movies_runtime>,"@DATA@"</@movies_runtime><@movies_country>,"@DATA@"</@movies_country><@movies_genre>,"@DATA@"</@movies_genre><@movies_site>,"@DATA@"</@movies_site><@movies_o_site>,"@DATA@"</@movies_o_site><@movies_trailer>,"@DATA@"</@movies_trailer><@movies_media_num>,"@DATA@"</@movies_media_num><@movies_seen>,"@DATA@"</@movies_seen><@movies_loaned>,"@DATA@"</@movies_loaned><@movies_classification>,"@DATA@"</@movies_classification><@movies_studio>,"@DATA@"</@movies_studio><@movies_cast>,"@DATA@"</@movies_cast><@movies_plot>,"@DATA@"</@movies_plot><@movies_notes>,"@DATA@"</@movies_notes><@vcodecs_name>,"@DATA@"</@vcodecs_name>
++"ID"<@movies_image>,"@TITLE@"</@movies_image><@movies_title>,"@TITLE@"</@movies_title><@movies_o_title>,"@TITLE@"</@movies_o_title><@movies_number>,"@TITLE@"</@movies_number><@movies_year>,"@TITLE@"</@movies_year><@movies_director>,"@TITLE@"</@movies_director><@movies_rating>,"@TITLE@"</@movies_rating><@movies_runtime>,"@TITLE@"</@movies_runtime><@movies_country>,"@TITLE@"</@movies_country><@movies_genre>,"@TITLE@"</@movies_genre><@movies_site>,"@TITLE@"</@movies_site><@movies_o_site>,"@TITLE@"</@movies_o_site><@movies_trailer>,"@TITLE@"</@movies_trailer><@movies_media_num>,"@TITLE@"</@movies_media_num><@movies_seen>,"@TITLE@"</@movies_seen><@movies_loaned>,"@TITLE@"</@movies_loaned><@movies_classification>,"@TITLE@"</@movies_classification><@movies_studio>,"@TITLE@"</@movies_studio><@movies_cast>,"@TITLE@"</@movies_cast><@movies_plot>,"@TITLE@"</@movies_plot><@movies_notes>,"@TITLE@"</@movies_notes><@vcodecs_name>,"@TITLE@"</@vcodecs_name><@movies_screenplay>,"@TITLE@"</@mo
+ vies_screenplay><@movies_cameraman>,"@TITLE@"</@movies_cameraman><@movies_width>,"@TITLE@"</@movies_width><@movies_height>,"@TITLE@"</@movies_height><@movies_barcode>,"@TITLE@"</@movies_barcode>
++<!-- ITEMS --><@item>"@DATA@"</@item><@movies_image><@item>,</@item>"@DATA@"</@movies_image><@movies_title>,"@DATA@"</@movies_title><@movies_o_title>,"@DATA@"</@movies_o_title><@movies_number>,"@DATA@"</@movies_number><@movies_year>,"@DATA@"</@movies_year><@movies_director>,"@DATA@"</@movies_director><@movies_rating>,"@DATA@"</@movies_rating><@movies_runtime>,"@DATA@"</@movies_runtime><@movies_country>,"@DATA@"</@movies_country><@movies_genre>,"@DATA@"</@movies_genre><@movies_site>,"@DATA@"</@movies_site><@movies_o_site>,"@DATA@"</@movies_o_site><@movies_trailer>,"@DATA@"</@movies_trailer><@movies_media_num>,"@DATA@"</@movies_media_num><@movies_seen>,"@DATA@"</@movies_seen><@movies_loaned>,"@DATA@"</@movies_loaned><@movies_classification>,"@DATA@"</@movies_classification><@movies_studio>,"@DATA@"</@movies_studio><@movies_cast>,"@DATA@"</@movies_cast><@movies_plot>,"@DATA@"</@movies_plot><@movies_notes>,"@DATA@"</@movies_notes><@vcodecs_name>,"@DATA@"</@vcodecs_name><@movies_
+ screenplay>,"@DATA@"</@movies_screenplay><@movies_cameraman>,"@DATA@"</@movies_cameraman><@movies_width>,"@DATA@"</@movies_width><@movies_height>,"@DATA@"</@movies_height><@movies_barcode>,"@DATA@"</@movies_barcode>
+ <!-- /ITEMS -->
+
+Modified: trunk/export_templates/html_table/page.tpl
+===================================================================
+--- trunk/export_templates/html_table/page.tpl	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/export_templates/html_table/page.tpl	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -18,7 +18,9 @@
+ 			<th>@TITLE@</th></@movies_title><@movies_o_title>
+ 			<th>@TITLE@</th></@movies_o_title><@movies_year>
+ 			<th>@TITLE@</th></@movies_year><@movies_director>
+-			<th>@TITLE@</th></@movies_director><@movies_rating>
++			<th>@TITLE@</th></@movies_director><@movies_screenplay>
++			<th>@TITLE@</th></@movies_screenplay><@movies_cameraman>
++			<th>@TITLE@</th></@movies_cameraman><@movies_rating>
+ 			<th>@TITLE@</th></@movies_rating><@movies_runtime>
+ 			<th>@TITLE@</th></@movies_runtime><@movies_country>
+ 			<th>@TITLE@</th></@movies_country><@movies_genre>
+@@ -34,7 +36,10 @@
+ 			<th>@TITLE@</th></@movies_seen><@movies_loaned>
+ 			<th>@TITLE@</th></@movies_loaned><@movies_classification>
+ 			<th>@TITLE@</th></@movies_classification><@movies_studio>
+-			<th>@TITLE@</th></@movies_studio><@movies_cast>
++			<th>@TITLE@</th></@movies_studio><@movies_width>
++			<th>@TITLE@</th></@movies_width><@movies_height>
++			<th>@TITLE@</th></@movies_height><@movies_barcode>
++			<th>@TITLE@</th></@movies_barcode><@movies_cast>
+ 			<th>@TITLE@</th></@movies_cast><@movies_plot>
+ 			<th>@TITLE@</th></@movies_plot><@movies_notes>
+ 			<th>@TITLE@</th></@movies_notes>
+@@ -48,7 +53,9 @@
+ 		<td class="title">@DATA@</td></@movies_title><@movies_o_title>
+ 		<td class="otitle">@DATA@</td></@movies_o_title><@movies_year>
+ 		<td class="year">@DATA@</td></@movies_year><@movies_director>
+-		<td class="director">@DATA@</td></@movies_director><@movies_rating>
++		<td class="director">@DATA@</td></@movies_director><@movies_screenplay>
++		<td class="screenplay">@DATA@</td></@movies_screenplay><@movies_cameraman>
++		<td class="cameraman">@DATA@</td></@movies_cameraman><@movies_rating>
+ 		<td class="rating">@DATA@</td></@movies_rating><@movies_runtime>
+ 		<td class="runtime">@DATA@</td></@movies_runtime><@movies_country>
+ 		<td class="country">@DATA@</td></@movies_country><@movies_genre>
+@@ -64,7 +71,12 @@
+ 		<td class="seen">@DATA@</td></@movies_seen><@movies_loaned>
+ 		<td class="loaned">@DATA@</td></@movies_loaned><@movies_classification>
+ 		<td class="classification">@DATA@</td></@movies_classification><@movies_studio>
+-		<td class="studio">@DATA@</td></@movies_studio><@movies_cast>
++		<td class="studio">@DATA@</td></@movies_studio><@movies_screenplay>
++		<td class="screenplay">@DATA@</td></@movies_screenplay><@movies_cameraman>
++		<td class="cameraman">@DATA@</td></@movies_cameraman><@movies_width>
++		<td class="width">@DATA@</td></@movies_width><@movies_height>
++		<td class="height">@DATA@</td></@movies_height><@movies_barcode>
++		<td class="barcode">@DATA@</td></@movies_barcode><@movies_cast>
+ 		<td class="cast">@DATA@</td></@movies_cast><@movies_plot>
+ 		<td class="plot">@DATA@</td></@movies_plot><@movies_notes>
+ 		<td class="notes">@DATA@</td></@movies_notes>
+
+Modified: trunk/export_templates/html_tables/page.tpl
+===================================================================
+--- trunk/export_templates/html_tables/page.tpl	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/export_templates/html_tables/page.tpl	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -36,7 +36,15 @@
+ 	<tr class="director">
+ 		<th>@TITLE@</th>
+ 		<td>@DATA@</td>
+-	</tr></@movies_director><@movies_rating>
++	</tr></@movies_director><@movies_screenplay>
++	<tr class="screenplay">
++		<th>@TITLE@</th>
++		<td>@DATA@</td>
++	</tr></@movies_screenplay><@movies_cameraman>
++	<tr class="cameraman">
++		<th>@TITLE@</th>
++		<td>@DATA@</td>
++	</tr></@movies_cameraman><@movies_rating>
+ 	<tr class="rating">
+ 		<th>@TITLE@</th>
+ 		<td>@DATA@</td>
+@@ -100,7 +108,19 @@
+ 	<tr class="studio">
+ 		<th>@TITLE@</th>
+ 		<td>@DATA@</td>
+-	</tr></@movies_studio><@movies_cast>
++	</tr></@movies_studio><@movies_width>
++	<tr class="width">
++		<th>@TITLE@</th>
++		<td>@DATA@</td>
++	</tr></@movies_width><@movies_height>
++	<tr class="height">
++		<th>@TITLE@</th>
++		<td>@DATA@</td>
++	</tr></@movies_height><@movies_barcode>
++	<tr class="barcode">
++		<th>@TITLE@</th>
++		<td>@DATA@</td>
++	</tr></@movies_barcode><@movies_cast>
+ 	<tr class="cast">
+ 		<th>@TITLE@</th>
+ 		<td>@DATA@</td>
+
+Modified: trunk/export_templates/latex/page.tpl
+===================================================================
+--- trunk/export_templates/latex/page.tpl	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/export_templates/latex/page.tpl	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -60,7 +60,17 @@
+ 		\item {@TITLE@: @DATA@}
+ </@movies_plot><@movies_notes>
+ 		\item {@TITLE@: @DATA@}
+-</@movies_notes>
++</@movies_notes><@movies_screenplay>
++		\item {@TITLE@: @DATA@}
++</@movies_screenplay><@movies_cameraman>
++		\item {@TITLE@: @DATA@}
++</@movies_cameraman><@movies_width>
++		\item {@TITLE@: @DATA@}
++</@movies_width><@movies_height>
++		\item {@TITLE@: @DATA@}
++</@movies_height><@movies_barcode>
++		\item {@TITLE@: @DATA@}
++</@movies_barcode>
+ \end{itemize}
+ 
+ <!-- /ITEMS -->
+
+Modified: trunk/export_templates/xml/page.tpl
+===================================================================
+--- trunk/export_templates/xml/page.tpl	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/export_templates/xml/page.tpl	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -27,7 +27,12 @@
+ 		<studio>@DATA@</studio></@movies_studio><@movies_cast>
+ 		<cast>@DATA@</cast></@movies_cast><@movies_plot>
+ 		<plot>@DATA@</plot></@movies_plot><@movies_notes>
+-		<notes>@DATA@</notes></@movies_notes>
++		<notes>@DATA@</notes></@movies_notes><@movies_screenplay>
++		<screenplay>@DATA@</screenplay></@movies_screenplay><@movies_cameraman>
++		<cameraman>@DATA@</cameraman></@movies_cameraman><@movies_width>
++		<width>@DATA@</width></@movies_width><@movies_height>
++		<height>@DATA@</height></@movies_height><@movies_barcode>
++		<barcode>@DATA@</barcode></@movies_barcode>
+ 	</movie>
+ <!-- /ITEMS -->
+ </movies>
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2010-10-24 20:37:34 UTC (rev 1475)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2010-11-16 21:31:31 UTC (rev 1476)
+@@ -83,6 +83,11 @@
+         'movies_title'          : True,
+         'movies_year'           : True,
+         'movies_notes'          : False,
++        'movies_screenplay'     : False,
++        'movies_cameraman'      : False,
++        'movies_width'          : False,
++        'movies_height'         : False,
++        'movies_barcode'        : False,
+ #        'movies_region'         : False,
+ #        'movies_layers'         : False,
+ #        'movies_condition'      : False,
+@@ -118,6 +123,11 @@
+         'movies_title'          : 'title',
+         'movies_year'           : 'year',
+         'movies_notes'          : 'notes',
++        'movies_screenplay'     : 'screenplay',
++        'movies_cameraman'      : 'cameraman',
++        'movies_width'          : 'width',
++        'movies_height'         : 'height',
++        'movies_barcode'        : 'barcode',
+ #        'movies_region'         : 'region',
+ #        'movies_layers'         : 'layers',
+ #        'movies_condition'      : 'condition',
+@@ -153,6 +163,11 @@
+         _('Title')          : 'movies_title',
+         _('Year')           : 'movies_year',
+         _('Notes')          : 'movies_notes',
++        _('Screenplay')     : 'movies_screenplay',
++        _('Cameraman')      : 'movies_cameraman',
++        _('Width')          : 'movies_width',
++        _('Height')         : 'movies_height',
++        _('Barcode')        : 'movies_barcode',
+ #        _('Region')         : 'movies_region',
+ #        _('Layers')         : 'movies_layers',
+ #        _('Condition')      : 'movies_condition',
+
+
+
+From mikej06 at mail.berlios.de  Tue Nov 23 20:18:49 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Nov 2010 20:18:49 +0100
+Subject: [Griffith-svn] r1477 - in trunk: . lib
+Message-ID: <20101123191849.BCF28480750@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-11-23 20:18:49 +0100 (Tue, 23 Nov 2010)
+New Revision: 1477
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+Log:
+added screenplay, cameraman and barcode to the search criteria combobox
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-11-16 21:31:31 UTC (rev 1476)
++++ trunk/ChangeLog	2010-11-23 19:18:49 UTC (rev 1477)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-11-23  Michael Jahn
++	* added screenplay, cameraman and barcode to the search criteria combobox
++
+ 2010-11-16  Michael Jahn
+ 	* added fields screenplay, cameraman, width, height and barcode to the html export plugin
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-11-16 21:31:31 UTC (rev 1476)
++++ trunk/lib/initialize.py	2010-11-23 19:18:49 UTC (rev 1477)
+@@ -753,7 +753,8 @@
+         'volume_id', 'cond', 'layers', 'region', 'movie_id']
+     self.search_criteria = (
+         'o_title', 'title', 'number', 'director', 'plot', 'cast', 'notes', 'year',
+-        'runtime', 'country', 'genre', 'studio', 'media_num', 'rating')
++        'runtime', 'country', 'genre', 'studio', 'media_num', 'rating', 'screenplay',
++        'cameraman', 'barcode')
+     self.field_names = {
+         'barcode': _('Barcode'),
+         'cast': _('Cast'),
+
+
+
+From mikej06 at mail.berlios.de  Tue Nov 23 21:25:16 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 23 Nov 2010 21:25:16 +0100
+Subject: [Griffith-svn] r1478 - in trunk: . lib
+Message-ID: <20101123202516.EC28148079E@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-11-23 21:25:16 +0100 (Tue, 23 Nov 2010)
+New Revision: 1478
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/advfilter.py
+   trunk/lib/initialize.py
+Log:
+sorted entries in the filter comboboxes of the main dialog
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-11-23 19:18:49 UTC (rev 1477)
++++ trunk/ChangeLog	2010-11-23 20:25:16 UTC (rev 1478)
+@@ -7,6 +7,7 @@
+ 
+ 2010-11-23  Michael Jahn
+ 	* added screenplay, cameraman and barcode to the search criteria combobox
++	* sorted entries in the filter comboboxes of the main dialog
+ 
+ 2010-11-16  Michael Jahn
+ 	* added fields screenplay, cameraman, width, height and barcode to the html export plugin
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2010-11-23 19:18:49 UTC (rev 1477)
++++ trunk/lib/advfilter.py	2010-11-23 20:25:16 UTC (rev 1478)
+@@ -171,7 +171,7 @@
+         widgets["loans_frame"].hide()
+ 
+     widgets['cb_name'].get_model().clear()
+-    search_filters = gsql.session.query(db.Filter.name).all()
++    search_filters = gsql.session.query(db.Filter.name).order_by(db.Filter.name).all()
+     for filter_ in search_filters:
+         widgets['cb_name'].append_text(filter_[0])
+     return True
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-11-23 19:18:49 UTC (rev 1477)
++++ trunk/lib/initialize.py	2010-11-23 20:25:16 UTC (rev 1478)
+@@ -713,10 +713,11 @@
+     i = 0
+     pos_to_activate = 0
+     selected_criteria = self.config.get('criteria', None, section='mainlist')
+-    for criteria in self.search_criteria:
+-        new_criteria = self.field_names[criteria]
+-        self.widgets['filter']['criteria'].insert_text(i, new_criteria)
+-        if selected_criteria == new_criteria:
++    sorted_criterias = [self.field_names[criteria] for criteria in self.search_criteria]
++    sorted_criterias.sort()
++    for criteria in sorted_criterias:
++        self.widgets['filter']['criteria'].insert_text(i, criteria)
++        if selected_criteria == criteria:
+             pos_to_activate = i
+         i += 1
+     self.widgets['filter']['criteria'].set_active(pos_to_activate)
+@@ -894,7 +895,7 @@
+ def update_collection_combo_ids(self):
+     self.collection_combo_ids = {}
+     self.collection_combo_ids[0] = 0
+-    for i, item in enumerate(self.db.session.query(db.Collection.collection_id).all()):
++    for i, item in enumerate(self.db.session.query(db.Collection.collection_id).order_by(db.Collection.name).all()):
+         self.collection_combo_ids[i + 1] = item.collection_id
+ 
+ 
+@@ -946,7 +947,7 @@
+     self.initialized = False # don't refresh main treeview
+     self.widgets['filter']['advfilter'].get_model().clear()
+     self.widgets['filter']['advfilter'].insert_text(0, '') # empty one
+-    for i, item in enumerate(self.db.session.query(db.Filter.name).all()):
++    for i, item in enumerate(self.db.session.query(db.Filter.name).order_by(db.Filter.name).all()):
+         # add some white spaces to prevent scrollbar hides parts of the names
+         self.widgets['filter']['advfilter'].insert_text(i + 1, item.name + '   ')
+     self.widgets['filter']['advfilter'].show_all()
+
+
+

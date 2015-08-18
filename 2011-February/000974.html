@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1513 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1513%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110203195005.11D2948135D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000973.html">
+   <LINK REL="Next"  HREF="000975.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1513 - in trunk: . lib/plugins/movie</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1513%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110203195005.11D2948135D%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1513 - in trunk: . lib/plugins/movie">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb  3 20:50:04 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000973.html">[Griffith-svn] r1512 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000975.html">[Griffith-svn] r1514 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#974">[ date ]</a>
+              <a href="thread.html#974">[ thread ]</a>
+              <a href="subject.html#974">[ subject ]</a>
+              <a href="author.html#974">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2011-02-03 20:50:04 +0100 (Thu, 03 Feb 2011)
+New Revision: 1513
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+Log:
+MoviePTGate plugin updated.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-02-02 21:24:00 UTC (rev 1512)
++++ trunk/ChangeLog	2011-02-03 19:50:04 UTC (rev 1513)
+@@ -4,6 +4,8 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2011-02-03  Vasco Nunes
++	* MoviePTGate plugin updated.
+ 
+ 2011-02-02  Michael Jahn
+ 	* [#710860] cannot import imdb movie titles starting with a bracket
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2011-02-02 21:24:00 UTC (rev 1512)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2011-02-03 19:50:04 UTC (rev 1513)
+@@ -32,7 +32,7 @@
+ plugin_language     = _(&quot;Portuguese&quot;)
+ plugin_author       = &quot;Vasco Nunes&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version      = &quot;0.5&quot;
++plugin_version      = &quot;0.6&quot;
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -50,35 +50,35 @@
+         self.image_url = '<A HREF="http://cinema.ptgate.pt/Movies/">http://cinema.ptgate.pt/Movies/</A>' + str(self.movie_id) + '.jpg'
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(gutils.after(self.page, u'&lt;h2&gt;'), u'&#8250;', u'&lt;br /&gt;') # &lt;--  &#8250;
++        self.o_title = gutils.trim(self.page, u'&lt;h2 class=&quot;title&quot;&gt;', u'&lt;/h2&gt;')
+         self.o_title = self.o_title.encode(self.encode)
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, u'&lt;h2&gt;', u'&lt;/h2&gt;')
++        self.title = gutils.trim(self.page, u'&lt;h1&gt;', u' &lt;small&gt;')
+         self.title = self.title.encode(self.encode)
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, u'&lt;b&gt;realiza&#231;&#227;o&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
+-        self.director = self.director.encode(self.encode)
++        self.director = gutils.trim(self.page, u'Realiza&#231;&#227;o:&lt;/b&gt;&lt;br /&gt;', u'&lt;/p&gt;')
++        self.director = gutils.strip_tags(self.director)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, u'&lt;b&gt;sinopse&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
++        self.plot = gutils.trim(self.page, u'&lt;h2&gt;Sinopse&lt;/h2&gt;', u'&lt;/div&gt;')
+         self.plot = self.plot.encode(self.encode)
+         self.plot = string.replace(self.plot, &quot;'&quot;, &quot;\&quot;&quot;)
+         self.plot = string.replace(self.plot, &quot;'&quot;, &quot;\&quot;&quot;)
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, u'&lt;b&gt;ano&lt;/b&gt;: ', u'&lt;br /&gt;')
++        self.year = gutils.trim(self.page, u'&lt;b&gt;Ano:&lt;/b&gt; ', u'&lt;br /&gt;')
+ 
+     def get_runtime(self):
+         self.runtime = ''
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, u'&lt;b&gt;g&#233;nero&lt;/b&gt;: ', u'&lt;br /&gt;')
++        self.genre = gutils.trim(self.page, u'&lt;b&gt;G&#233;nero:&lt;/b&gt; ', u'&lt;br /&gt;')
+         self.genre = self.genre.encode(self.encode)
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page, u'pretes&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
++        self.cast = gutils.trim(self.page, u'Int&#233;rpretes:&lt;/b&gt;&lt;br /&gt;', u'&lt;/p&gt;')
+         self.cast = gutils.strip_tags(self.cast)
+         self.cast = string.replace(self.cast, ', ', '\n')
+ 
+@@ -111,21 +111,17 @@
+                 self.trailer = gutils.before(self.page[index + 9:], '&quot;')
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, u'&lt;b&gt;pa&#237;s&lt;/b&gt;: ', '&lt;br /&gt;')
++        self.country = gutils.trim(self.page, u'&lt;b&gt;Pa&#237;s:&lt;/b&gt; ', '&lt;br /&gt;')
+         self.country = self.country.encode(self.encode)
+         
+     def get_notes(self):
+-        self.notes = gutils.trim(self.page,&quot;pr&#233;mios e nomea&#231;&#245;es&lt;/b&gt;&lt;br /&gt;&lt;b&gt;&quot;, &quot;&lt;td width=6 background='Images/group_r.gif'&quot;)
+-        self.notes = gutils.strip_tags(self.notes)
++        self.notes = ''
+ 
+     def get_rating(self):
+-        tmp = re.findall('[0-9.]+', string.replace(gutils.clean('&lt;' + gutils.trim(self.page, u'imgs/blank.gif&quot;', u'&lt;/small&gt;')), u'&nbsp;', ''))
+-        if tmp and len(tmp) &gt; 0:
+-            self.rating = float(tmp[0])
+-            if self.rating:
+-                self.rating = round(self.rating * 2)
+-        else:
+-            self.rating = ''
++        self.rating = gutils.trim(self.page, u'alt=&quot;Visitantes&quot; /&gt;', ' (&lt;a href=&quot;/')
++    	self.rating = gutils.strip_tags(self.rating)
++    	self.rating = float(self.rating)
++    	self.rating = round(self.rating * 2)
+ 
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+@@ -149,4 +145,4 @@
+                     self.ids.append(id)
+                     self.titles.append(gutils.convert_entities(title))
+         else:
+-            self.number_results = 0
++            self.number_results = 0
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000973.html">[Griffith-svn] r1512 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000975.html">[Griffith-svn] r1514 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#974">[ date ]</a>
+              <a href="thread.html#974">[ thread ]</a>
+              <a href="subject.html#974">[ subject ]</a>
+              <a href="author.html#974">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

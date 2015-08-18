@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r919 - branches/0.9.x trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r919%20-%20branches/0.9.x%20trunk&In-Reply-To=%3C200802121056.m1CAuFVW024520%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000409.html">
+   <LINK REL="Next"  HREF="000411.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r919 - branches/0.9.x trunk</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r919%20-%20branches/0.9.x%20trunk&In-Reply-To=%3C200802121056.m1CAuFVW024520%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r919 - branches/0.9.x trunk">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 12 11:56:15 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000409.html">[Griffith-svn] r917 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000411.html">[Griffith-svn] r920 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#410">[ date ]</a>
+              <a href="thread.html#410">[ thread ]</a>
+              <a href="subject.html#410">[ subject ]</a>
+              <a href="author.html#410">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-02-12 11:56:01 +0100 (Tue, 12 Feb 2008)
+New Revision: 919
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/griffith
+   trunk/ChangeLog
+   trunk/griffith
+Log:
+fixed selecting of quick filter volume and collection in main view
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-02-11 10:51:00 UTC (rev 918)
++++ branches/0.9.x/ChangeLog	2008-02-12 10:56:01 UTC (rev 919)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-02-12  Michael Jahn
++	* fixed selecting of quick filter volume and collection in main view
++
+ 2008-02-09  Michael Jahn
+ 	* sort collection list and volume list by name
+ 
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2008-02-11 10:51:00 UTC (rev 918)
++++ branches/0.9.x/griffith	2008-02-12 10:56:01 UTC (rev 919)
+@@ -451,11 +451,13 @@
+ 					initialize.fill_collections_combo(self, default=col_id)
+ 
+ 	def show_volume(self, widget):
+-		from view import filter_by_volume
++		quick_filter.clear_filter(self)
+ 		vol_id = self.db.Movie.get_by(movie_id=self._movie_id).volume_id
+-		filter_by_volume(self, vol_id)
++		pos = gutils.findKey(vol_id, self.volume_combo_ids)
++		self.widgets['filter']['volume'].set_active(pos)
+ 
+ 	def show_collection(self, widget):
++		quick_filter.clear_filter(self)
+ 		col_id = self.db.Movie.get_by(movie_id=self._movie_id).collection_id
+ 		pos = gutils.findKey(col_id, self.collection_combo_ids)
+ 		self.widgets['filter']['collection'].set_active(pos)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-11 10:51:00 UTC (rev 918)
++++ trunk/ChangeLog	2008-02-12 10:56:01 UTC (rev 919)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-02-12  Michael Jahn
++	* fixed selecting of quick filter volume and collection in main view
++
+ 2008-02-11  Vasco Nunes
+ 	* Added serbian language file (thanks to Sasa Petrovic) 
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-02-11 10:51:00 UTC (rev 918)
++++ trunk/griffith	2008-02-12 10:56:01 UTC (rev 919)
+@@ -449,11 +449,13 @@
+ 					initialize.fill_collections_combo(self, default=col_id)
+ 
+ 	def show_volume(self, widget):
+-		from view import filter_by_volume
++		quick_filter.clear_filter(self)
+ 		vol_id = self.db.Movie.query.filter_by(movie_id=self._movie_id).first().volume_id
+-		filter_by_volume(self, vol_id)
++		pos = gutils.findKey(vol_id, self.volume_combo_ids)
++		self.widgets['filter']['volume'].set_active(pos)
+ 
+ 	def show_collection(self, widget):
++		quick_filter.clear_filter(self)
+ 		col_id = self.db.Movie.query.filter_by(movie_id=self._movie_id).first().collection_id
+ 		pos = gutils.findKey(col_id, self.collection_combo_ids)
+ 		self.widgets['filter']['collection'].set_active(pos)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000409.html">[Griffith-svn] r917 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000411.html">[Griffith-svn] r920 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#410">[ date ]</a>
+              <a href="thread.html#410">[ thread ]</a>
+              <a href="subject.html#410">[ subject ]</a>
+              <a href="author.html#410">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

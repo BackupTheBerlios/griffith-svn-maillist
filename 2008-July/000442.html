@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r954 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r954%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200807131945.m6DJjxJO030663%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000441.html">
+   <LINK REL="Next"  HREF="000443.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r954 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r954%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200807131945.m6DJjxJO030663%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r954 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jul 13 21:45:59 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000441.html">[Griffith-svn] r953 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000443.html">[Griffith-svn] r955 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#442">[ date ]</a>
+              <a href="thread.html#442">[ thread ]</a>
+              <a href="subject.html#442">[ subject ]</a>
+              <a href="author.html#442">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-07-13 21:45:44 +0200 (Sun, 13 Jul 2008)
+New Revision: 954
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+Log:
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-07-11 20:02:41 UTC (rev 953)
++++ branches/0.9.x/ChangeLog	2008-07-13 19:45:44 UTC (rev 954)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-07-13  Michael Jahn
++	* updated DVDEmpire plugin
++
+ 2008-07-11  Michael Jahn
+ 	* added quick filter for tags
+ 	* [#244676] Griffith loses focus
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-07-11 20:02:41 UTC (rev 953)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-07-13 19:45:44 UTC (rev 954)
+@@ -66,7 +66,7 @@
+ 		self.runtime = gutils.strip_tags(gutils.trim(self.page, '&gt;Length:', '&lt;br /&gt;'))
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.strip_tags(gutils.trim(self.page, '&gt;Genre&lt;/b&gt;:', '\n'))
++		self.genre = gutils.strip_tags(gutils.trim(self.page, '&gt;Genre&lt;/b&gt;:', '&lt;/tr&gt;'))
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.page, '&gt;Actors:', '&lt;/td&gt;&lt;td')
+@@ -107,17 +107,23 @@
+ 	def get_notes(self):
+ 		self.notes = ''
+ 		tmp_page = gutils.trim(self.page, 'Features:', '&lt;b&gt;')
++		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
++		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+-			self.notes = self.notes + '\nFeatures:\n' + tmp_page + '\n'
++			self.notes = self.notes + '\nFeatures:' + tmp_page + '\n'
+ 		tmp_page = gutils.trim(self.page, 'Video:', '&lt;b&gt;')
++		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
++		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+-			self.notes = self.notes + '\nVideo:\n' + tmp_page + '\n'
++			self.notes = self.notes + '\nVideo:' + tmp_page + '\n'
+ 		tmp_page = gutils.trim(self.page, 'Audio:', '&lt;b&gt;')
++		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
++		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+-			self.notes = self.notes + '\nAudio:\n' + tmp_page + '\n'
++			self.notes = self.notes + '\nAudio:' + tmp_page
+ 		tmp_page = gutils.trim(self.page, 'Subtitles:', '&lt;b&gt;')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-07-11 20:02:41 UTC (rev 953)
++++ trunk/ChangeLog	2008-07-13 19:45:44 UTC (rev 954)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-07-13  Michael Jahn
++	* updated DVDEmpire plugin
++
+ 2008-07-11  Michael Jahn
+ 	* added quick filter for tags
+ 	* [#244676] Griffith loses focus
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-07-11 20:02:41 UTC (rev 953)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-07-13 19:45:44 UTC (rev 954)
+@@ -66,7 +66,7 @@
+ 		self.runtime = gutils.strip_tags(gutils.trim(self.page, '&gt;Length:', '&lt;br /&gt;'))
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.strip_tags(gutils.trim(self.page, '&gt;Genre&lt;/b&gt;:', '\n'))
++		self.genre = gutils.strip_tags(gutils.trim(self.page, '&gt;Genre&lt;/b&gt;:', '&lt;/tr&gt;'))
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.page, '&gt;Actors:', '&lt;/td&gt;&lt;td')
+@@ -107,17 +107,23 @@
+ 	def get_notes(self):
+ 		self.notes = ''
+ 		tmp_page = gutils.trim(self.page, 'Features:', '&lt;b&gt;')
++		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
++		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+-			self.notes = self.notes + '\nFeatures:\n' + tmp_page + '\n'
++			self.notes = self.notes + '\nFeatures:' + tmp_page + '\n'
+ 		tmp_page = gutils.trim(self.page, 'Video:', '&lt;b&gt;')
++		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
++		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+-			self.notes = self.notes + '\nVideo:\n' + tmp_page + '\n'
++			self.notes = self.notes + '\nVideo:' + tmp_page + '\n'
+ 		tmp_page = gutils.trim(self.page, 'Audio:', '&lt;b&gt;')
++		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
++		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+-			self.notes = self.notes + '\nAudio:\n' + tmp_page + '\n'
++			self.notes = self.notes + '\nAudio:' + tmp_page
+ 		tmp_page = gutils.trim(self.page, 'Subtitles:', '&lt;b&gt;')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000441.html">[Griffith-svn] r953 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000443.html">[Griffith-svn] r955 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#442">[ date ]</a>
+              <a href="thread.html#442">[ thread ]</a>
+              <a href="subject.html#442">[ subject ]</a>
+              <a href="author.html#442">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

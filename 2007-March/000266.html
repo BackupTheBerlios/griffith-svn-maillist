@@ -1,0 +1,551 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r746 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r746%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200703112006.l2BK6012013133%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000265.html">
+   <LINK REL="Next"  HREF="000267.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r746 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r746%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200703112006.l2BK6012013133%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r746 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar 11 21:06:00 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000265.html">[Griffith-svn] r745 - in trunk: . lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000267.html">[Griffith-svn] r747 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#266">[ date ]</a>
+              <a href="thread.html#266">[ thread ]</a>
+              <a href="subject.html#266">[ subject ]</a>
+              <a href="author.html#266">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-03-11 21:05:59 +0100 (Sun, 11 Mar 2007)
+New Revision: 746
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/griffith
+   trunk/lib/config.py
+   trunk/lib/gemail.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/preferences.py
+Log:
+New configuration file format (human readable)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/ChangeLog	2007-03-11 20:05:59 UTC (rev 746)
+@@ -7,6 +7,7 @@
+ 2007-03-11  Piotr O&#380;arowski
+ 	* Filmweb movie plugin updated (no more hangs if no movie info found - closes #10601)
+ 	* Version changed to 0.9.2+svn
++	* New configuration file format (human readable) - please delete old one manually
+ 
+ ---- 0.9.2 ---
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/NEWS	2007-03-11 20:05:59 UTC (rev 746)
+@@ -1,6 +1,7 @@
+ Griffith 0.9.3 - UNRELEASED
+ ===========================
+ * Updated movie plugins: Filmweb
++* New configuration file format (human readable)
+ 
+ 
+ Griffith 0.9.2
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/griffith	2007-03-11 20:05:59 UTC (rev 746)
+@@ -875,7 +875,7 @@
+ 
+ 	def restore_state(self):
+ 		&quot;&quot;&quot;Restores main window state&quot;&quot;&quot;
+-		if self.config.get(&quot;left&quot;) == &quot;None&quot;:
++		if self.config.get(&quot;left&quot;) == None:
+ 			pass
+ 		else:
+ 			self.widgets['window'].move(int(self.config.get(&quot;left&quot;)), \
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/config.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -23,114 +23,126 @@
+ 
+ import os
+ import os.path
+-import cPickle as pickle
++import ConfigParser
++#import cPickle as pickle
+ 
+ class Config:
+ 	def __init__ (self, file):
+ 		&quot;&quot;&quot;A basic class for handling preferences with pickle&quot;&quot;&quot;
+ 		self.file = file
+-		self.config = {}
+ 		if not self.load():
+ 			self.make_defaults()
+-		self.set_hooks = []
++		#self.set_hooks = []
+ 
+-	def get (self, key, default=None):
++	def get (self, key, default=None, section='main'):
+ 		&quot;&quot;&quot;Return a key's value, or default if the key isn't set.&quot;&quot;&quot;
+-		if not self.config.has_key(key):
++		if not self.cfg.has_option(section,key):
+ 			return default
+ 		else:
+-			return self.config[key]
++			tmp = self.cfg.get(section, key)
++			if tmp == 'True':
++				tmp = True
++			elif tmp == 'False':
++				tmp = False
++			elif tmp == 'None':
++				tmp = None
++			return tmp
+ 
+-	def has_key (self, k):
+-		return self.config.has_key(k)
++	def has_key (self, key, section='main'):
++		return self.cfg.has_option(section,key)
+ 
+ 	def __setitem__ (self, k, v):
+-		self.config[k] = v
+-		for hook in self.set_hooks: hook(k, v)
++		if not isinstance(v, str):
++			v = str(v)
++		self.cfg.set('main', k, v)
++		#for hook in self.set_hooks: hook(k, v)
+ 
+-	def __getitem__ (self, k):
+-		if not self.config.has_key(k):
+-			return None
+-		else:
+-			return self.config[k]
++	def __getitem__ (self, key):
++		return self.get(key)
+ 
+ 	def keys (self):
+-		return self.config.keys()
++		return [ i[0] for i in self.cfg.items('main') ]
+ 	def values (self):
+-		return self.config.values()
++		return [ i[1] for i in self.cfg.items('main') ]
+ 	def items (self):
+-		return self.config.items()
++		return self.cfg.items('main')
+ 
+ 	def save (self):
+ 		if not os.path.exists(os.path.split(self.file)[0]):
+ 			os.makedirs(os.path.split(self.file)[0])
+-		ofi=open(self.file, 'w')
+-		pickle.dump(self.config, ofi)
+-		ofi.close()
++		self.cfg.write(open(self.file, 'w'))
+ 
+ 	def load (self):
+ 		if os.path.isfile(self.file):
+-			ifi=open(self.file, 'r')
+-			self.config=pickle.load(ifi)
+-			ifi.close()
++			self.cfg = ConfigParser.SafeConfigParser()
++			try:
++				self.cfg.read(self.file)
++			except:
++				print 'Cannot parse config file'
++				return False
++			for i in self.cfg.items('main'):
++				self[i[0]] = i[1]
+ 			return True
+ 		else:
+ 			return False
+ 			
+ 	def make_defaults(self):
+-		self.config['pdf_reader']           = &quot;xpdf&quot;
+-		self.config['default_db']           = &quot;griffith.db&quot;
+-		self.config['height']               = &quot;None&quot;
+-		self.config['width']                = &quot;None&quot;
+-		self.config['top']                  = &quot;None&quot;
+-		self.config['left']                 = &quot;None&quot;
+-		self.config['view_director']        = &quot;True&quot;
+-		self.config['view_number']          = &quot;True&quot;
+-		self.config['view_otitle']          = &quot;True&quot;
+-		self.config['view_title']           = &quot;True&quot;
+-		self.config['view_image']           = &quot;True&quot;
+-		self.config['view_toolbar']         = &quot;True&quot;
+-		self.config['use_gtkspell']         = &quot;True&quot;
+-		self.config['spell_plot']           = &quot;True&quot;
+-		self.config['spell_notes']          = &quot;True&quot;
+-		self.config['spell_lang']           = &quot;en&quot;
+-		self.config['default_movie_plugin'] = &quot;IMDB&quot;
+-		self.config['rating']               = &quot;0&quot; # 0       = meter; 1 = stars
+-		self.config['color']                = 0
+-		self.config['condition']            = 0
+-		self.config['layers']               = 0
+-		self.config['media']                = 0
+-		self.config['region']               = 0
+-		self.config['vcodec']               = 0
+-		self.config['mail_smtp_server']     = &quot;localhost&quot;
+-		self.config['mail_use_auth']        = &quot;False&quot;
+-		self.config['mail_username']        = &quot;&quot;
+-		self.config['mail_password']        = &quot;&quot;
+-		self.config['mail_email']           = &quot;griffith&quot;
+-		self.config['posters']              = &quot;posters&quot;
+-		self.config['font']                 = &quot;&quot;
+-		self.config['db_type']              = &quot;sqlite&quot;
+-		self.config['db_host']              = &quot;localhost&quot;
+-		self.config['db_port']              = &quot;5432&quot;
+-		self.config['db_name']              = &quot;griffith&quot;
+-		self.config['db_user']              = &quot;griffith&quot;
+-		self.config['db_passwd']            = &quot;gRiFiTh&quot;
+-		self.config['s_classification']     = True
+-		self.config['s_country']            = True
+-		self.config['s_director']           = True
+-		self.config['s_genre']              = True
+-		self.config['s_image']              = True
+-		self.config['s_notes']              = True
+-		self.config['s_o_site']             = True
+-		self.config['s_o_title']            = True
+-		self.config['s_plot']               = True
+-		self.config['s_rating']             = True
+-		self.config['s_runtime']            = True
+-		self.config['s_site']               = True
+-		self.config['s_studio']             = True
+-		self.config['s_title']              = True
+-		self.config['s_trailer']            = True
+-		self.config['s_cast']               = True
+-		self.config['s_year']               = True
+-		self.config['s_limit']              = '0' # limit search results to x items (0 -&gt; no limits)
++		self.cfg = ConfigParser.SafeConfigParser()
++		self.cfg.read(self.file)
++		self.cfg.add_section('main')
++		self.cfg.set('main', 'pdf_reader', 'xpdf')
++		self.cfg.set('main', 'default_db', 'griffith.db')
++		self.cfg.set('main', 'height', 'None')
++		self.cfg.set('main', 'width', 'None')
++		self.cfg.set('main', 'top', 'None')
++		self.cfg.set('main', 'left', 'None')
++		self.cfg.set('main', 'view_director', 'True')
++		self.cfg.set('main', 'view_number', 'True')
++		self.cfg.set('main', 'view_otitle', 'True')
++		self.cfg.set('main', 'view_title', 'True')
++		self.cfg.set('main', 'view_image', 'True')
++		self.cfg.set('main', 'view_toolbar', 'True')
++		self.cfg.set('main', 'use_gtkspell', 'True')
++		self.cfg.set('main', 'spell_plot', 'True')
++		self.cfg.set('main', 'spell_notes', 'True')
++		self.cfg.set('main', 'spell_lang', 'en')
++		self.cfg.set('main', 'default_movie_plugin', 'IMDB')
++		self.cfg.set('main', 'rating', '0') # 0       = meter; 1 = stars
++		self.cfg.set('main', 'color', '0')
++		self.cfg.set('main', 'condition', '0')
++		self.cfg.set('main', 'layers', '0')
++		self.cfg.set('main', 'media', '0')
++		self.cfg.set('main', 'region', '0')
++		self.cfg.set('main', 'vcodec', '0')
++		self.cfg.set('main', 'mail_smtp_server', 'localhost')
++		self.cfg.set('main', 'mail_use_auth', 'False')
++		self.cfg.set('main', 'mail_username', '')
++		self.cfg.set('main', 'mail_password', '')
++		self.cfg.set('main', 'mail_email', 'griffith')
++		self.cfg.set('main', 'posters', 'posters')
++		self.cfg.set('main', 'font', '')
++		self.cfg.set('main', 'db_type', 'sqlite')
++		self.cfg.set('main', 'db_host', 'localhost')
++		self.cfg.set('main', 'db_port', '5432')
++		self.cfg.set('main', 'db_name', 'griffith')
++		self.cfg.set('main', 'db_user', 'griffith')
++		self.cfg.set('main', 'db_passwd', 'gRiFiTh')
++		self.cfg.set('main', 's_classification', 'True')
++		self.cfg.set('main', 's_country', 'True')
++		self.cfg.set('main', 's_director', 'True')
++		self.cfg.set('main', 's_genre', 'True')
++		self.cfg.set('main', 's_image', 'True')
++		self.cfg.set('main', 's_notes', 'True')
++		self.cfg.set('main', 's_o_site', 'True')
++		self.cfg.set('main', 's_o_title', 'True')
++		self.cfg.set('main', 's_plot', 'True')
++		self.cfg.set('main', 's_rating', 'True')
++		self.cfg.set('main', 's_runtime', 'True')
++		self.cfg.set('main', 's_site', 'True')
++		self.cfg.set('main', 's_studio', 'True')
++		self.cfg.set('main', 's_title', 'True')
++		self.cfg.set('main', 's_trailer', 'True')
++		self.cfg.set('main', 's_cast', 'True')
++		self.cfg.set('main', 's_year', 'True')
++		self.cfg.set('main', 's_limit', '0') # limit search results to x items (0 -&gt; no limits)
+ 		self.save()
+
+Modified: trunk/lib/gemail.py
+===================================================================
+--- trunk/lib/gemail.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/gemail.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -49,7 +49,7 @@
+ 
+ def send_email(self):
+ 	if len(self.person_email):
+-		if self.config.get('mail_use_auth', &quot;False&quot;) == &quot;True&quot;:
++		if self.config.get('mail_use_auth', False) == True:
+ 			use_auth = 1
+ 		else:
+ 			use_auth = 0
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/initialize.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -312,12 +312,13 @@
+ 	self.plugins.sort()
+ 	self.d_plugin = 0
+ 	mcounter = 0
++	default_plugin = self.config.get('default_movie_plugin')
+ 	for p in self.plugins:
+ 		plugin_module = os.path.basename(p).replace('.py','')
+ 		plugin_name = plugin_module.replace('PluginMovie','')
+ 		self.widgets['add']['source'].append_text(plugin_name)
+ 		self.widgets['preferences']['default_plugin'].append_text(plugin_name)
+-		if self.config.get('default_movie_plugin') == plugin_name:
++		if plugin_name == default_plugin:
+ 			self.widgets['preferences']['default_plugin'].set_active(mcounter)
+ 			self.d_plugin = mcounter
+ 		mcounter = mcounter + 1
+@@ -552,15 +553,13 @@
+ 	global spell_support
+ 	spell_error = False
+ 	if self.posix and spell_support:
+-		if self.config.get('use_gtkspell', False) == 'True':
+-			if self.config.get('spell_notes', True) == 'True' and \
+-				self.config.get('spell_lang')!='':
++		if self.config.get('use_gtkspell', False) == True:
++			if self.config.get('spell_notes', True) == True and self.config.get('spell_lang') != '':
+ 				try:
+ 					self.notes_spell = gtkspell.Spell(self.widgets['add']['cast'], self.config.get('spell_lang'))
+ 				except:
+ 					spell_error = True
+-			if self.config.get('spell_plot', True)=='True' and \
+-				self.config.get('spell_lang')!='':
++			if self.config.get('spell_plot', True)==True and self.config.get('spell_lang') != '':
+ 				try:
+ 					self.plot_spell = gtkspell.Spell(self.widgets['add']['plot'], self.config.get('spell_lang'))
+ 				except:
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/main_treeview.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -192,10 +192,7 @@
+ 		w['picture_button'].set_sensitive(False)
+ 	w['picture'].set_from_file(image_path)
+ 	# ratig
+-	try:
+-		rimage = int(str(self.config.get('rating_image')))
+-	except:
+-		rimage = 0
++	rimage = int(self.config.get('rating_image', 0))
+ 	if rimage:
+ 		prefix = ''
+ 	else:
+@@ -372,23 +369,23 @@
+ 	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str)
+ 
+ 	# check preferences to hide or show columns
+-	if self.config.get('view_number', 'True') == 'True':
++	if self.config.get('view_number', True) == True:
+ 		self.number_column.set_visible(True)
+ 	else:
+ 		self.number_column.set_visible(False)
+-	if self.config.get('view_otitle', 'True') == 'True':
++	if self.config.get('view_otitle', True) == True:
+ 		self.otitle_column.set_visible(True)
+ 	else:
+ 		self.otitle_column.set_visible(False)
+-	if self.config.get('view_title', 'True') == 'True':
++	if self.config.get('view_title', True) == True:
+ 		self.title_column.set_visible(True)
+ 	else:
+ 		self.title_column.set_visible(False)
+-	if self.config.get('view_director', 'True') == 'True':
++	if self.config.get('view_director', True) == True:
+ 		self.director_column.set_visible(True)
+ 	else:
+ 		self.director_column.set_visible(False)
+-	if self.config.get('view_image', 'True') == 'True':
++	if self.config.get('view_image', True) == True:
+ 		self.image_column.set_visible(True)
+ 	else:
+ 		self.image_column.set_visible(False)
+@@ -398,7 +395,7 @@
+ 		
+ 		self.treemodel.set_value(myiter,0,'%004d' % int(movie.number))
+ 
+-		if self.config.get('view_image', 'True') == 'True':
++		if self.config.get('view_image', True) == True:
+ 			tmp_dest = self.locations['posters']
+ 			tmp_img = os.path.join(tmp_dest, &quot;t_%s.jpg&quot; % str(movie.image))
+ 			if movie.image and os.path.isfile(tmp_img):
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-03-11 13:26:55 UTC (rev 745)
++++ trunk/lib/preferences.py	2007-03-11 20:05:59 UTC (rev 746)
+@@ -35,33 +35,33 @@
+ def show_preferences(self):
+ 	w = self.widgets['preferences']
+ 	# number
+-	if self.config.get('view_number', 'True')=='False':
++	if self.config.get('view_number', True) == False:
+ 		w['view_number'].set_active(False)
+ 	else:
+ 		w['view_number'].set_active(True)
+ 	# image
+-	if self.config.get('view_image', 'True')=='False':
++	if self.config.get('view_image', True) == False:
+ 		w['view_image'].set_active(False)
+ 	else:
+ 		w['view_image'].set_active(True)
+ 	# original title
+-	if self.config.get('view_otitle', 'True')=='False':
++	if self.config.get('view_otitle', True) == False:
+ 		w['view_o_title'].set_active(False)
+ 	else:
+ 		w['view_o_title'].set_active(True)
+ 	# title
+-	if self.config.get('view_title', 'True')=='False':
++	if self.config.get('view_title', True) == False:
+ 		w['view_title'].set_active(False)
+ 	else:
+ 		w['view_title'].set_active(True)
+ 	# director
+-	if self.config.get('view_director', 'True')=='False':
++	if self.config.get('view_director', True) == False:
+ 		w['view_director'].set_active(False)
+ 	else:
+ 		w['view_director'].set_active(True)
+ 
+ 	# email reminder
+-	if self.config.get('mail_use_auth', 'False') == 'False':
++	if self.config.get('mail_use_auth', False) == False:
+ 		w['mail_use_auth'].set_active(False)
+ 	else:
+ 		w['mail_use_auth'].set_active(True)
+@@ -83,14 +83,14 @@
+ 	w['region'].set_active( gutils.digits_only(self.config.get('region', 0), 8) )
+ 	w['layers'].set_active( gutils.digits_only(self.config.get('layers', 0), 4) )
+ 	w['color'].set_active( gutils.digits_only(self.config.get('color', 0), 3 ))
+-	if self.config.get('media', 0) in self.media_ids:
+-		if self.config.get('media', 0) &gt; 0:
+-			w['media'].set_active( gutils.findKey(self.config.get('media', 0), self.media_ids) )
++	if int(self.config.get('media', 0)) in self.media_ids:
++		if int(self.config.get('media', 0)) &gt; 0:
++			w['media'].set_active( gutils.findKey(int(self.config.get('media', 0)), self.media_ids) )
+ 		else:
+ 			w['media'].set_active(0)
+-	if self.config.get('vcodec', 0) in self.vcodecs_ids &gt;- 1:
+-		if self.config.get('vcodec', 0) &gt; 0:
+-			w['vcodec'].set_active(	int(gutils.findKey(self.config.get('vcodec', 0), self.vcodecs_ids)) )
++	if int(self.config.get('vcodec', 0)) in self.vcodecs_ids:
++		if int(self.config.get('vcodec', 0)) &gt; 0:
++			w['vcodec'].set_active(	int(gutils.findKey(int(self.config.get('vcodec', 0)), self.vcodecs_ids)) )
+ 		else:
+ 			w['vcodec'].set_active(0)
+ 	
+@@ -124,40 +124,41 @@
+ 		self.locations['movie_plugins'])
+ 	plugins.sort()
+ 	mcounter = 0
++	default_movie_plugin = self.config.get('default_movie_plugin')
+ 	for p in plugins:
+ 		plugin_module = os.path.basename(p).replace('.py','')
+ 		plugin_name = plugin_module.replace('PluginMovie','')
+-		if self.config.get('default_movie_plugin') == plugin_name:
++		if plugin_name == default_movie_plugin:
+ 			w['default_plugin'].set_active(mcounter)
+ 			self.d_plugin = mcounter
+ 		mcounter = mcounter + 1
+ 
+ 	# rating image
+ 	try:
+-		rimage = int(str(self.config.get('rating_image', '0')))
++		rimage = int(self.config.get('rating_image', 0))
+ 	except:
+ 		rimage = 0
+ 	w['rating_image'].set_active(rimage)
+ 
+ 	# spellchecker
+-	if self.config.get('use_gtkspell', 'False')=='False':
++	if self.config.get('use_gtkspell', False) == False:
+ 		w['spellchecker'].set_active(False)
+ 	else:
+ 		w['spellchecker'].set_active(True)
+ 
+-	if self.config.get('spell_notes', 'True')=='False':
++	if self.config.get('spell_notes', True) == False:
+ 		w['spell_notes'].set_active(False)
+ 	else:
+ 		w['spell_notes'].set_active(True)
+ 
+-	if self.config.get('spell_plot', 'True')=='False':
++	if self.config.get('spell_plot', True) == False:
+ 		w['spell_plot'].set_active(False)
+ 	else:
+ 		w['spell_plot'].set_active(True)
+ 
+ 	w['spell_lang'].set_text(str(self.config.get('spell_lang', 'en')))
+ 
+-	w['amazon_locale'].set_active(self.config.get('amazon_locale', 0))
++	w['amazon_locale'].set_active(int(self.config.get('amazon_locale', 0)))
+ 
+ 	w['window'].show()
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000265.html">[Griffith-svn] r745 - in trunk: . lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000267.html">[Griffith-svn] r747 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#266">[ date ]</a>
+              <a href="thread.html#266">[ thread ]</a>
+              <a href="subject.html#266">[ subject ]</a>
+              <a href="author.html#266">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

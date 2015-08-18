@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1362 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1362%20-%20trunk/lib&In-Reply-To=%3C201001041352.o04DqCtT027966%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000828.html">
+   <LINK REL="Next"  HREF="000830.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1362 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1362%20-%20trunk/lib&In-Reply-To=%3C201001041352.o04DqCtT027966%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1362 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  4 14:52:12 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000828.html">[Griffith-svn] r1361 - in trunk: . lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000830.html">[Griffith-svn] r1363 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#829">[ date ]</a>
+              <a href="thread.html#829">[ thread ]</a>
+              <a href="subject.html#829">[ subject ]</a>
+              <a href="author.html#829">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-04 14:51:59 +0100 (Mon, 04 Jan 2010)
+New Revision: 1362
+
+Modified:
+   trunk/lib/gutils.py
+Log:
+extend md5sum method for support of calculating md5 from in-memory objects
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-01-03 20:48:47 UTC (rev 1361)
++++ trunk/lib/gutils.py	2010-01-04 13:51:59 UTC (rev 1362)
+@@ -276,6 +276,9 @@
+                 window = gtk.Window()
+                 window.set_title('Griffith info')
+                 window.set_position(gtk.WIN_POS_CENTER)
++                window.set_keep_above(True)
++                window.stick()
++                window.set_default_size(200, 50)
+                 label = gtk.Label()
+                 label.set_markup(&quot;&quot;&quot;&lt;big&gt;&lt;b&gt;Griffith:&lt;/b&gt;
+ %s&lt;/big&gt;&quot;&quot;&quot; % message)
+@@ -624,11 +627,14 @@
+     except ImportError:
+         import md5
+         m = md5.new()
+-    while True:
+-        d = fobj.read(8096)
+-        if not d:
+-            break
+-        m.update(d)
++    if hasattr(fobj, 'read'):
++        while True:
++            d = fobj.read(8096)
++            if not d:
++                break
++            m.update(d)
++    else:
++        m.update(fobj)
+     return unicode(m.hexdigest())
+ 
+ def create_image_cache(md5sum, gsql):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000828.html">[Griffith-svn] r1361 - in trunk: . lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000830.html">[Griffith-svn] r1363 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#829">[ date ]</a>
+              <a href="thread.html#829">[ thread ]</a>
+              <a href="subject.html#829">[ subject ]</a>
+              <a href="author.html#829">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

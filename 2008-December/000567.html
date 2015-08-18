@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1092 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1092%20-%20trunk/lib&In-Reply-To=%3C200812162128.mBGLSfCM026765%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000566.html">
+   <LINK REL="Next"  HREF="000568.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1092 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1092%20-%20trunk/lib&In-Reply-To=%3C200812162128.mBGLSfCM026765%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1092 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec 16 22:28:41 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000566.html">[Griffith-svn] r1091 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000568.html">[Griffith-svn] r1093 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#567">[ date ]</a>
+              <a href="thread.html#567">[ thread ]</a>
+              <a href="subject.html#567">[ subject ]</a>
+              <a href="author.html#567">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-12-16 22:28:41 +0100 (Tue, 16 Dec 2008)
+New Revision: 1092
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/movie.py
+Log:
+movie details download cancellation is possible as well
+
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-12-16 21:18:12 UTC (rev 1091)
++++ trunk/lib/add.py	2008-12-16 21:28:41 UTC (rev 1092)
+@@ -191,7 +191,8 @@
+         fields_to_fetch = [ i for i in fields_to_fetch if details[i] is None ]
+     self.movie.fields_to_fetch = fields_to_fetch
+     
+-    self.movie.get_movie(w['window'])
++    if not self.movie.get_movie(w['window']):
++        return None
+     self.movie.parse_movie()
+ 
+     if 'year' in fields_to_fetch:
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2008-12-16 21:18:12 UTC (rev 1091)
++++ trunk/lib/movie.py	2008-12-16 21:28:41 UTC (rev 1092)
+@@ -124,12 +124,14 @@
+             #            
+             # get the page
+             #
+-            self.open_page(parent_window)
++            if not self.open_page(parent_window):
++                return None
+         except:
+             # close the dialog if an error occured
+             self.progress.hide()
+             # reraise the error
+             raise
++        return True
+ 
+     def open_page(self, parent_window=None, url=None):
+         if url is None:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000566.html">[Griffith-svn] r1091 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000568.html">[Griffith-svn] r1093 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#567">[ date ]</a>
+              <a href="thread.html#567">[ thread ]</a>
+              <a href="subject.html#567">[ subject ]</a>
+              <a href="author.html#567">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

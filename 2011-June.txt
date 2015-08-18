@@ -1,0 +1,1352 @@
+From lanus at mail.berlios.de  Thu Jun  2 01:23:50 2011
+From: lanus at mail.berlios.de (lanus at mail.berlios.de)
+Date: Thu,  2 Jun 2011 01:23:50 +0200
+Subject: [Griffith-svn] r1555 - in trunk: . lib
+Message-ID: <20110601232350.5E47B480BAD@sheep.berlios.de>
+
+Author: lanus
+Date: 2011-06-02 01:23:49 +0200 (Thu, 02 Jun 2011)
+New Revision: 1555
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/movie.py
+Log:
+Fixed crash when you try fetching a movie's information without internet connection.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-05-29 19:13:45 UTC (rev 1554)
++++ trunk/ChangeLog	2011-06-01 23:23:49 UTC (rev 1555)
+@@ -4,6 +4,8 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
++2011-06-01  Ivo Nunes
++    * fixed crash when you try fetching a movie's information without internet connection
+ 
+ 2011-05-23  Michael Jahn
+ 	* updated MyMoviesIt plugin (full cast, screenplay, cameraman, director)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-05-29 19:13:45 UTC (rev 1554)
++++ trunk/lib/add.py	2011-06-01 23:23:49 UTC (rev 1555)
+@@ -24,7 +24,7 @@
+ 
+ import logging
+ import os
+-
++import urllib2
+ import gtk
+ from sqlalchemy.exc import IntegrityError
+ 
+@@ -264,6 +264,7 @@
+ 
+ def get_from_web(self):
+     """search the movie in web using the active plugin"""
++        
+     title = self.widgets['add']['title'].get_text()
+     o_title = self.widgets['add']['o_title'].get_text()
+ 
+@@ -290,17 +291,22 @@
+                 self.search_movie.title = gutils.remove_accents(title, 'utf-8')
+             else:
+                 self.search_movie.title = unicode(title, 'utf-8')
+-        if self.search_movie.search_movies(self.widgets['add']['window']):
+-            self.search_movie.get_searches()
+-        if len(self.search_movie.ids) == 1 and o_title and title:
+-            self.search_movie.url = self.search_movie.translated_url_search
+-            if self.search_movie.remove_accents:
+-                self.search_movie.title = gutils.remove_accents(title, 'utf-8')
+-            else:
+-                self.search_movie.title = unicode(title, 'utf-8')
++        # check if internet connection is available
++        try:
++            urllib2.urlopen(self.search_movie.url)
+             if self.search_movie.search_movies(self.widgets['add']['window']):
+                 self.search_movie.get_searches()
+-        self.show_search_results(self.search_movie)
++            if len(self.search_movie.ids) == 1 and o_title and title:
++                self.search_movie.url = self.search_movie.translated_url_search
++                if self.search_movie.remove_accents:
++                    self.search_movie.title = gutils.remove_accents(title, 'utf-8')
++                else:
++                    self.search_movie.title = unicode(title, 'utf-8')
++                if self.search_movie.search_movies(self.widgets['add']['window']):
++                    self.search_movie.get_searches()
++            self.show_search_results(self.search_movie)
++        except:
++            gutils.error(_("Connection failed."))
+     else:
+         gutils.error(_("You should fill the original title\nor the movie title."))
+ 
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2011-05-29 19:13:45 UTC (rev 1554)
++++ trunk/lib/movie.py	2011-06-01 23:23:49 UTC (rev 1555)
+@@ -31,6 +31,7 @@
+ from urllib import *
+ import gtk
+ import gutils
++import urllib2
+ 
+ log = logging.getLogger("Griffith")
+ 
+@@ -150,6 +151,8 @@
+ 
+     def get_movie(self, parent_window=None):
+         try:
++            # check for internet connection
++            urllib2.urlopen("http://www.griffith.cc")
+             #
+             # initialize the progress dialog once for the following loading process
+             #
+@@ -161,13 +164,12 @@
+             #
+             if not self.open_page(parent_window):
+                 return None
++            return True
++
+         except:
+-            # close the dialog if an error occured
+-            self.progress.hide()
+-            # reraise the error
+-            raise
+-        return True
+-
++            gutils.error(_("Connection failed."))
++            return False
++        
+     def open_page(self, parent_window=None, url=None):
+         if url is None:
+             url_to_fetch = self.url
+
+
+
+From mikej06 at mail.berlios.de  Mon Jun 13 22:46:47 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 13 Jun 2011 22:46:47 +0200
+Subject: [Griffith-svn] r1556 - in trunk: . lib/db
+Message-ID: <20110613204648.09FD2480587@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-06-13 22:46:47 +0200 (Mon, 13 Jun 2011)
+New Revision: 1556
+
+Added:
+   trunk/lib/db/validators.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db/_movie.py
+   trunk/lib/db/_objects.py
+Log:
+[#789246] movies.studio field length too short in postgres
+added a LengthValidator which truncates text fields
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-01 23:23:49 UTC (rev 1555)
++++ trunk/ChangeLog	2011-06-13 20:46:47 UTC (rev 1556)
+@@ -4,8 +4,13 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
++
++2011-06-13  Michael Jahn
++	* [#789246] movies.studio field length too short in postgres
++	  added a LengthValidator which truncates text fields
++
+ 2011-06-01  Ivo Nunes
+-    * fixed crash when you try fetching a movie's information without internet connection
++	* fixed crash when you try fetching a movie's information without internet connection
+ 
+ 2011-05-23  Michael Jahn
+ 	* updated MyMoviesIt plugin (full cast, screenplay, cameraman, director)
+
+Modified: trunk/lib/db/_movie.py
+===================================================================
+--- trunk/lib/db/_movie.py	2011-06-01 23:23:49 UTC (rev 1555)
++++ trunk/lib/db/_movie.py	2011-06-13 20:46:47 UTC (rev 1556)
+@@ -27,7 +27,7 @@
+ from sqlalchemy.sql import select, update
+ 
+ import tables
+-from _objects import Loan
++from _objects import Loan, DBTable
+ 
+ log = logging.getLogger('Griffith')
+ 
+@@ -65,7 +65,7 @@
+ del aliases, alias, res
+ 
+ 
+-class Movie(object):
++class Movie(DBTable):
+ 
+     def _set_resolution(self, res_string):
+         if not res_string: # clear resulution field
+
+Modified: trunk/lib/db/_objects.py
+===================================================================
+--- trunk/lib/db/_objects.py	2011-06-01 23:23:49 UTC (rev 1555)
++++ trunk/lib/db/_objects.py	2011-06-13 20:46:47 UTC (rev 1556)
+@@ -30,6 +30,7 @@
+ from sqlalchemy.sql import select, update
+ 
+ import tables
++import validators
+ 
+ log = logging.getLogger('Griffith')
+ 
+@@ -38,6 +39,8 @@
+ 
+ class DBTable(object):
+ 
++    __sa_instrumentation_manager__ = validators.InstallValidatorListeners
++
+     def __init__(self, **kwargs):
+         for i in kwargs:
+             if hasattr(self, i):
+
+Added: trunk/lib/db/validators.py
+===================================================================
+--- trunk/lib/db/validators.py	                        (rev 0)
++++ trunk/lib/db/validators.py	2011-06-13 20:46:47 UTC (rev 1556)
+@@ -0,0 +1,86 @@
++# -*- coding: UTF-8 -*-
++# vim: fdm=marker
++__revision__ = '$Id$'
++
++# Copyright ? 2011
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import logging
++
++from sqlalchemy.orm.interfaces import AttributeExtension, InstrumentationManager
++from sqlalchemy.orm import ColumnProperty
++from sqlalchemy.types import String
++
++use_pre_07 = False
++try:
++    from sqlalchemy import event
++except:
++    use_pre_07 = True
++
++log = logging.getLogger('Griffith')
++
++class InstallValidatorListeners(InstrumentationManager):
++    def post_configure_attribute(self, class_, key, inst):
++        if use_pre_07:
++            self.post_configure_attribute_pre_07(class_, key, inst)
++        else:
++            self.post_configure_attribute_07(class_, key, inst)
++        
++    def post_configure_attribute_07(self, class_, key, inst):
++        """Add validators for any attributes that can be validated."""
++        # SQLAlchemy >= 0.7 (using events)
++        prop = inst.prop
++        # Only interested in simple columns, not relations
++        if isinstance(prop, ColumnProperty) and len(prop.columns) == 1:
++            col = prop.columns[0]
++            # if we have string column with a length, install a length validator
++            if isinstance(col.type, String) and col.type.length:
++                event.listen(inst, 'set', LengthValidator(col.name, col.type.length).set, retval=True)
++
++    def post_configure_attribute_pre_07(self, class_, key, inst):
++        """Add validators for any attributes that can be validated."""
++        # SQLAlchemy < 0.7 (using extensions)
++        prop = inst.prop
++        # Only interested in simple columns, not relations
++        if isinstance(prop, ColumnProperty) and len(prop.columns) == 1:
++            col = prop.columns[0]
++            # if we have string column with a length, install a length validator
++            if isinstance(col.type, String) and col.type.length:
++                inst.impl.extensions.insert(0, LengthValidator(col.name, col.type.length))
++
++
++class ValidationError(Exception):
++    pass
++
++
++class LengthValidator(AttributeExtension):
++    def __init__(self, name, max_length):
++        self.name = name
++        self.max_length = max_length
++
++    def set(self, state, value, oldvalue, initiator):
++        if value and len(value) > self.max_length:
++            # can be changed so that an exception is raised which can be shown in UI
++            # but at the moment an exception is silently lost, only written to console
++            #raise ValidationError("Length %d exceeds allowed %d for %s" %
++            #                    (len(value), self.max_length, self.name))
++            log.warning("Length %d exceeds allowed %d for %s; truncating value" %
++                                (len(value), self.max_length, self.name))
++            return value[0:self.max_length]
++        return value
+
+
+
+From mikej06 at mail.berlios.de  Thu Jun 16 23:47:31 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 16 Jun 2011 23:47:31 +0200
+Subject: [Griffith-svn] r1557 - in trunk: . lib
+Message-ID: <20110616214731.4F7E248140B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-06-16 23:47:30 +0200 (Thu, 16 Jun 2011)
+New Revision: 1557
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/quick_filter.py
+Log:
+[#721033] Wrong behaviour
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-13 20:46:47 UTC (rev 1556)
++++ trunk/ChangeLog	2011-06-16 21:47:30 UTC (rev 1557)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-06-16  Michael Jahn
++	* [#721033] Wrong behaviour
++
+ 2011-06-13  Michael Jahn
+ 	* [#789246] movies.studio field length too short in postgres
+ 	  added a LengthValidator which truncates text fields
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-06-13 20:46:47 UTC (rev 1556)
++++ trunk/griffith	2011-06-16 21:47:30 UTC (rev 1557)
+@@ -414,11 +414,11 @@
+                     movie.seen = True
+                     self.db.session.add(movie)
+                     self.db.session.commit()
+-            for this_iter in self.selected_iter:
+-                self.treemodel.set_value(this_iter,6,movie.seen)
+-            self.treeview_clicked()
+-            self.populate_treeview()
+-            self.count_statusbar()
++        for this_iter in self.selected_iter:
++            val = self.treemodel.get_value(this_iter,6)
++            self.treemodel.set_value(this_iter, 6, not val)
++        self.treeview_clicked()
++        self.count_statusbar()
+ 
+     def sugest_movie(self, *args):
+         if not self.widgets['menu']['not_seen_movies'].get_active():
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2011-06-13 20:46:47 UTC (rev 1556)
++++ trunk/lib/quick_filter.py	2011-06-16 21:47:30 UTC (rev 1557)
+@@ -54,7 +54,6 @@
+     # prevent multiple treeview updates
+     self.initialized = False
+     self.widgets['filter']['text'].set_text('')
+-    self.widgets['filter']['criteria'].set_active(0)
+     self.widgets['filter']['collection'].set_active(0)
+     self.widgets['filter']['advfilter'].set_active(0)
+     self.initialized = True
+
+
+
+From mikej06 at mail.berlios.de  Fri Jun 17 10:27:28 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 17 Jun 2011 10:27:28 +0200
+Subject: [Griffith-svn] r1558 - in trunk: . lib lib/plugins/movie
+Message-ID: <20110617082728.8060B481393@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-06-17 10:27:28 +0200 (Fri, 17 Jun 2011)
+New Revision: 1558
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/test_movieplugins.py
+Log:
+[#725810] CSFD plugin is not working
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-16 21:47:30 UTC (rev 1557)
++++ trunk/ChangeLog	2011-06-17 08:27:28 UTC (rev 1558)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-06-17  Michael Jahn
++	* [#725810] CSFD plugin is not working
++
+ 2011-06-16  Michael Jahn
+ 	* [#721033] Wrong behaviour
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-06-16 21:47:30 UTC (rev 1557)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-06-17 08:27:28 UTC (rev 1558)
+@@ -1,224 +1,289 @@
+-# -*- coding: utf-8 -*-
+-__revision__ = '$Id: PluginMovieCSFD.py 12 2011-05-22 08:37:14Z KamilHanus $'
+-# Copyright (c) 2011 Kamil Hanus
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-from gettext import gettext as _
+-import gutils
+-import movie,string
+-import re
+-
+-plugin_name = "CSFD"
+-plugin_description = "Cesko-Slovenska Filmova Databaze"
+-plugin_url = "www.csfd.cz"
+-plugin_language = _("Czech")
+-plugin_author = "Kamil Hanus"
+-plugin_author_email = "<kamilhanus at gmail.com>"
+-plugin_version = '1.1'
+-
+-class Plugin(movie.Movie):
+-    def __init__(self, id):
+-        self.movie_id = id
+-        self.encode = "utf-8"
+-        self.url = "http://www.csfd.cz"+str(id)
+-
+-    def get_image(self):
+-        self.image_url = re.search(r"content=\"http://img.csfd.cz/posters/([^\"]*)\"",self.page)
+-        if self.image_url:
+-            self.image_url = "http://img.csfd.cz/posters/" + gutils.strip_tags(self.image_url.group(1))
+-        else:
+-            self.image_url = ""
+-
+-
+-    def get_title(self, ret=False):
+-        data = re.search(r'<title>*>([^>]*)',self.page)
+-        if data:
+-            if len(data.group(1).split("/")) == 2:
+-		data = data.group(1).split(" | ")[0][:-7]
+-	    else:
+-		data = data.group(1).split(" / ")[0]
+-        else:
+-            data = ""
+-        if ret is True:
+-            return data
+-        else:
+-            self.title = data
+-
+-
+-    def get_o_title(self):
+-        self.o_title = re.findall(r'/images/flags/flag_[\d]+.gif"[^<]*>([^/]*)',self.page)
+-        if len(self.o_title)>0:
+-            self.o_title = self.o_title[0]
+-	    self.o_title = self.o_title[11:-1]
+-        else:
+-            self.o_title = ""
+-        if self.o_title == "":
+-            self.o_title = self.get_title(True)
+-
+-
+-
+-    def get_director(self):
+-	a=re.sub("\t", "", self.page)
+-	a=re.sub("\n", "", a)
+-	try:
+-	    b = re.search(r'data-truncate="60">(.*)</span></div><div>',a).group()
+-	    b = re.search(r"<a(.*)</span", b).group()[:-6]
+-	    b = b.split(",")
+-
+-	    self.director=""
+-	    for i in b:
+-	        self.director=self.director + ", "+i[:-4].split(">")[-1]
+-	    if self.director[0] == ",":
+-	        self.director=self.director[2:]
+-	except:
+-	    self.director=""
+-	if self.director=="":
+-	    try:
+-		b = re.search(r'data-truncate="60">(.*)</a></span></div>',a).group()
+-
+-		b = re.search(r"<a(.*)</span", b).group()[:-6]
+-		b = b.split(",")
+-
+-		self.director=""
+-	        for i in b:
+-	            self.director=self.director + ", "+i[:-4].split(">")[-1]
+-	        if self.director[0] == ",":
+-	            self.director=self.director[2:]
+-	    except:
+-		self.director=""
+-
+-
+-    def get_year(self):
+-        self.year = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
+-        if self.year:
+-            self.year = self.year.group()[18:-7].split(", ")[-2]
+-        else:
+-            self.year = ""
+-
+-    def get_runtime(self):
+-        self.runtime = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
+-        if self.runtime:
+-	    self.runtime = self.runtime.group()[18:-7].split(", ")[-1]
+-
+-        else:
+-            self.runtime = ""
+-
+-    def get_genre(self):
+-	try:
+-            self.genre = re.search(r'<p class="genre"[^<]*>([^>]*)',self.page).group()[17:-3]
+-        except:
+-            self.genre = ""
+-
+-    def get_country(self):
+-        self.country = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
+-        if self.country:
+-            self.country = self.country.group()[18:-7].split(", ")[0]
+-        else:
+-            self.country = ""
+-
+-    def get_cast(self):
+-	a=re.sub("\t", "", self.page)
+-	a=re.sub("\n", "", a)
+-	try:
+-	    b = re.search(r'data-truncate="280">(.*)</span></div></div>',a).group()
+-	    b = re.search(r"<a(.*)</span", b).group()[:-6]
+-	    b = b.split(",")
+-	
+-	    self.cast=""
+-	    for i in b:
+-	        self.cast=self.cast + ", "+i[:-4].split(">")[-1]
+-	    if self.cast[0] == ",":
+-	        self.cast=self.cast[2:]
+-	except:
+-	    self.cast=""
+-
+-    def get_plot(self):
+-
+-	a= re.sub("\t", "", self.page)
+-	a= re.sub("\n", "", a)
+-	a= re.sub("<BR>", "", a)
+-	try:
+-            self.plot = re.search(r'ka"([^<]*)',a).group(0)[6:]
+-	except:
+-	    self.plot = ""
+-
+-    def get_site(self):
+-        self.site = re.search(r"href=[\"'](http://.*imdb\.com/title/[^\"']*)",self.page)
+-        if self.site:
+-            self.site = gutils.strip_tags(self.site.group(1))
+-        else:
+-            self.site = ""
+-
+-    def get_trailer(self):
+-        self.trailer = re.search(r"<a href=\"([^\"]*)\"[^>]*>trailer<br><img src=\"http://img.csfd.cz/images/new/film/ikona_trailer",self.page)
+-        try:
+-            self.trailer = self.url+"videa"
+-
+-        except:
+-            self.trailer = ""
+-
+-    def get_rating(self):
+-	a= re.sub("\t", "", self.page)
+-	a= re.sub("\n", "", a)
+-        self.rating = re.search(r"[\s]*([\d]+)%[\s]*</h2>",a).group()[:-6]
+-	
+-        if self.rating:
+-            self.rating = str(float(self.rating)/10)
+-        else:
+-            self.rating = ""
+-
+-    def get_o_site(self):
+-	try:
+-            self.o_site = "http://"+re.findall(r'<li><a\ href="http://([^>]*)',self.page)[1][:-36]
+-
+-        except:
+-            self.o_site = ""
+-
+-    def get_notes(self):
+-        self.notes = ""
+-
+-    def get_studio(self):
+-        self.studio = ""
+-
+-    def get_classification(self):
+-        self.classification = ""
+-
+-class SearchPlugin(movie.SearchMovie):
+-    def __init__(self):
+-        self.encode = "utf-8"
+-        self.original_url_search   = "http://www.csfd.cz/hledat/?q="
+-        self.translated_url_search = "http://www.csfd.cz/hledat/?q="
+-
+-    def search(self,parent_window):
+-        if not self.open_search(parent_window):
+-            return None
+-        return self.page
+-
+-    def get_searches(self):
+-        tmp_id = self.re_items=re.search(r"window.location.href='http://www.csfd.cz/(/film/[^']*)'",self.page)
+-        if tmp_id:
+-            self.ids.append(tmp_id.group(1))
+-        else:
+-            self.re_items=re.findall(r"href=\"(/film/[^\"]+)[^>]*>([^<]+)</a>([^<]*)",self.page)
+-            self.number_results = len(self.re_items)
+-            if (self.number_results > 0):
+-                for item in self.re_items:
+-                    self.ids.append(item[0])
+-#                    self.titles.append(gutils.convert_entities(item[1])+' '+item[2])
+-                    self.titles.append(item[1]+' '+item[2])
++# -*- coding: utf-8 -*-
++__revision__ = '$Id: PluginMovieCSFD.py 12 2011-05-22 08:37:14Z KamilHanus $'
++# Copyright (c) 2011 Kamil Hanus
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name = "CSFD"
++plugin_description = "Cesko-Slovenska Filmova Databaze"
++plugin_url = "www.csfd.cz"
++plugin_language = _("Czech")
++plugin_author = "Kamil Hanus"
++plugin_author_email = "<kamilhanus at gmail.com>"
++plugin_version = '1.2'
++
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.movie_id = id
++        self.encode = "utf-8"
++        self.url = "http://www.csfd.cz" + str(id)
++
++    def get_image(self):
++        self.image_url = re.search(r"content=\"http://img.csfd.cz/posters/([^\"]*)\"", self.page)
++        if self.image_url:
++            self.image_url = "http://img.csfd.cz/posters/" + gutils.strip_tags(self.image_url.group(1))
++        else:
++            self.image_url = ""
++
++    def get_title(self, ret=False):
++        data = re.search(r'<title>*>([^>]*)', self.page)
++        if data:
++            if len(data.group(1).split("/")) == 2:
++                data = data.group(1).split(" | ")[0][:-7]
++            else:
++                data = data.group(1).split(" / ")[0]
++        else:
++            data = ""
++        if ret is True:
++            return data
++        else:
++            self.title = data
++
++    def get_o_title(self):
++        self.o_title = re.findall(r'/images/flags/flag_[\d]+.gif"[^<]*>([^/]*)', self.page)
++        if len(self.o_title) > 0:
++            self.o_title = self.o_title[0]
++            self.o_title = self.o_title[11:-1]
++        else:
++            self.o_title = ""
++        if self.o_title == "":
++            self.o_title = self.get_title(True)
++
++    def get_director(self):
++        self.director = ''
++        tmp = gutils.trim(self.page, '>Re?ie:<', '</div>')
++        if tmp:
++            tmp = string.split(tmp, "href=")
++            for item in tmp:
++                item = gutils.clean(gutils.trim(item, '>', '<'))
++                if item:
++                    self.director = self.director + item + ', '
++            if self.director:
++                self.director = self.director[:-2]
++
++    def get_year(self):
++        self.year = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
++        if self.year:
++            self.year = self.year.group()[18:-7].split(", ")[-2]
++        else:
++            self.year = ""
++
++    def get_runtime(self):
++        self.runtime = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
++        if self.runtime:
++            self.runtime = self.runtime.group()[18:-7].split(", ")[-1]
++        else:
++            self.runtime = ""
++
++    def get_genre(self):
++        try:
++            self.genre = re.search(r'<p class="genre"[^<]*>([^>]*)', self.page).group()[17:-3]
++        except:
++            self.genre = ""
++
++    def get_country(self):
++        self.country = re.search(r'<p class="origin"[^<]*>([^>]*)', self.page)
++        if self.country:
++            self.country = self.country.group()[18:-7].split(", ")[0]
++        else:
++            self.country = ""
++
++    def get_cast(self):
++        self.cast = ''
++        tmp = gutils.trim(self.page, '>Hraj?:<', '</div>')
++        if tmp:
++            tmp = string.split(tmp, "href=")
++            for item in tmp:
++                item = gutils.clean(gutils.trim(item, '>', '<'))
++                if item:
++                    self.cast = self.cast + item + '\n'
++            if self.cast:
++                self.cast = self.cast[:-2]
++
++    def get_plot(self):
++        a = re.sub("\t", "", self.page)
++        a = re.sub("\n", "", a)
++        a = re.sub("<BR>", "", a)
++        try:
++            self.plot = re.search(r'ka"([^<]*)', a).group(0)[6:]
++        except:
++            self.plot = ""
++
++    def get_site(self):
++        self.site = re.search(r"href=[\"'](http://.*imdb\.com/title/[^\"']*)", self.page)
++        if self.site:
++            self.site = gutils.strip_tags(self.site.group(1))
++        else:
++            self.site = ""
++
++    def get_trailer(self):
++        try:
++            self.trailer = self.url + "/videa"
++        except:
++            self.trailer = ""
++
++    def get_rating(self):
++        a = re.sub("\t", "", self.page)
++        a = re.sub("\n", "", a)
++        self.rating = re.search(r"[\s]*([\d]+)%[\s]*</h2>", a).group()[:-6]
++
++        if self.rating:
++            self.rating = str(float(self.rating) / 10)
++        else:
++            self.rating = ""
++
++    def get_o_site(self):
++        try:
++            self.o_site = gutils.before("http://" + re.findall(r'<li><a\ href="http://([^> ]*)', self.page)[1], '"')
++        except:
++            self.o_site = ""
++
++    def get_notes(self):
++        self.notes = ""
++
++    def get_studio(self):
++        self.studio = ""
++
++    def get_classification(self):
++        self.classification = ""
++
++
++class SearchPlugin(movie.SearchMovie):
++    def __init__(self):
++        self.encode = "utf-8"
++        self.original_url_search = "http://www.csfd.cz/hledat/?q="
++        self.translated_url_search = "http://www.csfd.cz/hledat/?q="
++
++    def search(self, parent_window):
++        if not self.open_search(parent_window):
++            return None
++        return self.page
++
++    def get_searches(self):
++        tmp_id = self.re_items = re.search(r'form action="(/film/[^/"]*)', self.page)
++        if tmp_id:
++            self.ids.append(tmp_id.group(1))
++        else:
++            self.re_items = re.findall(r"href=\"(/film/[^/\"]+)[^>]*>([^<]+)</a>([^<]*)", self.page)
++            self.number_results = len(self.re_items)
++            if (self.number_results > 0):
++                for item in self.re_items:
++                    self.ids.append(item[0])
++#                    self.titles.append(gutils.convert_entities(item[1])+' '+item[2])
++                    self.titles.append(item[1] + ' ' + item[2])
++
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> expected result count }
++    #
++    test_configuration = {
++        'Cliffhanger' : [ 1, 1 ],
++        'Rocky' : [ 37, 37 ]
++    }
++
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> dict { arribute -> value } }
++    #
++    # value: * True/False if attribute should only be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '/film/221900-rocky-balboa' : {
++            'title'          : 'Rocky Balboa',
++            'o_title'        : 'Rocky Balboa',
++            'director'       : 'Sylvester Stallone',
++            'plot'           : True,
++            'cast'           : 'Sylvester Stallone\n\
++Tony Burton\n\
++Talia Shire\n\
++Milo Ventimiglia\n\
++Burt Young\n\
++Antonio Tarver\n\
++Geraldine Hughes\n\
++Pedro Lovell\n\
++Frank Stallone\n\
++Mike Tyson\n\
++Michael Ahl\n\
++Dean Maur',
++            'country'        : 'USA',
++            'genre'          : 'Sportovn? / Drama',
++            'classification' : False,
++            'studio'         : False,
++            'o_site'         : 'http://www.mgm.com/view/movie/1667/Rocky-Balboa/',
++            'site'           : 'http://www.imdb.com/title/tt0479143/',
++            'trailer'        : 'http://www.csfd.cz/film/221900-rocky-balboa/videa',
++            'year'           : 2006,
++            'notes'          : False,
++            'runtime'        : 97,
++            'image'          : True,
++            'rating'         : 7,
++            'cameraman'      : False,
++            'screenplay'     : False
++        },
++        '/film/4155-cliffhanger' : {
++            'title'          : 'Cliffhanger',
++            'o_title'        : 'Cliffhanger',
++            'director'       : 'Renny Harlin',
++            'plot'           : True,
++            'cast'           : 'Sylvester Stallone\n\
++John Lithgow\n\
++Michael Rooker\n\
++Janine Turner\n\
++Rex Linn\n\
++Caroline Goodall\n\
++Leon\n\
++Craig Fairbrass\n\
++Gregory Scott Cummins\n\
++Max Perlich\n\
++Paul Winfield\n\
++Zach Grenier\n\
++Don S. Davis\n\
++Bruce McGill\n\
++Jeff Blynn\n\
++John Fin',
++            'country'        : 'USA / It?lie / Francie',
++            'genre'          : 'Ak?n? / Dobrodru?n? / Thriller',
++            'classification' : False,
++            'studio'         : False,
++            'o_site'         : 'http://www.popron.cz/cliffhanger-dvd/s-368398/?_actionnumber=9045',
++            'site'           : 'http://www.imdb.com/title/tt0106582/',
++            'trailer'        : 'http://www.csfd.cz/film/4155-cliffhanger/videa',
++            'year'           : 1993,
++            'notes'          : False,
++            'runtime'        : 110,
++            'image'          : True,
++            'rating'         : 7,
++            'cameraman'      : False,
++            'screenplay'     : False
++        }
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2011-06-16 21:47:30 UTC (rev 1557)
++++ trunk/lib/test_movieplugins.py	2011-06-17 08:27:28 UTC (rev 1558)
+@@ -64,7 +64,7 @@
+ #
+ # test class for movie plugin classes Plugin and SearchPlugin
+ # it simulates the resolving of movie data for configured movies and
+-# compares the results with the expected once
++# compares the results with the expected one
+ #
+ class PluginTester:
+     test_plugins = [
+@@ -76,6 +76,7 @@
+         'PluginMovieCineMovies',
+         'PluginMovieCineteka',
+         'PluginMovieClubedevideo',
++        'PluginMovieCSFD',
+         'PluginMovieCulturalia',
+         'PluginMovieDVDEmpire',
+         'PluginMovieE-Pipoca',
+
+
+
+From mikej06 at mail.berlios.de  Mon Jun 20 23:21:06 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 20 Jun 2011 23:21:06 +0200
+Subject: [Griffith-svn] r1559 - in trunk: . glade lib
+Message-ID: <20110620212107.18FAE480E51@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-06-20 23:21:06 +0200 (Mon, 20 Jun 2011)
+New Revision: 1559
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/add.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+Log:
+[#570053] Region selection shows DVD regions when media is not DVD.
+(added Bluray regions)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/ChangeLog	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -5,6 +5,10 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-06-20  Michael Jahn
++	* [#570053] Region selection shows DVD regions when media is not DVD.
++	  (added Bluray regions)
++
+ 2011-06-17  Michael Jahn
+ 	* [#725810] CSFD plugin is not working
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/glade/griffith.glade	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -2326,7 +2326,7 @@
+                           <widget class="GtkLabel" id="label108">
+                             <property name="visible">True</property>
+                             <property name="xalign">0</property>
+-                            <property name="label" translatable="yes">DVD region</property>
++                            <property name="label" translatable="yes">Region</property>
+                           </widget>
+                           <packing>
+                             <property name="top_attach">1</property>
+@@ -2358,7 +2358,7 @@
+                           <widget class="GtkLabel" id="label109">
+                             <property name="visible">True</property>
+                             <property name="xalign">0</property>
+-                            <property name="label" translatable="yes">DVD layers</property>
++                            <property name="label" translatable="yes">Layers</property>
+                           </widget>
+                           <packing>
+                             <property name="top_attach">2</property>
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/lib/add.py	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -521,9 +521,9 @@
+     else:
+         w['layers'].set_active(gutils.digits_only(self.config.get('layers', 0, section='defaults'), 4))
+     if 'region' in item and item['region'] >= 0:
+-            w['region'].set_active(gutils.digits_only(item['region'], 8))
++        w['region'].set_active(gutils.digits_only(item['region'], 11))
+     else:
+-        w['region'].set_active(gutils.digits_only(self.config.get('region', 0, section='defaults'), 8))
++        w['region'].set_active(gutils.digits_only(self.config.get('region', 0, section='defaults'), 11))
+     if 'cond' in item and item['cond'] >= 0:
+         w['condition'].set_active(gutils.digits_only(item['cond'], 5))
+     else:
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/lib/initialize.py	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -823,6 +823,9 @@
+         _('Region 6 (Popular Republic of China)'),
+         _('Region 7 (Reserved for Unspecified Special Use)'),
+         _('Region 8 (Airlines/Cruise Ships)'),
++        _('Region A/1 (North and South America, Japan, Korea, Taiwan, Hong Kong, Southeast Asia)'),
++        _('Region B/2 (Europe, Middle East, Africa, Australia, Oceania)'),
++        _('Region C/3 (India, Nepal, China, Russia, Central and South Asia)'),
+     )
+ 
+ 
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2011-06-17 08:27:28 UTC (rev 1558)
++++ trunk/lib/main_treeview.py	2011-06-20 21:21:06 UTC (rev 1559)
+@@ -165,9 +165,9 @@
+     else:
+         w['condition'].set_text('')
+     if 'region' in item and item['region']:
+-        if str(item['region']) in [str(i) for i in range(len(self._regions))]:
+-            w['region'].set_markup("<i>%s</i>" % gutils.html_encode(item['region']))
+-            if int(item['region']) < 9:
++        if item['region'] < len(self._regions):
++            w['region'].set_markup("<i>%s</i>" % gutils.html_encode(self._regions[item['region']]))
++            if int(item['region']) < 12:
+                 self.widgets['tooltips'].set_tip(w['region'], self._regions[int(item['region'])])
+         else:
+             log.info("Wrong value in 'region' field (movie_id=%s, region=%s)" % (item['movie_id'], item['region']))
+
+
+
+From filosottile at mail.berlios.de  Tue Jun 21 00:34:08 2011
+From: filosottile at mail.berlios.de (filosottile at mail.berlios.de)
+Date: Tue, 21 Jun 2011 00:34:08 +0200
+Subject: [Griffith-svn] r1560 - in trunk: . lib/plugins/movie
+Message-ID: <20110620223408.32D9C480E9E@sheep.berlios.de>
+
+Author: filosottile
+Date: 2011-06-21 00:34:07 +0200 (Tue, 21 Jun 2011)
+New Revision: 1560
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB-it.py
+Log:
+Refresh of PluginMovieIMDB-it.py
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-20 21:21:06 UTC (rev 1559)
++++ trunk/ChangeLog	2011-06-20 22:34:07 UTC (rev 1560)
+@@ -4,6 +4,8 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
++2011-06-20  Filippo Valsorda
++    * Refresh IMDB-it plugin
+ 
+ 2011-06-20  Michael Jahn
+ 	* [#570053] Region selection shows DVD regions when media is not DVD.
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-it.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-it.py	2011-06-20 21:21:06 UTC (rev 1559)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-it.py	2011-06-20 22:34:07 UTC (rev 1560)
+@@ -3,6 +3,7 @@
+ __revision__ = '$Id$'
+ 
+ # Copyright (c) 2010-2015 Enrico Carlesso
++# Copyright (c) 2011 Filippo Valsorda
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -28,16 +29,16 @@
+ plugin_description  = 'Internet Movie Database in Italiano'
+ plugin_url          = 'italian.imdb.com'
+ plugin_language     = _('Italian')
+-plugin_author       = 'Enrico Carlesso'
+-plugin_author_email = 'enrico at ecarlesso.org'
+-plugin_version      = '0.1'
++plugin_author       = 'Enrico Carlesso, Filippo Valsorda'
++plugin_author_email = 'enrico at ecarlesso.org, filosottile.wiki -at- gmail com'
++plugin_version      = '0.2'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.encode   = 'iso8859-1'
+         self.movie_id = id
+-        self.url      = "http://italian.imdb.com/title/tt%s" % self.movie_id
+-        self.o_url      = "http://imdb.com/title/tt%s" % self.movie_id
++        self.url      = "http://www.imdb.it/title/tt%s" % self.movie_id
++        self.o_url      = "http://www.imdb.com/title/tt%s" % self.movie_id
+ 
+     def initialize(self):
+         self.cast_page = self.open_page(url=self.url + '/fullcredits')
+@@ -52,11 +53,13 @@
+             self.image_url = gutils.trim(self.page[tmp:], 'src="', '"')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.regextrim(self.o_page, '<h1>', '([ ]|[&][#][0-9]+[;])<span')
++        self.o_title = gutils.trim(self.o_page, '<span class="title-extra">', '<i>(original title)</i>')
+         if self.o_title == '':
++            self.o_title = gutils.regextrim(self.o_page, '<h1>', '([ ]|[&][#][0-9]+[;])<span')
++        if self.o_title == '':
+             self.o_title = re.sub('[(].*', '', gutils.trim(self.o_page, '<title>', '</title>'))
+ 
+-    def get_title(self):    # same as get_o_title()
++    def get_title(self):
+         self.title = gutils.regextrim(self.page, '<h1>', '([ ]|[&][#][0-9]+[;])<span')
+         if self.title == '':
+             self.title = re.sub('[(].*', '', gutils.trim(self.page, '<title>', '</title>'))
+@@ -71,15 +74,8 @@
+             self.director = self.director[0:len(self.director) - 2]
+ 
+     def get_plot(self):
+-        self.plot = gutils.regextrim(self.page, '<h5>Plot:</h5>', '(</div>|<a href.*)')
+-        self.plot = self.__before_more(self.plot)
+-        elements = string.split(self.plot_page, '<p class="plotpar">')
+-        if len(elements) > 1:
+-            self.plot = self.plot + '\n\n'
+-            elements[0] = ''
+-            for element in elements:
+-                if element <> '':
+-                    self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n\n'
++        self.plot = gutils.trim(self.plot_page, '<div id="swiki.2.1">', '</div>')
++        self.plot = gutils.convert_entities(self.plot)
+ 
+     def get_year(self):
+         self.year = gutils.trim(self.page, '<title>', '</title>')
+@@ -102,17 +98,16 @@
+         self.cast = string.replace(self.cast, '</tr><tr>', "\n")
+         self.cast = re.sub('</tr>[ \t]*<tr[ \t]*class="even">', "\n", self.cast)
+         self.cast = re.sub('</tr>[ \t]*<tr[ \t]*class="odd">', "\n", self.cast)
+-        self.cast = self.__before_more(self.cast)
++        self.cast = gutils.convert_entities(self.cast)
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page, '<h5><a href="/mpaa">MPAA</a>:</h5>', '</div>')
+-        self.classification = gutils.trim(self.classification, 'Rated ', ' ')
++        self.classification = gutils.trim(self.page, '<h5>Divieti:</h5>', '</div>')
+ 
+     def get_studio(self):
+         self.studio = gutils.trim(self.page, '<h5>Compagnia:</h5>', '</a>')
+ 
+     def get_o_site(self):
+-        self.o_site = ''
++        self.o_site = "http://italian.imdb.com/title/tt%s/officialsites" % self.movie_id
+ 
+     def get_site(self):
+         self.site = "http://italian.imdb.com/title/tt%s" % self.movie_id
+@@ -121,21 +116,16 @@
+         self.trailer = "http://italian.imdb.com/title/tt%s/trailers" % self.movie_id
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '<h5>Nazionalit?:</h5>', '</div>')
+-        self.country = re.sub('[\n]+', '', self.country)
++        self.country = gutils.trim(self.page, '<h5>Nazionalit&#xE0;:</h5>', '</div>')
+ 
+     def get_rating(self):
+-        pattern = re.compile('>([0-9]([.][0-9])*)[/][0-9][0-9]<')
+-        result = pattern.search(self.o_page)
+-        if result:
+-            self.rating = result.groups()[0]
+-            if self.rating:
+-                try:
+-                    self.rating = round(float(self.rating), 0)
+-                except Exception, e:
+-                    self.rating = 0
+-        else:
+-            self.rating = 0
++        self.rating = gutils.trim(self.page, '<div class="starbar-meta">', '/10</b>')
++        self.rating = gutils.clean(self.rating).replace(',', '.')
++        if self.rating:
++            try:
++                self.rating = round(float(self.rating), 0)
++            except Exception, e:
++                self.rating = 0
+ 
+     def get_notes(self):
+         self.notes = ''
+@@ -154,20 +144,18 @@
+         sound = re.sub('[\n]+', '', sound)
+         sound = re.sub('[ ]+', ' ', sound)
+         sound = sound.rstrip()
+-        tagline = gutils.trim(self.page, '<h5>Trama:</h5>', '</div>')
+-        tagline = self.__before_more(tagline)
+-        tagline = gutils.strip_tags(tagline)
+-        tagline = re.sub('[\n]+', '', tagline)
+-        tagline = re.sub('[ ]+', ' ', tagline)
+-        tagline = tagline.rstrip()
++        date = gutils.trim(self.page, '<h5>Data di uscita:</h5>', '<a class="tn15more inline"')
++        date = re.sub('[\n]+', '', date)
++        date = re.sub('[ ]+', ' ', date)
++        date = gutils.clean(date)
+         if len(language)>0:
+             self.notes = "%s: %s\n" %(_('Language'), language)
+         if len(sound)>0:
+             self.notes += "%s: %s\n" %(gutils.strip_tags(_('<b>Audio</b>')), sound)
+         if len(color)>0:
+             self.notes += "%s: %s\n" %(_('Color'), color)
+-        if len(tagline)>0 and tagline != "Aggiungi o traduci un riassunto della trama":
+-            self.notes += "%s: %s\n" %('Tagline', tagline)
++        if len(date)>0:
++            self.notes += "%s: %s\n" %(_('Data di uscita'), date)
+ 
+     def get_screenplay(self):
+         self.screenplay = ''
+
+
+
+From filosottile at mail.berlios.de  Thu Jun 23 01:31:36 2011
+From: filosottile at mail.berlios.de (filosottile at mail.berlios.de)
+Date: Thu, 23 Jun 2011 01:31:36 +0200
+Subject: [Griffith-svn] r1561 - in trunk: . lib lib/plugins/movie
+Message-ID: <20110622233137.15E5D4812E0@sheep.berlios.de>
+
+Author: filosottile
+Date: 2011-06-23 01:31:36 +0200 (Thu, 23 Jun 2011)
+New Revision: 1561
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/gutils.py
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+Log:
+Fixed and completed PluginMovieMyMoviesIt
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-20 22:34:07 UTC (rev 1560)
++++ trunk/ChangeLog	2011-06-22 23:31:36 UTC (rev 1561)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
++2011-06-22  Filippo Valsorda
++    * Fixed and completed PluginMovieMyMoviesIt (hidden bug)
++    * Added gutils.rtrim (think at string.rfind)
++
+ 2011-06-20  Filippo Valsorda
+     * Refresh IMDB-it plugin
+ 
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-06-20 22:34:07 UTC (rev 1560)
++++ trunk/lib/gutils.py	2011-06-22 23:31:36 UTC (rev 1561)
+@@ -106,6 +106,16 @@
+         p2 = p1 + p2
+     return text[p1:p2]
+ 
++def rtrim(text, key1, key2):
++    p1 = string.rfind(text, key2)
++    if p1 == -1:
++        return ''
++    p2 = string.rfind(text[:p1], key1)
++    if p2 == -1:
++        return ""
++    else:
++        p2 = p2 + len(key1)
++    return text[p2:p1]
+ 
+ def regextrim(text, key1, key2):
+     obj = re.search(key1, text)
+@@ -818,4 +828,4 @@
+     if pagesize < 1024:
+         pagesize = 1024
+ 
+-    return pagesize
+\ No newline at end of file
++    return pagesize
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-06-20 22:34:07 UTC (rev 1560)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-06-22 23:31:36 UTC (rev 1561)
+@@ -102,10 +102,9 @@
+         self.studio = ''
+ 
+     def get_o_site(self):
+-        self.o_site = ''
+-        #tmp = gutils.trim(self.page, 'http://www.imdb.com', '"')
+-        #if tmp != '':
+-        #    self.o_site = 'http://www.imdb.com' + tmp
++        self.o_site = gutils.rtrim(self.page, '<a href="', '">Sito italiano</a>')
++        if not self.o_site:
++            self.o_site = gutils.rtrim(self.page, '<a href="', '">Sito ufficiale</a>')
+ 
+     def get_site(self):
+         self.site = self.url
+@@ -114,21 +113,19 @@
+         self.trailer = "http://www.mymovies.it/trailer/?id=%s" % self.movie_id
+ 
+     def get_country(self):
+-        pos = string.find(self.page, ' min.')
+-        self.country = gutils.trim(self.page[pos+2:], '- ', '  <')
++        obj = re.search('<strong> <a title="Film [0-9]+" href="http://www.mymovies.it/film/[0-9]+/">', self.page)
++        if obj:
++            pos = self.page[:obj.start()].rfind('- ')
++            self.country = self.page[pos+2:obj.start()]
+ 
+     def get_rating(self):
+-        rat = gutils.trim(self.page, '<div style="text-align:center; font-size:23px; font-weight:bold; letter-spacing:1px; margin:0px 11px 7px 11px"><span class="rating">', '</span><span style="font-size:11px">/5</span></div>')
++        rat = gutils.trim(self.page, '<span itemprop="average">', '</span>')
+         if rat != '':
+             self.rating = int(round(float(rat.replace(',', '.'))*2, 0))
+         else:
+             self.rating = 0
+ 
+     def get_notes(self):
+-        #self.notes = ''
+-        #tmp = gutils.trim(self.page, 'Alt. titel:', '</span>')
+-        #if tmp:
+-        #    self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
+         self.notes = ''
+ 
+     def get_screenplay(self):
+
+
+

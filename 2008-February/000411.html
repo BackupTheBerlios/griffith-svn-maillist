@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r920 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r920%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200802181944.m1IJiotv029473%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000410.html">
+   <LINK REL="Next"  HREF="000412.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r920 - in trunk: . lib lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r920%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200802181944.m1IJiotv029473%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r920 - in trunk: . lib lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Feb 18 20:44:50 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000410.html">[Griffith-svn] r919 - branches/0.9.x trunk
+</A></li>
+        <LI>Next message: <A HREF="000412.html">[Griffith-svn] r921 - branches/0.9.x trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#411">[ date ]</a>
+              <a href="thread.html#411">[ thread ]</a>
+              <a href="subject.html#411">[ subject ]</a>
+              <a href="author.html#411">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-02-18 20:44:49 +0100 (Mon, 18 Feb 2008)
+New Revision: 920
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+   trunk/lib/sql.py
+Log:
+* Filmweb movie plugin updated (thanks to Mariusz)
+* Windows 64 bit is not detected correctly
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/ChangeLog	2008-02-18 19:44:49 UTC (rev 920)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-02-18  Piotr O&#380;arowski
++	* Filmweb movie plugin updated (thanks to Mariusz)
++	* Windows 64 bit is not detected correctly
++
+ 2008-02-12  Michael Jahn
+ 	* fixed selecting of quick filter volume and collection in main view
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/lib/initialize.py	2008-02-18 19:44:49 UTC (rev 920)
+@@ -47,7 +47,7 @@
+ 	locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0])) # deprecated
+ 	locations['lib']  = os.path.dirname(__file__)
+ 	
+-	if os.name == 'nt' or os.name == 'win32':
++	if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+ 		import winshell
+ 		from win32com.shell import shellcon, shell
+ 		import shutil
+@@ -144,7 +144,7 @@
+ def gui(self):
+ 	self._ = None
+ 	self.debug.show(&quot;running on %s - %s&quot; % (os.name, platform.system()))
+-	if os.name == 'win32' or os.name == 'nt':
++	if os.name == 'nt' or os.name.startswith('win'):
+ 		self.windows = True
+ 	else:
+ 		self.windows = False
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-02-18 19:44:49 UTC (rev 920)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O&#380;arowski'
+ plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version		= '1.11'
++plugin_version		= '1.12'
+ 
+ class Plugin(movie.Movie):
+ 	TRAILER_PATTERN     = re.compile(&quot;&quot;&quot;&lt;a class=[&quot;']notSelected[&quot;'].*?href=[&quot;'](.*?)[&quot;']&gt;zwiastuny&lt;/a&gt;\s*\[\d+\]\s*&raquo;&quot;&quot;&quot;)
+@@ -101,11 +101,11 @@
+ 		self.genre = string.replace(self.genre, &quot;\n&quot;,'')
+ 
+ 	def get_cast(self):
+-		self.cast = &quot;&lt;%s&quot; % gutils.trim(self.page, '/ob.gif&quot;',&quot;&lt;br/&gt;\n\t&quot;)
++		self.cast = &quot;&lt;%s&quot; % gutils.trim(self.page, '/ob.gif&quot;',&quot;zobacz wi&#281;cej&quot;)
+ 		self.cast = string.replace(self.cast, &quot;\n&quot;,'')
+ 		self.cast = string.replace(self.cast, &quot;\t&quot;,'')
+-		self.cast = string.replace(self.cast, '&lt;div class=&quot;filmActor&quot;&gt;', &quot;\n&quot;)
+ 		self.cast = string.replace(self.cast, &quot;:&quot;, _(&quot; as &quot;))
++		self.cast = string.replace(self.cast, '&lt;/span&gt;', &quot;\n&quot;)
+ 		self.cast = gutils.strip_tags(self.cast)
+ 
+ 	def get_classification(self):
+@@ -128,11 +128,11 @@
+ 			self.trailer = trailer[0]
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,&quot;\tprodukcja:&quot;, '&lt;/a&gt;')
++		self.country = gutils.trim(self.page,&quot;\tprodukcja:&quot;, '&lt;/b&gt;')
+ 		self.country = string.replace(self.country, &quot;\t&quot;,'')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '&lt;b class=&quot;rating&quot;&gt;', '&lt;/b&gt;')
++		self.rating = gutils.trim(self.page, '&lt;b id=&quot;filmRating&quot; class=&quot;rating&quot;&gt;', '&lt;/b&gt;')
+ 		self.rating = string.replace(self.rating, ',', '.')
+ 		if self.rating != '':
+ 			self.rating = str( float(string.strip(self.rating)) )
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/lib/sql.py	2008-02-18 19:44:49 UTC (rev 920)
+@@ -36,7 +36,7 @@
+ 		if self.name is None or len(self.name)==0:
+ 			debug.show(&quot;%s: name can't be empty&quot; % self.__class__.__name__)
+ 			return False
+-		# check if achannel already exists
++		# check if item already exists
+ 		if self.query.filter_by(name=self.name).first() is not None:
+ 			debug.show(&quot;%s: '%s' already exists&quot; % (self.__class__.__name__, self.name))
+ 			return False
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000410.html">[Griffith-svn] r919 - branches/0.9.x trunk
+</A></li>
+	<LI>Next message: <A HREF="000412.html">[Griffith-svn] r921 - branches/0.9.x trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#411">[ date ]</a>
+              <a href="thread.html#411">[ thread ]</a>
+              <a href="subject.html#411">[ subject ]</a>
+              <a href="author.html#411">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

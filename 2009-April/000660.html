@@ -1,0 +1,764 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1188 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1188%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib%0A%09trunk/lib/plugins/movie&In-Reply-To=%3C200904162023.n3GKNtdN003485%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000659.html">
+   <LINK REL="Next"  HREF="000661.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1188 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1188%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib%0A%09trunk/lib/plugins/movie&In-Reply-To=%3C200904162023.n3GKNtdN003485%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1188 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 16 22:23:55 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000659.html">[Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000661.html">[Griffith-svn] r1189 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#660">[ date ]</a>
+              <a href="thread.html#660">[ thread ]</a>
+              <a href="subject.html#660">[ subject ]</a>
+              <a href="author.html#660">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-16 22:23:17 +0200 (Thu, 16 Apr 2009)
+New Revision: 1188
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieCulturalia.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieE-Pipoca.py
+   branches/0.9.x/lib/test_movieplugins.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCulturalia.py
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+   trunk/lib/test_movieplugins.py
+Log:
+* updated Culturalia plugin
+* updated E-Pipoca plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-04-15 20:37:42 UTC (rev 1187)
++++ branches/0.9.x/ChangeLog	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-04-16  Michael Jahn
++	* updated Culturalia plugin
++	* updated E-Pipoca plugin
++
+ 2009-04-15  Michael Jahn
+ 	* added data for automated tests of the IMDB plugin
+ 	* added data for automated tests of the CineMovies plugin
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCulturalia.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCulturalia.py	2009-04-15 20:37:42 UTC (rev 1187)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCulturalia.py	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id: PluginMovieCulturalia.py 389 2006-07-29 18:43:35Z piotrek $'
+ 
+-# Copyright (c) 2006 Pedro D. S&#225;nchez
++# Copyright (c) 2006-2009 Pedro D. S&#225;nchez
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -25,19 +25,19 @@
+ import movie
+ import string
+ 
+-plugin_name		= 'Culturalia'
+-plugin_description	= 'Base de Datos de Peliculas'
+-plugin_url		= 'www.culturalianet.com'
+-plugin_language		= _('Spanish')
+-plugin_author		= 'Pedro D. S&#225;nchez'
+-plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version		= '0.2'
++plugin_name         = 'Culturalia'
++plugin_description  = 'Base de Datos de Peliculas'
++plugin_url          = 'www.culturalianet.com'
++plugin_language     = _('Spanish')
++plugin_author       = 'Pedro D. S&#225;nchez'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
++plugin_version      = '0.3'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-15'
++		self.encode   = 'iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.culturalianet.com/art/ver.php?art=%s">http://www.culturalianet.com/art/ver.php?art=%s</A>&quot; % str(self.movie_id)
++		self.url      = &quot;<A HREF="http://www.culturalianet.com/art/ver.php?art=%s">http://www.culturalianet.com/art/ver.php?art=%s</A>&quot; % str(self.movie_id)
+ 
+ 	def get_image(self):
+ 		tmp = string.find(self.page, &quot;&lt;font class = 'titulo2'&gt;&quot;)
+@@ -107,9 +107,9 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+ 	def __init__(self):
+-		self.original_url_search	= '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
+-		self.translated_url_search	= '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
+-		self.encode = 'iso-8859-15'
++		self.original_url_search   = '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
++		self.translated_url_search = '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
++		self.encode                = 'iso-8859-1'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+@@ -128,3 +128,60 @@
+ 			for element in elements:
+ 				self.ids.append(gutils.trim(element, 'ver.php?art=',&quot;'&quot;))
+ 				self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, &quot;target='_top'&gt;&quot;, '&lt;/a&gt;'))))
++
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa' : [ 11, 11 ],
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'27039' : { 
++			'title'               : 'Rocky Balboa',
++			'o_title'             : 'Rocky Balboa',
++			'director'            : 'Sylvester Stallone',
++			'plot'                : True,
++			'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Milo Ventimiglia\n\
++Geraldine Hughes\n\
++James Francis Kelly III\n\
++Tony Burton\n\
++A.J. Benza\n\
++Talia Shire\n\
++Henry G. Sanders\n\
++Antonio Tarver\n\
++Pedro Lovell\n\
++Ana Gerena\n\
++Angela Boyd\n\
++Louis Giansante\n\
++Maureen Schilling',
++			'country'             : 'USA',
++			'genre'               : 'Drama / Deportes',
++			'classification'      : False,
++			'studio'              : False,
++			'o_site'              : False,
++			'site'                : '<A HREF="http://www.culturalianet.com/art/ver.php?art=27039">http://www.culturalianet.com/art/ver.php?art=27039</A>',
++			'trailer'             : False,
++			'year'                : 2006,
++			'notes'               : False,
++			'runtime'             : 99,
++			'image'               : True,
++			'rating'              : False
++		},
++	}
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieE-Pipoca.py	2009-04-15 20:37:42 UTC (rev 1187)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieE-Pipoca.py	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#197;&#188;arowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#197;&#188;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -24,23 +24,27 @@
+ # Updated on 04/29/2007 by Djohnson &quot;Joe&quot; Lima
+ # <A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joe1310 at terra.com.br</A> - S&#195;&#163;o Paulo/Brasil
+ 
++
+ import gutils, movie, string
+ 
+-plugin_name = &quot;E-Pipoca&quot;
+-plugin_description = &quot;E-Pipoca Brasil&quot;
+-plugin_url = &quot;epipoca.uol.com.br&quot;
+-plugin_language = _(&quot;Brazilian Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.5&quot;
++plugin_name         = &quot;E-Pipoca&quot;
++plugin_description  = &quot;E-Pipoca Brasil&quot;
++plugin_url          = &quot;epipoca.uol.com.br&quot;
++plugin_language     = _(&quot;Brazilian Portuguese&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.6&quot;
+ 
+ class Plugin(movie.Movie):
+ 	&quot;A movie plugin object&quot;
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode   = 'iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://epipoca.uol.com.br/filmes_detalhes.php?idf=">http://epipoca.uol.com.br/filmes_detalhes.php?idf=</A>&quot; + str(self.movie_id)
++		self.url      = &quot;<A HREF="http://epipoca.uol.com.br/filmes_detalhes.php?idf=">http://epipoca.uol.com.br/filmes_detalhes.php?idf=</A>&quot; + str(self.movie_id)
+ 
++	def initialize(self):
++		self.page_cast = self.open_page(url = '<A HREF="http://epipoca.uol.com.br/filmes_ficha.php?idf=">http://epipoca.uol.com.br/filmes_ficha.php?idf=</A>' + str(self.movie_id))
++
+ 	def get_image(self):
+ 		&quot;Find the film's poster image&quot;
+ 		tmp_pic = gutils.trim(self.page, &quot;images/filmes/poster/poster_&quot;, &quot;\&quot;&quot;)
+@@ -80,9 +84,11 @@
+ 	def get_cast(self):
+ 		&quot;Find the actors. Try to make it line separated.&quot;
+ 		self.cast = &quot;&quot;
+-		self.cast = gutils.trim(self.page, &quot;&lt;b&gt;Elenco: &lt;/b&gt;&quot;, &quot;&lt;b&gt;mais...&lt;/b&gt;&quot;)
+-		self.cast = gutils.strip_tags(self.cast)
+-		self.cast = self.cast[:-2]
++		tmp = gutils.trim(self.page_cast, '&lt;b&gt;Elenco / Cast&lt;/b&gt;', '&lt;/table&gt;')
++		elements = tmp.split('&lt;tr&gt;')
++		for index in range(1, len(elements), 1):
++			element = elements[index]
++			self.cast = self.cast + gutils.strip_tags(element.replace(' ... ', _(' as ').encode('utf8'))) + '\n'
+ 
+ 	def get_classification(self):
+ 		&quot;Find the film's classification&quot;
+@@ -150,3 +156,105 @@
+ 				self.titles.append(gutils.strip_tags(gutils.trim(element, &quot;&lt;font class=\&quot;titulo\&quot;&gt;&quot;, &quot;&lt;b&gt;Adicionar aos meus filmes favoritos&lt;/b&gt;&quot;) ))
+ 		else:
+ 			self.number_results = 0
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa' : [ 7, 7 ],
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'11521' : { 
++			'title'               : 'Rocky Balboa',
++			'o_title'             : 'Rocky Balboa',
++			'director'            : 'Sylvester Stallone',
++			'plot'                : True,
++			'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian (imagens de arquivo)\n\
++Lou DiBella' + _(' as ') + 'Lou DiBella\n\
++Mike Tyson (1)' + _(' as ') + 'Mike Tyson\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Ana Gerena' + _(' as ') + 'Isabel\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Louis Giansante' + _(' as ') + 'Bandido do bar\n\
++Maureen Schilling' + _(' as ') + 'Bartender do Lucky\n\
++Lahmard Tate&#194;&#185;' + _(' as ') + 'X-Cell\n\
++Woodrow W. Paige&#194;&#185;' + _(' as ') + 'Comentarista da ESPN\n\
++Skip Bayless' + _(' as ') + 'Comentarista da ESPN\n\
++Jay Crawford' + _(' as ') + 'Comentarista da ESPN\n\
++Brian Kenny' + _(' as ') + 'Apresentador da ESPN\n\
++Dana Jacobson' + _(' as ') + 'Apresentador da ESPN\n\
++Chuck Johnson&#194;&#185;' + _(' as ') + 'Apresentador da ESPN\n\
++James Binns' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Johnnie Hobbs Jr.' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Barney Fitzpatrick' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Jim Lampley' + _(' as ') + 'Comentarista da HBO\n\
++Larry Merchant' + _(' as ') + 'Comentarista da HBO\n\
++Max Kellerman' + _(' as ') + 'Comentarista da HBO\n\
++LeRoy Neiman' + _(' as ') + 'LeRoy Neiman\n\
++Bert Randolph Sugar' + _(' as ') + 'Rep&#195;&#179;rter da Ring Magazine\n\
++Bernard Fern&#195;&#161;ndez' + _(' as ') + 'Articulista da Boxing Association of America\n\
++Gunnar Peterson' + _(' as ') + 'Treinador de levantamento de peso\n\
++Yahya' + _(' as ') + 'Oponente de Dixon\n\
++Marc Ratner (1)' + _(' as ') + 'Oficial de luta\n\
++Anthony Lato Jr.' + _(' as ') + 'Inspetor de Rocky\n\
++Jack Lazzarado' + _(' as ') + 'Inspetor de Dixon\n\
++Michael Buffer' + _(' as ') + 'Anunciador de luta\n\
++Joe Cortez' + _(' as ') + '&#195;&#129;rbitro\n\
++Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
++Vinod Kumar' + _(' as ') + 'Ravi\n\
++Fran Pultro' + _(' as ') + 'Pai no restaurante\n\
++Frank Stallone Jr.&#194;&#185;' + _(' as ') + 'Cliente do restaurante\n\
++Jody Giambelluca' + _(' as ') + 'Cliente do restaurante\n\
++Tobias Segal' + _(' as ') + 'Amigo de Robert\n\
++Tim Carr' + _(' as ') + 'Amigo de Robert\n\
++Matt Frack' + _(' as ') + 'Amigo de Robert\n\
++Paul Dion Monte' + _(' as ') + 'Amigo de Robert\n\
++Kevin King Templeton' + _(' as ') + 'Amigo de Robert\n\
++Robert Michael Kelly' + _(' as ') + 'Senhor Tomilson\n\
++Rick Buchborn' + _(' as ') + 'F&#195;&#163; de Rocky\n\
++Nick Baker' + _(' as ') + 'Bartender do pub irland&#195;&#170;s\n\
++Don Sherman' + _(' as ') + 'Andy\n\
++Stu Nahan' + _(' as ') + 'Comentarista da luta pelo computador\n\
++Gary Compton' + _(' as ') + 'Seguran&#195;&#167;a\n\
++Ricky Cavazos' + _(' as ') + 'Espectador da luta (n&#195;&#163;o creditado)\n\
++Dolph Lundgren' + _(' as ') + 'Capit&#195;&#163;o Ivan Drago (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Burgess Meredith' + _(' as ') + 'Mickey (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Mr. T' + _(' as ') + 'Clubber Lang (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Carl Weathers' + _(' as ') + 'Apollo Creed (imagens de arquivo) (n&#195;&#163;o creditado)',
++			'country'             : 'EUA',
++			'genre'               : 'A&#195;&#167;&#195;&#163;o',
++			'classification'      : False,
++			'studio'              : 'Fox Film',
++			'o_site'              : '<A HREF="http://epipoca.uol.com.br/filmes_web.php?idf=11521">http://epipoca.uol.com.br/filmes_web.php?idf=11521</A>',
++			'site'                : '<A HREF="http://epipoca.uol.com.br/filmes_ficha.php?idf=11521">http://epipoca.uol.com.br/filmes_ficha.php?idf=11521</A>',
++			'trailer'             : '<A HREF="http://epipoca.uol.com.br/filmes_trailer.php?idf=11521">http://epipoca.uol.com.br/filmes_trailer.php?idf=11521</A>',
++			'year'                : 2006,
++			'notes'               : False,
++			'runtime'             : 102,
++			'image'               : True,
++			'rating'              : 9
++		},
++	}
+
+Modified: branches/0.9.x/lib/test_movieplugins.py
+===================================================================
+--- branches/0.9.x/lib/test_movieplugins.py	2009-04-15 20:37:42 UTC (rev 1187)
++++ branches/0.9.x/lib/test_movieplugins.py	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -67,7 +67,9 @@
+ 		'PluginMovieAmazon',
+ 		'PluginMovieCinematografo',
+ 		'PluginMovieCineteka',
++		'PluginMovieCulturalia',
+ 		'PluginMovieDVDEmpire',
++		'PluginMovieE-Pipoca',
+ 		'PluginMovieFilmDb',
+ 		'PluginMovieFilmeVonAZ',
+ 		'PluginMovieIMDB',
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-04-15 20:37:42 UTC (rev 1187)
++++ trunk/ChangeLog	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-04-16  Michael Jahn
++	* updated Culturalia plugin
++	* updated E-Pipoca plugin
++
+ 2009-04-15  Michael Jahn
+ 	* added data for automated tests of the IMDB plugin
+ 	* added data for automated tests of the CineMovies plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieCulturalia.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCulturalia.py	2009-04-15 20:37:42 UTC (rev 1187)
++++ trunk/lib/plugins/movie/PluginMovieCulturalia.py	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -25,19 +25,19 @@
+ import movie
+ import string
+ 
+-plugin_name        = 'Culturalia'
+-plugin_description    = 'Base de Datos de Peliculas'
+-plugin_url        = 'www.culturalianet.com'
+-plugin_language        = _('Spanish')
+-plugin_author        = 'Pedro D. S&#225;nchez'
+-plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version        = '0.2'
++plugin_name         = 'Culturalia'
++plugin_description  = 'Base de Datos de Peliculas'
++plugin_url          = 'www.culturalianet.com'
++plugin_language     = _('Spanish')
++plugin_author       = 'Pedro D. S&#225;nchez'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
++plugin_version      = '0.3'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+-        self.encode='iso-8859-15'
++        self.encode   = 'iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.culturalianet.com/art/ver.php?art=%s">http://www.culturalianet.com/art/ver.php?art=%s</A>&quot; % str(self.movie_id)
++        self.url      = &quot;<A HREF="http://www.culturalianet.com/art/ver.php?art=%s">http://www.culturalianet.com/art/ver.php?art=%s</A>&quot; % str(self.movie_id)
+ 
+     def get_image(self):
+         tmp = string.find(self.page, &quot;&lt;font class = 'titulo2'&gt;&quot;)
+@@ -64,12 +64,12 @@
+         self.year = gutils.after(self.year, '. (')
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, &quot;&lt;font class = 'titulo3'&gt;Duraci&#243;n:&lt;/font&gt; &quot;, ' minutos')
++        self.runtime = gutils.trim(self.page, u&quot;&lt;font class = 'titulo3'&gt;Duraci&#243;n:&lt;/font&gt; &quot;, u' minutos')
+         if self.runtime == '':
+             self.runtime = gutils.trim(self.page, &quot;&lt;font class = 'titulo3'&gt;Duraci&oacute;n:&lt;/font&gt; &quot;, ' minutos')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, &quot;&lt;font class = 'titulo3'&gt;G&#233;nero:&lt;/font&gt;&lt;br&gt;&quot;, '&lt;br&gt;&lt;br&gt;')
++        self.genre = gutils.trim(self.page, u&quot;&lt;font class = 'titulo3'&gt;G&#233;nero:&lt;/font&gt;&lt;br&gt;&quot;, u'&lt;br&gt;&lt;br&gt;')
+ 
+     def get_cast(self):
+         self.cast = ''
+@@ -78,7 +78,7 @@
+         self.cast = string.strip(gutils.strip_tags(self.cast))
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page, &quot;&lt;font class = 'titulo3'&gt;Calificaci&#243;n moral:&lt;/font&gt; &quot;, '&lt;br&gt;')
++        self.classification = gutils.trim(self.page, u&quot;&lt;font class = 'titulo3'&gt;Calificaci&#243;n moral:&lt;/font&gt; &quot;, u'&lt;br&gt;')
+         if self.classification == '':
+             self.classification = gutils.trim(self.page, &quot;&lt;font class = 'titulo3'&gt;Calificaci&oacute;n moral:&lt;/font&gt; &quot;, '&lt;br&gt;')
+ 
+@@ -98,18 +98,24 @@
+         self.country = gutils.trim(self.page, &quot;&lt;font class = 'titulo3'&gt;Nacionalidad:&lt;/font&gt;&lt;br&gt;&quot;, '&lt;br&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, &quot;Puntuaci&#243;n: &lt;font class = 'titulo3'&gt;&quot;, '&lt;/font&gt;')
++        self.rating = gutils.trim(self.page, u&quot;Puntuaci&#243;n: &lt;font class = 'titulo3'&gt;&quot;, u'&lt;/font&gt;')
+         if self.rating == '':
+             self.rating = gutils.trim(self.page, &quot;Puntuaci&oacute;n: &lt;font class = 'titulo3'&gt;&quot;, '&lt;/font&gt;')
+         if self.rating:
+             self.rating = str(float(gutils.clean(self.rating)))
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.trim(self.page,u'&gt;Gui&#243;n:', u'&lt;br&gt;&lt;br&gt;')
++
++    def get_cameraman(self):
++        self.cameraman = gutils.trim(self.page,u'&gt;Fotograf&#237;a:', u'&lt;br&gt;&lt;br&gt;')
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search    = '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
+-        self.translated_url_search    = '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
+-        self.encode = 'iso-8859-15'
++        self.original_url_search   = '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
++        self.translated_url_search = '<A HREF="http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=">http://www.culturalianet.com/bus/resu.php?donde=1&amp;texto=</A>'
++        self.encode                = 'iso-8859-1'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -129,3 +135,62 @@
+             for element in elements:
+                 self.ids.append(gutils.trim(element, 'ver.php?art=',&quot;'&quot;))
+                 self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, &quot;target='_top'&gt;&quot;, '&lt;/a&gt;'))))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 11, 11 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '27039' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Milo Ventimiglia\n\
++Geraldine Hughes\n\
++James Francis Kelly III\n\
++Tony Burton\n\
++A.J. Benza\n\
++Talia Shire\n\
++Henry G. Sanders\n\
++Antonio Tarver\n\
++Pedro Lovell\n\
++Ana Gerena\n\
++Angela Boyd\n\
++Louis Giansante\n\
++Maureen Schilling',
++            'country'             : 'USA',
++            'genre'               : 'Drama / Deportes',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.culturalianet.com/art/ver.php?art=27039">http://www.culturalianet.com/art/ver.php?art=27039</A>',
++            'trailer'             : False,
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 99,
++            'image'               : True,
++            'rating'              : False,
++            'cameraman'           : 'J. Clark Mathis',
++            'screenplay'          : 'Sylvester Stallone',
++            'barcode'             : False
++        },
++    }
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2009-04-15 20:37:42 UTC (rev 1187)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#197;&#188;arowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#197;&#188;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -27,21 +27,24 @@
+ 
+ import gutils, movie, string
+ 
+-plugin_name = &quot;E-Pipoca&quot;
+-plugin_description = &quot;E-Pipoca Brasil&quot;
+-plugin_url = &quot;epipoca.uol.com.br&quot;
+-plugin_language = _(&quot;Brazilian Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.5&quot;
++plugin_name         = &quot;E-Pipoca&quot;
++plugin_description  = &quot;E-Pipoca Brasil&quot;
++plugin_url          = &quot;epipoca.uol.com.br&quot;
++plugin_language     = _(&quot;Brazilian Portuguese&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.6&quot;
+ 
+ class Plugin(movie.Movie):
+     &quot;A movie plugin object&quot;
+     def __init__(self, id):
+-        self.encode='iso-8859-1'
++        self.encode   = 'iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://epipoca.uol.com.br/filmes_detalhes.php?idf=">http://epipoca.uol.com.br/filmes_detalhes.php?idf=</A>&quot; + str(self.movie_id)
++        self.url      = &quot;<A HREF="http://epipoca.uol.com.br/filmes_detalhes.php?idf=">http://epipoca.uol.com.br/filmes_detalhes.php?idf=</A>&quot; + str(self.movie_id)
+ 
++    def initialize(self):
++        self.page_cast = self.open_page(url = '<A HREF="http://epipoca.uol.com.br/filmes_ficha.php?idf=">http://epipoca.uol.com.br/filmes_ficha.php?idf=</A>' + str(self.movie_id))
++
+     def get_image(self):
+         &quot;Find the film's poster image&quot;
+         tmp_pic = gutils.trim(self.page, &quot;images/filmes/poster/poster_&quot;, &quot;\&quot;&quot;)
+@@ -81,9 +84,11 @@
+     def get_cast(self):
+         &quot;Find the actors. Try to make it line separated.&quot;
+         self.cast = &quot;&quot;
+-        self.cast = gutils.trim(self.page, &quot;&lt;b&gt;Elenco: &lt;/b&gt;&quot;, &quot;&lt;b&gt;mais...&lt;/b&gt;&quot;)
+-        self.cast = gutils.strip_tags(self.cast)
+-        self.cast = self.cast[:-2]
++        tmp = gutils.trim(self.page_cast, '&lt;b&gt;Elenco / Cast&lt;/b&gt;', '&lt;/table&gt;')
++        elements = tmp.split('&lt;tr&gt;')
++        for index in range(1, len(elements), 1):
++            element = elements[index]
++            self.cast = self.cast + gutils.strip_tags(element.replace(' ... ', _(' as '))) + '\n'
+ 
+     def get_classification(self):
+         &quot;Find the film's classification&quot;
+@@ -120,6 +125,12 @@
+         else:
+             self.rating = &quot;&quot;
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.trim(self.page_cast, '&lt;b&gt;Roteirista(s) / Writers&lt;/b&gt;', '&lt;/table&gt;').replace('&lt;/tr&gt;&lt;tr&gt;', ', ')
++
++    def get_cameraman(self):
++        self.cameraman = gutils.trim(self.page_cast, u'&lt;b&gt;Fot&#195;&#179;grafo(s) / Cinematographers&lt;/b&gt;', u'&lt;/table&gt;').replace(u'&lt;/tr&gt;&lt;tr&gt;', u', ')
++
+ class SearchPlugin(movie.SearchMovie):
+     &quot;A movie search object&quot;
+     def __init__(self):
+@@ -152,3 +163,108 @@
+                 self.titles.append(gutils.strip_tags(gutils.trim(element, &quot;&lt;font class=\&quot;titulo\&quot;&gt;&quot;, &quot;&lt;b&gt;Adicionar aos meus filmes favoritos&lt;/b&gt;&quot;) ))
+         else:
+             self.number_results = 0
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 7, 7 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '11521' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian (imagens de arquivo)\n\
++Lou DiBella' + _(' as ') + 'Lou DiBella\n\
++Mike Tyson (1)' + _(' as ') + 'Mike Tyson\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Ana Gerena' + _(' as ') + 'Isabel\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Louis Giansante' + _(' as ') + 'Bandido do bar\n\
++Maureen Schilling' + _(' as ') + 'Bartender do Lucky\n\
++Lahmard Tate&#194;&#185;' + _(' as ') + 'X-Cell\n\
++Woodrow W. Paige&#194;&#185;' + _(' as ') + 'Comentarista da ESPN\n\
++Skip Bayless' + _(' as ') + 'Comentarista da ESPN\n\
++Jay Crawford' + _(' as ') + 'Comentarista da ESPN\n\
++Brian Kenny' + _(' as ') + 'Apresentador da ESPN\n\
++Dana Jacobson' + _(' as ') + 'Apresentador da ESPN\n\
++Chuck Johnson&#194;&#185;' + _(' as ') + 'Apresentador da ESPN\n\
++James Binns' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Johnnie Hobbs Jr.' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Barney Fitzpatrick' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Jim Lampley' + _(' as ') + 'Comentarista da HBO\n\
++Larry Merchant' + _(' as ') + 'Comentarista da HBO\n\
++Max Kellerman' + _(' as ') + 'Comentarista da HBO\n\
++LeRoy Neiman' + _(' as ') + 'LeRoy Neiman\n\
++Bert Randolph Sugar' + _(' as ') + 'Rep&#195;&#179;rter da Ring Magazine\n\
++Bernard Fern&#195;&#161;ndez' + _(' as ') + 'Articulista da Boxing Association of America\n\
++Gunnar Peterson' + _(' as ') + 'Treinador de levantamento de peso\n\
++Yahya' + _(' as ') + 'Oponente de Dixon\n\
++Marc Ratner (1)' + _(' as ') + 'Oficial de luta\n\
++Anthony Lato Jr.' + _(' as ') + 'Inspetor de Rocky\n\
++Jack Lazzarado' + _(' as ') + 'Inspetor de Dixon\n\
++Michael Buffer' + _(' as ') + 'Anunciador de luta\n\
++Joe Cortez' + _(' as ') + '&#195;&#129;rbitro\n\
++Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
++Vinod Kumar' + _(' as ') + 'Ravi\n\
++Fran Pultro' + _(' as ') + 'Pai no restaurante\n\
++Frank Stallone Jr.&#194;&#185;' + _(' as ') + 'Cliente do restaurante\n\
++Jody Giambelluca' + _(' as ') + 'Cliente do restaurante\n\
++Tobias Segal' + _(' as ') + 'Amigo de Robert\n\
++Tim Carr' + _(' as ') + 'Amigo de Robert\n\
++Matt Frack' + _(' as ') + 'Amigo de Robert\n\
++Paul Dion Monte' + _(' as ') + 'Amigo de Robert\n\
++Kevin King Templeton' + _(' as ') + 'Amigo de Robert\n\
++Robert Michael Kelly' + _(' as ') + 'Senhor Tomilson\n\
++Rick Buchborn' + _(' as ') + 'F&#195;&#163; de Rocky\n\
++Nick Baker' + _(' as ') + 'Bartender do pub irland&#195;&#170;s\n\
++Don Sherman' + _(' as ') + 'Andy\n\
++Stu Nahan' + _(' as ') + 'Comentarista da luta pelo computador\n\
++Gary Compton' + _(' as ') + 'Seguran&#195;&#167;a\n\
++Ricky Cavazos' + _(' as ') + 'Espectador da luta (n&#195;&#163;o creditado)\n\
++Dolph Lundgren' + _(' as ') + 'Capit&#195;&#163;o Ivan Drago (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Burgess Meredith' + _(' as ') + 'Mickey (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Mr. T' + _(' as ') + 'Clubber Lang (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Carl Weathers' + _(' as ') + 'Apollo Creed (imagens de arquivo) (n&#195;&#163;o creditado)',
++            'country'             : 'EUA',
++            'genre'               : 'A&#195;&#167;&#195;&#163;o',
++            'classification'      : False,
++            'studio'              : 'Fox Film',
++            'o_site'              : '<A HREF="http://epipoca.uol.com.br/filmes_web.php?idf=11521">http://epipoca.uol.com.br/filmes_web.php?idf=11521</A>',
++            'site'                : '<A HREF="http://epipoca.uol.com.br/filmes_ficha.php?idf=11521">http://epipoca.uol.com.br/filmes_ficha.php?idf=11521</A>',
++            'trailer'             : '<A HREF="http://epipoca.uol.com.br/filmes_trailer.php?idf=11521">http://epipoca.uol.com.br/filmes_trailer.php?idf=11521</A>',
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 9,
++            'cameraman'           : 'J. Clark Mathis',
++            'screenplay'          : 'Sylvester Stallone ... Escrito por, Sylvester Stallone ... Personagens',
++            'barcode'             : False
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2009-04-15 20:37:42 UTC (rev 1187)
++++ trunk/lib/test_movieplugins.py	2009-04-16 20:23:17 UTC (rev 1188)
+@@ -72,7 +72,9 @@
+         'PluginMovieCinematografo',
+         'PluginMovieCineMovies',
+         'PluginMovieCineteka',
++        'PluginMovieCulturalia',
+         'PluginMovieDVDEmpire',
++        'PluginMovieE-Pipoca',
+         'PluginMovieFilmDb',
+         'PluginMovieFilmeVonAZ',
+         'PluginMovieIMDB',
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000659.html">[Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000661.html">[Griffith-svn] r1189 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#660">[ date ]</a>
+              <a href="thread.html#660">[ thread ]</a>
+              <a href="subject.html#660">[ subject ]</a>
+              <a href="author.html#660">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

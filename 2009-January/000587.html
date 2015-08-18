@@ -1,0 +1,472 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1113 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1113%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901062131.n06LVNIi007211%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000586.html">
+   <LINK REL="Next"  HREF="000588.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1113 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1113%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901062131.n06LVNIi007211%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1113 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  6 22:31:23 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000586.html">[Griffith-svn] r1112 - branches/0.9.x/lib
+</A></li>
+        <LI>Next message: <A HREF="000588.html">[Griffith-svn] r1114 - branches/0.9.x trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#587">[ date ]</a>
+              <a href="thread.html#587">[ thread ]</a>
+              <a href="subject.html#587">[ subject ]</a>
+              <a href="author.html#587">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-01-06 22:30:41 +0100 (Tue, 06 Jan 2009)
+New Revision: 1113
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieMoviefone.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieMoviefone.py
+Log:
+MovieFone movie plugin updated
+
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-01-06 21:15:25 UTC (rev 1112)
++++ branches/0.9.x/ChangeLog	2009-01-06 21:30:41 UTC (rev 1113)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-06  Michael Jahn
++	* MovieFone movie plugin updated
++
+ 2009-01-04  Piotr O&#380;arowski
+ 	* MyMoviesIt movie plugin added (thanks to Giovanni Sposito)
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieMoviefone.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieMoviefone.py	2009-01-06 21:15:25 UTC (rev 1112)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieMoviefone.py	2009-01-06 21:30:41 UTC (rev 1113)
+@@ -2,98 +2,136 @@
+ 
+ # $Id$
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes
++# Copyright (c) 2005-2009 Vasco Nunes
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+ import gutils
+-import movie,string
++import movie,string,re
+ 
+-plugin_name = &quot;Moviefone&quot;
++plugin_name        = &quot;Moviefone&quot;
+ plugin_description = &quot;A Service of America Online&quot;
+-plugin_url = &quot;movies.aol.com&quot;
+-plugin_language = _(&quot;English&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_url         = &quot;www.moviefone.de&quot;
++plugin_language    = _(&quot;English&quot;)
++plugin_author      = &quot;Vasco Nunes&quot;
++plugin_version     = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
++	BASEURL = &quot;<A HREF="http://www.moviefone.com/movie/%s">http://www.moviefone.com/movie/%s</A>&quot;
++
+ 	def __init__(self, id):
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://movies.aol.com/movie/main.adp?_pgtyp=pdct&amp;mid=">http://movies.aol.com/movie/main.adp?_pgtyp=pdct&amp;mid=</A>&quot; + str(self.movie_id)
++		self.url = self.BASEURL % self.movie_id + '/main'
+ 
++	def initialize(self):
++		self.page_main     = self.page
++		self.page_synopsis = self.open_page(self.parent_window, url = self.BASEURL % self.movie_id + '/synopsis')
++		self.page_cast     = self.open_page(self.parent_window, url = self.BASEURL % self.movie_id + '/credits')
++
+ 	def get_image(self):
+-		self.image_url = gutils.trim(self.page,&quot;<A HREF="http://cdn.channel.aol.com/amgvideo/dvd/cov150/">http://cdn.channel.aol.com/amgvideo/dvd/cov150/</A>&quot;,&quot;.jpg&quot;)
+-		self.image_url = &quot;<A HREF="http://cdn.channel.aol.com/amgvideo/dvd/cov150/">http://cdn.channel.aol.com/amgvideo/dvd/cov150/</A>&quot; + self.image_url + &quot;.jpg&quot;
++		self.image_url = gutils.trim(self.page_main, '<A HREF="http://www.aolcdn.com/mf_movies/">http://www.aolcdn.com/mf_movies/</A>', '&quot;')
++		self.image_url = '<A HREF="http://www.aolcdn.com/mf_movies/">http://www.aolcdn.com/mf_movies/</A>' + self.image_url
+ 
+ 	def get_o_title(self):
+-		self.o_title = string.capwords(gutils.trim(self.page,&quot;&lt;title&gt;&quot;,&quot; - Moviefone&lt;/title&gt;&quot;) )
++		self.o_title = gutils.trim(self.page_main, '&lt;h1&gt;', '&lt;/h1&gt;')
+ 
+ 	def get_title(self):
+-		self.title = self.o_title
++		self.title = gutils.trim(self.page_main, '&lt;h1&gt;', '&lt;/h1&gt;')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&lt;strong&gt;Directed By:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
+-		self.director = string.strip(gutils.strip_tags(self.director))
++		self.director = gutils.trim(self.page_main, '&lt;dt&gt;Director(s)&lt;/dt&gt;', '&lt;/dl&gt;')
++		self.director = gutils.strip_tags(self.director.replace('&lt;/dd&gt;', ','))
++		self.director = re.sub(',[ ]*$', '', self.director)
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page,&quot;&lt;strong&gt;Synopsis:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++		self.plot = gutils.trim(self.page_synopsis, '&lt;h3&gt;Synopsis&lt;/h3&gt;', '&lt;/p&gt;')
+ 		self.plot = string.strip(gutils.strip_tags(self.plot))
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,&quot;&lt;strong&gt;DVD Release Date:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
+-		self.year = self.year[-4:]
++		self.year = gutils.trim(self.page_synopsis, 'Theatrical Release Date:', '&lt;div class=&quot;row')
++		self.year = string.strip(gutils.strip_tags(self.year))
++		self.year = re.sub('[0-9][0-9]/[0-9][0-9]/', '', self.year)
+ 
+ 	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page,&quot;&lt;strong&gt;Run Time:&lt;/strong&gt; &quot;,&quot; min.&lt;br /&gt;&quot;)
++		self.runtime = string.strip(gutils.strip_tags(gutils.trim(self.page_main, '&lt;dt&gt;Runtime&lt;/dt&gt;', ' min.&lt;/dd&gt;')))
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page,&quot;&lt;strong&gt;Genre:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++		self.genre = gutils.trim(self.page_synopsis, 'Genre(s):', '&lt;div class=&quot;row')
++		self.genre = gutils.strip_tags(self.genre)
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.trim(self.page,&quot;&lt;strong&gt;Starring:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
+-		self.cast = string.strip(gutils.strip_tags(self.cast))
++		self.cast = ''
++		tmp = re.split('(?:[&lt;]div[ \t]+class=&quot;name&quot;[&gt;])', self.page_cast)
++		for index in range(1, len(tmp), 1):
++			entry = tmp[index]
++			if string.find(entry, '&lt;h3&gt;Director&lt;/h3&gt;') &gt;= 0 or string.find(entry, '&lt;h3&gt;Producer&lt;/h3&gt;') &gt;= 0 or string.find(entry, '&lt;h3&gt;Writer&lt;/h3&gt;') &gt;= 0:
++				break
++			name = string.strip(gutils.strip_tags(gutils.before(entry, '&lt;/div&gt;')))
++			role = string.strip(gutils.strip_tags(gutils.trim(entry, '&lt;div class=&quot;role&quot;&gt;', '&lt;/div&gt;')))
++			if role:
++				self.cast = self.cast + name + _(' as ') + role + '\n'
++			else:
++				self.cast = self.cast + name + '\n'
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.page,&quot;&lt;strong&gt;Rating:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++		self.classification = gutils.trim(self.page_synopsis, 'Rating:', '&lt;div class=&quot;row')
++		self.classification = gutils.strip_tags(self.classification)
+ 
+ 	def get_studio(self):
+-		self.studio = gutils.trim(self.page,&quot;&lt;strong&gt;Released By:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++		self.studio = gutils.trim(self.page_synopsis, 'Production Co.:', '&lt;div class=&quot;row')
++		self.studio = gutils.strip_tags(self.studio)
+ 
+ 	def get_o_site(self):
+ 		self.o_site = &quot;&quot;
+ 
+ 	def get_site(self):
+-		self.site = &quot;&quot;
++		self.site = self.url
+ 
+ 	def get_trailer(self):
+-		self.trailer = gutils.trim(self.page,&quot;&quot;&quot;onclick=&quot;setTrailerOmni();window.open('&quot;&quot;&quot;, \
+-			&quot;','_dlplayer'&quot;)
++		self.trailer = ''
+ 
+ 	def get_country(self):
+-		self.country = &quot;&quot;
++		self.country = gutils.trim(self.page_synopsis, 'Country of Origin:', '&lt;div class=&quot;row')
++		self.country = gutils.strip_tags(self.country)
+ 
+ 	def get_rating(self):
+-		self.rating = &quot;0&quot;
++		self.rating = '0'
++		tmp = gutils.trim(self.page_main, '&lt;dt&gt;Critics Say&lt;/dt&gt;', '&lt;/dd&gt;')
++		parts = re.split('(starAvg3)', tmp)
++		if parts and len(parts):
++			self.rating = len(parts) - 1
+ 
+ class SearchPlugin(movie.SearchMovie):
++	PATTERN = re.compile('&lt;a[ \t]+href=&quot;/movie/([^/]+/[0-9]+)/main&quot;[ \t]+class=&quot;title&quot;&gt;([^&lt;]+)(?:[^(]+)[(]([0-9]+)[)]')
++	SUBPAGE_PATTERN = re.compile('(?:movies[?]subCategory=&amp;restrictToCategory=&amp;page=)([0-9]+)')
++    
+ 	def __init__(self):
+-		self.original_url_search	= &quot;<A HREF="http://movies.aol.com/search/encyresults.adp?query=">http://movies.aol.com/search/encyresults.adp?query=</A>&quot;;
+-		self.translated_url_search	= &quot;<A HREF="http://movies.aol.com/search/encyresults.adp?query=">http://movies.aol.com/search/encyresults.adp?query=</A>&quot;;
++		self.original_url_search   = &quot;<A HREF="http://www.moviefone.com/search/%s/movies">http://www.moviefone.com/search/%s/movies</A>&quot;;
++		self.translated_url_search = &quot;<A HREF="http://www.moviefone.com/search/%s/movies">http://www.moviefone.com/search/%s/movies</A>&quot;;
+ 
+ 	def search(self,parent_window):
+-		self.open_search(parent_window)
+-		self.sub_search()
++		if not self.open_search(parent_window):
++			return None
++		subpages = self.SUBPAGE_PATTERN.split(self.page)
++		if len(subpages) &gt; 4:
++			maxsubpage = subpages[len(subpages) - 4]
++			completepage = self.page
++			try:
++				for subpage in range(1, int(maxsubpage) + 1, 1):
++					self.url = &quot;<A HREF="http://www.moviefone.com/search/%s/movies?subCategory=&amp;restrictToCategory=&amp;page=">http://www.moviefone.com/search/%s/movies?subCategory=&amp;restrictToCategory=&amp;page=</A>&quot; + str(subpage)
++					if not self.open_search(parent_window):
++						return None
++					completepage = completepage + self.page
++			finally:
++				self.page = completepage
+ 		return self.page
+ 
+-	def sub_search(self):
+-		self.page = gutils.trim(self.page,&quot;--start LT_MultiColumn_1.0 module--&gt;&quot;, 'pagnationleft&quot;&gt;Results   ')
+-
+ 	def get_searches(self):
+-		elements = string.split(self.page,'class=&quot;dvdtitle&quot;&gt;')
+-		elements[0] = ''
++		elements = self.PATTERN.split(self.page)
+ 
+-		for element in elements:
+-			element = gutils.trim( element, '&lt;a href=&quot;', '&lt;br/&gt;' )
+-			if element != '':
+-				self.ids.append( gutils.after( gutils.trim( element, 'movie/','/main') , '/' ) )
+-				self.titles.append( string.replace( gutils.after( element, '&quot;&gt;' ), '&lt;/a&gt;&lt;/span&gt;', '' ) )
++		for index in range(1, len(elements), 4):
++			id = elements[index]
++			title = elements[index + 1]
++			year = elements[index + 2]
++			self.ids.append(id)
++			self.titles.append(title + ' (' + year + ')')
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-06 21:15:25 UTC (rev 1112)
++++ trunk/ChangeLog	2009-01-06 21:30:41 UTC (rev 1113)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-06  Michael Jahn
++	* MovieFone movie plugin updated
++
+ 2009-01-04  Piotr O&#380;arowski
+ 	* MyMoviesIt movie plugin added (thanks to Giovanni Sposito)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieMoviefone.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMoviefone.py	2009-01-06 21:15:25 UTC (rev 1112)
++++ trunk/lib/plugins/movie/PluginMovieMoviefone.py	2009-01-06 21:30:41 UTC (rev 1113)
+@@ -2,99 +2,136 @@
+ 
+ # $Id$
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes
++# Copyright (c) 2005-2009 Vasco Nunes
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+ import gutils
+-import movie,string
++import movie,string,re
+ 
+-plugin_name = &quot;Moviefone&quot;
++plugin_name        = &quot;Moviefone&quot;
+ plugin_description = &quot;A Service of America Online&quot;
+-plugin_url = &quot;movies.aol.com&quot;
+-plugin_language = _(&quot;English&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_url         = &quot;www.moviefone.de&quot;
++plugin_language    = _(&quot;English&quot;)
++plugin_author      = &quot;Vasco Nunes&quot;
++plugin_version     = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
++    BASEURL = &quot;<A HREF="http://www.moviefone.com/movie/%s">http://www.moviefone.com/movie/%s</A>&quot;
++
+     def __init__(self, id):
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://movies.aol.com/movie/main.adp?_pgtyp=pdct&amp;mid=">http://movies.aol.com/movie/main.adp?_pgtyp=pdct&amp;mid=</A>&quot; + str(self.movie_id)
++        self.url = self.BASEURL % self.movie_id + '/main'
+ 
++    def initialize(self):
++        self.page_main     = self.page
++        self.page_synopsis = self.open_page(self.parent_window, url = self.BASEURL % self.movie_id + '/synopsis')
++        self.page_cast     = self.open_page(self.parent_window, url = self.BASEURL % self.movie_id + '/credits')
++
+     def get_image(self):
+-        self.image_url = gutils.trim(self.page,&quot;<A HREF="http://cdn.channel.aol.com/amgvideo/dvd/cov150/">http://cdn.channel.aol.com/amgvideo/dvd/cov150/</A>&quot;,&quot;.jpg&quot;)
+-        self.image_url = &quot;<A HREF="http://cdn.channel.aol.com/amgvideo/dvd/cov150/">http://cdn.channel.aol.com/amgvideo/dvd/cov150/</A>&quot; + self.image_url + &quot;.jpg&quot;
++        self.image_url = gutils.trim(self.page_main, '<A HREF="http://www.aolcdn.com/mf_movies/">http://www.aolcdn.com/mf_movies/</A>', '&quot;')
++        self.image_url = '<A HREF="http://www.aolcdn.com/mf_movies/">http://www.aolcdn.com/mf_movies/</A>' + self.image_url
+ 
+     def get_o_title(self):
+-        self.o_title = string.capwords(gutils.trim(self.page,&quot;&lt;title&gt;&quot;,&quot; - Moviefone&lt;/title&gt;&quot;) )
++        self.o_title = gutils.trim(self.page_main, '&lt;h1&gt;', '&lt;/h1&gt;')
+ 
+     def get_title(self):
+-        self.title = self.o_title
++        self.title = gutils.trim(self.page_main, '&lt;h1&gt;', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page,&quot;&lt;strong&gt;Directed By:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
+-        self.director = string.strip(gutils.strip_tags(self.director))
++        self.director = gutils.trim(self.page_main, '&lt;dt&gt;Director(s)&lt;/dt&gt;', '&lt;/dl&gt;')
++        self.director = gutils.strip_tags(self.director.replace('&lt;/dd&gt;', ','))
++        self.director = re.sub(',[ ]*$', '', self.director)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page,&quot;&lt;strong&gt;Synopsis:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++        self.plot = gutils.trim(self.page_synopsis, '&lt;h3&gt;Synopsis&lt;/h3&gt;', '&lt;/p&gt;')
+         self.plot = string.strip(gutils.strip_tags(self.plot))
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page,&quot;&lt;strong&gt;DVD Release Date:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
+-        self.year = self.year[-4:]
++        self.year = gutils.trim(self.page_synopsis, 'Theatrical Release Date:', '&lt;div class=&quot;row')
++        self.year = string.strip(gutils.strip_tags(self.year))
++        self.year = re.sub('[0-9][0-9]/[0-9][0-9]/', '', self.year)
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page,&quot;&lt;strong&gt;Run Time:&lt;/strong&gt; &quot;,&quot; min.&lt;br /&gt;&quot;)
++        self.runtime = string.strip(gutils.strip_tags(gutils.regextrim(self.page_main, '&lt;dt&gt;Runtime&lt;/dt&gt;', ' min[. ]*&lt;/dd&gt;')))
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page,&quot;&lt;strong&gt;Genre:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++        self.genre = gutils.trim(self.page_synopsis, 'Genre(s):', '&lt;div class=&quot;row')
++        self.genre = gutils.strip_tags(self.genre)
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page,&quot;&lt;strong&gt;Starring:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
+-        self.cast = string.strip(gutils.strip_tags(self.cast))
++        self.cast = ''
++        tmp = re.split('(?:[&lt;]div[ \t]+class=&quot;name&quot;[&gt;])', self.page_cast)
++        for index in range(1, len(tmp), 1):
++            entry = tmp[index]
++            if string.find(entry, '&lt;h3&gt;Director&lt;/h3&gt;') &gt;= 0 or string.find(entry, '&lt;h3&gt;Producer&lt;/h3&gt;') &gt;= 0 or string.find(entry, '&lt;h3&gt;Writer&lt;/h3&gt;') &gt;= 0:
++                break
++            name = string.strip(gutils.strip_tags(gutils.before(entry, '&lt;/div&gt;')))
++            role = string.strip(gutils.strip_tags(gutils.trim(entry, '&lt;div class=&quot;role&quot;&gt;', '&lt;/div&gt;')))
++            if role:
++                self.cast = self.cast + name + _(' as ') + role + '\n'
++            else:
++                self.cast = self.cast + name + '\n'
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page,&quot;&lt;strong&gt;Rating:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++        self.classification = gutils.trim(self.page_synopsis, 'Rating:', '&lt;div class=&quot;row')
++        self.classification = gutils.strip_tags(self.classification)
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page,&quot;&lt;strong&gt;Released By:&lt;/strong&gt; &quot;,&quot;&lt;br /&gt;&quot;)
++        self.studio = gutils.trim(self.page_synopsis, 'Production Co.:', '&lt;div class=&quot;row')
++        self.studio = gutils.strip_tags(self.studio)
+ 
+     def get_o_site(self):
+         self.o_site = &quot;&quot;
+ 
+     def get_site(self):
+-        self.site = &quot;&quot;
++        self.site = self.url
+ 
+     def get_trailer(self):
+-        self.trailer = gutils.trim(self.page,&quot;&quot;&quot;onclick=&quot;setTrailerOmni();window.open('&quot;&quot;&quot;, \
+-            &quot;','_dlplayer'&quot;)
++        self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = &quot;&quot;
++        self.country = gutils.trim(self.page_synopsis, 'Country of Origin:', '&lt;div class=&quot;row')
++        self.country = gutils.strip_tags(self.country)
+ 
+     def get_rating(self):
+-        self.rating = &quot;0&quot;
++        self.rating = '0'
++        tmp = gutils.trim(self.page_main, '&lt;dt&gt;Critics Say&lt;/dt&gt;', '&lt;/dd&gt;')
++        parts = re.split('(starAvg3)', tmp)
++        if parts and len(parts):
++            self.rating = len(parts) - 1
+ 
+ class SearchPlugin(movie.SearchMovie):
++    PATTERN = re.compile('&lt;a[ \t]+href=&quot;/movie/([^/]+/[0-9]+)/main&quot;[ \t]+class=&quot;title&quot;&gt;([^&lt;]+)(?:[^(]+)[(]([0-9]+)[)]')
++    SUBPAGE_PATTERN = re.compile('(?:movies[?]subCategory=&amp;restrictToCategory=&amp;page=)([0-9]+)')
++    
+     def __init__(self):
+-        self.original_url_search    = &quot;<A HREF="http://movies.aol.com/search/encyresults.adp?query=">http://movies.aol.com/search/encyresults.adp?query=</A>&quot;;
+-        self.translated_url_search    = &quot;<A HREF="http://movies.aol.com/search/encyresults.adp?query=">http://movies.aol.com/search/encyresults.adp?query=</A>&quot;;
++        self.original_url_search   = &quot;<A HREF="http://www.moviefone.com/search/%s/movies">http://www.moviefone.com/search/%s/movies</A>&quot;;
++        self.translated_url_search = &quot;<A HREF="http://www.moviefone.com/search/%s/movies">http://www.moviefone.com/search/%s/movies</A>&quot;;
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+             return None
+-        self.sub_search()
++        subpages = self.SUBPAGE_PATTERN.split(self.page)
++        if len(subpages) &gt; 4:
++            maxsubpage = subpages[len(subpages) - 4]
++            completepage = self.page
++            try:
++                for subpage in range(1, int(maxsubpage) + 1, 1):
++                    self.url = &quot;<A HREF="http://www.moviefone.com/search/%s/movies?subCategory=&amp;restrictToCategory=&amp;page=">http://www.moviefone.com/search/%s/movies?subCategory=&amp;restrictToCategory=&amp;page=</A>&quot; + str(subpage)
++                    if not self.open_search(parent_window):
++                        return None
++                    completepage = completepage + self.page
++            finally:
++                self.page = completepage
+         return self.page
+ 
+-    def sub_search(self):
+-        self.page = gutils.trim(self.page,&quot;--start LT_MultiColumn_1.0 module--&gt;&quot;, 'pagnationleft&quot;&gt;Results   ')
+-
+     def get_searches(self):
+-        elements = string.split(self.page,'class=&quot;dvdtitle&quot;&gt;')
+-        elements[0] = ''
++        elements = self.PATTERN.split(self.page)
+ 
+-        for element in elements:
+-            element = gutils.trim( element, '&lt;a href=&quot;', '&lt;br/&gt;' )
+-            if element != '':
+-                self.ids.append( gutils.after( gutils.trim( element, 'movie/','/main') , '/' ) )
+-                self.titles.append( string.replace( gutils.after( element, '&quot;&gt;' ), '&lt;/a&gt;&lt;/span&gt;', '' ) )
++        for index in range(1, len(elements), 4):
++            id = elements[index]
++            title = elements[index + 1]
++            year = elements[index + 2]
++            self.ids.append(id)
++            self.titles.append(title + ' (' + year + ')')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000586.html">[Griffith-svn] r1112 - branches/0.9.x/lib
+</A></li>
+	<LI>Next message: <A HREF="000588.html">[Griffith-svn] r1114 - branches/0.9.x trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#587">[ date ]</a>
+              <a href="thread.html#587">[ thread ]</a>
+              <a href="subject.html#587">[ subject ]</a>
+              <a href="author.html#587">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

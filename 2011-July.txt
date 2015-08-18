@@ -1,0 +1,283 @@
+From mikej06 at mail.berlios.de  Mon Jul 18 21:30:19 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 18 Jul 2011 21:30:19 +0200
+Subject: [Griffith-svn] r1562 - in trunk: . glade lib
+Message-ID: <20110718193019.E73374815B1@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-07-18 21:30:19 +0200 (Mon, 18 Jul 2011)
+New Revision: 1562
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/add.py
+   trunk/lib/preferences.py
+   trunk/lib/widgets.py
+Log:
+configurable default value for field "seen it"
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-22 23:31:36 UTC (rev 1561)
++++ trunk/ChangeLog	2011-07-18 19:30:19 UTC (rev 1562)
+@@ -4,12 +4,16 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
++
++2011-07-18  Michael Jahn
++	* configurable default value for field "seen it"
++
+ 2011-06-22  Filippo Valsorda
+-    * Fixed and completed PluginMovieMyMoviesIt (hidden bug)
+-    * Added gutils.rtrim (think at string.rfind)
++	* Fixed and completed PluginMovieMyMoviesIt (hidden bug)
++	* Added gutils.rtrim (think at string.rfind)
+ 
+ 2011-06-20  Filippo Valsorda
+-    * Refresh IMDB-it plugin
++	* Refresh IMDB-it plugin
+ 
+ 2011-06-20  Michael Jahn
+ 	* [#570053] Region selection shows DVD regions when media is not DVD.
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-06-22 23:31:36 UTC (rev 1561)
++++ trunk/glade/griffith.glade	2011-07-18 19:30:19 UTC (rev 1562)
+@@ -3069,7 +3069,7 @@
+                         <child>
+                           <widget class="GtkTable" id="table15">
+                             <property name="visible">True</property>
+-                            <property name="n_rows">6</property>
++                            <property name="n_rows">7</property>
+                             <property name="n_columns">2</property>
+                             <child>
+                               <widget class="GtkComboBox" id="p_vcodec">
+@@ -3167,6 +3167,38 @@
+                               </packing>
+                             </child>
+                             <child>
++                              <widget class="GtkLabel" id="label147">
++                                <property name="visible">True</property>
++                                <property name="xalign">0</property>
++                                <property name="label" translatable="yes">Seen it</property>
++                              </widget>
++                              <packing>
++                                <property name="top_attach">6</property>
++                                <property name="bottom_attach">7</property>
++                                <property name="x_options">GTK_FILL</property>
++                                <property name="y_options"></property>
++                              </packing>
++                            </child>
++                            <child>
++                              <widget class="GtkCheckButton" id="p_seen">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes"></property>
++                                <property name="use_underline">True</property>
++                                <property name="response_id">0</property>
++                                <property name="active">True</property>
++                                <property name="draw_indicator">True</property>
++                              </widget>
++                              <packing>
++                                <property name="left_attach">1</property>
++                                <property name="right_attach">2</property>
++                                <property name="top_attach">6</property>
++                                <property name="bottom_attach">7</property>
++                                <property name="x_options">GTK_FILL</property>
++                                <property name="y_options"></property>
++                              </packing>
++                            </child>
++                            <child>
+                               <widget class="GtkLabel" id="label145">
+                                 <property name="visible">True</property>
+                                 <property name="xalign">0</property>
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-06-22 23:31:36 UTC (rev 1561)
++++ trunk/lib/add.py	2011-07-18 19:30:19 UTC (rev 1562)
+@@ -536,10 +536,13 @@
+         w['rating_slider'].set_value(gutils.digits_only(item['rating'], 10))
+     else:
+         w['rating_slider'].set_value(0)
+-    if 'seen' in item and item['seen'] is True:
+-        w['seen'].set_active(True)
++    if 'seen' in item:
++        if item['seen'] is True:
++            w['seen'].set_active(True)
++        else:
++            w['seen'].set_active(False)
+     else:
+-        w['seen'].set_active(False)
++        w['seen'].set_active(bool(self.config.get('seen', True, section='defaults')))
+     if 'cast' in item and item['cast']:
+         cast_buffer.set_text(item['cast'])
+     else:
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2011-06-22 23:31:36 UTC (rev 1561)
++++ trunk/lib/preferences.py	2011-07-18 19:30:19 UTC (rev 1562)
+@@ -154,6 +154,7 @@
+             w['vcodec'].set_active(    int(gutils.findKey(int(self.config.get('vcodec', 0, section='defaults')), self.vcodecs_ids)) )
+         else:
+             w['vcodec'].set_active(0)
++    w['seen'].set_active(bool(self.config.get('seen', True, section='defaults')))
+ 
+     # search for:
+     w['s_classification'].set_active(bool(self.config.get('s_classification', True, section='add')))
+@@ -361,6 +362,7 @@
+     c.set('region', str(w['region'].get_active()), section='defaults')
+     c.set('layers', str(w['layers'].get_active()), section='defaults')
+     c.set('color', str(w['color'].get_active()), section='defaults')
++    c.set('seen', str(w['seen'].get_active()), section='defaults')
+ 
+     # email reminder
+     if w['mail_use_auth'].get_active():
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2011-06-22 23:31:36 UTC (rev 1561)
++++ trunk/lib/widgets.py	2011-07-18 19:30:19 UTC (rev 1562)
+@@ -208,6 +208,7 @@
+         'layers': get('p_layers'),
+         'media': get('p_media'),
+         'region': get('p_region'),
++        'seen': get('p_seen'),
+         's_classification': get('p_s_classification'),
+         's_country': get('p_s_country'),
+         's_director': get('p_s_director'),
+
+
+
+From mikej06 at mail.berlios.de  Mon Jul 18 22:10:52 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 18 Jul 2011 22:10:52 +0200
+Subject: [Griffith-svn] r1563 - in trunk: . glade lib
+Message-ID: <20110718201053.31ACA4815B1@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-07-18 22:10:52 +0200 (Mon, 18 Jul 2011)
+New Revision: 1563
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/widgets.py
+Log:
+ability to switch the behaviour of the live search that it queries only after
+enter is pressed (switchable via griffith.cfg only); good for bigger databases
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-07-18 19:30:19 UTC (rev 1562)
++++ trunk/ChangeLog	2011-07-18 20:10:52 UTC (rev 1563)
+@@ -7,6 +7,8 @@
+ 
+ 2011-07-18  Michael Jahn
+ 	* configurable default value for field "seen it"
++	* ability to switch the behaviour of the live search that it queries only after
++	  enter is pressed (switchable via griffith.cfg only); good for bigger databases
+ 
+ 2011-06-22  Filippo Valsorda
+ 	* Fixed and completed PluginMovieMyMoviesIt (hidden bug)
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-07-18 19:30:19 UTC (rev 1562)
++++ trunk/glade/griffith.glade	2011-07-18 20:10:52 UTC (rev 1563)
+@@ -734,6 +734,7 @@
+                     <property name="can_focus">True</property>
+                     <property name="invisible_char">*</property>
+                     <signal name="changed" handler="on_filter_txt_changed"/>
++                    <signal name="key_release_event" handler="on_filter_txt_key_release"/>
+                   </widget>
+                 </child>
+               </widget>
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-07-18 19:30:19 UTC (rev 1562)
++++ trunk/griffith	2011-07-18 20:10:52 UTC (rev 1563)
+@@ -1140,8 +1140,15 @@
+         quick_filter.change_filter(self)
+ 
+     def filter_txt(self, *args):
+-        quick_filter.change_filter(self)
++        if not bool(self.config.get('filter_on_enter', False, section='main')):
++            quick_filter.change_filter(self)
+ 
++    def filter_txt_key_release(self, widget, event, *args):
++        if bool(self.config.get('filter_on_enter', False, section='main')):
++            keyname = gtk.gdk.keyval_name(event.keyval)
++            if keyname == "Return":
++                quick_filter.change_filter(self)
++
+     def clear_filter(self, *args):
+         quick_filter.clear_filter(self)
+ 
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2011-07-18 19:30:19 UTC (rev 1562)
++++ trunk/lib/widgets.py	2011-07-18 20:10:52 UTC (rev 1563)
+@@ -432,6 +432,7 @@
+         'on_people_activate': self.show_people_window,
+         'on_cancel_people_clicked': self.hide_people_window,
+         'on_filter_txt_changed': self.filter_txt,
++        'on_filter_txt_key_release': self.filter_txt_key_release,
+         'on_filter_criteria_changed': self.on_filter_criteria_changed,
+         'on_clear_filter_clicked': self.clear_filter,
+         'on_people_add_clicked': self.add_person,
+
+
+
+From mikej06 at mail.berlios.de  Mon Jul 18 22:36:35 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 18 Jul 2011 22:36:35 +0200
+Subject: [Griffith-svn] r1564 - in trunk: . lib/plugins/movie
+Message-ID: <20110718203635.2A6B8481547@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-07-18 22:36:34 +0200 (Mon, 18 Jul 2011)
+New Revision: 1564
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+[#811685] IMDB movie ratings not updating when adding new movie
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-07-18 20:10:52 UTC (rev 1563)
++++ trunk/ChangeLog	2011-07-18 20:36:34 UTC (rev 1564)
+@@ -9,6 +9,7 @@
+ 	* configurable default value for field "seen it"
+ 	* ability to switch the behaviour of the live search that it queries only after
+ 	  enter is pressed (switchable via griffith.cfg only); good for bigger databases
++	* [#811685] IMDB movie ratings not updating when adding new movie
+ 
+ 2011-06-22  Filippo Valsorda
+ 	* Fixed and completed PluginMovieMyMoviesIt (hidden bug)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-07-18 20:10:52 UTC (rev 1563)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-07-18 20:36:34 UTC (rev 1564)
+@@ -132,7 +132,7 @@
+         self.country = re.sub('[\n]+', '', self.country)
+ 
+     def get_rating(self):
+-        pattern = re.compile('>([0-9]([.][0-9])*)<[^>]+>[/][0-9][0-9]<')
++        pattern = re.compile('>([0-9]([.][0-9])*)<[/][^/]+>[/][0-9][0-9]<')
+         result = pattern.search(self.page)
+         if result:
+             self.rating = result.groups()[0]
+
+
+

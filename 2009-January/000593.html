@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1119 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1119%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901151331.n0FDVAZp015251%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000592.html">
+   <LINK REL="Next"  HREF="000594.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1119 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1119%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901151331.n0FDVAZp015251%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1119 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 15 14:31:10 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000592.html">[Griffith-svn] r1118 - branches/0.9.x/lib
+</A></li>
+        <LI>Next message: <A HREF="000594.html">[Griffith-svn] r1120 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#593">[ date ]</a>
+              <a href="thread.html#593">[ thread ]</a>
+              <a href="subject.html#593">[ subject ]</a>
+              <a href="author.html#593">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-01-15 14:30:56 +0100 (Thu, 15 Jan 2009)
+New Revision: 1119
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+Log:
+added ASIN to amazon result list; added missing amazon result pages
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-01-15 13:18:00 UTC (rev 1118)
++++ branches/0.9.x/ChangeLog	2009-01-15 13:30:56 UTC (rev 1119)
+@@ -2,9 +2,13 @@
+ 
+ Griffith ChangeLog
+ ------------------
+-(c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
++(c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-15  Michael Jahn
++	* Amazon movie plugin updated
++	* better results for amazon poster search
++
+ 2009-01-06  Michael Jahn
+ 	* MovieFone movie plugin updated
+ 	* windows installer: movie import plugins deselectable from installation
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-01-15 13:18:00 UTC (rev 1118)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-01-15 13:30:56 UTC (rev 1119)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2008
++# Copyright (c) 2006-2009
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -32,13 +32,13 @@
+ from operator import isSequenceType
+ from urlparse import urlsplit
+ 
+-plugin_name = &quot;Amazon&quot;
+-plugin_description = &quot;Amazon&quot;
+-plugin_url = &quot;www.amazon.com/.uk/.de/.ca/.fr/.jp&quot;
+-plugin_language = _(&quot;International&quot;)
+-plugin_author = &quot;Michael Jahn&quot;
++plugin_name         = &quot;Amazon&quot;
++plugin_description  = &quot;Amazon&quot;
++plugin_url          = &quot;www.amazon.com/.uk/.de/.ca/.fr/.jp&quot;
++plugin_language     = _(&quot;International&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.0&quot;
++plugin_version      = &quot;1.1&quot;
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -289,7 +289,7 @@
+ 			theatricalReleaseDate = ' (' + item.ItemAttributes.TheatricalReleaseDate + ')'
+ 		else:
+ 			theatricalReleaseDate = ''
+-		self.titles.append(&quot;%s%s%s&quot; % (productGroup, title, theatricalReleaseDate))
++		self.titles.append(&quot;%s%s%s (ASIN: %s)&quot; % (productGroup, title, theatricalReleaseDate, item.ASIN))
+ 
+ class AmazonRetriever(threading.Thread):
+ 
+@@ -321,9 +321,9 @@
+ 				tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=1)
+ 				self.result.append(tmp)
+ 				if hasattr(tmp, 'TotalPages'):
+-					pages = int(tmp.TotalPages) - 1
++					pages = int(tmp.TotalPages)
+ 					page = 2
+-					while page &lt; pages and page &lt; 11:
++					while page &lt;= pages and page &lt; 11:
+ 						tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=page)
+ 						self.result.append(tmp)
+ 						page = page + 1
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-15 13:18:00 UTC (rev 1118)
++++ trunk/ChangeLog	2009-01-15 13:30:56 UTC (rev 1119)
+@@ -2,9 +2,13 @@
+ 
+ Griffith ChangeLog
+ ------------------
+-(c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
++(c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-15  Michael Jahn
++	* Amazon movie plugin updated
++	* better results for amazon poster search
++
+ 2009-01-06  Michael Jahn
+ 	* MovieFone movie plugin updated
+ 	* windows installer: movie import plugins deselectable from installation
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-01-15 13:18:00 UTC (rev 1118)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-01-15 13:30:56 UTC (rev 1119)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2008
++# Copyright (c) 2006-2009
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -33,13 +33,13 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+-plugin_name = &quot;Amazon&quot;
+-plugin_description = &quot;Amazon&quot;
+-plugin_url = &quot;www.amazon.com/.uk/.de/.ca/.fr/.jp&quot;
+-plugin_language = _(&quot;International&quot;)
+-plugin_author = &quot;Michael Jahn&quot;
++plugin_name         = &quot;Amazon&quot;
++plugin_description  = &quot;Amazon&quot;
++plugin_url          = &quot;www.amazon.com/.uk/.de/.ca/.fr/.jp&quot;
++plugin_language     = _(&quot;International&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.0&quot;
++plugin_version      = &quot;1.1&quot;
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -290,7 +290,7 @@
+             theatricalReleaseDate = ' (' + item.ItemAttributes.TheatricalReleaseDate + ')'
+         else:
+             theatricalReleaseDate = ''
+-        self.titles.append(&quot;%s%s%s&quot; % (productGroup, title, theatricalReleaseDate))
++        self.titles.append(&quot;%s%s%s (ASIN: %s)&quot; % (productGroup, title, theatricalReleaseDate, item.ASIN))
+ 
+ class AmazonRetriever(threading.Thread):
+ 
+@@ -321,9 +321,9 @@
+                 tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=1)
+                 self.result.append(tmp)
+                 if hasattr(tmp, 'TotalPages'):
+-                    pages = int(tmp.TotalPages) - 1
++                    pages = int(tmp.TotalPages)
+                     page = 2
+-                    while page &lt; pages and page &lt; 11:
++                    while page &lt;= pages and page &lt; 11:
+                         tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=page)
+                         self.result.append(tmp)
+                         page = page + 1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000592.html">[Griffith-svn] r1118 - branches/0.9.x/lib
+</A></li>
+	<LI>Next message: <A HREF="000594.html">[Griffith-svn] r1120 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#593">[ date ]</a>
+              <a href="thread.html#593">[ thread ]</a>
+              <a href="subject.html#593">[ subject ]</a>
+              <a href="author.html#593">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

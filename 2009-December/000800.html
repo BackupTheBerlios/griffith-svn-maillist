@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1332 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1332%20-%20trunk&In-Reply-To=%3C200912152121.nBFLL3ff007041%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000799.html">
+   <LINK REL="Next"  HREF="000801.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1332 - trunk</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1332%20-%20trunk&In-Reply-To=%3C200912152121.nBFLL3ff007041%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1332 - trunk">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec 15 22:21:03 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000799.html">[Griffith-svn] r1331 - in trunk: . lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000801.html">[Griffith-svn] r1333 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#800">[ date ]</a>
+              <a href="thread.html#800">[ thread ]</a>
+              <a href="subject.html#800">[ subject ]</a>
+              <a href="author.html#800">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-15 22:20:52 +0100 (Tue, 15 Dec 2009)
+New Revision: 1332
+
+Modified:
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+Log:
+added the new extensions to the windows installer
+added start menu link for debugging mode and log file of griffith
+more cleanups
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2009-12-15 15:11:55 UTC (rev 1331)
++++ trunk/winpackage.iss	2009-12-15 21:20:52 UTC (rev 1332)
+@@ -67,17 +67,18 @@
+ Source: dist\lib\db\*;           DestDir: {app}\lib\db;           Flags: ignoreversion recursesubdirs createallsubdirs
+ Source: dist\lib\gettext\*;      DestDir: {app}\lib\gettext;      Flags: ignoreversion recursesubdirs createallsubdirs
+ Source: dist\lib\glade3\*;       DestDir: {app}\lib\glade3;       Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\glib-2.0\*;     DestDir: {app}\lib\glib-2.0;     Flags: ignoreversion recursesubdirs createallsubdirs
++;Source: dist\lib\glib-2.0\*;     DestDir: {app}\lib\glib-2.0;     Flags: ignoreversion recursesubdirs createallsubdirs
+ Source: dist\lib\gtk-2.0\*;      DestDir: {app}\lib\gtk-2.0;      Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\gtkglext-1.0\*; DestDir: {app}\lib\gtkglext-1.0; Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\libglade\*;     DestDir: {app}\lib\libglade;     Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\pango\*;        DestDir: {app}\lib\pango;        Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\pkgconfig\*;    DestDir: {app}\lib\pkgconfig;    Flags: ignoreversion recursesubdirs createallsubdirs
++;Source: dist\lib\gtkglext-1.0\*; DestDir: {app}\lib\gtkglext-1.0; Flags: ignoreversion recursesubdirs createallsubdirs
++;Source: dist\lib\libglade\*;     DestDir: {app}\lib\libglade;     Flags: ignoreversion recursesubdirs createallsubdirs
++;Source: dist\lib\pango\*;        DestDir: {app}\lib\pango;        Flags: ignoreversion recursesubdirs createallsubdirs
++;Source: dist\lib\pkgconfig\*;    DestDir: {app}\lib\pkgconfig;    Flags: ignoreversion recursesubdirs createallsubdirs
+ ; don't use recursion because of components selection (movie plugins, ...)
+-Source: dist\lib\plugins\*;        DestDir: {app}\lib\plugins;    Flags: ignoreversion
++Source: dist\lib\plugins\*;      DestDir: {app}\lib\plugins;      Flags: ignoreversion
+ ; use recursion, no components
+-Source: dist\lib\plugins\export\*; DestDir: {app}\lib\plugins\export; Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\plugins\imp\*;    DestDir: {app}\lib\plugins\imp;    Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\lib\plugins\export\*;     DestDir: {app}\lib\plugins\export;     Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\lib\plugins\extensions\*; DestDir: {app}\lib\plugins\extensions; Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\lib\plugins\imp\*;        DestDir: {app}\lib\plugins\imp;        Flags: ignoreversion recursesubdirs createallsubdirs
+ ; component based installation
+ Source: dist\lib\plugins\movie\PluginMovie7arte.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\7arte
+ Source: dist\lib\plugins\movie\PluginMovieAllMovie.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\AllMovie
+@@ -120,6 +121,8 @@
+ Name: {group}\{cm:LaunchProgram,Griffith};    Filename: {app}\griffith.exe
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
+ Name: {group}\{cm:ProgramOnTheWeb,Griffith};  Filename: <A HREF="http://griffith.cc">http://griffith.cc</A>
++Name: {group}\Debug\Griffith Debug Start;     Filename: {app}\griffith.exe;         Parameters: --debug
++Name: {group}\Debug\Griffith Log File;        Filename: %APPDATA%\Griffith\griffith.log
+ Name: {group}\Doc\Griffith Forum;             Filename: <A HREF="http://griffith.cc/forum/">http://griffith.cc/forum/</A>
+ Name: {group}\Doc\Griffith Wiki;              Filename: <A HREF="http://wiki.griffith.cc/">http://wiki.griffith.cc/</A>
+ ; some information files opened by iexplore which should work on most installations
+@@ -140,9 +143,11 @@
+ [UninstallDelete]
+ Type: files; Name: {app}\lib\*.pyo
+ Type: files; Name: {app}\lib\db\*.pyo
++Type: files; Name: {app}\lib\plugins\*.pyo
+ Type: files; Name: {app}\lib\plugins\export\*.pyo
++Type: files; Name: {app}\lib\plugins\extensions\*.pyo
++Type: files; Name: {app}\lib\plugins\imp\*.pyo
+ Type: files; Name: {app}\lib\plugins\movie\*.pyo
+-Type: files; Name: {app}\lib\plugins\imp\*.pyo
+ 
+ [Components]
+ Name: Griffith;                                      Description: Griffith; Types: custom compact full; Flags: fixed
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2009-12-15 15:11:55 UTC (rev 1331)
++++ trunk/winsetup.bat	2009-12-15 21:20:52 UTC (rev 1332)
+@@ -55,10 +55,17 @@
+ copy &quot;%GRIFFITHDIR%\TRANSLATORS&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+ 
+ rem *** remove unnecessary files
+-del /S /F /Q *.pyo
+-del /S /F /Q *.a
+-del /S /F /Q *.lib
+-del /S /F /Q xml2Conf.sh
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\*.pyo&quot;
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\*.a&quot;
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\*.lib&quot;
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\xml2Conf.sh&quot;
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\*.pyc&quot;
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\*.la&quot;
++del /S /F /Q &quot;%GRIFFITHDIR%\dist\*.def&quot;
++rd /S /Q &quot;%GRIFFITHDIR%\dist\lib\pkgconfig&quot;
++rd /S /Q &quot;%GRIFFITHDIR%\dist\lib\gtkglext-1.0&quot;
++rd /S /Q &quot;%GRIFFITHDIR%\dist\lib\gtk-2.0\include&quot;
++rd /S /Q &quot;%GRIFFITHDIR%\dist\lib\glib-2.0&quot;
+ 
+ :END
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000799.html">[Griffith-svn] r1331 - in trunk: . lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000801.html">[Griffith-svn] r1333 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#800">[ date ]</a>
+              <a href="thread.html#800">[ thread ]</a>
+              <a href="subject.html#800">[ subject ]</a>
+              <a href="author.html#800">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

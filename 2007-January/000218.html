@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r695 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r695%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701090150.l091oHjn022139%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000217.html">
+   <LINK REL="Next"  HREF="000219.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r695 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r695%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701090150.l091oHjn022139%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r695 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 02:50:17 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000217.html">[Griffith-svn] r694 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000219.html">[Griffith-svn] r696 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#218">[ date ]</a>
+              <a href="thread.html#218">[ thread ]</a>
+              <a href="subject.html#218">[ subject ]</a>
+              <a href="author.html#218">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-09 02:50:14 +0100 (Tue, 09 Jan 2007)
+New Revision: 695
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/README
+   trunk/lib/dbupgrade.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+* Catch some more bad cases while upgrading database
+* Switch to sqlite if psycopg2 or MySQLdb module are not available
+* Add info about chardet in README
+* Add notes for upcoming 0.9-rc3
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-08 23:41:31 UTC (rev 694)
++++ trunk/ChangeLog	2007-01-09 01:50:14 UTC (rev 695)
+@@ -4,9 +4,13 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-01-09  Piotr O&#380;arowski
++	* Catch some more bad cases while upgrading database
++	* Switch to sqlite if psycopg2 or MySQLdb module are not available
++
+ 2007-01-08  Piotr O&#380;arowski
+ 	* Ignore bad entries in loans table
+-	* Don't save changes in old database while upgrading
++	* Don't modify old database while upgrading
+ 
+ 2007-01-08  Vasco Nunes
+ 	* Italian translation updated (Thanks to Diego)
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-01-08 23:41:31 UTC (rev 694)
++++ trunk/NEWS	2007-01-09 01:50:14 UTC (rev 695)
+@@ -1,3 +1,12 @@
++Griffith 0.9-rc3
++================
++
++NOT RELEASED YET
++* Old database is not modified during upgrade process (bug introduced in 0.9-rc2)
++* Catch some more bad cases while upgrading database
++* Updated translations: Italian
++
++
+ Griffith 0.9-rc2
+ ================
+ 
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-01-08 23:41:31 UTC (rev 694)
++++ trunk/README	2007-01-09 01:50:14 UTC (rev 695)
+@@ -46,6 +46,8 @@
+   * MySQLDb					<A HREF="http://sourceforge.net/projects/mysql-python">http://sourceforge.net/projects/mysql-python</A>
+   Upgrading from Griffith &lt;=0.6.2 (only if pysqlite 1.0 was used before, 1.1 is not needed)
+   * pysqlite		1.0 			<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>
++  Encoding detection of imported CSV file support:
++  * chardet					<A HREF="http://chardet.feedparser.org/">http://chardet.feedparser.org/</A>
+   Gtkspell:
+   * python-gnome-extras
+   Covers and reports support:
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-01-08 23:41:31 UTC (rev 694)
++++ trunk/lib/dbupgrade.py	2007-01-09 01:50:14 UTC (rev 695)
+@@ -176,20 +176,19 @@
+ 	old_cursor.execute(&quot;UPDATE movies SET media = '10' WHERE media = 'SVCD'; 	&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET media = '11' WHERE media = 'VHS';&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET media = '12' WHERE media = 'BETACAM';&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET collection_id=0 WHERE collection_id&lt;1&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET volume_id=0 WHERE volume_id&lt;1&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET color=NULL WHERE color&lt;1 OR color=''&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET condition=NULL WHERE condition&lt;0 OR condition='' OR condition&gt;2&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET layers=NULL WHERE layers&lt;0 OR layers='' OR layers&gt;3&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET region=NULL WHERE region='' OR region=2 OR region&lt;0 OR region&gt;8&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET year=NULL WHERE year&lt;1900 or year&gt;2007&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET rating=10 WHERE rating&gt;10&quot;)	# FIXME?
+ 	old_cursor.execute(&quot;UPDATE movies SET rating=0 WHERE rating&lt;0&quot;)		# FIXME?
+-	old_cursor.execute(&quot;UPDATE movies SET volume_id=0 WHERE volume_id&lt;1&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET collection_id=0 WHERE collection_id&lt;1&quot;)
++	old_cursor.execute(&quot;UPDATE movies SET rating=10 WHERE rating&gt;10&quot;)	# FIXME?
+ 	old_cursor.execute(&quot;UPDATE loans SET return_date=NULL WHERE return_date=''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE date='' OR date ISNULL&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id=0&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id NOT IN (SELECT id FROM movies)&quot;)
+-	#old_cursor.commit()
+-	old_cursor.execute(&quot;UPDATE movies SET region=NULL WHERE region='' OR region='2' OR region&lt;0 OR region&gt;8&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET condition=NULL WHERE condition='' OR condition='3'&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET color=NULL WHERE color='' OR color='0'&quot;)
+-	old_cursor.execute(&quot;UPDATE movies SET layers=NULL WHERE layers='' OR layers='4'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = ''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = 'None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM collections WHERE name = ''&quot;)
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-01-08 23:41:31 UTC (rev 694)
++++ trunk/lib/preferences.py	2007-01-09 01:50:14 UTC (rev 695)
+@@ -359,8 +359,16 @@
+ 		self.initialized = False
+ 		self.db.metadata.clear()
+ 		from sqlalchemy.orm import clear_mappers
++		from sqlalchemy.exceptions import InvalidRequestError
+ 		clear_mappers()
+-		self.db = sql.GriffithSQL(c, self.debug, self.locations['home'])
++		try:
++			self.db = sql.GriffithSQL(c, self.debug, self.locations['home'])
++		except InvalidRequestError, e:
++			self.debug.show(str(e))
++			c['db_type'] = 'sqlite'
++			w['db_type'].set_active(0)
++			self.db = sql.GriffithSQL(c, self.debug, self.locations['home'])
++
+ 		self.debug.show(&quot;New database Engine: %s&quot; % self.db.metadata.engine.name)
+ 		
+ 		# initialize new database
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-01-08 23:41:31 UTC (rev 694)
++++ trunk/lib/sql.py	2007-01-09 01:50:14 UTC (rev 695)
+@@ -283,6 +283,7 @@
+ 
+ 	def __init__(self, config, gdebug, griffith_dir):
+ 		from sqlalchemy.mods.threadlocal import assign_mapper
++		from sqlalchemy.exceptions import InvalidRequestError
+ 		global debug
+ 		debug = gdebug
+ 		if not config.has_key('db_type'):
+@@ -321,7 +322,13 @@
+ 				config['db_name'])
+ 		else:
+ 			config['db_type'] = 'sqlite'
+-		self.metadata = BoundMetaData(url)
++			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config['default_db'])
++		try:
++			self.metadata = BoundMetaData(url)
++		except InvalidRequestError, e:
++			debug.show(str(e))
++			config['db_type'] = 'sqlite'
++			self.metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config['default_db']))
+ 		# try to establish a db connection
+ 		try:
+ 			self.metadata.engine.connect()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000217.html">[Griffith-svn] r694 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000219.html">[Griffith-svn] r696 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#218">[ date ]</a>
+              <a href="thread.html#218">[ thread ]</a>
+              <a href="subject.html#218">[ subject ]</a>
+              <a href="author.html#218">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

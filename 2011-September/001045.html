@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1586 - in trunk/lib: . plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1586%20-%20in%20trunk/lib%3A%20.%20plugins/movie&In-Reply-To=%3C20110913181234.7161448125B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001044.html">
+   <LINK REL="Next"  HREF="001046.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1586 - in trunk/lib: . plugins/movie</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1586%20-%20in%20trunk/lib%3A%20.%20plugins/movie&In-Reply-To=%3C20110913181234.7161448125B%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1586 - in trunk/lib: . plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 13 20:12:34 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001044.html">[Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001046.html">[Griffith-svn] r1587 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1045">[ date ]</a>
+              <a href="thread.html#1045">[ thread ]</a>
+              <a href="subject.html#1045">[ subject ]</a>
+              <a href="author.html#1045">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2011-09-13 20:12:34 +0200 (Tue, 13 Sep 2011)
+New Revision: 1586
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+few minor fixes in AniDB movie plugin
+
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-09-12 20:43:18 UTC (rev 1585)
++++ trunk/lib/add.py	2011-09-13 18:12:34 UTC (rev 1586)
+@@ -147,7 +147,7 @@
+     w = self.widgets['add']
+     m_id = None
+     if self.founded_results_id:
+-        log.info(&quot;self.founded:results_id: %s&quot;, self.founded_results_id)
++        log.info(&quot;selected id: %s&quot;, self.founded_results_id)
+         m_id = self.founded_results_id
+     else:
+         self.founded_results_id = 0
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-12 20:43:18 UTC (rev 1585)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-13 18:12:34 UTC (rev 1586)
+@@ -44,7 +44,8 @@
+ 
+ ANIME_TITLES_URL = '<A HREF="http://anidb.net/api/animetitles.xml.gz">http://anidb.net/api/animetitles.xml.gz</A>'
+ ANIME_IMG_URL = '<A HREF="http://img7.anidb.net/pics/anime/">http://img7.anidb.net/pics/anime/</A>'
+-ANIME_WEB_URL = '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=">http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=</A>'
++#ANIME_WEB_URL = '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=">http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=</A>'
++ANIME_WEB_URL = '<A HREF="http://anidb.net/a">http://anidb.net/a</A>'
+ REQUEST = &quot;<A HREF="http://api.anidb.net:9001/httpapi?request=anime&amp;client=%(client">http://api.anidb.net:9001/httpapi?request=anime&amp;client=%(client</A>)s&amp;clientver=%(version)s&amp;protover=%(protocol)s&amp;aid=&quot;
+ REQUEST %= dict(client='griffith', version=1, protocol=1)
+ 
+@@ -78,18 +79,24 @@
+         self.director = ', '.join(n.text for n in self._xml.xpath('creators/name[@type=&quot;Direction&quot;]'))
+ 
+     def get_plot(self):
+-        self.plot = self._xml.xpath('description')[0].text
++        self.plot = self._xml.find('description').text
+ 
+     def get_year(self):
++        self.year = 0
+         node = self._xml.xpath('episodes/episode[title=&quot;Complete Movie&quot;]')
+         if node:
+-            self.year = node.xpath('airdate')[0][:4]
++            self.year = node[0].find('airdate').text[:4]
++        else:
++            node = self._xml.find('startdate')
++            if node is not None:
++                self.year = node.text[:4]
+         # XXX: should we take the first child if &quot;Complete Movie&quot; is missing?
+ 
+     def get_runtime(self):
++        self.runtime = 0
+         node = self._xml.xpath('episodes/episode[title=&quot;Complete Movie&quot;]')
+         if node:
+-            self.runtime = node.xpath('length')[0]
++            self.runtime = node[0].find('length').text
+ 
+     def get_genre(self):
+         nodes = self._xml.xpath('categories/category/name')
+@@ -99,32 +106,23 @@
+         nodes = self._xml.xpath('characters/character[@type=&quot;main character in&quot;]')
+         self.cast = ''
+         for node in nodes:
+-            name = node.xpath('name')[0].text
+-            actor = node.xpath('seiyuu')[0].text
++            name = node.find('name').text
++            actor = node.find('seiyuu').text
+             self.cast += &quot;[%s] voiced by %s\n&quot; % (name, actor)
+ 
+-    def get_classification(self):
+-        self.classification = ''
+-
+     def get_studio(self):
+         self.studio = ', '.join(n.text for n in self._xml.xpath('creators/name[@type=&quot;Animation Production&quot;]'))
+ 
+     def get_o_site(self):
+-        self.site = self._xml.xpath('url')[0].text
++        self.o_site = self._xml.find('url').text
+ 
+     def get_site(self):
+-        self.site = ANIME_TITLES_URL + self._aid
++        self.site = ANIME_WEB_URL + self._aid
+ 
+-    def get_trailer(self):
+-        self.trailer = ''
+-
+-    def get_country(self):
+-        self.country = ''
+-
+     def get_rating(self):
+-        rating = self._xml.xpath('ratings/permanent')
+-        if rating:
+-            self.rating = str(round(float(rating[0].text)))
++        rating = self._xml.find('ratings/permanent')
++        if rating is not None:
++            self.rating = str(round(float(rating.text)))
+ 
+     def get_notes(self):
+         self.notes = ''
+@@ -146,6 +144,7 @@
+             self.notes += &quot;\n%s: &quot; % key
+             self.notes += details['titles'].get(lang, details['titles']['en'])
+             self.notes += &quot; (%s&quot; % details['duration']
++            self.notes += _(' min')
+             if details['airdate']:
+                 self.notes += &quot;, %s)&quot; % details['airdate']
+             else:
+@@ -271,7 +270,7 @@
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : '<A HREF="http://www.gonzo.co.jp/works/0102.html">http://www.gonzo.co.jp/works/0102.html</A>',
+-            'site'                : '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=32">http://anidb.net/perl-bin/animedb.pl?show=anime&amp;aid=32</A>',
++            'site'                : '<A HREF="http://anidb.net/a32">http://anidb.net/a32</A>',
+             'trailer'             : False,
+             'year'                : 2002,
+             'notes'               : True,
+@@ -279,6 +278,6 @@
+             'image'               : True,
+             'rating'              : 8,
+             'cameraman'           : False,
+-            'screenplay'          : 'Konaka Chiaki'
++            'screenplay'          : False
+         },
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001044.html">[Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001046.html">[Griffith-svn] r1587 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1045">[ date ]</a>
+              <a href="thread.html#1045">[ thread ]</a>
+              <a href="subject.html#1045">[ subject ]</a>
+              <a href="author.html#1045">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

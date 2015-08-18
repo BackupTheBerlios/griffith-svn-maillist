@@ -1,0 +1,1632 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1274 - in trunk: . glade lib lib/plugins	lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1274%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/plugins%0A%09lib/plugins/extensions&In-Reply-To=%3C200908092115.n79LFwrI018150%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000741.html">
+   <LINK REL="Next"  HREF="000743.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1274 - in trunk: . glade lib lib/plugins	lib/plugins/extensions</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1274%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/plugins%0A%09lib/plugins/extensions&In-Reply-To=%3C200908092115.n79LFwrI018150%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1274 - in trunk: . glade lib lib/plugins	lib/plugins/extensions">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug  9 23:15:58 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000741.html">[Griffith-svn] r1273 - trunk/lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000743.html">[Griffith-svn] r1275 - in trunk: . lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#742">[ date ]</a>
+              <a href="thread.html#742">[ thread ]</a>
+              <a href="subject.html#742">[ subject ]</a>
+              <a href="author.html#742">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-08-09 23:15:57 +0200 (Sun, 09 Aug 2009)
+New Revision: 1274
+
+Added:
+   trunk/lib/plugins/extensions/
+   trunk/lib/plugins/extensions/__init__.py
+   trunk/lib/plugins/extensions/amazon.py
+   trunk/lib/plugins/extensions/ge_amazon.py
+Removed:
+   trunk/lib/amazon.py
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/edit.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/plugins/__init__.py
+   trunk/lib/version.py
+   trunk/lib/widgets.py
+Log:
+* Version changed to 0.11~svn
+* Initial structure for extensions created
+  + ~/.griffith/lib/extensions can be used for user's extensions
+* Amazon posters feature converted to Griffith extension
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/ChangeLog	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -5,6 +5,12 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-08-09  Piotr O&#380;arowski
++	* Version changed to 0.11~svn
++	* Initial structure for extensions created
++	  + ~/.griffith/lib/extensions can be used for user's extensions
++	* Amazon posters feature converted to Griffith extension
++
+ ---- 0.10 ----
+ 
+ 2009-08-03  Piotr O&#380;arowski
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/NEWS	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -1,3 +1,9 @@
++Griffith 0.11
++=============
++* Griffith extensions feature added. You can add your own extensions in
++  ~/.griffith/lib/extensions
++
++
+ Griffith 0.10
+ =============
+ * Almost unchanged release candidate 1
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/glade/griffith.glade	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -191,48 +191,6 @@
+                         &lt;/child&gt;
+                       &lt;/widget&gt;
+                     &lt;/child&gt;
+-                    &lt;child&gt;
+-                      &lt;widget class=&quot;GtkSeparatorMenuItem&quot; id=&quot;separator7&quot;&gt;
+-                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                      &lt;/widget&gt;
+-                    &lt;/child&gt;
+-                    &lt;child&gt;
+-                      &lt;widget class=&quot;GtkMenuItem&quot; id=&quot;poster1&quot;&gt;
+-                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                        &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Poster image&lt;/property&gt;
+-                        &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
+-                        &lt;child&gt;
+-                          &lt;widget class=&quot;GtkMenu&quot; id=&quot;poster1_menu&quot;&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkImageMenuItem&quot; id=&quot;open_poster&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;gtk-open&lt;/property&gt;
+-                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+-                                &lt;signal name=&quot;activate&quot; handler=&quot;on_open_poster_clicked&quot;/&gt;
+-                              &lt;/widget&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkMenuItem&quot; id=&quot;fetch_poster&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Fetch from Amazon&lt;/property&gt;
+-                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
+-                                &lt;signal name=&quot;activate&quot; handler=&quot;on_fetch_poster_clicked&quot;/&gt;
+-                              &lt;/widget&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkImageMenuItem&quot; id=&quot;delete_poster&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;gtk-delete&lt;/property&gt;
+-                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+-                                &lt;signal name=&quot;activate&quot; handler=&quot;on_delete_poster_clicked&quot;/&gt;
+-                              &lt;/widget&gt;
+-                            &lt;/child&gt;
+-                          &lt;/widget&gt;
+-                        &lt;/child&gt;
+-                      &lt;/widget&gt;
+-                    &lt;/child&gt;
+                   &lt;/widget&gt;
+                 &lt;/child&gt;
+               &lt;/widget&gt;
+@@ -657,17 +615,6 @@
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
+-                      &lt;widget class=&quot;GtkToolButton&quot; id=&quot;toolbutton9&quot;&gt;
+-                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                        &lt;property name=&quot;tooltip&quot; translatable=&quot;yes&quot;&gt;Attempt to fetch a big poster from Amazon services Web site&lt;/property&gt;
+-                        &lt;property name=&quot;stock_id&quot;&gt;gtk-network&lt;/property&gt;
+-                        &lt;signal name=&quot;clicked&quot; handler=&quot;on_fetch_poster_clicked&quot;/&gt;
+-                      &lt;/widget&gt;
+-                      &lt;packing&gt;
+-                        &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+-                      &lt;/packing&gt;
+-                    &lt;/child&gt;
+-                    &lt;child&gt;
+                       &lt;widget class=&quot;GtkSeparatorToolItem&quot; id=&quot;separatortoolitem5&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                       &lt;/widget&gt;
+@@ -836,6 +783,32 @@
+           &lt;/packing&gt;
+         &lt;/child&gt;
+         &lt;child&gt;
++          &lt;widget class=&quot;GtkHBox&quot; id=&quot;ext_hbox&quot;&gt;
++            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++            &lt;child&gt;
++              &lt;widget class=&quot;GtkHandleBox&quot; id=&quot;ext_toolbar_hb&quot;&gt;
++                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                &lt;property name=&quot;shadow_type&quot;&gt;GTK_SHADOW_OUT&lt;/property&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkToolbar&quot; id=&quot;ext_toolbar&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;toolbar_style&quot;&gt;GTK_TOOLBAR_BOTH_HORIZ&lt;/property&gt;
++                    &lt;property name=&quot;show_arrow&quot;&gt;False&lt;/property&gt;
++                  &lt;/widget&gt;
++                &lt;/child&gt;
++              &lt;/widget&gt;
++              &lt;packing&gt;
++                &lt;property name=&quot;position&quot;&gt;0&lt;/property&gt;
++              &lt;/packing&gt;
++            &lt;/child&gt;
++          &lt;/widget&gt;
++          &lt;packing&gt;
++            &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
++            &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
++            &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
++          &lt;/packing&gt;
++        &lt;/child&gt;
++        &lt;child&gt;
+           &lt;widget class=&quot;GtkHPaned&quot; id=&quot;hpaned1&quot;&gt;
+             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+             &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+@@ -2415,7 +2388,7 @@
+             &lt;/child&gt;
+           &lt;/widget&gt;
+           &lt;packing&gt;
+-            &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
++            &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
+           &lt;/packing&gt;
+         &lt;/child&gt;
+         &lt;child&gt;
+@@ -2425,7 +2398,7 @@
+           &lt;packing&gt;
+             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+-            &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
++            &lt;property name=&quot;position&quot;&gt;5&lt;/property&gt;
+           &lt;/packing&gt;
+         &lt;/child&gt;
+       &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/griffith	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -122,6 +122,7 @@
+         initialize.preferences(self)
+         initialize.movie_plugins(self)
+         initialize.export_plugins(self)
++        initialize.extensions(self)
+         initialize.people_treeview(self)
+         initialize.web_results(self)
+         self.initialized = True
+@@ -373,11 +374,6 @@
+     def z_poster_hide(self, *args):
+         self.widgets['poster_window'].hide()
+ 
+-    def get_poster(self, *args):
+-        &quot;&quot;&quot;tries to fetch a new big poster from amazon&quot;&quot;&quot;
+-        from edit import fetch_bigger_poster
+-        fetch_bigger_poster(self)
+-
+     # rating --------------------------------------------------------------
+ 
+     def scale_rating_change_add(self, *args):
+@@ -1200,11 +1196,6 @@
+ 
+     # windows/dialogs -----------------------------------------------------
+ 
+-    def results_cancel_ck(self, *args):
+-        from widgets import reconnect_add_signals
+-        reconnect_add_signals(self)
+-        self.widgets['results']['window'].hide()
+-
+     def save_state(self):
+         &quot;&quot;&quot;Saves main window state&quot;&quot;&quot;
+         # size should only be saved on microsoft windows systems
+@@ -1278,10 +1269,6 @@
+                     int(self.config.get('height', section='window')))
+         self.widgets['window'].show()
+ 
+-    def on_delete_event_r(self, *args):
+-        self.widgets['results']['window'].hide()
+-        return True
+-
+     def on_delete_event_poster(self, *args):
+         self.widgets['poster_window'].hide()
+         return True
+@@ -1327,11 +1314,11 @@
+             gutils.run_browser(self._trailer_url)
+ 
+     def on_goto_homepage_activate(site, *args):
+-        gutils.run_browser(&quot;<A HREF="http://www.griffith.cc/">http://www.griffith.cc/</A>&quot;)
++        gutils.run_browser('<A HREF="http://www.griffith.cc/">http://www.griffith.cc/</A>')
+     def on_goto_forum_activate(site, *args):
+-        gutils.run_browser(&quot;<A HREF="http://forum.griffith.cc/">http://forum.griffith.cc/</A>&quot;)
++        gutils.run_browser('<A HREF="http://forum.griffith.cc/">http://forum.griffith.cc/</A>')
+     def on_goto_report_bug_activate(site, *args):
+-        gutils.run_browser(&quot;<A HREF="https://bugs.launchpad.net/griffith/">https://bugs.launchpad.net/griffith/</A>&quot;)
++        gutils.run_browser('<A HREF="http://bugs.griffith.cc/">http://bugs.griffith.cc/</A>')
+ 
+     # toolbar -------------------------------------------------------------
+     def toggle_toolbar(self, *args):
+@@ -1414,16 +1401,42 @@
+         elif event.type == gtk.gdk._2BUTTON_PRESS:
+             self.edit_movie()
+ 
++    # -=[ results window ]=------------------------------------------------
++    def on_results_window_close(self, *args):
++        self.widgets['results']['window'].hide()
++        # restore default signals (reassgin results window to &quot;add movie&quot; dialog)
++        self.widgets['add']['b_get_from_web'].set_sensitive(True)
++        if self._resultswin_window_closed_signal:
++            self._resultswin_window_closed_signal(*args)
++        self._resultswin_window_closed_signal = None
++        self._resultswin_button_pressed_signal = self.on_add_movie_results_button_press_event
++        self._resultswin_process = self.populate_dialog_with_results
++        return True
++
+     def on_results_button_press_event(self, widget, event):
++        if event.type == gtk.gdk._2BUTTON_PRESS:
++            return self.on_results_select_press_event(widget)
++        return self._resultswin_button_pressed_signal(widget, event)
++    
++    def on_results_select_press_event(self, button):
++        treeselection = self.widgets['results']['treeview'].get_selection()
++        if not treeselection:
++            log.debug('no treeselection')
++            return False
++        tmp_model, tmp_iter = treeselection.get_selected()
++        if tmp_iter is None:
++            log.debug('no selected iter found')
++            return False
++        selected_key = int(tmp_model.get_value(tmp_iter, 0))
++        self.widgets['results']['window'].hide()
++        return self._resultswin_process(selected_key)
++
++    def on_add_movie_results_button_press_event(self, widget, event):
+         &quot;&quot;&quot;add a double click event to add movie results&quot;&quot;&quot;
++        # TODO: use on_results_select_press_event and its selected_key
+         if event.type == gtk.gdk._2BUTTON_PRESS:
+             add.populate_with_results(self)
+ 
+-    def on_poster_results_button_press_event(self, widget, event):
+-        &quot;&quot;&quot;add a double click event to poster results&quot;&quot;&quot;
+-        if event.type == gtk.gdk._2BUTTON_PRESS:
+-            add.populate_with_results(self)
+-    
+     # -=[ treeview ]=------------------------------------------------------
+     def go_first(self, *args):
+         self.click_on(self.widgets['treeview'], 'first')
+
+Deleted: trunk/lib/amazon.py
+===================================================================
+--- trunk/lib/amazon.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/amazon.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -1,397 +0,0 @@
+-__all__ = []
+-&quot;&quot;&quot;Python wrapper
+-
+-
+-for Amazon web APIs
+-
+-This module allows you to access Amazon's web APIs,
+-to do things like search Amazon and get the results programmatically.
+-Described here:
+-  <A HREF="http://www.amazon.com/webservices">http://www.amazon.com/webservices</A>
+-
+-You need a Amazon-provided license key to use these services.
+-Follow the link above to get one.  These functions will look in
+-several places (in this order) for the license key:
+-- the &quot;license_key&quot; argument of each function
+-- the module-level LICENSE_KEY variable (call setLicense once to set it)
+-- an environment variable called AMAZON_LICENSE_KEY
+-- a file called &quot;.amazonkey&quot; in the current directory
+-- a file called &quot;amazonkey.txt&quot; in the current directory
+-- a file called &quot;.amazonkey&quot; in your home directory
+-- a file called &quot;amazonkey.txt&quot; in your home directory
+-- a file called &quot;.amazonkey&quot; in the same directory as amazon.py
+-- a file called &quot;amazonkey.txt&quot; in the same directory as amazon.py
+-
+-Sample usage:
+-&gt;&gt;&gt; import amazon
+-&gt;&gt;&gt; amazon.setLicense('...') # must get your own key!
+-&gt;&gt;&gt; pythonBooks = amazon.searchByKeyword('Python')
+-&gt;&gt;&gt; pythonBooks[0].ProductName
+-u'Learning Python (Help for Programmers)'
+-&gt;&gt;&gt; pythonBooks[0].URL
+-...
+-&gt;&gt;&gt; pythonBooks[0].OurPrice
+-...
+-
+-Other available functions:
+-- browseBestSellers
+-- searchByASIN
+-- searchByUPC
+-- searchByAuthor
+-- searchByArtist
+-- searchByActor
+-- searchByDirector
+-- searchByManufacturer
+-- searchByListMania
+-- searchSimilar
+-- searchByWishlist
+-
+-Other usage notes:
+-- Most functions can take product_line as well, see source for possible values
+-- All functions can take type=&quot;lite&quot; to get less detail in results
+-- All functions can take page=N to get second, third, fourth page of results
+-- All functions can take license_key=&quot;XYZ&quot;, instead of setting it globally
+-- All functions can take http_proxy=&quot;<A HREF="http://x/y/z">http://x/y/z</A>&quot; which overrides your system setting
+-&quot;&quot;&quot;
+-
+-__author__ = &quot;Mark Pilgrim (<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">f8dy at diveintomark.org</A>)&quot;
+-__version__ = &quot;0.64.1&quot;
+-__cvsversion__ = &quot;$Revision: 1.1 $&quot;[11:-2]
+-__date__ = &quot;$Date: 2005/08/06 13:29:10 $&quot;[7:-2]
+-__copyright__ = &quot;Copyright (c) 2002 Mark Pilgrim&quot;
+-__license__ = &quot;Python&quot;
+-# Powersearch and return object type fix by Joseph Reagle &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">geek at goatee.net</A>&gt;
+-
+-# Locale support by Michael Josephson &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mike at josephson.org</A>&gt;
+-
+-# Modification to _contentsOf to strip trailing whitespace when loading Amazon key
+-# from a file submitted by Patrick Phalen.
+-
+-# Support for specifying locale and associates ID as search parameters and 
+-# internationalisation fix for the SalesRank integer conversion by
+-# Christian Theune &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ct at gocept.com</A>&gt;, gocept gmbh &amp; co. kg
+-
+-# Support for BlendedSearch contributed by Alex Choo
+-
+-from xml.dom import minidom
+-import os, sys, getopt, cgi, urllib, string
+-try:
+-    import timeoutsocket # <A HREF="http://www.timo-tasi.org/python/timeoutsocket.py">http://www.timo-tasi.org/python/timeoutsocket.py</A>
+-    timeoutsocket.setDefaultSocketTimeout(10)
+-except ImportError:
+-    pass
+-import logging
+-log = logging.getLogger(&quot;Griffith&quot;)
+-
+-LICENSE_KEY = &quot;&quot;
+-ASSOCIATE = &quot;webservices-20&quot;
+-HTTP_PROXY = None
+-LOCALE = &quot;us&quot;
+-# default API version is from 2005-10-05
+-APIVERSION='2008-06-26'
+-
+-# don't touch the rest of these constants
+-class AmazonError(Exception): pass
+-class NoLicenseKey(Exception): pass
+-_amazonfile1 = &quot;.amazonkey&quot;
+-_amazonfile2 = &quot;amazonkey.txt&quot;
+-_licenseLocations = (
+-    (lambda key: key, 'passed to the function in license_key variable'),
+-    (lambda key: LICENSE_KEY, 'module-level LICENSE_KEY variable (call setLicense to set it)'),
+-    (lambda key: os.environ.get('AMAZON_LICENSE_KEY', None), 'an environment variable called AMAZON_LICENSE_KEY'),
+-    (lambda key: _contentsOf(os.getcwd(), _amazonfile1), '%s in the current directory' % _amazonfile1),
+-    (lambda key: _contentsOf(os.getcwd(), _amazonfile2), '%s in the current directory' % _amazonfile2),
+-    (lambda key: _contentsOf(os.environ.get('HOME', ''), _amazonfile1), '%s in your home directory' % _amazonfile1),
+-    (lambda key: _contentsOf(os.environ.get('HOME', ''), _amazonfile2), '%s in your home directory' % _amazonfile2),
+-    (lambda key: _contentsOf(_getScriptDir(), _amazonfile1), '%s in the amazon.py directory' % _amazonfile1),
+-    (lambda key: _contentsOf(_getScriptDir(), _amazonfile2), '%s in the amazon.py directory' % _amazonfile2)
+-    )
+-_supportedLocales = {
+-        &quot;us&quot; : (None, &quot;ecs.amazonaws.com/onca/xml?Service=AWSECommerceService&quot;),   
+-        &quot;uk&quot; : (&quot;uk&quot;, &quot;ecs.amazonaws.co.uk/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;de&quot; : (&quot;de&quot;, &quot;ecs.amazonaws.de/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;ca&quot; : (&quot;ca&quot;, &quot;ecs.amazonaws.ca/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;fr&quot; : (&quot;fr&quot;, &quot;ecs.amazonaws.fr/onca/xml?Service=AWSECommerceService&quot;),
+-        &quot;jp&quot; : (&quot;jp&quot;, &quot;ecs.amazonaws.jp/onca/xml?Service=AWSECommerceService&quot;)
+-    }
+-
+-## administrative functions
+-def version():
+-    print &quot;&quot;&quot;PyAmazon %(__version__)s
+-%(__copyright__)s
+-released %(__date__)s
+-&quot;&quot;&quot; % globals()
+-
+-def setAssociate(associate):
+-    global ASSOCIATE
+-    ASSOCIATE=associate
+-
+-def getAssociate(override=None):
+-    return override or ASSOCIATE
+-
+-## utility functions
+-
+-def _checkLocaleSupported(locale):
+-    if not _supportedLocales.has_key(locale):
+-        raise AmazonError, (&quot;Unsupported locale. Locale must be one of: %s&quot; %
+-            string.join(_supportedLocales, &quot;, &quot;))
+-
+-def setLocale(locale):
+-    &quot;&quot;&quot;set locale&quot;&quot;&quot;
+-    global LOCALE
+-    _checkLocaleSupported(locale)
+-    LOCALE = locale
+-
+-def getLocale(locale=None):
+-    &quot;&quot;&quot;get locale&quot;&quot;&quot;
+-    return locale or LOCALE
+-
+-def setLicense(license_key):
+-    &quot;&quot;&quot;set license key&quot;&quot;&quot;
+-    global LICENSE_KEY
+-    LICENSE_KEY = license_key
+-
+-def getLicense(license_key = None):
+-    &quot;&quot;&quot;get license key
+-
+-    license key can come from any number of locations;
+-    see module docs for search order&quot;&quot;&quot;
+-    for get, location in _licenseLocations:
+-        rc = get(license_key)
+-        if rc: return rc
+-    raise NoLicenseKey, 'get a license key at <A HREF="http://www.amazon.com/webservices">http://www.amazon.com/webservices</A>'
+-
+-def setProxy(http_proxy):
+-    &quot;&quot;&quot;set HTTP proxy&quot;&quot;&quot;
+-    global HTTP_PROXY
+-    HTTP_PROXY = http_proxy
+-
+-def getProxy(http_proxy = None):
+-    &quot;&quot;&quot;get HTTP proxy&quot;&quot;&quot;
+-    return http_proxy or HTTP_PROXY
+-
+-def getProxies(http_proxy = None):
+-    http_proxy = getProxy(http_proxy)
+-    if http_proxy:
+-        proxies = {&quot;http&quot;: http_proxy}
+-    else:
+-        proxies = None
+-    return proxies
+-
+-def _contentsOf(dirname, filename):
+-    filename = os.path.join(dirname, filename)
+-    if not os.path.exists(filename): return None
+-    fsock = open(filename)
+-    contents =  fsock.read().strip()
+-    fsock.close()
+-    return contents
+-
+-def _getScriptDir():
+-    if __name__ == '__main__':
+-        return os.path.abspath(os.path.dirname(sys.argv[0]))
+-    else:
+-        return os.path.abspath(os.path.dirname(sys.modules[__name__].__file__))
+-
+-class Bag: pass
+-
+-def unmarshal(element):
+-    rc = Bag()
+-    if isinstance(element, minidom.Element) and (element.tagName == 'Details'):
+-        rc.URL = element.attributes[&quot;url&quot;].value
+-    childElements = [e for e in element.childNodes if isinstance(e, minidom.Element)]
+-    if childElements:
+-        for child in childElements:
+-            key = child.tagName
+-            if hasattr(rc, key):
+-                if type(getattr(rc, key)) &lt;&gt; type([]):
+-                    setattr(rc, key, [getattr(rc, key)])
+-                setattr(rc, key, getattr(rc, key) + [unmarshal(child)])
+-            elif isinstance(child, minidom.Element) and (child.tagName == 'Details' or child.tagName == 'Item'):
+-                # make the first Details element a key
+-                setattr(rc,key,[unmarshal(child)])
+-                #dbg: because otherwise 'hasattr' only tests
+-                #dbg: on the second occurence: if there's a
+-                #dbg: single return to a query, it's not a
+-                #dbg: list. This module should always
+-                #dbg: return a list of Details objects.
+-            else:
+-                setattr(rc, key, unmarshal(child))
+-    else:
+-        rc = &quot;&quot;.join([e.data for e in element.childNodes if isinstance(e, minidom.Text)])
+-        if element.tagName == 'SalesRank':
+-            rc = rc.replace('.', '')
+-            rc = rc.replace(',', '')
+-            rc = int(rc)
+-    return rc
+-
+-def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate):
+-    _checkLocaleSupported(locale)
+-    if isinstance(searchvalue, unicode):
+-        searchvalue = searchvalue.encode('utf-8') # needed for urllib.quote
+-    url = &quot;<A HREF="http://">http://</A>&quot; + _supportedLocales[locale][1]
+-    if search_type == 'ItemLookup':
+-        url += &quot;&amp;AssociateTag=%s&quot; % associate
+-        url += &quot;&amp;AWSAccessKeyId=%s&quot; % license_key.strip()
+-        url += &quot;&amp;ResponseGroup=%s&quot; % type
+-        if product_line:
+-            url += &quot;&amp;SearchIndex=%s&quot; % product_line
+-        url += &quot;&amp;Operation=%s&quot; % search_type
+-        url += &quot;&amp;IdType=%s&quot; % searchfield
+-        url += &quot;&amp;ItemId=%s&quot; % searchvalue
+-    else:
+-        url += &quot;&amp;AssociateTag=%s&quot; % associate
+-        url += &quot;&amp;AWSAccessKeyId=%s&quot; % license_key.strip()
+-        url += &quot;&amp;ResponseGroup=%s&quot; % type
+-        if page:
+-            url += &quot;&amp;ItemPage=%s&quot; % page
+-        if product_line:
+-            url += &quot;&amp;SearchIndex=%s&quot; % product_line
+-        url += &quot;&amp;Operation=%s&quot; % search_type
+-        url += &quot;&amp;%s=%s&quot; % (searchfield, urllib.quote(searchvalue))
+-        url += &quot;&amp;Sort=titlerank&quot;
+-    if not APIVERSION is None:
+-        url += &quot;&amp;Version=%s&quot; % APIVERSION
+-    log.info('URL: ' + url)
+-    return url
+-
+-
+-## main functions
+-
+-
+-def search(search_type, searchfield, searchvalue, product_line, type = &quot;Large&quot;, page = None,
+-           license_key=None, http_proxy = None, locale = None, associate = None):
+-    &quot;&quot;&quot;search Amazon
+-
+-    You need a license key to call this function; see
+-    <A HREF="http://www.amazon.com/webservices">http://www.amazon.com/webservices</A>
+-    to get one.  Then you can either pass it to
+-    this function every time, or set it globally; see the module docs for details.
+-
+-    Parameters:
+-    keyword - keyword to search
+-    search_type - in (KeywordSearch, BrowseNodeSearch, AsinSearch, UpcSearch, AuthorSearch, ArtistSearch, ActorSearch, DirectorSearch, ManufacturerSearch, ListManiaSearch, SimilaritySearch)
+-    product_line - type of product to search for.  restrictions based on search_type
+-        UpcSearch - in (music, classical)
+-        AuthorSearch - must be &quot;books&quot;
+-        ArtistSearch - in (music, classical)
+-        ActorSearch - in (dvd, vhs, video)
+-        DirectorSearch - in (dvd, vhs, video)
+-        ManufacturerSearch - in (electronics, kitchen, videogames, software, photo, pc-hardware)
+-    http_proxy (optional) - address of HTTP proxy to use for sending and receiving SOAP messages
+-
+-    Returns: list of Bags, each Bag may contain the following attributes:
+-      Asin - Amazon ID (&quot;ASIN&quot; number) of this item
+-      Authors - list of authors
+-      Availability - &quot;available&quot;, etc.
+-      BrowseList - list of related categories
+-      Catalog - catalog type (&quot;Book&quot;, etc)
+-      CollectiblePrice - ?, format &quot;$34.95&quot;
+-      ImageUrlLarge - URL of large image of this item
+-      ImageUrlMedium - URL of medium image of this item
+-      ImageUrlSmall - URL of small image of this item
+-      Isbn - ISBN number
+-      ListPrice - list price, format &quot;$34.95&quot;
+-      Lists - list of ListMania lists that include this item
+-      Manufacturer - manufacturer
+-      Media - media (&quot;Paperback&quot;, &quot;Audio CD&quot;, etc)
+-      NumMedia - number of different media types in which this item is available
+-      OurPrice - Amazon price, format &quot;$24.47&quot;
+-      ProductName - name of this item
+-      ReleaseDate - release date, format &quot;09 April, 1999&quot;
+-      Reviews - reviews (AvgCustomerRating, plus list of CustomerReview with Rating, Summary, Content)
+-      SalesRank - sales rank (integer)
+-      SimilarProducts - list of Product, which is ASIN number
+-      ThirdPartyNewPrice - ?, format &quot;$34.95&quot;
+-      URL - URL of this item
+-    &quot;&quot;&quot;
+-    license_key = getLicense(license_key)
+-    locale = getLocale(locale)
+-    associate = getAssociate(associate)
+-    url = buildURL(search_type, searchfield, searchvalue, product_line, type, page, 
+-            license_key, locale, associate)
+-    proxies = getProxies(http_proxy)
+-    u = urllib.FancyURLopener(proxies)
+-    usock = u.open(url)
+-    xmldoc = minidom.parse(usock)
+-
+-#     from xml.dom.ext import PrettyPrint
+-#     PrettyPrint(xmldoc)
+-
+-    usock.close()
+-    data = unmarshal(xmldoc)
+-    if search_type == &quot;BlendedSearch&quot;:
+-        if hasattr(data, 'BlendedSearch'):
+-            data = data.BlendedSearch
+-    elif hasattr(data, 'ItemSearchResponse'):
+-        data = data.ItemSearchResponse 
+-    elif hasattr(data, 'ItemLookupResponse'):
+-        data = data.ItemLookupResponse 
+-
+-    if hasattr(data, 'Errors'):
+-        raise AmazonError, data.Errors
+-    else:
+-        if search_type == &quot;BlendedSearch&quot;:
+-            return data 
+-        else:            
+-            if hasattr(data, 'Items'):
+-                return data.Items
+-            else:
+-                return data
+-
+-def searchByKeyword(keyword, product_line=&quot;Books&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;ItemSearch&quot;, 'Keywords', keyword, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByTitle(keyword, product_line=&quot;Books&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;ItemSearch&quot;, 'Title', keyword, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def browseBestSellers(browse_node, product_line=&quot;Books&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;BrowseNodeSearch&quot;, 'Keywords', browse_node, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByASIN(ASIN, type=&quot;Large&quot;, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;ItemLookup&quot;, 'ASIN', ASIN, None, type, None, license_key, http_proxy, locale, associate)
+-
+-def searchByUPC(UPC, product_line=&quot;Books&quot;, type=&quot;Large&quot;, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;ItemLookup&quot;, 'UPC', UPC, product_line, type, None, license_key, http_proxy, locale, associate)
+-
+-def searchByEAN(EAN, product_line=&quot;Books&quot;, type=&quot;Large&quot;, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;ItemLookup&quot;, 'EAN', EAN, product_line, type, None, license_key, http_proxy, locale, associate)
+-
+-def searchByAuthor(author, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;AuthorSearch&quot;, 'Keywords', author, &quot;Books&quot;, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByArtist(artist, product_line=&quot;Music&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    if product_line not in (&quot;music&quot;, &quot;classical&quot;):
+-        raise AmazonError, &quot;product_line must be in ('Music', 'Classical')&quot;
+-    return search(&quot;ArtistSearch&quot;, 'Keywords', artist, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByActor(actor, product_line=&quot;DVD&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    if product_line not in (&quot;DVD&quot;, &quot;VHS&quot;, &quot;Video&quot;):
+-        raise AmazonError, &quot;product_line must be in ('DVD', 'VHS', 'Video')&quot;
+-    return search(&quot;ActorSearch&quot;, 'Keywords', actor, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByDirector(director, product_line=&quot;DVD&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    if product_line not in (&quot;DVD&quot;, &quot;VHS&quot;, &quot;Video&quot;):
+-        raise AmazonError, &quot;product_line must be in ('DVD', 'VHS', 'Video')&quot;
+-    return search(&quot;DirectorSearch&quot;, 'Keywords', director, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByManufacturer(manufacturer, product_line=&quot;pc-hardware&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    if product_line not in (&quot;electronics&quot;, &quot;kitchen&quot;, &quot;videogames&quot;, &quot;software&quot;, &quot;photo&quot;, &quot;pc-hardware&quot;):
+-        raise AmazonError, &quot;product_line must be in ('electronics', 'kitchen', 'videogames', 'software', 'photo', 'pc-hardware')&quot;
+-    return search(&quot;ManufacturerSearch&quot;, 'Keywords', manufacturer, product_line, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByListMania(listManiaID, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;ListManiaSearch&quot;, 'Keywords', listManiaID, None, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchSimilar(ASIN, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;SimilaritySearch&quot;, 'Keywords', ASIN, None, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByWishlist(wishlistID, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;WishlistSearch&quot;, 'Keywords', wishlistID, None, type, page, license_key, http_proxy, locale, associate)
+-
+-def searchByPower(keyword, product_line=&quot;Books&quot;, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;PowerSearch&quot;, 'Keywords', keyword, product_line, type, page, license_key, http_proxy, locale, associate)
+-    # &gt;&gt;&gt; RecentKing = amazon.searchByPower('author:Stephen King and pubdate:2003')
+-    # &gt;&gt;&gt; SnowCrash = amazon.searchByPower('title:Snow Crash')
+-
+-def searchByBlended(keyword, type=&quot;Large&quot;, page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+-    return search(&quot;BlendedSearch&quot;, 'Keywords', keyword, None, type, page, license_key, http_proxy, locale, associate)
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/edit.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -23,13 +23,9 @@
+ 
+ import logging
+ import os
+-import tempfile
+-from urllib import urlcleanup, FancyURLopener, urlretrieve
+ 
+ import gtk
+-from PIL import Image
+ 
+-import amazon
+ import db
+ import delete
+ import gutils
+@@ -133,201 +129,3 @@
+     pixbuf = self.Image.get_pixbuf()
+     self.treemodel.set_value(tmp_iter, 1, pixbuf)
+ 
+-def fetch_bigger_poster(self):
+-    match = 0
+-    log.info(&quot;fetching poster from amazon...&quot;)
+-    movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+-    if movie is None:
+-        gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+-        return False
+-    current_poster_md5 = movie.poster_md5
+-    if current_poster_md5:
+-        current_poster = gutils.get_image_fname(current_poster_md5, self.db)
+-    else:
+-        current_poster = None
+-    amazon.setLicense(&quot;04GDDMMXX8X9CJ1B22G2&quot;)
+-
+-    locale = self.config.get('amazon_locale', 0, section='add')
+-    keyword = self.widgets['movie']['o_title'].get_text()
+-    if locale == '1':
+-        locale = 'uk'
+-    elif locale == '2':
+-        locale = 'de'
+-        keyword = self.widgets['movie']['title'].get_text()
+-    elif locale == '3':
+-        locale = 'ca'
+-    elif locale == '4':
+-        locale = 'fr'
+-    elif locale == '5':
+-        locale = 'jp'
+-    else:
+-        locale = None
+-
+-    try:
+-        result = amazon.searchByTitle(keyword, type=&quot;Large&quot;, product_line=&quot;DVD&quot;, locale=locale)
+-        if hasattr(result, 'TotalPages'):
+-            # get next result pages
+-            pages = int(result.TotalPages)
+-            page = 2
+-            while page &lt;= pages and page &lt; 11:
+-                tmp = amazon.searchByTitle(keyword, type='Large', product_line='DVD', locale=locale, page=page)
+-                result.Item.extend(tmp.Item)
+-                page = page + 1
+-        if not hasattr(result, 'Item') or not len(result.Item):
+-            # fallback if nothing is found by title
+-            result = amazon.searchByKeyword(keyword, type=&quot;Large&quot;, product_line=&quot;DVD&quot;, locale=locale)
+-            if hasattr(result, 'TotalPages'):
+-                # get next result pages
+-                pages = int(result.TotalPages)
+-                page = 2
+-                while page &lt;= pages and page &lt; 11:
+-                    tmp = amazon.searchByKeyword(keyword, type='Large', product_line='DVD', locale=locale, page=page)
+-                    result.Item.extend(tmp.Item)
+-                    page = page + 1
+-        log.info(&quot;... %s posters found&quot; % result.TotalResults)
+-    except:
+-        gutils.warning(_(&quot;No posters found for this movie.&quot;))
+-        return
+-
+-    from widgets import connect_poster_signals, reconnect_add_signals
+-    connect_poster_signals(self, get_poster_select_dc, result, current_poster)
+-
+-    if not hasattr(result, 'Item') or not len(result.Item):
+-        gutils.warning(_(&quot;No posters found for this movie.&quot;))
+-        reconnect_add_signals(self)
+-        return
+-
+-    if len(result.Item) == 1:
+-        o_title = self.widgets['movie']['o_title'].get_text().decode('utf-8')
+-        if o_title == result.Item[0].ItemAttributes.Title or keyword == result.Item[0].ItemAttributes.Title:
+-            get_poster(self, 0, result)
+-            return
+-
+-    self.treemodel_results.clear()
+-    self.widgets['add']['b_get_from_web'].set_sensitive(False) # disable movie plugins (result window is shared)
+-
+-    for f in range(len(result.Item)):
+-        if hasattr(result.Item[f], &quot;LargeImage&quot;) and len(result.Item[f].LargeImage.URL):
+-            title = result.Item[f].ItemAttributes.Title
+-            if hasattr(result.Item[f].ItemAttributes, 'ProductGroup'):
+-                title = title + u' - ' + result.Item[f].ItemAttributes.ProductGroup
+-            elif hasattr(result.Item[f].ItemAttributes, 'Binding'):
+-                title = title + u' - ' + result.Item[f].ItemAttributes.Binding
+-            if hasattr(result.Item[f].ItemAttributes, 'ReleaseDate'):
+-                title = title + u' - ' + result.Item[f].ItemAttributes.ReleaseDate[:4]
+-            elif hasattr(result.Item[f].ItemAttributes, 'TheatricalReleaseDate'):
+-                result.Item[f].ItemAttributes.TheatricalReleaseDate[:4]
+-            if hasattr(result.Item[f].ItemAttributes, 'Studio'):
+-                title = title + u' - ' + result.Item[f].ItemAttributes.Studio
+-            myiter = self.treemodel_results.insert_before(None, None)
+-            self.treemodel_results.set_value(myiter, 0, str(f))
+-            self.treemodel_results.set_value(myiter, 1, title)
+-
+-    self.widgets['results']['window'].show()
+-    self.widgets['results']['window'].set_keep_above(True)
+-
+-def get_poster_select_dc(self, event, mself, result, current_poster):
+-    if event.type == gtk.gdk._2BUTTON_PRESS:
+-        get_poster(mself, None, result)
+-
+-def get_poster_select(self, mself, result, current_poster):
+-    get_poster(mself, None, result)
+-
+-def get_poster(self, f, result):
+-    from widgets import reconnect_add_signals
+-    from movie import Progress, Retriever
+-    if f is None:
+-        treeselection = self.widgets['results']['treeview'].get_selection()
+-        (tmp_model, tmp_iter) = treeselection.get_selected()
+-        if tmp_iter is None:
+-            return False
+-        f = int(tmp_model.get_value(tmp_iter, 0))
+-        self.widgets['results']['window'].hide()
+-
+-    file_to_copy = tempfile.mktemp(suffix=self.widgets['movie']['number'].get_text(), \
+-        dir=self.locations['temp'])
+-    file_to_copy += &quot;.jpg&quot;
+-    canceled = False
+-    if len(result.Item[f].LargeImage.URL):
+-        try:
+-            progress = Progress(self.widgets['window'],_(&quot;Fetching poster&quot;),_(&quot;Wait a moment&quot;))
+-            retriever = Retriever(result.Item[f].LargeImage.URL, self.widgets['window'], progress, file_to_copy)
+-            retriever.start()
+-            while retriever.isAlive():
+-                progress.pulse()
+-                if progress.status:
+-                    canceled = True
+-                while gtk.events_pending():
+-                    gtk.main_iteration()
+-            progress.close()
+-            urlcleanup()
+-        except:
+-            canceled = True
+-            gutils.warning(_(&quot;Sorry. A connection error has occurred.&quot;))
+-            try:
+-                os.remove(file_to_copy)
+-            except:
+-                log.error(&quot;no permission for %s&quot;%file_to_copy)
+-
+-    if not canceled:
+-        if os.path.isfile(file_to_copy):
+-            im = None
+-            try:
+-                im = Image.open(file_to_copy)
+-            except IOError:
+-                log.warn(&quot;failed to identify %s&quot;%file_to_copy)
+-
+-            if im and im.size == (1,1):
+-                url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % result.Item[f].ASIN).read()
+-                if url.find('no-img-sm._V47056216_.gif') &gt; 0:
+-                    log.warn('No image available')
+-                    gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+-                    return False
+-                url = gutils.after(url, 'id=&quot;imageViewerDiv&quot;&gt;&lt;img src=&quot;')
+-                url = gutils.before(url, '&quot; id=&quot;prodImage&quot;')
+-                urlretrieve(url, file_to_copy)
+-                try:
+-                    im = Image.open(file_to_copy)
+-                except IOError:
+-                    log.warn(&quot;failed to identify %s&quot;%file_to_copy)
+-
+-            if not im:
+-                # something wrong with the image, give some feedback to the user
+-                log.warn('No image available')
+-                gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+-                return False
+-
+-            if im.mode != 'RGB': # convert GIFs
+-                im = im.convert('RGB')
+-                im.save(file_to_copy, 'JPEG')
+-            # set to None because the file is locked otherwise (os.remove throws an exception)
+-            im = None
+-
+-            handler = self.widgets['big_poster'].set_from_file(file_to_copy)
+-
+-            self.widgets['poster_window'].show()
+-            self.widgets['poster_window'].move(0,0)
+-            response = gutils.question(_(&quot;Do you want to use this poster instead?&quot;), True, self.widgets['window'])
+-            if response == -8:
+-                log.info(&quot;Using fetched poster, updating and removing old one from disk.&quot;)
+-                update_image(self, self.widgets['movie']['number'].get_text(), file_to_copy)
+-            else:
+-                log.info(&quot;Reverting to previous poster and deleting new one from disk.&quot;)
+-                try:
+-                    os.remove(file_to_copy)
+-                except:
+-                    log.error(&quot;no permission for %s&quot;%file_to_copy)
+-
+-            self.widgets['poster_window'].hide()
+-        else:
+-            gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+-    else:
+-        # cleanup temporary files after canceling the download
+-        if os.path.isfile(file_to_copy):
+-            try:
+-                os.remove(file_to_copy)
+-            except:
+-                log.error(&quot;no permission for %s&quot;%file_to_copy)
+-    # reconnect the signals to the shared result list
+-    reconnect_add_signals(self)
+-
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/initialize.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -478,6 +478,32 @@
+     w['box_import_2'].show_all()
+     w['box_import_3'].show_all()
+ 
++def extensions(self):
++    import plugins.extensions
++    user_extensions_path = os.path.join(self.locations['home'], 'lib', 'extensions')
++    if os.path.isdir(user_extensions_path):
++        plugins.extensions.scan_for_extensions(user_extensions_path)
++
++    if hasattr(self, 'extensions'):
++        for ext in self.extensions:
++            ext.clear()
++    self.extensions = [] # deletes previous instances
++
++    for ext_name in plugins.extensions.by_name:
++        ext_module = plugins.extensions.by_name[ext_name]
++        if ext_module.enabled:
++            try:
++                ext = ext_module(self)
++                self.extensions.append(ext)
++            except (NotImplementedError, DeprecationWarning), e:
++                log.warning('extension skipped: %s', e.message)
++                log.debug('extension skipped: %s', ext_module.__file__)
++                continue
++            if ext_module.toolbar_icon:
++                toolbar = self.widgets['extensions']['toolbar']
++                i = ext_module.toolbar_icon
++                ext.toolbar_icon_widget = toolbar.insert_stock(ext_module.toolbar_icon, ext_module.description, None, ext._on_toolbar_icon_clicked, None, -1)
++
+ def people_treeview(self, create=True):
+     row = None
+     self.p_treemodel = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
+@@ -623,16 +649,16 @@
+     self.widgets['results']['treeview'].set_model(self.treemodel_results)
+     self.widgets['results']['treeview'].set_headers_visible(False)
+     # column ids
+-    renderer=gtk.CellRendererText()
+-    self.column1=gtk.TreeViewColumn(None, renderer, text=0)
+-    self.column1.set_visible(False)
+-    self.widgets['results']['treeview'].append_column(self.column1)
++    renderer = gtk.CellRendererText()
++    column1 = gtk.TreeViewColumn(None, renderer, text=0)
++    column1.set_visible(False)
++    self.widgets['results']['treeview'].append_column(column1)
+     # column titles
+-    renderer=gtk.CellRendererText()
+-    self.column2=gtk.TreeViewColumn(None, renderer, text=1)
+-    self.column2.set_resizable(True)
+-    self.column2.set_sort_column_id(1)
+-    self.widgets['results']['treeview'].append_column(self.column2)
++    renderer = gtk.CellRendererText()
++    column2 = gtk.TreeViewColumn(None, renderer, text=1)
++    column2.set_resizable(True)
++    column2.set_sort_column_id(1)
++    self.widgets['results']['treeview'].append_column(column2)
+ 
+ def spellcheck(self):
+     global spell_support
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/main_treeview.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -51,6 +51,8 @@
+             # poster window is visible
+             filename = gutils.get_image_fname(movie.poster_md5, self.db)
+             self.widgets['big_poster'].set_from_file(filename)
++        for ext in self.extensions:
++            ext.maintree_clicked(treeselection, movie)
+         set_details(self, movie)
+     else:
+         set_details(self, {})
+@@ -225,12 +227,10 @@
+         if filename and os.path.isfile(filename):
+             image_path = filename
+             self.widgets['add']['delete_poster'].set_sensitive(True)
+-            self.widgets['menu']['delete_poster'].set_sensitive(True)
+             w['picture_button'].set_sensitive(True)
+         else:
+             image_path = os.path.join(self.locations['images'], 'default.png')
+             self.widgets['add']['delete_poster'].set_sensitive(False)
+-            self.widgets['menu']['delete_poster'].set_sensitive(False)
+             w['picture_button'].set_sensitive(False)
+     else:
+         image_path = os.path.join(self.locations['images'], 'default.png')
+
+Modified: trunk/lib/plugins/__init__.py
+===================================================================
+--- trunk/lib/plugins/__init__.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/plugins/__init__.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -1 +1 @@
+-__all__ = ['export', 'imp', 'movie']
++__all__ = ['export', 'imp', 'movie', 'extensions']
+
+Added: trunk/lib/plugins/extensions/__init__.py
+===================================================================
+--- trunk/lib/plugins/extensions/__init__.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/plugins/extensions/__init__.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -0,0 +1,139 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright &#169; 2009 Piotr O&#380;arowski
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published byp
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import glob
++import logging
++import os.path
++import sys
++
++import db
++
++log = logging.getLogger('Griffith')
++
++# minimum and maximum supported extension APIs
++COMPAT = (1, 1)
++
++class GriffithExtensionBase(object):
++    &quot;&quot;&quot;Griffith Extension
++
++    :attr config: configuration
++    :attr db: database
++    :attr locations: dictionary with Griffth locations
++    :attr widgets: dictionary with GUI widgets
++    :attr preferences: dictionary used to generate new widgets in preferences window
++        every key points to another dictionary that contains:
++        * name: will be shown to user
++        * type: int or unicode (type) or list (instance)
++        * min: minimum value (int) or length (unicode)
++        * max: maximum value (int) or length (unicode)
++    :attr app: application reference (use only if really needed)
++    &quot;&quot;&quot;
++    name = None
++    description = None
++    author = None
++    email = None
++    version = None
++    api = 1 # required Griffith Extension API
++
++    enabled = True # default state (can be later changed in preferences)
++    toolbar_icon = None # None or stock icon name
++    preferences = {}
++
++    toolbar_icon_widget = None # will be constructed from toolbar_icon
++
++    def __new__(class_, *args, **kwargs):
++        if class_.api &lt; COMPAT[0]:
++            raise DeprecationWarning(&quot;Extension is using API that is no longer supported: %s (api=%d)&quot; % (class_.name, class_.api))
++        if class_.api &gt; COMPAT[1]:
++            raise NotImplementedError(&quot;Extension is using API that is not yet supported: %s (api=%d)&quot; % (class_.name, class_.api))
++        obj = object.__new__(class_, *args, **kwargs)
++        obj.app = app = args[0]
++        obj.widgets = app.widgets
++        obj.config = app.config
++        obj.db = app.db
++        obj.locations = app.locations
++        return obj
++
++    def __repr__(self):
++        return &quot;&lt;GriffithExtension api=%d name=%s version=%s&gt;&quot; % (self.api, self.name, self.version)
++
++    def get_config_value(self, key, default=None):
++        return self.config.get(&quot;%s_%s&quot; % (self.id, key), default, section='extensions')
++
++    def _on_toolbar_icon_clicked(self, button_widget):
++        session = self.db.Session()
++        movie = session.query(db.Movie).filter(db.Movie.movie_id==self.app._movie_id).first()
++        if not movie:
++            log.error('No movie selected')
++        else:
++            self.toolbar_icon_clicked(button_widget, movie)
++
++    # methods that can be overwritten:
++
++    def __init__(self, griffith):
++        &quot;&quot;&quot;Initializes extension&quot;&quot;&quot;
++   
++    def clear(self): # __del__ cannot be used here (signal references issue)
++        &quot;&quot;&quot;Invoked when extension is about to be disabled&quot;&quot;&quot;
++        if self.toolbar_icon_widget:
++            print self.toolbar_icon_widget.destroy()
++
++    def maintree_clicked(self, selection, movie):
++        &quot;&quot;&quot;Invoked every time new movie is selected&quot;&quot;&quot;
++    
++    def toolbar_icon_clicked(self, widget, movie):
++        &quot;&quot;&quot;Invoked when toolbar icon is clicked&quot;&quot;&quot;
++
++    def filter_movies(self, conditions):
++        &quot;&quot;&quot;Modifies movie selection (via search conditions)&quot;&quot;&quot;
++        return conditions
++
++
++by_name = {} # extension modules by name 
++def scan_for_extensions(path):
++    &quot;&quot;&quot;Adds new extensions from given path&quot;&quot;&quot;
++
++    names = dict((os.path.basename(x)[:-3], x) for x in glob.glob(&quot;%s/ge_[a-zA-Z]*.py&quot; % path))
++    names.update(dict((os.path.basename(x)[:-4], x) for x in glob.glob(&quot;%s/ge_[a-zA-Z]*.pyo&quot; % path)))
++    names.update(dict((os.path.basename(x)[:-4], x) for x in glob.glob(&quot;%s/ge_[a-zA-Z]*.pyc&quot; % path)))
++
++    if names:
++        remove_from_syspath = False
++        if path not in sys.path:
++            remove_from_syspath = True
++            sys.path.append(path)
++
++        for ext_name in names:
++            #module = __import__(&quot;plugins.extensions.%s&quot; % ext_name, fromlist=[ext_name])
++            module = __import__(ext_name)
++            id_ = ext_name[3:] # skip the &quot;ge_&quot;
++            extension = module.GriffithExtension
++            extension.id = id_
++            extension.__file__ = names[ext_name]
++            by_name[id_] = extension
++
++        if remove_from_syspath:
++            del sys.path[-1]
++
++scan_for_extensions(os.path.dirname(__file__)) # user's directory will be added later (in app)
++
+
+
+Property changes on: trunk/lib/plugins/extensions/__init__.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Copied: trunk/lib/plugins/extensions/amazon.py (from rev 1272, trunk/lib/amazon.py)
+
+
+Property changes on: trunk/lib/plugins/extensions/amazon.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/lib/plugins/extensions/ge_amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_amazon.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/plugins/extensions/ge_amazon.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -0,0 +1,227 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright &#169; 2009 Piotr O&#380;arowski
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published byp
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import logging
++import os
++import tempfile
++from urllib import urlcleanup, FancyURLopener, urlretrieve
++
++import gtk
++from PIL import Image
++
++import gutils
++from plugins.extensions import GriffithExtensionBase as Base
++from widgets import populate_results_window
++from edit import update_image
++
++import amazon
++
++log = logging.getLogger('Griffith')
++amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
++
++class GriffithExtension(Base):
++    name = 'Amazon'
++    description = _('Fetch from Amazon')
++    author = 'Piotr O&#380;arowski'
++    email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at griffith.cc</A>'
++    version = 1
++    api = 1
++
++    preferences = {'locale': {'name': _('Select source'),
++                              'type': ('US', 'UK', 'DE', 'CA', 'FR', 'JP')}}
++    toolbar_icon = 'gtk-network'
++
++    def toolbar_icon_clicked(self, widget, movie):
++        log.info('fetching poster from Amazon...')
++        self.movie = movie
++
++        if movie is None:
++            gutils.error(self.app, _('You have no movies in your database'), self.widgets['window'])
++            return False
++
++        locale = self.get_config_value('locale', 'US').lower()
++
++        keyword = movie.o_title
++        if locale == 'de':
++            keyword = movie.title
++
++        try:
++            result = amazon.searchByTitle(keyword, type='Large', product_line='DVD', locale=locale)
++            if hasattr(result, 'TotalPages'):
++                # get next result pages
++                pages = int(result.TotalPages)
++                page = 2
++                while page &lt;= pages and page &lt; 11:
++                    tmp = amazon.searchByTitle(keyword, type='Large', product_line='DVD', locale=locale, page=page)
++                    result.Item.extend(tmp.Item)
++                    page = page + 1
++            if not hasattr(result, 'Item') or not len(result.Item):
++                # fallback if nothing is found by title
++                result = amazon.searchByKeyword(keyword, type='Large', product_line='DVD', locale=locale)
++                if hasattr(result, 'TotalPages'):
++                    # get next result pages
++                    pages = int(result.TotalPages)
++                    page = 2
++                    while page &lt;= pages and page &lt; 11:
++                        tmp = amazon.searchByKeyword(keyword, type='Large', product_line='DVD', locale=locale, page=page)
++                        result.Item.extend(tmp.Item)
++                        page = page + 1
++            self._result = result
++            log.info(&quot;... %s posters found&quot; % result.TotalResults)
++        except:
++            gutils.warning(_('No posters found for this movie.'))
++            return
++
++        if not hasattr(result, 'Item') or not len(result.Item):
++            gutils.warning(_('No posters found for this movie.'))
++            return
++
++        if len(result.Item) == 1:
++            o_title = self.widgets['movie']['o_title'].get_text().decode('utf-8')
++            if o_title == result.Item[0].ItemAttributes.Title or keyword == result.Item[0].ItemAttributes.Title:
++                self.get_poster(self.app, result.Item[0])
++                return
++
++        # populate results window
++        items = {}
++        for i, item in enumerate(result.Item):
++            if hasattr(item, 'LargeImage') and len(item.LargeImage.URL):
++                title = item.ItemAttributes.Title
++                if hasattr(item.ItemAttributes, 'ProductGroup'):
++                    title = title + u' - ' + item.ItemAttributes.ProductGroup
++                elif hasattr(item.ItemAttributes, 'Binding'):
++                    title = title + u' - ' + item.ItemAttributes.Binding
++                if hasattr(item.ItemAttributes, 'ReleaseDate'):
++                    title = title + u' - ' + item.ItemAttributes.ReleaseDate[:4]
++                elif hasattr(item.ItemAttributes, 'TheatricalReleaseDate'):
++                    item.ItemAttributes.TheatricalReleaseDate[:4]
++                if hasattr(item.ItemAttributes, 'Studio'):
++                    title = title + u' - ' + item.ItemAttributes.Studio
++                items[i] = title
++
++        populate_results_window(self.app.treemodel_results, items)
++        self.widgets['add']['b_get_from_web'].set_sensitive(False) # disable movie plugins (result window is shared)
++        self.app._resultswin_process = self.on_result_selected # use this signal (will be reverted when window is closed)
++        self.widgets['results']['window'].show()
++        self.widgets['results']['window'].set_keep_above(True)
++
++    def on_result_selected(self, key):
++        key = int(key)
++        if self._result.Item[key].LargeImage.URL:
++            poster_file = self.get_poster(self._result.Item[key])
++            if poster_file:
++                update_image(self.app, self.movie.number, poster_file)
++                try:
++                    os.remove(poster_file)
++                except:
++                    log.error('cannot remove %s', poster_file)
++        self.widgets['results']['window'].hide()
++        self.widgets['add']['b_get_from_web'].set_sensitive(True)
++
++    def get_poster(self, item):
++        &quot;&quot;&quot;Returns file path to the new poster&quot;&quot;&quot;
++
++        from movie import Progress, Retriever
++
++        file_to_copy = tempfile.mktemp(suffix=self.widgets['movie']['number'].get_text(), \
++            dir=self.locations['temp'])
++        file_to_copy += &quot;.jpg&quot;
++        canceled = False
++        try:
++            progress = Progress(self.widgets['window'], _(&quot;Fetching poster&quot;), _(&quot;Wait a moment&quot;))
++            retriever = Retriever(item.LargeImage.URL, self.widgets['window'], progress, file_to_copy)
++            retriever.start()
++            while retriever.isAlive():
++                progress.pulse()
++                if progress.status:
++                    canceled = True
++                while gtk.events_pending():
++                    gtk.main_iteration()
++            progress.close()
++            urlcleanup()
++        except:
++            canceled = True
++            gutils.warning(_(&quot;Sorry. A connection error has occurred.&quot;))
++            try:
++                os.remove(file_to_copy)
++            except:
++                log.error(&quot;no permission for %s&quot;%file_to_copy)
++
++        if not canceled:
++            if os.path.isfile(file_to_copy):
++                im = None
++                try:
++                    im = Image.open(file_to_copy)
++                except IOError:
++                    log.warn(&quot;failed to identify %s&quot;%file_to_copy)
++
++                if im and im.size == (1,1):
++                    url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % item.ASIN).read()
++                    if url.find('no-img-sm._V47056216_.gif') &gt; 0:
++                        log.warn('No image available')
++                        gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++                        return False
++                    url = gutils.after(url, 'id=&quot;imageViewerDiv&quot;&gt;&lt;img src=&quot;')
++                    url = gutils.before(url, '&quot; id=&quot;prodImage&quot;')
++                    urlretrieve(url, file_to_copy)
++                    try:
++                        im = Image.open(file_to_copy)
++                    except IOError:
++                        log.warn(&quot;failed to identify %s&quot;, file_to_copy)
++
++                if not im:
++                    # something wrong with the image, give some feedback to the user
++                    log.warn('No image available')
++                    gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++                    return False
++
++                if im.mode != 'RGB': # convert GIFs
++                    im = im.convert('RGB')
++                    im.save(file_to_copy, 'JPEG')
++                # set to None because the file is locked otherwise (os.remove throws an exception)
++                im = None
++
++                handler = self.widgets['big_poster'].set_from_file(file_to_copy)
++
++                self.widgets['poster_window'].show()
++                self.widgets['poster_window'].move(0,0)
++                response = gutils.question(_(&quot;Do you want to use this poster instead?&quot;), True, self.widgets['window'])
++                if response == -8:
++                    return file_to_copy
++                else:
++                    log.info(&quot;Reverting to previous poster and deleting new one from disk.&quot;)
++                    try:
++                        os.remove(file_to_copy)
++                    except:
++                        log.error('cannot remove %s', file_to_copy)
++
++                self.widgets['poster_window'].hide()
++            else:
++                gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++        else:
++            # cleanup temporary files after canceling the download
++            if os.path.isfile(file_to_copy):
++                try:
++                    os.remove(file_to_copy)
++                except:
++                    log.error('cannot remove %s', file_to_copy)
+
+
+Property changes on: trunk/lib/plugins/extensions/ge_amazon.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/version.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname        = &quot;Griffith&quot;
+-pversion     = &quot;0.10&quot;
++pversion     = &quot;0.11~svn&quot;
+ pauthor      = &quot;Vasco Nunes, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&gt;&quot;
+ pyear        = &quot;2005-2009&quot;
+ pwebsite     = &quot;<A HREF="http://www.griffith.cc/">http://www.griffith.cc/</A>&quot;
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2009-08-09 20:52:13 UTC (rev 1273)
++++ trunk/lib/widgets.py	2009-08-09 21:15:57 UTC (rev 1274)
+@@ -1,4 +1,5 @@
+ # -*- coding: UTF-8 -*-
++# vim: fdm=marker
+ 
+ __revision__ = '$Id$'
+ 
+@@ -34,9 +35,9 @@
+     self.widgets['treeview'] = get('main_treeview')
+     self.widgets['treeview'].connect('button_press_event', self.on_maintree_button_press_event)
+     self.widgets['statusbar'] = get('statusbar')
+-    self.widgets['progressbar']    = get('w_progress')    # get from web
++    self.widgets['progressbar'] = get('w_progress')    # get from web
+     #buttons
+-    self.widgets['new_db']      = get('new_bt')
++    self.widgets['new_db'] = get('new_bt')
+     self.widgets['toolbar'] = get('toolbar1')
+     
+ 
+@@ -137,7 +138,7 @@
+         'lang_treeview'    : get('lang_treeview'),
+         'b_get_from_web'   : get('get_from_web'),
+         'c_web_source'     : get('combo_source'), # c_web_source
+-        'delete_poster'    : get('delete_poster'),
++        'delete_poster'    : get('t_delete_poster'),
+         'add_button'       : get('am_add_button'),
+         'add_close_button' : get('am_add_close_button'),
+         'clear_button'     : get('am_clear_button'),
+@@ -266,11 +267,14 @@
+         'select':   get('results_select'),
+         'cancel':   get('results_cancel'),
+     }
+-    self.widgets['results']['window'].connect('delete_event', self.on_delete_event_r)
++    self.widgets['results']['window'].connect('delete_event', self.on_results_window_close)
+     self.widgets['results']['window'].set_transient_for(self.widgets['add']['window'])
+     # default results window signals:
+-    self.results_signal = self.widgets['results']['select'].connect('clicked', self.populate_dialog_with_results)
+-    self.results_double_click = self.widgets['results']['treeview'].connect('button_press_event', self.on_results_button_press_event)
++    self._resultswin_window_closed_signal = None
++    self._resultswin_process = self.populate_dialog_with_results
++    self._resultswin_button_pressed_signal = self.on_add_movie_results_button_press_event
++    self.widgets['results']['select'].connect('clicked', self.on_results_select_press_event)
++    self.widgets['results']['treeview'].connect('button_press_event', self.on_results_button_press_event)
+     #}}}
+ 
+     self.widgets['print_cover'] = {#{{{
+@@ -330,7 +334,6 @@
+         'not_seen_movies' : get('seen_movies'),
+         'loaned_movies'   : get('loaned_movies'),
+         'all_movies'      : get('all_movies'),
+-        'delete_poster'   : get('t_delete_poster'),
+         'loan'            : get('loan1'),
+         'email'           : get('return1'),
+         'return'          : get('e-mail_reminder1'),
+@@ -342,6 +345,9 @@
+         'return' : get('popup_return'),
+         'email'  : get('popup_email'),
+     }#}}}
++    self.widgets['extensions'] = {
++        'toolbar': get('ext_toolbar'),
++    }
+     
+     self.widgets['w_loan_to']     = get('w_loan_to')
+     self.widgets['w_loan_to'].connect('delete_event', self.on_delete_event_lt)
+@@ -434,7 +440,6 @@
+         'on_open_poster_clicked'                 : self.change_poster,
+         'on_zoom_poster_clicked'                 : self.z_poster,
+         'on_delete_poster_clicked'               : self.del_poster,
+-        'on_fetch_poster_clicked'                : self.get_poster,
+         # URLs
+         'on_goto_homepage_activate'              : self.on_goto_homepage_activate,
+         'on_goto_forum_activate'                 : self.on_goto_forum_activate,
+@@ -464,7 +469,7 @@
+         'on_am_remove_collection_button_clicked' : self.remove_collection,
+         'on_f_col_changed'                       : self.filter_collection,
+         'on_f_advfilter_changed'                 : self.filter_using_advfilter_rule,
+-        'on_results_cancel_clicked'              : self.results_cancel_ck,
++        'on_results_cancel_clicked'              : self.on_results_window_close,
+         # languages
+         'on_lang_add_clicked'                    : self.on_lang_add_clicked,
+         'on_lang_remove_clicked'                 : self.on_lang_remove_clicked,
+@@ -512,44 +517,15 @@
+         'on_advfilter_open'                      : lambda w: advfilter.load(self.db, self.widgets['advfilter'], self.field_names),
+     })#}}}
+ 
+-def reconnect_add_signals(self):#{{{
+-    self.widgets['add']['b_get_from_web'].set_sensitive(True)
+-    try:
+-        self.widgets['results']['select'].disconnect(self.poster_results_signal)
+-    except:
+-        pass
++def populate_results_window(treemodel, items):
++    treemodel.clear()
+ 
+-    try:
+-        self.widgets['results']['treeview'].disconnect(self.results_poster_double_click)
+-    except:
+-        pass
++    if isinstance(items, dict):
++        iterable = items.iteritems()
++    else:
++        iterable = items
+ 
+-    # connect signals
+-    self.results_signal = self.widgets['results']['select'].connect('clicked', \
+-            self.populate_dialog_with_results)
+-    self.results_double_click = self.widgets['results']['treeview'].connect('button_press_event', \
+-        self.on_results_button_press_event)#}}}
+-
+-def connect_poster_signals(self, event, result, current_poster):#{{{
+-    import edit
+-
+-    try:
+-        self.widgets['results']['select'].disconnect(self.results_signal)
+-    except:
+-        pass
+-
+-    try:
+-        self.widgets['results']['treeview'].disconnect(self.results_double_click)
+-    except:
+-        pass
+-
+-    # connect signals
+-
+-    self.results_poster_double_click = self.widgets['results']['treeview'].connect('button_press_event', \
+-        edit.get_poster_select_dc, self, result, current_poster)
+-
+-    self.poster_results_signal = \
+-        self.widgets['results']['select'].connect('clicked', edit.get_poster_select, \
+-        self, result, current_poster)
+-    #}}}
+-# vim: fdm=marker
++    for key, value in iterable:
++        myiter = treemodel.insert_before(None, None)
++        treemodel.set_value(myiter, 0, str(key))
++        treemodel.set_value(myiter, 1, value)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000741.html">[Griffith-svn] r1273 - trunk/lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000743.html">[Griffith-svn] r1275 - in trunk: . lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#742">[ date ]</a>
+              <a href="thread.html#742">[ thread ]</a>
+              <a href="subject.html#742">[ subject ]</a>
+              <a href="author.html#742">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

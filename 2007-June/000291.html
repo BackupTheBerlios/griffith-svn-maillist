@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r773 - in trunk: . lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r773%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200706171941.l5HJfKiM028206%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000290.html">
+   <LINK REL="Next"  HREF="000292.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r773 - in trunk: . lib/plugins/export</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r773%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200706171941.l5HJfKiM028206%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r773 - in trunk: . lib/plugins/export">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jun 17 21:41:20 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000290.html">[Griffith-svn] r772 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000292.html">[Griffith-svn] r774 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#291">[ date ]</a>
+              <a href="thread.html#291">[ thread ]</a>
+              <a href="subject.html#291">[ subject ]</a>
+              <a href="author.html#291">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-06-17 21:41:19 +0200 (Sun, 17 Jun 2007)
+New Revision: 773
+
+Modified:
+   trunk/griffith
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportXML.py
+   trunk/lib/plugins/export/PluginExportiPod.py
+Log:
+use config instance in export plugins
+(PDF plugin fixed)
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-06-17 19:15:03 UTC (rev 772)
++++ trunk/griffith	2007-06-17 19:41:19 UTC (rev 773)
+@@ -137,7 +137,7 @@
+ 
+ 	def on_export_activate(self, menu_iter, plugin_name):
+ 		export_plugin = __import__('PluginExport%s' % plugin_name)
+-		export_plugin.ExportPlugin(self.db, self.locations, self.widgets['window'], self.debug)
++		export_plugin.ExportPlugin(self.db, self.locations, self.widgets['window'], self.debug, config=self.config)
+ 
+ 	def on_import_activate(self, *args):
+ 		if self.widgets.has_key('import'):
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2007-06-17 19:15:03 UTC (rev 772)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2007-06-17 19:41:19 UTC (rev 773)
+@@ -35,7 +35,7 @@
+ 
+ class ExportPlugin:
+ 
+-    def __init__(self, database, locations, parent, debug):
++    def __init__(self, database, locations, parent, debug, **kwargs):
+         self.db = database
+         self.locations = locations
+         self.parent = parent
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2007-06-17 19:15:03 UTC (rev 772)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2007-06-17 19:41:19 UTC (rev 773)
+@@ -120,7 +120,7 @@
+ 	}
+ 	#}}}
+ 
+-	def __init__(self, database, locations, parent, debug):#{{{
++	def __init__(self, database, locations, parent_window, debug, **kwargs):#{{{
+ 		self.db = database
+ 		self.debug = debug
+ 		self.locations = locations
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-06-17 19:15:03 UTC (rev 772)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2007-06-17 19:41:19 UTC (rev 773)
+@@ -47,10 +47,11 @@
+ plugin_version = &quot;0.3&quot;
+ 
+ class ExportPlugin:
+-    def __init__(self, database, locations, parent, debug):
++    def __init__(self, database, locations, parent_window, debug, **kwargs):
+         self.db = database
+         self.locations = locations
+-        self.parent = parent
++        self.parent = parent_window
++	self.config = kwargs['config']
+         self.styles = getSampleStyleSheet()
+         self.export_simple_pdf()
+         self.fontName = &quot;&quot;
+@@ -58,10 +59,9 @@
+     def export_simple_pdf(self):
+         &quot;&quot;&quot;exports a simple movie list to a pdf file&quot;&quot;&quot;
+         
+-        myconfig = config.Config(os.path.join(self.locations['home'], 'griffith.conf'))
+-        if myconfig.get('font', '')!='':
+-                self.fontName = &quot;custom_font&quot;
+-                pdfmetrics.registerFont(TTFont(self.fontName, myconfig.get('font', '')))
++        if self.config.get('font', '') != '':
++                self.fontName = 'custom_font'
++                pdfmetrics.registerFont(TTFont(self.fontName, self.config.get('font', '')))
+         else:
+                 self.fontName = &quot;Helvetica&quot;
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2007-06-17 19:15:03 UTC (rev 772)
++++ trunk/lib/plugins/export/PluginExportXML.py	2007-06-17 19:41:19 UTC (rev 773)
+@@ -36,10 +36,10 @@
+ 
+ class ExportPlugin:
+ 
+-	def __init__(self, database, locations, parent, debug):
++	def __init__(self, database, locations, parent_window, debug, **kwargs):
+ 		self.db = database
+ 		self.locations = locations
+-		self.parent = parent
++		self.parent = parent_window
+ 		self.export_xml()
+ 
+ 	def export_xml(self):
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2007-06-17 19:15:03 UTC (rev 772)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2007-06-17 19:41:19 UTC (rev 773)
+@@ -1,6 +1,6 @@
+ # -*- coding: UTF-8 -*-
+ 
+-__revision__ = '$Id:  $'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2005-2007 Vasco Nunes
+ #
+@@ -65,10 +65,10 @@
+ 
+ class ExportPlugin:
+ 
+-    def __init__(self, database, locations, parent, debug):
++    def __init__(self, database, locations, parent_window, debug, **kwargs):
+         self.db = database
+         self.locations = locations
+-        self.parent = parent
++        self.parent = parent_window
+         self.export_iPod()
+ 
+     def export_iPod(self):
+@@ -101,7 +101,7 @@
+ 		# this is not a mac, lets save the file
+ 		else:
+ 			filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-	            buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='ipod_griffith_list')
++				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='ipod_griffith_list')
+ 			if filename[0]:
+ 				overwrite = None
+ 				if os.path.isfile(filename[0]):
+@@ -112,4 +112,4 @@
+ 						overwrite = False
+ 				if overwrite == True or overwrite is None:
+ 					shutil.copyfile(os.path.join(tmp_dir,&quot;movies&quot;), filename[0])
+-					gutils.info(self, _(&quot;List was successful exported. Now you should move it to the 'Notes' folder on your iPod.&quot;), self.parent)
+\ No newline at end of file
++					gutils.info(self, _(&quot;List was successful exported. Now you should move it to the 'Notes' folder on your iPod.&quot;), self.parent)
+
+
+Property changes on: trunk/lib/plugins/export/PluginExportiPod.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000290.html">[Griffith-svn] r772 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000292.html">[Griffith-svn] r774 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#291">[ date ]</a>
+              <a href="thread.html#291">[ thread ]</a>
+              <a href="subject.html#291">[ subject ]</a>
+              <a href="author.html#291">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

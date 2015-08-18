@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r613 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r613%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200612240206.kBO266b8019951%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000138.html">
+   <LINK REL="Next"  HREF="000140.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r613 - in trunk: . lib</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r613%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200612240206.kBO266b8019951%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r613 - in trunk: . lib">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 24 03:06:06 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000138.html">[Griffith-svn] r612 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000140.html">[Griffith-svn] r614 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#139">[ date ]</a>
+              <a href="thread.html#139">[ thread ]</a>
+              <a href="subject.html#139">[ subject ]</a>
+              <a href="author.html#139">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2006-12-24 03:06:02 +0100 (Sun, 24 Dec 2006)
+New Revision: 613
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/initialize.py
+   trunk/winsetup.py
+Log:
+fixed some win32 issues. updates py2exe setup includes.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2006-12-24 01:54:21 UTC (rev 612)
++++ trunk/ChangeLog	2006-12-24 02:06:02 UTC (rev 613)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+ 
++2006-12-24 Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
++	* Added some gtk dialogs when converting old db format
++	* Fixed some win32 setup includes
++
+ 2006-12-22 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Polish manpage updated
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2006-12-24 01:54:21 UTC (rev 612)
++++ trunk/griffith	2006-12-24 02:06:02 UTC (rev 613)
+@@ -25,7 +25,8 @@
+ import sys, os.path
+ import gtk, gtk.glade
+ assert gtk.pygtk_version &gt;= (2, 6, 0), 'PyGTK should be &gt;= 2.6.0'
+-lib = os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib'))
++lib = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
++#lib = os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib'))
+ if os.path.isdir(lib):
+ 	sys.path.append(lib)
+ del lib
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2006-12-24 01:54:21 UTC (rev 612)
++++ trunk/lib/initialize.py	2006-12-24 02:06:02 UTC (rev 613)
+@@ -43,10 +43,10 @@
+ 	locations['lib']  = os.path.dirname(__file__)
+ 	
+ 	if os.name == 'nt' or os.name == 'win32':
+-		#import winshell
+-		#mydocs = winshell.my_documents()
+-		#locations['home']           = os.path.join(mydocs, 'griffith')
+-		locations['home']           = os.path.join(os.path.expanduser('~'), 'griffith')
++		import winshell
++		mydocs = winshell.my_documents()
++		locations['home']           = os.path.join(mydocs, 'griffith')
++		#locations['home']           = os.path.join(os.path.expanduser('~'), 'griffith')
+ 		locations['movie_plugins']  = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+ 		locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+ 		locations['images']         = &quot;%s\\images&quot; % locations['exec']
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2006-12-24 01:54:21 UTC (rev 612)
++++ trunk/winsetup.py	2006-12-24 02:06:02 UTC (rev 613)
+@@ -52,7 +52,7 @@
+ 
+ opts = {
+     &quot;py2exe&quot;: {
+-        &quot;includes&quot;: &quot;cairo,pangocairo,cgi,PIL,sqlite,pysqlite2,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,adodb,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,winshell&quot;,
++        &quot;includes&quot;: &quot;cairo,pangocairo,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet&quot;,
+         &quot;optimize&quot;: 2,
+ 		&quot;dist_dir&quot;: &quot;dist&quot;,
+     }
+@@ -60,8 +60,12 @@
+ 
+ setup(
+     name = &quot;Griffith&quot;,
+-    description = &quot;Griffith&quot;,
+     version = &quot;0.9~rc1&quot;,
++	description = 'Griffith - A film manager',
++    author = 'Vasco Nunes/Piotr Ozarowski',
++    author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>',
++    url = '<A HREF="http://griffith.vasconunes.net">http://griffith.vasconunes.net</A>',
++    license = 'GPL',
+     console = [
+         {
+             &quot;script&quot;: &quot;griffith&quot;,
+@@ -101,10 +105,16 @@
+ 		glob.glob(&quot;i18n\\pt\\LC_MESSAGES\\*.mo&quot;)),
+ 		(&quot;i18n/it/LC_MESSAGES&quot;,
+ 		glob.glob(&quot;i18n\\it\\LC_MESSAGES\\*.mo&quot;)),
++		(&quot;i18n/sv/LC_MESSAGES&quot;,
++		glob.glob(&quot;i18n\\sv\\LC_MESSAGES\\*.mo&quot;)),
++		(&quot;i18n/pt_BR/LC_MESSAGES&quot;,
++		glob.glob(&quot;i18n\\pt_BR\\LC_MESSAGES\\*.mo&quot;)),
+ 		(&quot;lib/plugins/export&quot;,
+ 		glob.glob(&quot;lib\\plugins\\export\\*.*&quot;)),
+ 		(&quot;lib/plugins/movie&quot;,
+ 		glob.glob(&quot;lib\\plugins\\movie\\*.*&quot;)),
++		(&quot;lib/plugins/imp&quot;,
++		glob.glob(&quot;lib\\plugins\\imp\\*.*&quot;)),
+ 		(&quot;images&quot;,
+ 		glob.glob(&quot;images\\*.png&quot;)),
+ 		(&quot;&quot;,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000138.html">[Griffith-svn] r612 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000140.html">[Griffith-svn] r614 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#139">[ date ]</a>
+              <a href="thread.html#139">[ thread ]</a>
+              <a href="subject.html#139">[ subject ]</a>
+              <a href="author.html#139">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

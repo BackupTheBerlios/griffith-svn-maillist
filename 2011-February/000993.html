@@ -1,0 +1,744 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1533 - in trunk: . lib lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1533%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export&In-Reply-To=%3C20110208210438.93D3248138D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000992.html">
+   <LINK REL="Next"  HREF="000994.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1533 - in trunk: . lib lib/plugins/export</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1533%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export&In-Reply-To=%3C20110208210438.93D3248138D%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1533 - in trunk: . lib lib/plugins/export">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb  8 22:04:38 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000992.html">[Griffith-svn] r1532 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000994.html">[Griffith-svn] r1534 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#993">[ date ]</a>
+              <a href="thread.html#993">[ thread ]</a>
+              <a href="subject.html#993">[ subject ]</a>
+              <a href="author.html#993">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2011-02-08 22:04:38 +0100 (Tue, 08 Feb 2011)
+New Revision: 1533
+
+Modified:
+   trunk/griffith
+   trunk/lib/backup.py
+   trunk/lib/gutils.py
+   trunk/lib/main_treeview.py
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportXML.py
+   trunk/lib/plugins/export/PluginExportiPod.py
+   trunk/lib/plugins/export/__init__.py
+Log:
+macosx menubar and dialogs integration removed (igemacintegration libs are quite buggy). using native gtk ones under mac.
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/griffith	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -140,21 +140,6 @@
+         initialize.people_treeview(self)
+         initialize.web_results(self)
+         self.initialized = True
+-        
+-        # macosx integration
+-        # hide gtk menubar and implement a native Cocoa replacement
+-        # using gtk_osxapplication 
+-        if self.mac:
+-            import gtk_osxapplication  
+-            self.macapp = gtk_osxapplication.OSXApplication()
+-            self.macapp.connect(&quot;NSApplicationBlockTermination&quot;, self.destroy)      
+-            gtk.Widget.hide(self.widgets['menu']['menubar']);
+-            self.macapp.set_menu_bar(self.widgets['menu']['menubar'])
+-            self.macapp.insert_app_menu_item(self.widgets['menu']['preferences'],1)
+-            self.macapp.insert_app_menu_item(self.widgets['menu']['about'],0)
+-            self.macapp.ready()
+-        # end macosx integration 
+-
+         self.restore_state()
+         self.clear_details()
+         self.populate_treeview()
+@@ -216,11 +201,6 @@
+ 
+     def destroy(self, widget, data=None):
+         self.save_state()
+-        # macosx - macosx integration fails with gtk.main_quit()
+-        # this is just a dirty workaround
+-        if self.mac:
+-            sys.exit(0)
+-        # end macosx
+         gtk.main_quit()
+ 
+     def on_configure(self, widget, data=None):
+@@ -1328,44 +1308,36 @@
+                 from sqlalchemy import select
+                 from sql import GriffithSQL
+                 from delete import delete_poster_from_cache
+-                # TODO: change this! seems sqlalchemy are crashing under mac when creating new db...
+-                if self.mac:
+-                    from shutil import rmtree
+-                    rmtree(os.path.expanduser('~/.griffith'))
+-                    log.debug(&quot;Deleting database&quot;)
+-                    python = sys.executable
+-                    os.execl(python, python, * sys.argv)
+-                else:
+-                    # delete images
+-                    posters_dir = self.locations['posters']
+-                    # NOTE: only used images are removed (posters are shared between various db)
+-                    log.debug('removing old images...')
+-                    posters = self.db.session.query(db.Movie.poster_md5).all()
+-                    for poster in posters:
+-                        delete_poster_from_cache(poster[0], posters_dir)
+-                    log.debug('dropping old tables...')
+-                    self.db.session.rollback() # cancel all pending operations
+-                    db.metadata.drop_all(self.db.session.bind.engine)
+-                    #from sqlalchemy.orm import clear_mappers
+-                    #clear_mappers()
+-                    # disposing current db connection
+-                    self.db.dispose()
+-                    # dispose isn't enough here, I don't know why, but unlink fails
+-                    # but I think unlink should not be necessary because all tables are dropped
+-                    #if self.config.get('type', 'sqlite', section='database') == 'sqlite':
+-                    #    os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
+-                    #    if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
+-                    #        self.config.set('file', 'griffith.db', section='database')
+-                    #    create/connect db
+-                    log.debug('creating new ones...')
+-                    self.db = GriffithSQL(self.config, self.griffith_dir)
+-                    self.clear_details()
+-                    self.total = 0
+-                    self.count_statusbar()
+-                    self.treemodel.clear()
+-                    from initialize import dictionaries, people_treeview
+-                    dictionaries(self)
+-                    people_treeview(self)
++                # delete images
++                posters_dir = self.locations['posters']
++                # NOTE: only used images are removed (posters are shared between various db)
++                log.debug('removing old images...')
++                posters = self.db.session.query(db.Movie.poster_md5).all()
++                for poster in posters:
++                    delete_poster_from_cache(poster[0], posters_dir)
++                log.debug('dropping old tables...')
++                self.db.session.rollback() # cancel all pending operations
++                db.metadata.drop_all(self.db.session.bind.engine)
++                #from sqlalchemy.orm import clear_mappers
++                #clear_mappers()
++                # disposing current db connection
++                self.db.dispose()
++                # dispose isn't enough here, I don't know why, but unlink fails
++                # but I think unlink should not be necessary because all tables are dropped
++                #if self.config.get('type', 'sqlite', section='database') == 'sqlite':
++                #    os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
++                #    if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
++                #        self.config.set('file', 'griffith.db', section='database')
++                #    create/connect db
++                log.debug('creating new ones...')
++                self.db = GriffithSQL(self.config, self.griffith_dir)
++                self.clear_details()
++                self.total = 0
++                self.count_statusbar()
++                self.treemodel.clear()
++                from initialize import dictionaries, people_treeview
++                dictionaries(self)
++                people_treeview(self)
+ 
+     # key events ----------------------------------------------------------
+ 
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/backup.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -45,37 +45,27 @@
+ except:
+     pass
+     
+-mac = True if system() == &quot;Darwin&quot; else False
+-
+ log = logging.getLogger('Griffith')
+ 
+-
+ def create(self):
+     &quot;&quot;&quot;perform a compressed griffith database/posters/preferences backup&quot;&quot;&quot;
+     #if self.db.session.bind.engine.name != 'sqlite':
+     #    gutils.error(_(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
+     #    return False
+     
+-    if mac:
+-        filename = EasyDialogs.AskFileForSave()
+-    else:
+-        default_name = &quot;%s_backup_%s.zip&quot; % (self.config.get('name', 'griffith', section='database'),\
+-                        datetime.date.isoformat(datetime.datetime.now()))
+-        filename = gutils.file_chooser(_(&quot;Save Griffith backup&quot;), \
+-            action=gtk.FILE_CHOOSER_ACTION_SAVE, name=default_name, \
+-            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK))
++    default_name = &quot;%s_backup_%s.zip&quot; % (self.config.get('name', 'griffith', section='database'),\
++                    datetime.date.isoformat(datetime.datetime.now()))
++    filename = gutils.file_chooser(_(&quot;Save Griffith backup&quot;), \
++        action=gtk.FILE_CHOOSER_ACTION_SAVE, name=default_name, \
++        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+ 
+     if filename and filename[0]:
+         proceed = True
+-        
+-        if mac:
+-            zipfilename = filename + &quot;.zip&quot;
+-        else:
+-            zipfilename = filename[0].decode('utf-8')
+-            log.debug('Backup filename: %s', zipfilename)
+-            if os.path.isfile(zipfilename):
+-                if not gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), window=self.widgets['window']):
+-                    proceed = False
++        zipfilename = filename[0].decode('utf-8')
++        log.debug('Backup filename: %s', zipfilename)
++        if os.path.isfile(zipfilename):
++            if not gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), window=self.widgets['window']):
++                proceed = False
+ 
+         if proceed:
+             try:
+@@ -210,12 +200,9 @@
+     * SQLite3 *.db file
+     &quot;&quot;&quot;
+     # let user select a backup file
+-    if mac:
+-        filename = EasyDialogs.AskFileForOpen()
+-    else:
+-        filename = gutils.file_chooser(_(&quot;Restore Griffith backup&quot;), \
+-                    action=gtk.FILE_CHOOSER_ACTION_OPEN, backup=True, \
+-                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
++    filename = gutils.file_chooser(_(&quot;Restore Griffith backup&quot;), \
++                action=gtk.FILE_CHOOSER_ACTION_OPEN, backup=True, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+     if not filename:
+         log.debug('no file selected')
+         return False
+@@ -293,13 +280,6 @@
+             tmp_config._file = self.config._file
+             self.config = tmp_config
+             self.config.save()
+-
+-        if mac:
+-            log.debug(&quot;Restoring database&quot;)
+-            import sys
+-            python = sys.executable
+-            os.execl(python, python, * sys.argv)
+-        else:
+             dictionaries(self)
+             people_treeview(self)
+             # let's refresh the treeview
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/gutils.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -275,38 +275,24 @@
+ 
+ 
+ def info(msg, parent=None):
+-    if platform.system() == 'Darwin':
+-        EasyDialogs.Message(str(msg))
+-    else:
+-        dialog = gtk.MessageDialog(parent,
+-                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+-                gtk.MESSAGE_INFO, gtk.BUTTONS_OK, msg)
+-        dialog.set_skip_taskbar_hint(False)
+-        dialog.run()
+-        dialog.destroy()
++    dialog = gtk.MessageDialog(parent,
++            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
++            gtk.MESSAGE_INFO, gtk.BUTTONS_OK, msg)
++    dialog.set_skip_taskbar_hint(False)
++    dialog.run()
++    dialog.destroy()
+ 
+ def question(msg, window=None):
+-    if platform.system() == 'Darwin':
+-        response = EasyDialogs.AskYesNoCancel(str(msg))
+-        if response == -1: response = 0
+-        return response
+-    else:
+-        dialog = gtk.MessageDialog(window,
+-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+-            gtk.MESSAGE_QUESTION, gtk.BUTTONS_NONE, msg)
+-        dialog.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
+-            gtk.STOCK_NO, gtk.RESPONSE_NO)
+-        dialog.set_default_response(gtk.RESPONSE_NO)
+-        dialog.set_skip_taskbar_hint(False)
+-        response = dialog.run()
+-        dialog.destroy()
+-        return response in (gtk.RESPONSE_OK, gtk.RESPONSE_YES)
+-    
+-def warningmac(msg, parent=None):
+-    EasyDialogs.Message(str(msg))
+-    
+-def errormac(msg, parent=None):
+-    EasyDialogs.Message(str(msg))
++    dialog = gtk.MessageDialog(window,
++        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
++        gtk.MESSAGE_QUESTION, gtk.BUTTONS_NONE, msg)
++    dialog.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
++        gtk.STOCK_NO, gtk.RESPONSE_NO)
++    dialog.set_default_response(gtk.RESPONSE_NO)
++    dialog.set_skip_taskbar_hint(False)
++    response = dialog.run()
++    dialog.destroy()
++    return response in (gtk.RESPONSE_OK, gtk.RESPONSE_YES)
+ 
+ def popup_message(message):
+     &quot;&quot;&quot;shows popup message while executing decorated function&quot;&quot;&quot;
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/main_treeview.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -498,8 +498,6 @@
+     if self.total:
+         self.widgets['treeview'].set_cursor_on_cell(0)
+     self.count_statusbar()
+-    
+-    if self.mac: self.macapp.sync_menubar()
+ #}}}
+ 
+ def addmovie(self, movie): #{{{
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -27,18 +27,8 @@
+ import gutils
+ import db
+ from plugins.export import Base
+-from platform import system
+ 
+-mac = False
+-if system() == &quot;Darwin&quot;:
+-    mac = True
+ 
+-try:
+-    import EasyDialogs
+-except:
+-    pass
+-
+-
+ class ExportPlugin(Base):
+     name = &quot;CSV&quot;
+     description = _(&quot;Full CSV list export plugin&quot;)
+@@ -56,37 +46,27 @@
+         basedir = None
+         if self.config is not None:
+             basedir = self.config.get('export_dir', None, section='export-csv')
+-        if mac:
+-            filename = EasyDialogs.AskFileForSave()
+-            filename = filename + &quot;.csv&quot;
++        if not basedir:
++            filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name='griffith_list.csv')
+         else:
+-            if not basedir:
+-                filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name='griffith_list.csv')
+-            else:
+-                filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,gtk.RESPONSE_OK), name='griffith_list.csv', folder=basedir)
+-        if filename and filename[0] or filenamemac:
+-            if mac:
+-                overwrite = True
+-            else:
+-                if self.config is not None and filename[1]:
+-                    self.config.set('export_dir', filename[1], section='export-csv')
+-                    self.config.save()
+-                overwrite = None
+-                if os.path.isfile(filename[0]):
+-                    if gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), self.parent_window):
+-                        overwrite = True
+-                    else:
+-                        overwrite = False
++            filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,gtk.RESPONSE_OK), name='griffith_list.csv', folder=basedir)
++        if filename and filename[0]:
++            if self.config is not None and filename[1]:
++                self.config.set('export_dir', filename[1], section='export-csv')
++                self.config.save()
++            overwrite = None
++            if os.path.isfile(filename[0]):
++                if gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), self.parent_window):
++                    overwrite = True
++                else:
++                    overwrite = False
+             
+             if overwrite or overwrite is None:
+                 movies = self.get_query().execute()
+ 
+-                if mac:
+-                    writer = csv.writer(file(filename, 'w'), dialect=csv.excel)
+-                else:
+-                    writer = csv.writer(file(filename[0], 'w'), dialect=csv.excel)
++                writer = csv.writer(file(filename[0], 'w'), dialect=csv.excel)
+                 # write column header row
+                 writer.writerow(self.fields_to_export)
+                 # write data rows
+@@ -95,8 +75,5 @@
+                     for s in self.exported_columns:
+                         t.append(movie[s])
+                     writer.writerow(t)
+-                if mac:
+-                    EasyDialogs.Message(&quot;%s file has been created.&quot; % &quot;CSV&quot;)
+-                else:
+-                    gutils.info(_(&quot;%s file has been created.&quot;) % &quot;CSV&quot;, self.parent_window)
++                gutils.info(_(&quot;%s file has been created.&quot;) % &quot;CSV&quot;, self.parent_window)
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -42,17 +42,7 @@
+ import gutils
+ import version
+ from plugins.export import Base
+-from platform import system
+ 
+-mac = False
+-if system() == &quot;Darwin&quot;:
+-    mac = True
+-
+-try:
+-    import EasyDialogs
+-except:
+-    pass
+-
+ class ExportPlugin(Base):
+     name = &quot;PDF&quot;
+     description = _(&quot;PDF export plugin&quot;)
+@@ -72,29 +62,21 @@
+         basedir = None
+         if not self.config is None:
+             basedir = self.config.get('export_dir', None, section='export-pdf')
+-        if mac:
+-            filename = EasyDialogs.AskFileForSave()
+-            filename = filename + &quot;.pdf&quot;
++        if basedir is None:
++            filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;)
+         else:
+-            if basedir is None:
+-                filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;)
+-            else:
+-                filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;,folder=basedir)
++            filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;,folder=basedir)
+         if filename is not False and filename[0]:
+-            if mac:
+-                overwrite = True
+-                pdffilename = filename.decode('utf-8')
+-            else:
+-                if not self.config is None and filename[1]:
+-                    self.config.set('export_dir', filename[1], section='export-pdf')
+-                    self.config.save()
+-                overwrite = None
+-                pdffilename = filename[0].decode('utf-8')
+-                if os.path.isfile(pdffilename):
+-                    if gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), self.parent_window):
+-                        overwrite = True
+-                    else:
+-                        overwrite = False
++            if not self.config is None and filename[1]:
++                self.config.set('export_dir', filename[1], section='export-pdf')
++                self.config.save()
++            overwrite = None
++            pdffilename = filename[0].decode('utf-8')
++            if os.path.isfile(pdffilename):
++                if gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), self.parent_window):
++                    overwrite = True
++                else:
++                    overwrite = False
+ 
+             if overwrite == True or overwrite is None:
+                 # filename encoding
+@@ -214,10 +196,7 @@
+                         p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                         Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+-                if mac:
+-                    EasyDialogs.Message(&quot;PDF has been created.&quot;)
+-                else:
+-                    gutils.info(_('PDF has been created.'), self.parent_window)
++                gutils.info(_('PDF has been created.'), self.parent_window)
+ 
+     def create_styles(self):
+         self.styles = getSampleStyleSheet()
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/plugins/export/PluginExportXML.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -27,17 +27,7 @@
+ import db
+ import gutils
+ from plugins.export import Base
+-from platform import system
+ 
+-mac = False
+-if system() == &quot;Darwin&quot;:
+-    mac = True
+-
+-try:
+-    import EasyDialogs
+-except:
+-    pass
+-
+ class ExportPlugin(Base):
+     name = &quot;XML&quot;
+     description = _(&quot;Full XML list export plugin&quot;)
+@@ -53,38 +43,26 @@
+         basedir = None
+         if self.config is not None:
+             basedir = self.config.get('export_dir', None, section='export-xml')
+-        if mac:
+-            filename = EasyDialogs.AskFileForSave()
+-            filename = filename + &quot;.xml&quot;
++        if basedir is None:
++            filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml')
+         else:
+-            if basedir is None:
+-                filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                    buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml')
+-            else:
+-                filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                    buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml',folder=basedir)
++            filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;XML&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml',folder=basedir)
+         if filename and filename[0]:
+-            if mac:
+-                overwrite = True
+-            else:
+-                if self.config is not None and filename[1]:
+-                    self.config.set('export_dir', filename[1], section='export-xml')
+-                    self.config.save()
+-                overwrite = None
+-                if os.path.isfile(filename[0]):
+-                    if gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), self.parent_window):
+-                        overwrite = True
+-                    else:
+-                        overwrite = False
++            if self.config is not None and filename[1]:
++                self.config.set('export_dir', filename[1], section='export-xml')
++                self.config.save()
++            overwrite = None
++            if os.path.isfile(filename[0]):
++                if gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), self.parent_window):
++                    overwrite = True
++                else:
++                    overwrite = False
+             
+-            if mac:
+-                posterdir = os.path.join(os.path.dirname(filename), 'posters')
+-                if not os.path.exists(posterdir):
+-                    os.mkdir(posterdir)
+-            else:
+-                posterdir = os.path.join(os.path.dirname(filename[0]), 'posters')
+-                if not os.path.exists(posterdir):
+-                    os.mkdir(posterdir)
++            posterdir = os.path.join(os.path.dirname(filename[0]), 'posters')
++            if not os.path.exists(posterdir):
++                os.mkdir(posterdir)
+             
+             if overwrite or overwrite is None:
+                 # create document
+@@ -129,16 +107,10 @@
+                     
+                 # write XML to file
+                 xmldata = doc.toprettyxml(encoding='utf-8')
+-                if mac:
+-                    fp = open(filename, &quot;w&quot;)
+-                else:
+-                    fp = open(filename[0], &quot;w&quot;)
++                fp = open(filename[0], &quot;w&quot;)
+                 try:
+                     fp.write(xmldata)
+                 finally:
+                     fp.close()
+-                if mac:
+-                    EasyDialogs.Message(&quot;%s file has been created.&quot; % &quot;XML&quot;)
+-                else:
+-                    gutils.info( _(&quot;%s file has been created.&quot;)%&quot;XML&quot;, self.parent_window)
++                gutils.info( _(&quot;%s file has been created.&quot;)%&quot;XML&quot;, self.parent_window)
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -33,11 +33,6 @@
+ import db
+ from plugins.export import Base
+ 
+-try:
+-  import EasyDialogs
+-except:
+-  pass
+-
+ # TODO: bypass the 4Kb file limit on the iPod notes folder, splitting the file in multiple ones and linking them.
+ 
+ class Path2iPod(object):
+@@ -105,9 +100,9 @@
+         
+             if thisPath:
+                 commands.getoutput('mv '+os.path.join(tmp_dir,&quot;movies&quot;)+' &quot;'+thisPath+'/Notes/&quot;') # FIXME: WTF?
+-                EasyDialogs.Message(&quot;List successfully exported to iPod.&quot;)
++                gutils.info(_(&quot;List successfully exported to iPod.&quot;), self.parent_window)
+             else:
+-                EasyDialogs.Message(&quot;iPod is not connected.&quot;)
++                gutils.info(_(&quot;iPod is not connected.&quot;), self.parent_window)
+         # this is not a mac, lets save the file
+         else:
+             filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;iPod&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+
+Modified: trunk/lib/plugins/export/__init__.py
+===================================================================
+--- trunk/lib/plugins/export/__init__.py	2011-02-08 01:58:47 UTC (rev 1532)
++++ trunk/lib/plugins/export/__init__.py	2011-02-08 21:04:38 UTC (rev 1533)
+@@ -27,7 +27,6 @@
+ import gtk
+ import xml.dom.minidom
+ import os
+-from platform import system
+ 
+ import logging
+ log = logging.getLogger(&quot;Griffith.%s&quot; % __name__)
+@@ -36,15 +35,6 @@
+ import db
+ from sql import update_whereclause
+ 
+-mac = False
+-if system() == &quot;Darwin&quot;:
+-    mac = True
+-
+-try:
+-    import EasyDialogs
+-except:
+-    pass
+-
+ # detect all plugins:
+ __all__ = [os.path.basename(x)[:-3] for x in glob.glob(&quot;%s/PluginExport*.py&quot; % os.path.dirname(__file__))]
+ 
+@@ -143,10 +133,7 @@
+             self.export_to_document(doc, doc.documentElement)
+             # write xml document to file
+             self.export_document_to_file(doc, self.filepath)
+-            if mac:
+-                EasyDialogs.Message(&quot;%s file has been created.&quot; % self.export_name)
+-            else:    
+-                gutils.info(_('%s file has been created.') % self.export_name, self.parent_window)
++            gutils.info(_('%s file has been created.') % self.export_name, self.parent_window)
+ 
+     def show_dialog(self):
+         # shows a file dialog and sets self.filepath
+@@ -154,38 +141,32 @@
+         basedir = None
+         if not self.config is None and not self.config_section is None:
+             basedir = self.config.get('export_dir', None, section=self.config_section)
+-        if mac:
+-            self.filepath = EasyDialogs.AskFileForSave()
++        if basedir is None:
++            filenames = gutils.file_chooser(_('Export a %s document') % self.export_name, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name=self.filename)
+         else:
+-            if basedir is None:
+-                filenames = gutils.file_chooser(_('Export a %s document') % self.export_name, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name=self.filename)
++            filenames = gutils.file_chooser(_('Export a %s document') % self.export_name, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name=self.filename, folder=basedir)
++        if filenames[0]:
++            self.filepath = filenames[0]
++            if len(filenames) &gt; 1:
++                self.dirpath = filenames[1]
+             else:
+-                filenames = gutils.file_chooser(_('Export a %s document') % self.export_name, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name=self.filename, folder=basedir)
+-        if mac:
+-            return True
+-        else:
+-            if filenames[0]:
+-                self.filepath = filenames[0]
+-                if len(filenames) &gt; 1:
+-                    self.dirpath = filenames[1]
++                self.dirpath = os.path.dirname(self.filepath)
++            self.filename = os.path.basename(self.filepath)
++            if not self.config is None and self.dirpath and not self.config_section is None:
++                self.config.set('export_dir', self.dirpath, section=self.config_section)
++                self.config.save()
++            overwrite = None
++            if os.path.isfile(self.filepath):
++                if gutils.question(_('File exists. Do you want to overwrite it?'), self.parent_window):
++                    overwrite = True
+                 else:
+-                    self.dirpath = os.path.dirname(self.filepath)
+-                self.filename = os.path.basename(self.filepath)
+-                if not self.config is None and self.dirpath and not self.config_section is None:
+-                    self.config.set('export_dir', self.dirpath, section=self.config_section)
+-                    self.config.save()
+-                overwrite = None
+-                if os.path.isfile(self.filepath):
+-                    if gutils.question(_('File exists. Do you want to overwrite it?'), self.parent_window):
+-                       overwrite = True
+-                    else:
+-                       overwrite = False
++                    overwrite = False
+                     
+-                if overwrite == True or overwrite is None:
+-                   return True
+-            return False
++            if overwrite == True or overwrite is None:
++                return True
++        return False
+ 
+     def export_document_to_file(self, document, filename):
+         # write XML to file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000992.html">[Griffith-svn] r1532 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000994.html">[Griffith-svn] r1534 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#993">[ date ]</a>
+              <a href="thread.html#993">[ thread ]</a>
+              <a href="subject.html#993">[ subject ]</a>
+              <a href="author.html#993">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r877 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r877%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200711082104.lA8L4OAQ014485%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000383.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r877 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r877%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200711082104.lA8L4OAQ014485%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r877 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov  8 22:04:24 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000383.html">[Griffith-svn] r878 - in trunk: . lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#382">[ date ]</a>
+              <a href="thread.html#382">[ thread ]</a>
+              <a href="subject.html#382">[ subject ]</a>
+              <a href="author.html#382">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-11-08 22:04:08 +0100 (Thu, 08 Nov 2007)
+New Revision: 877
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/backup.py
+   trunk/lib/main_treeview.py
+   trunk/lib/view.py
+Log:
+status bar shows count of movies after applying a filter
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/ChangeLog	2007-11-08 21:04:08 UTC (rev 877)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-11-08  Michael Jahn
++	* status bar shows count of movies after applying a filter
++
+ 2007-10-15  Michael Jahn
+ 	* Kino.de plugin updated
+ 	* Fetch from Amazon function fixed
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/griffith	2007-11-08 21:04:08 UTC (rev 877)
+@@ -122,7 +122,6 @@
+ 		self.restore_state()
+ 		self.clear_details()
+ 		self.populate_treeview()
+-		self.count_statusbar()
+ 
+ 		# adding some completion fields
+ 		self.completion = gtk.EntryCompletion()
+@@ -891,10 +890,10 @@
+ 	# statusbar -----------------------------------------------------------
+ 
+ 	def count_statusbar(self):
+-		text = str(self.total)
++		allmovies = self.db.Movie.count_by()
+ 		loaned = self.db.Movie.count_by(loaned=True)
+ 		not_seen = self.db.Movie.count_by(seen=False)
+-		self.update_statusbar(str(text) + _(' movie(s) in collection. ')
++		self.update_statusbar(str(allmovies) + ' (' + str(self.total) + ')' + _(' movie(s) in collection. ')
+ 			+ str(loaned) + _(' movie(s) loaned. ')
+ 			+ _('You haven\'t seen ')+&quot;%s&quot;%str(not_seen)+ _(&quot; movie(s)&quot;)
+ 		)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/add.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -679,9 +679,7 @@
+ 		image_path = os.path.join(self.locations['images'], &quot;default.png&quot;)
+ 	handler = self.Image.set_from_file(image_path)
+ 
+-	#update statusbar
+-	self.total = self.total + 1
+-	self.count_statusbar()
+-	self.populate_treeview()
++	# change_filter calls populate_treeview which updates the status bar
++	quick_filter.change_filter(self)
+ 
+ # vim: fdm=marker
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/backup.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -171,7 +171,6 @@
+ 		# let's refresh the treeview
+ 		self.clear_details()
+ 		self.populate_treeview()
+-		self.count_statusbar()
+ 		gutils.info(self, _(&quot;Backup restored&quot;), self.widgets['window'])
+ 
+ def merge(self):	# FIXME
+@@ -260,7 +259,5 @@
+ 		# let's refresh the treeview
+ 		self.clear_details()
+ 		self.populate_treeview(self.db.Movie.select())
+-		self.total = self.db.Movie.count()
+-		self.count_statusbar()
+ 		#gutils.info(self, _(&quot;Databases merged!\n\nProcessed movies: %s\nMerged movies: %s&quot;%(movies, merged)), self.widgets['window'])
+ 
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/main_treeview.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -445,6 +445,7 @@
+ 	self.widgets['treeview'].set_model(self.treemodel)
+ 	self.widgets['treeview'].thaw_child_notify()
+ 	self.widgets['treeview'].set_cursor_on_cell(0)
++	self.count_statusbar()
+ #}}}
+ 
+ # vim: fdm=marker
+
+Modified: trunk/lib/view.py
+===================================================================
+--- trunk/lib/view.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/view.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -33,7 +33,6 @@
+ 
+ def filter_all(self):
+ 	self.populate_treeview()
+-	self.count_statusbar()
+ 
+ def filter_by_volume(self, volume_id):
+ 	from quick_filter import clear_filter
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000383.html">[Griffith-svn] r878 - in trunk: . lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#382">[ date ]</a>
+              <a href="thread.html#382">[ thread ]</a>
+              <a href="subject.html#382">[ subject ]</a>
+              <a href="author.html#382">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

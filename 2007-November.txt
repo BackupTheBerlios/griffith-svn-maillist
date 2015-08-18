@@ -1,0 +1,1450 @@
+From mikej06 at mail.berlios.de  Thu Nov  8 22:04:24 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 8 Nov 2007 22:04:24 +0100
+Subject: [Griffith-svn] r877 - in trunk: . lib
+Message-ID: <200711082104.lA8L4OAQ014485@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-08 22:04:08 +0100 (Thu, 08 Nov 2007)
+New Revision: 877
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/backup.py
+   trunk/lib/main_treeview.py
+   trunk/lib/view.py
+Log:
+status bar shows count of movies after applying a filter
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/ChangeLog	2007-11-08 21:04:08 UTC (rev 877)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-11-08  Michael Jahn
++	* status bar shows count of movies after applying a filter
++
+ 2007-10-15  Michael Jahn
+ 	* Kino.de plugin updated
+ 	* Fetch from Amazon function fixed
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/griffith	2007-11-08 21:04:08 UTC (rev 877)
+@@ -122,7 +122,6 @@
+ 		self.restore_state()
+ 		self.clear_details()
+ 		self.populate_treeview()
+-		self.count_statusbar()
+ 
+ 		# adding some completion fields
+ 		self.completion = gtk.EntryCompletion()
+@@ -891,10 +890,10 @@
+ 	# statusbar -----------------------------------------------------------
+ 
+ 	def count_statusbar(self):
+-		text = str(self.total)
++		allmovies = self.db.Movie.count_by()
+ 		loaned = self.db.Movie.count_by(loaned=True)
+ 		not_seen = self.db.Movie.count_by(seen=False)
+-		self.update_statusbar(str(text) + _(' movie(s) in collection. ')
++		self.update_statusbar(str(allmovies) + ' (' + str(self.total) + ')' + _(' movie(s) in collection. ')
+ 			+ str(loaned) + _(' movie(s) loaned. ')
+ 			+ _('You haven\'t seen ')+"%s"%str(not_seen)+ _(" movie(s)")
+ 		)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/add.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -679,9 +679,7 @@
+ 		image_path = os.path.join(self.locations['images'], "default.png")
+ 	handler = self.Image.set_from_file(image_path)
+ 
+-	#update statusbar
+-	self.total = self.total + 1
+-	self.count_statusbar()
+-	self.populate_treeview()
++	# change_filter calls populate_treeview which updates the status bar
++	quick_filter.change_filter(self)
+ 
+ # vim: fdm=marker
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/backup.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -171,7 +171,6 @@
+ 		# let's refresh the treeview
+ 		self.clear_details()
+ 		self.populate_treeview()
+-		self.count_statusbar()
+ 		gutils.info(self, _("Backup restored"), self.widgets['window'])
+ 
+ def merge(self):	# FIXME
+@@ -260,7 +259,5 @@
+ 		# let's refresh the treeview
+ 		self.clear_details()
+ 		self.populate_treeview(self.db.Movie.select())
+-		self.total = self.db.Movie.count()
+-		self.count_statusbar()
+ 		#gutils.info(self, _("Databases merged!\n\nProcessed movies: %s\nMerged movies: %s"%(movies, merged)), self.widgets['window'])
+ 
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/main_treeview.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -445,6 +445,7 @@
+ 	self.widgets['treeview'].set_model(self.treemodel)
+ 	self.widgets['treeview'].thaw_child_notify()
+ 	self.widgets['treeview'].set_cursor_on_cell(0)
++	self.count_statusbar()
+ #}}}
+ 
+ # vim: fdm=marker
+
+Modified: trunk/lib/view.py
+===================================================================
+--- trunk/lib/view.py	2007-10-25 21:20:23 UTC (rev 876)
++++ trunk/lib/view.py	2007-11-08 21:04:08 UTC (rev 877)
+@@ -33,7 +33,6 @@
+ 
+ def filter_all(self):
+ 	self.populate_treeview()
+-	self.count_statusbar()
+ 
+ def filter_by_volume(self, volume_id):
+ 	from quick_filter import clear_filter
+
+
+
+From mikej06 at mail.berlios.de  Thu Nov  8 23:22:01 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 8 Nov 2007 23:22:01 +0100
+Subject: [Griffith-svn] r878 - in trunk: . lib/plugins/export
+Message-ID: <200711082222.lA8MM1Ta018451@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-08 23:21:41 +0100 (Thu, 08 Nov 2007)
+New Revision: 878
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+changed HTML export:
+ - exported poster file names contain the movie number instead of the random name
+ - movies without a poster get the griffith picture
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-08 21:04:08 UTC (rev 877)
++++ trunk/ChangeLog	2007-11-08 22:21:41 UTC (rev 878)
+@@ -6,6 +6,9 @@
+ 
+ 2007-11-08  Michael Jahn
+ 	* status bar shows count of movies after applying a filter
++	* changed HTML export:
++	  + exported poster file names contain the movie number instead of the random name
++	  + movies without a poster get the griffith picture
+ 
+ 2007-10-15  Michael Jahn
+ 	* Kino.de plugin updated
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2007-11-08 21:04:08 UTC (rev 877)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2007-11-08 22:21:41 UTC (rev 878)
+@@ -282,6 +282,7 @@
+ 			'sb_width'              : get('sb_width'),
+ 			'cb_black'              : get('cb_black'),
+ 			'combo_format'          : get('combo_format'),
++			'cb_convert'            : get('cb_convert'),
+ 		}
+ 
+ 		# define handlers for general events
+@@ -366,9 +367,11 @@
+ 			self.widgets['rb_loaned'].set_active(True)
+ 		# posters
+ 		self.widgets['combo_format'].set_active(0)
+-		if self.config['poster_convert']:
++		if self.config['poster_convert'] and self.config['poster_convert'] == True:
++			self.widgets['cb_convert'].set_active(True)
+ 			self.widgets['vb_posters'].set_sensitive(True)
+ 		else:
++			self.widgets['cb_convert'].set_active(False)
+ 			self.widgets['vb_posters'].set_sensitive(False)
+ 	#}}}
+ 
+@@ -621,17 +624,17 @@
+ 
+ 		if fields['movies_image']:
+ 			# import modules needed later
+-			if config['poster_convert']:
+-				from PIL import Image
+-				# py2exe problem workaround:
+-				# if self.windows:
+-				from PIL import PngImagePlugin
+-				from PIL import GifImagePlugin
+-				from PIL import JpegImagePlugin
+-				Image._initialized=2
+-				# end if
+-			else:
+-				config['poster_format'] = 'jpg' # replace 'jpeg'
++			# modules are needed at least to convert griffith.png to nopic.(gif|jpeg|png)
++			from PIL import Image
++			# py2exe problem workaround:
++			# if self.windows:
++			from PIL import PngImagePlugin
++			from PIL import GifImagePlugin
++			from PIL import JpegImagePlugin
++			Image._initialized=2
++			# end if
++			if not config['poster_convert']:
++				config['poster_format'] = 'jpeg' # replace 'jpeg'
+ 			
+ 			posters_dir = os.path.join(config['exported_dir'], 'posters')
+ 			if os.path.isdir(posters_dir):
+@@ -751,10 +754,11 @@
+ 				if self.fields[self.names[j]] == True:
+ 					if self.names[j] == 'movies_image':
+ 						if row['movies_image']:
+-							image = row['movies_image'] + '.' + config['poster_format'].lower()
++							#image = row['movies_image'] + '.' + config['poster_format'].lower()
++							image = '%d' % row['movies_number'] + '.' + config['poster_format'].lower()
+ 							tmp = self.fill_template(tmp, self.names[j], image, j)
+ 						else:
+-							tmp = self.fill_template(tmp, self.names[j], '', j)
++							tmp = self.fill_template(tmp, self.names[j], 'nopic.' + config['poster_format'].lower(), j)
+ 					elif row[self.names[j]] is None:
+ 						tmp = self.fill_template(tmp, self.names[j], '', j)
+ 					elif row[self.names[j]] is True:
+@@ -765,10 +769,10 @@
+ 						try:
+ 							tmp = self.fill_template(tmp, self.names[j], str(row[self.names[j]]).encode('utf-8'), j)
+ 						except UnicodeDecodeError:
+-							self.debug.show("Unicode Decode Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['number']))
++							self.debug.show("Unicode Decode Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['movies_number']))
+ 							tmp = self.fill_template(tmp, self.names[j], str(row[self.names[j]]), j)
+ 						except Exception, ex:
+-							self.debug.show("Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['number']))
++							self.debug.show("Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['movies_number']))
+ 				else:
+ 					tmp = self.fill_template(tmp, self.names[j], remove=True)
+ 				tmp = gutils.convert_entities(tmp)
+@@ -779,19 +783,20 @@
+ 			# copy poster
+ 			if fields['movies_image']:
+ 				if row['movies_image'] is not None:
+-					image_file = os.path.join(self.locations['posters'], str(row['movies_image']) + '.jpg')
++					image_file_src = os.path.join(self.locations['posters'], str(row['movies_image']) + '.jpg')
++					image_file_dst = os.path.join(posters_dir, '%d' % row['movies_number']) + '.' + config['poster_format'].lower()
+ 					if not config['poster_convert']:	# copy file
+ 						try:
+-							shutil.copy(image_file,	posters_dir)
++							shutil.copy(image_file_src,	image_file_dst)
+ 						except:
+-							self.debug.show("Can't copy %s" % image_file)
++							self.debug.show("Can't copy %s" % image_file_src)
+ 					else:	# convert posters
+ 						try:
+-							im = Image.open(image_file, 'r').convert(config['poster_mode'])
++							im = Image.open(image_file_src, 'r').convert(config['poster_mode'])
+ 							im.thumbnail((config['poster_width'], config['poster_height']), Image.ANTIALIAS)
+-							im.save(os.path.join(posters_dir, row['movies_image']) + '.' + config['poster_format'].lower(), config['poster_format'])
++							im.save(image_file_dst, config['poster_format'])
+ 						except:
+-							self.debug.show("Can't convert %s" % image_file)
++							self.debug.show("Can't convert %s" % image_file_src)
+ 
+ 			# close file if last item
+ 			if ((page-1)*self.entries_per_page)+item == number_of_exported_movies:
+@@ -812,6 +817,18 @@
+ 				item=item+1
+ 			i=i+1
+ 		#}}}
++		# convert/copy the griffith picture for movies without a poster
++		image_file_src = os.path.join(self.locations['images'], 'griffith.png')
++		image_file_dst = os.path.join(posters_dir, 'nopic.' + config['poster_format'].lower())
++		try:
++			if config['poster_convert']:
++				im = Image.open(image_file_src, 'r').convert(config['poster_mode'])
++				im.thumbnail((config['poster_width'], config['poster_height']), Image.ANTIALIAS)
++			else:
++				im = Image.open(image_file_src, 'r')
++			im.save(image_file_dst, config['poster_format'])
++		except:
++			self.debug.show("Can't convert %s" % image_file_src)
+ 		gutils.info(self, _("Document has been generated."), self)
+ 		self.on_quit()
+ 	#}}}
+
+
+
+From mikej06 at mail.berlios.de  Mon Nov 12 22:07:52 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 12 Nov 2007 22:07:52 +0100
+Subject: [Griffith-svn] r879 - in trunk: . lib/plugins/movie
+Message-ID: <200711122107.lACL7qbT031884@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-12 22:07:38 +0100 (Mon, 12 Nov 2007)
+New Revision: 879
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+Kino.de plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-08 22:21:41 UTC (rev 878)
++++ trunk/ChangeLog	2007-11-12 21:07:38 UTC (rev 879)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-11-12  Michael Jahn
++	* Kino.de plugin updated
++
+ 2007-11-08  Michael Jahn
+ 	* status bar shows count of movies after applying a filter
+ 	* changed HTML export:
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-11-08 22:21:41 UTC (rev 878)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-11-12 21:07:38 UTC (rev 879)
+@@ -33,7 +33,7 @@
+ plugin_language = _("German")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.10"
++plugin_version = "1.11"
+ 
+ class Plugin(movie.Movie):
+ 	url_to_use = "http://www.kino.de/kinofilm/"
+@@ -74,18 +74,18 @@
+ 				self.image_url = 'http://images.kino.de/flbilder' + tmpdata + '.jpg'
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.tmp_page,"span class=\"standardsmall\"><br />(",")<")
+-		if self.o_title == "":
+-			if self.url_type == "V":
+-				self.o_title = gutils.after(gutils.trim(self.tmp_page,"\"headline2\"><a href=\"/videofilm", "</a>"), ">")
++		self.o_title = gutils.trim(self.tmp_page, 'span class="standardsmall">(', ')<')
++		if self.o_title == '':
++			if self.url_type == 'V':
++				self.o_title = gutils.after(self.regextrim(self.tmp_page, 'headline2"[^>]*>[ \t\r\n]*<a href="/videofilm', '</a>'), '>')
+ 			else:
+-				self.o_title = gutils.after(gutils.trim(self.tmp_page,"\"headline2\"><a href=\"/kinofilm", "</a>"), ">")
++				self.o_title = gutils.after(self.regextrim(self.tmp_page, 'headline2"[^>]*>[ \t\r\n]*<a href="/kinofilm', '</a>'), '>')
+ 
+ 	def get_title(self):
+ 		if self.url_type == "V":
+-			self.title = gutils.after(gutils.trim(self.tmp_page,"\"headline2\"><a href=\"/videofilm", "</a>"), ">")
++			self.title = gutils.after(self.regextrim(self.tmp_page, 'headline2"[^>]*>[ \t\r\n]*<a href="/videofilm', '</a>'), '>')
+ 		else:
+-			self.title = gutils.after(gutils.trim(self.tmp_page,"\"headline2\"><a href=\"/kinofilm", "</a>"), ">")
++			self.title = gutils.after(self.regextrim(self.tmp_page, 'headline2"[^>]*>[ \t\r\n]*<a href="/kinofilm', '</a>'), '>')
+ 
+ 	def get_director(self):
+ 		self.director = gutils.trim(self.tmp_creditspage,"Regie","</a>")
+@@ -95,7 +95,7 @@
+ 	def get_plot(self):
+ 		# little steps to perfect plot (I hope ... it's a terrible structured content ... )
+ 		self.plot = gutils.before(self.tmp_page, '<!-- PRINT-CONTENT-ENDE-->')
+-		self.plot = gutils.trim(self.plot, 'Kurzinfo', '</span></td></tr>')
++		self.plot = self.regextrim(self.plot, 'Kurzinfo', '</td></tr>[ \t\r\n]*<tr><td></td></tr>')
+ 		if self.plot != '':
+ 			lastpos = self.plot.rfind('</table>')
+ 			if lastpos == -1:
+@@ -116,23 +116,21 @@
+ 				self.plot = gutils.after(self.plot, '>')
+ 
+ 	def get_year(self):
+-		self.year = self.regextrim(self.tmp_page,"class=\"standardsmall\"><br /><b>(DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)</b> - <b>","<br />")
+-		if self.year == "":
+-			self.year = gutils.trim(self.tmp_page,"class=\"standardsmall\"><b>","<br />")
+-		self.year = gutils.trim(self.year,"<b>","</b>")
+-		self.year = gutils.after(self.year," ")
++		self.year = ''
++		tmp = self.regextrim(self.tmp_page, 'span class="standardsmall"[^>]*><strong>', '</span>')
++		if tmp <> None:
++			srchresult = re.search('[0-9][0-9][0-9][0-9]</strong>', tmp)
++			if srchresult <> None:
++				self.year = srchresult.string[srchresult.start():srchresult.end()]
+ 
+ 	def get_runtime(self):
+-		self.runtime = gutils.trim(self.tmp_page,"Jahren</b> - <b>"," Min.")
+-		if (self.runtime == ''):
+-			self.runtime = gutils.trim(self.tmp_page,"Jahren</b></b> - <b>"," Min.")
+-		if (self.runtime == ''):
+-			self.runtime = gutils.trim(self.tmp_page,"</b><br /><b>"," Min.")
++		self.runtime = ''
++		srchresult = re.search('>[0-9]+[ \t]Min[.]<', self.tmp_page)
++		if srchresult <> None:
++			self.runtime = self.regextrim(srchresult.string[srchresult.start():srchresult.end()], '>', '[^0-9]')
+ 
+ 	def get_genre(self):
+-		self.genre = self.regextrim(self.tmp_page,"class=\"standardsmall\"><br /><b>(DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)</b> - <b>","</b>")
+-		if self.genre == "":
+-			self.genre = gutils.trim(self.tmp_page,"class=\"standardsmall\"><b>","</b>")
++		self.genre = self.regextrim(self.tmp_page,'span class="standardsmall"[^>]*>[ \t\r\n]*<strong>((DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)</strong>[ \t]-[ \t]<strong>)*', '</strong>[ \t]-[ \t]<strong>')
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.tmp_creditspage,'>Cast<', '</table><br')
+@@ -157,12 +155,12 @@
+ 			self.cast = string.replace(self.cast, "--flip--", _(" as "))
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.tmp_page,"FSK: ","</b>")
++		self.classification = gutils.trim(self.tmp_page,'FSK: ', '</strong>')
+ 
+ 	def get_studio(self):
+-		self.studio = gutils.trim(self.tmp_page,"Verleih: ", "</b>")
++		self.studio = gutils.trim(self.tmp_page, 'Verleih: ', '</strong>')
+ 		if (self.studio == ""):
+-			self.studio = gutils.trim(self.tmp_page,"Anbieter: ", "</b>")
++			self.studio = gutils.trim(self.tmp_page, 'Anbieter: ', '</strong>')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ""
+@@ -174,11 +172,12 @@
+ 		self.trailer = ""
+ 
+ 	def get_country(self):
+-		self.country = self.regextrim(self.tmp_page,"class=\"standardsmall\"><br /><b>(DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)</b> - <b>","<br />")
+-		if self.country == "":
+-			self.country = gutils.trim(self.tmp_page,"class=\"standardsmall\"><b>","<br />")
+-		self.country = gutils.trim(self.country,"<b>","</b>")
+-		self.country = gutils.before(self.country," ")
++		self.country = self.regextrim(self.tmp_page, 'span class="standardsmall"[^>]*><strong>((DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)</strong>[ \t]-[ \t]<strong>)*', '</span>')
++		if self.country <> None:
++			self.country = self.regextrim(self.country, '-[ \t]<strong>', '</strong>')
++			self.country = re.sub('[0-9]+$', '', self.country)
++		else:
++			self.country = ''
+ 
+ 	def get_rating(self):
+ 		self.rating = "0"
+@@ -208,7 +207,7 @@
+ 		if obj is None:
+ 			return ''
+ 		else:
+-			p2 = p1 + obj.end()
++			p2 = p1 + obj.start()
+ 		return text[p1:p2]
+ 
+ #
+@@ -268,7 +267,7 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		elements1 = re.split('headline3"><a href="(http://www.kino.de)*/kinofilm/', self.page)
++		elements1 = re.split('headline3"[^>]*>[ \t\r\n]*<a href="(http://www.kino.de)*/kinofilm/', self.page)
+ 		elements1[0] = None
+ 		for element in elements1:
+ 			if element <> None:
+@@ -284,7 +283,7 @@
+ 					'( - (', '('), '))', ')')
+ 				)
+ 
+-		elements2 = re.split('headline3"><a href="(http://www.kino.de)*/videofilm/', self.page)
++		elements2 = re.split('headline3"[^>]*>[ \t\r\n]*<a href="(http://www.kino.de)*/videofilm/', self.page)
+ 		elements2[0] = None
+ 		for element in elements2:
+ 			if element <> None:
+
+
+
+From mikej06 at mail.berlios.de  Mon Nov 12 22:55:25 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 12 Nov 2007 22:55:25 +0100
+Subject: [Griffith-svn] r880 - in trunk: . lib/plugins/export
+Message-ID: <200711122155.lACLtPSu006630@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-12 22:55:06 +0100 (Mon, 12 Nov 2007)
+New Revision: 880
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+fixed pdf export with non-ascii characters in filename
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-12 21:07:38 UTC (rev 879)
++++ trunk/ChangeLog	2007-11-12 21:55:06 UTC (rev 880)
+@@ -6,6 +6,7 @@
+ 
+ 2007-11-12  Michael Jahn
+ 	* Kino.de plugin updated
++	* fixed pdf export with non-ascii characters in filename
+ 
+ 2007-11-08  Michael Jahn
+ 	* status bar shows count of movies after applying a filter
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-11-12 21:07:38 UTC (rev 879)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2007-11-12 21:55:06 UTC (rev 880)
+@@ -37,6 +37,7 @@
+ import string
+ import sys
+ import config
++from locale import getdefaultlocale
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -51,7 +52,7 @@
+         self.db = database
+         self.locations = locations
+         self.parent = parent_window
+-	self.config = kwargs['config']
++        self.config = kwargs['config']
+         self.styles = getSampleStyleSheet()
+         self.export_simple_pdf()
+         self.fontName = ""
+@@ -68,7 +69,8 @@
+         filename = gutils.file_chooser(_("Export a PDF"), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name="griffith_simple_list.pdf")
+         if filename[0]:
+             overwrite = None
+-            if os.path.isfile(filename[0]):
++            pdffilename = filename[0].decode('utf-8')
++            if os.path.isfile(pdffilename):
+                 response = gutils.question(self,_("File exists. Do you want to overwrite it?"),1,self.parent)
+                 if response==-8:
+                     overwrite = True
+@@ -76,7 +78,10 @@
+                     overwrite = False
+                     
+             if overwrite == True or overwrite is None:
+-                c = SimpleDocTemplate(filename[0])
++                defaultLang, defaultEnc = getdefaultlocale()
++                if defaultEnc is None:
++                    defaultEnc = 'UTF-8'
++                c = SimpleDocTemplate(pdffilename.encode(defaultEnc))
+                 style = self.styles["Normal"]
+                 Story = [Spacer(1,2*inch)]
+                 # define some custom stylesheetfont
+@@ -88,7 +93,7 @@
+                 Story.append(p)
+                 Story.append(Paragraph(" ",style))
+                 movies = self.db.Movie.select()
+-		for movie in movies:
++                for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title)
+                     title = str(movie.title)
+
+
+
+From mikej06 at mail.berlios.de  Tue Nov 13 00:59:23 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 13 Nov 2007 00:59:23 +0100
+Subject: [Griffith-svn] r881 - in trunk: . lib/plugins/export
+Message-ID: <200711122359.lACNxN4O025049@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-13 00:59:13 +0100 (Tue, 13 Nov 2007)
+New Revision: 881
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+* pdf export supports sort column from configuration
+* fixed pdf export with non-ascii characters in data
+
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-12 21:55:06 UTC (rev 880)
++++ trunk/ChangeLog	2007-11-12 23:59:13 UTC (rev 881)
+@@ -6,7 +6,8 @@
+ 
+ 2007-11-12  Michael Jahn
+ 	* Kino.de plugin updated
+-	* fixed pdf export with non-ascii characters in filename
++	* fixed pdf export with non-ascii characters in filenames and data
++	* pdf export supports sort column from configuration
+ 
+ 2007-11-08  Michael Jahn
+ 	* status bar shows count of movies after applying a filter
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-11-12 21:55:06 UTC (rev 880)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2007-11-12 23:59:13 UTC (rev 881)
+@@ -28,6 +28,7 @@
+ from reportlab.pdfbase import pdfmetrics
+ from reportlab.pdfbase.ttfonts import TTFont
+ from reportlab.rl_config import defaultPageSize
++from reportlab.rl_config import defaultEncoding
+ from reportlab.platypus import Image, SimpleDocTemplate, Paragraph, Spacer
+ from reportlab.lib.styles import getSampleStyleSheet
+ from xml.sax import saxutils
+@@ -38,6 +39,7 @@
+ import sys
+ import config
+ from locale import getdefaultlocale
++from sqlalchemy import Select
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -78,10 +80,16 @@
+                     overwrite = False
+                     
+             if overwrite == True or overwrite is None:
++                # filename encoding
+                 defaultLang, defaultEnc = getdefaultlocale()
+                 if defaultEnc is None:
+                     defaultEnc = 'UTF-8'
+                 c = SimpleDocTemplate(pdffilename.encode(defaultEnc))
++                # data encoding
++                if defaultEncoding == 'WinAnsiEncoding':
++                    defaultEnc = 'cp1252'
++                else:
++                    defaultEnc = 'utf-8'
+                 style = self.styles["Normal"]
+                 Story = [Spacer(1,2*inch)]
+                 # define some custom stylesheetfont
+@@ -92,17 +100,27 @@
+                 p = Paragraph("<font name='" + self.fontName +"' size=\"10\">" + saxutils.escape((_("Total Movies: %s") % str(total)).encode('utf-8'))  + '</font>', self.styles["Heading3"])
+                 Story.append(p)
+                 Story.append(Paragraph(" ",style))
+-                movies = self.db.Movie.select()
++                movies = Select(self.db.Movie.c)
++                # select sort column
++                sort_column_name = self.config.get('sortby', 'number', section='mainlist')
++                sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
++                for i in sort_column_name.split(','):
++                    if self.db.Movie.c.has_key(i):
++                        if sort_reverse:
++                            movies.order_by_clause.append(desc(self.db.Movie.c[i]))
++                        else:
++                            movies.order_by_clause.append(self.db.Movie.c[i])
++                movies = movies.execute().fetchall()
+                 for movie in movies:
+                     number = movie.number
+-                    original_title = str(movie.o_title)
+-                    title = str(movie.title)
++                    original_title = str(movie.o_title).encode(defaultEnc)
++                    title = str(movie.title).encode(defaultEnc)
+                     if movie.year:
+                         year = ' - ' + str(movie.year)
+                     else:
+                         year = ""
+                     if movie.director:
+-                        director = ' - ' + str(movie.director)
++                        director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = ""
+                     p = Paragraph("<font name=" + self.fontName + " size=\"7\">" + \
+
+
+
+From iznogoud at mail.berlios.de  Thu Nov 29 22:24:19 2007
+From: iznogoud at mail.berlios.de (iznogoud at mail.berlios.de)
+Date: Thu, 29 Nov 2007 22:24:19 +0100
+Subject: [Griffith-svn] r884 - in trunk: . po
+Message-ID: <200711292124.lATLOJeq025484@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-11-29 22:23:55 +0100 (Thu, 29 Nov 2007)
+New Revision: 884
+
+Modified:
+   trunk/ChangeLog
+   trunk/po/ru.po
+Log:
+Russian language file updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-28 20:50:24 UTC (rev 883)
++++ trunk/ChangeLog	2007-11-29 21:23:55 UTC (rev 884)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-11-29 Vasco Nunes
++	* Russian language file updated
++
+ 2007-11-28  Michael Jahn
+ 	* [#164966] deactivating spellchecker option in preferences dialog disables the depending elements
+ 
+
+Modified: trunk/po/ru.po
+===================================================================
+--- trunk/po/ru.po	2007-11-28 20:50:24 UTC (rev 883)
++++ trunk/po/ru.po	2007-11-29 21:23:55 UTC (rev 884)
+@@ -3,14 +3,13 @@
+ # This file is distributed under the same license as the griffith package.
+ # FIRST AUTHOR <EMAIL at ADDRESS>, 2007.
+ #
+-#, fuzzy
+ msgid ""
+ msgstr ""
+ "Project-Id-Version: griffith 0.9.5\n"
+ "Report-Msgid-Bugs-To: \n"
+ "POT-Creation-Date: 2007-09-02 23:38+0200\n"
+-"PO-Revision-Date: 2007-09-02 23:34+0200\n"
+-"Last-Translator: Taras Cavin <tasctasc at gmail.com>\n"
++"PO-Revision-Date: 2007-11-25 13:13+0600\n"
++"Last-Translator: Basil Shubin <basil.shubin at gmail.com>\n"
+ "Language-Team: Russian <ru at li.org>\n"
+ "MIME-Version: 1.0\n"
+ "Content-Type: text/plain; charset=UTF-8\n"
+@@ -90,9 +89,8 @@
+ msgstr "??????? ??????"
+ 
+ #: ../lib/about.py:41
+-#, fuzzy
+ msgid "Programmers"
+-msgstr "???????????"
++msgstr "????????????"
+ 
+ #: ../lib/about.py:44
+ msgid "Contributors:"
+@@ -111,9 +109,8 @@
+ msgstr "??????????"
+ 
+ #: ../lib/about.py:61
+-#, fuzzy
+ msgid "Catalan"
+-msgstr "???????????"
++msgstr "???????????"
+ 
+ #: ../lib/about.py:63 ../lib/dbupgrade.py:88
+ #: ../lib/plugins/movie/PluginMovieCSFD.py:30
+@@ -160,7 +157,7 @@
+ 
+ #: ../lib/about.py:93
+ msgid "Norwegian Bokmal"
+-msgstr ""
++msgstr "?????????? ??????"
+ 
+ #: ../lib/about.py:95 ../lib/dbupgrade.py:93
+ #: ../lib/plugins/movie/PluginMovieFDb.py:33
+@@ -228,8 +225,7 @@
+ 
+ #: ../lib/add.py:380 ../lib/add.py:386
+ msgid "Movie with that title already exists, are you sure you want to add?"
+-msgstr ""
+-"????? ? ????? ????????? ??? ??????????, ?? ????????????? ?????? ?????????"
++msgstr "????? ? ????? ????????? ??? ??????????, ?? ????????????? ?????? ?????????"
+ 
+ #: ../lib/add.py:555
+ msgid "No results"
+@@ -284,7 +280,7 @@
+ 
+ #: ../lib/cover.py:86 ../lib/cover.py:149
+ msgid "Cover generated by Griffith v"
+-msgstr "???????  ??????? Griffith v"
++msgstr "??????? ??????? Griffith v"
+ 
+ #: ../lib/cover.py:88 ../lib/cover.py:151
+ #: ../lib/plugins/export/PluginExportHTML.py:702
+@@ -412,9 +408,8 @@
+ msgstr "????? ?? ??????"
+ 
+ #: ../lib/gemail.py:39
+-#, fuzzy
+ msgid "Connection timed out"
+-msgstr "?????? ??????????"
++msgstr "????? ???????? ?????????? ???????"
+ 
+ #: ../lib/gemail.py:50 ../lib/gemail.py:60
+ #, python-format
+@@ -426,7 +421,6 @@
+ msgstr ""
+ 
+ #: ../lib/gemail.py:57
+-#, fuzzy
+ msgid "E-mail sent sucessfuly"
+ msgstr "E-mail ??????? ?????????"
+ 
+@@ -447,7 +441,7 @@
+ 
+ #: ../lib/gemail.py:83
+ msgid "Mail could not be sent. Please check e-mail preferences."
+-msgstr ""
++msgstr "?????? ?? ????? ???? ??????????. ??????????, ????????? ????????? ??.?????."
+ 
+ #: ../lib/gemail.py:85
+ msgid "This person has no e-mail address defined."
+@@ -568,7 +562,7 @@
+ 
+ #: ../lib/initialize.py:519 ../glade/griffith.glade.h:82
+ msgid "Medium"
+-msgstr "???????"
++msgstr "????????"
+ 
+ #: ../lib/initialize.py:520 ../lib/plugins/export/PluginExportHTML.py:149
+ #: ../glade/griffith.glade.h:90
+@@ -578,7 +572,7 @@
+ #: ../lib/initialize.py:521 ../lib/sql.py:278
+ #: ../lib/plugins/export/PluginExportHTML.py:140 ../glade/griffith.glade.h:91
+ msgid "Number"
+-msgstr "?????"
++msgstr "?????"
+ 
+ #: ../lib/initialize.py:522 ../lib/plugins/export/PluginExportHTML.py:135
+ #: ../glade/griffith.glade.h:92
+@@ -588,7 +582,7 @@
+ #: ../lib/initialize.py:524 ../lib/plugins/export/PluginExportHTML.py:142
+ #: ../glade/griffith.glade.h:101
+ msgid "Plot"
+-msgstr "?????????"
++msgstr "?????"
+ 
+ #: ../lib/initialize.py:525 ../lib/plugins/export/PluginExportHTML.py:143
+ #: ../glade/griffith.glade.h:109
+@@ -631,7 +625,7 @@
+ #: ../lib/initialize.py:534 ../lib/plugins/export/PluginExportHTML.py:158
+ #: ../glade/griffith.glade.h:157
+ msgid "Volume"
+-msgstr "?????????"
++msgstr "???"
+ 
+ #: ../lib/initialize.py:535 ../lib/plugins/export/PluginExportHTML.py:148
+ #: ../glade/griffith.glade.h:159
+@@ -905,11 +899,12 @@
+ "the most common one) is '25'"
+ msgstr ""
+ 
++#
+ #: ../lib/widgets.py:310
+ msgid ""
+ "If you need TLS support, please check this checkbox. This is needed, for "
+ "example, when using gmail service to send your reminder e-mails."
+-msgstr ""
++msgstr "???? ??? ????? ????????? TLS, ?????????? ????????? ??????. ??? ??????????, ????????, ??? ????????????? ?????? gmail ??? ???????? ??????????? ?? ??????????? ?????."
+ 
+ #: ../lib/plugins/movie/PluginMovieCinematografo.py:93
+ #: ../lib/plugins/movie/PluginMovieFDb.py:103
+@@ -1023,7 +1018,7 @@
+ 
+ #: ../lib/plugins/export/PluginExportiPod.py:36
+ msgid "iPod Notes export plugin"
+-msgstr "????? ???????? ??????? ?? iPod"
++msgstr "?????? ???????? ??????? ?? iPod"
+ 
+ #: ../lib/plugins/export/PluginExportiPod.py:85
+ msgid "My Movies List"
+@@ -1590,9 +1585,8 @@
+ msgstr "?????????"
+ 
+ #: ../glade/griffith.glade.h:120
+-#, fuzzy
+ msgid "SMTP port"
+-msgstr "?????? CSV"
++msgstr "???? SMTP"
+ 
+ #: ../glade/griffith.glade.h:121
+ msgid "SMTP server"
+@@ -1695,7 +1689,7 @@
+ 
+ #: ../glade/griffith.glade.h:151
+ msgid "Use TLS?"
+-msgstr ""
++msgstr "???????????? TLS?"
+ 
+ #: ../glade/griffith.glade.h:152
+ msgid "Use locale:"
+
+
+
+From mikej06 at mail.berlios.de  Thu Nov 29 22:50:55 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 29 Nov 2007 22:50:55 +0100
+Subject: [Griffith-svn] r885 - trunk/lib/plugins/movie
+Message-ID: <200711292150.lATLotHD026453@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-29 22:50:42 +0100 (Thu, 29 Nov 2007)
+New Revision: 885
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+KinoDe plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-11-29 21:23:55 UTC (rev 884)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-11-29 21:50:42 UTC (rev 885)
+@@ -155,12 +155,12 @@
+ 			self.cast = string.replace(self.cast, "--flip--", _(" as "))
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.tmp_page,'FSK: ', '</strong>')
++		self.classification = self.regextrim(self.tmp_page,'FSK:( |&nbsp;)+', '</strong>')
+ 
+ 	def get_studio(self):
+-		self.studio = gutils.trim(self.tmp_page, 'Verleih: ', '</strong>')
++		self.studio = self.regextrim(self.tmp_page, 'Verleih:( |&nbsp;)+', '( - |&nbsp;-&nbsp;)*</strong>')
+ 		if (self.studio == ""):
+-			self.studio = gutils.trim(self.tmp_page, 'Anbieter: ', '</strong>')
++			self.studio = self.regextrim(self.tmp_page, 'Anbieter:( |&nbsp;)+', '( - |&nbsp;-&nbsp;)*</strong>')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ""
+
+
+
+From mikej06 at mail.berlios.de  Fri Nov 30 23:08:29 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 30 Nov 2007 23:08:29 +0100
+Subject: [Griffith-svn] r886 - in trunk: export_templates/csv
+	export_templates/html_table export_templates/html_tables
+	export_templates/latex export_templates/xml lib/plugins/export
+Message-ID: <200711302208.lAUM8TwZ016689@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-30 23:07:57 +0100 (Fri, 30 Nov 2007)
+New Revision: 886
+
+Modified:
+   trunk/export_templates/csv/page.tpl
+   trunk/export_templates/html_table/page.tpl
+   trunk/export_templates/html_tables/page.tpl
+   trunk/export_templates/latex/page.tpl
+   trunk/export_templates/xml/page.tpl
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+HTML export plugin exports video codec
+
+Modified: trunk/export_templates/csv/page.tpl
+===================================================================
+--- trunk/export_templates/csv/page.tpl	2007-11-29 21:50:42 UTC (rev 885)
++++ trunk/export_templates/csv/page.tpl	2007-11-30 22:07:57 UTC (rev 886)
+@@ -1,3 +1,3 @@
+-"ID"<@movies_image>,"@TITLE@"</@movies_image><@movies_title>,"@TITLE@"</@movies_title><@movies_o_title>,"@TITLE@"</@movies_o_title><@movies_number>,"@TITLE@"</@movies_number><@movies_year>,"@TITLE@"</@movies_year><@movies_director>,"@TITLE@"</@movies_director><@movies_rating>,"@TITLE@"</@movies_rating><@movies_runtime>,"@TITLE@"</@movies_runtime><@movies_country>,"@TITLE@"</@movies_country><@movies_genre>,"@TITLE@"</@movies_genre><@movies_site>,"@TITLE@"</@movies_site><@movies_o_site>,"@TITLE@"</@movies_o_site><@movies_trailer>,"@TITLE@"</@movies_trailer><@movies_media_num>,"@TITLE@"</@movies_media_num><@movies_seen>,"@TITLE@"</@movies_seen><@movies_loaned>,"@TITLE@"</@movies_loaned><@movies_classification>,"@TITLE@"</@movies_classification><@movies_studio>,"@TITLE@"</@movies_studio><@movies_cast>,"@TITLE@"</@movies_cast><@movies_plot>,"@TITLE@"</@movies_plot><@movies_notes>,"@TITLE@"</@movies_notes>
+-<!-- ITEMS --><@item>"@DATA@"</@item><@movies_image><@item>,</@item>"@DATA@"</@movies_image><@movies_title>,"@DATA@"</@movies_title><@movies_o_title>,"@DATA@"</@movies_o_title><@movies_number>,"@DATA@"</@movies_number><@movies_year>,"@DATA@"</@movies_year><@movies_director>,"@DATA@"</@movies_director><@movies_rating>,"@DATA@"</@movies_rating><@movies_runtime>,"@DATA@"</@movies_runtime><@movies_country>,"@DATA@"</@movies_country><@movies_genre>,"@DATA@"</@movies_genre><@movies_site>,"@DATA@"</@movies_site><@movies_o_site>,"@DATA@"</@movies_o_site><@movies_trailer>,"@DATA@"</@movies_trailer><@movies_media_num>,"@DATA@"</@movies_media_num><@movies_seen>,"@DATA@"</@movies_seen><@movies_loaned>,"@DATA@"</@movies_loaned><@movies_classification>,"@DATA@"</@movies_classification><@movies_studio>,"@DATA@"</@movies_studio><@movies_cast>,"@DATA@"</@movies_cast><@movies_plot>,"@DATA@"</@movies_plot><@movies_notes>,"@DATA@"</@movies_notes>
++"ID"<@movies_image>,"@TITLE@"</@movies_image><@movies_title>,"@TITLE@"</@movies_title><@movies_o_title>,"@TITLE@"</@movies_o_title><@movies_number>,"@TITLE@"</@movies_number><@movies_year>,"@TITLE@"</@movies_year><@movies_director>,"@TITLE@"</@movies_director><@movies_rating>,"@TITLE@"</@movies_rating><@movies_runtime>,"@TITLE@"</@movies_runtime><@movies_country>,"@TITLE@"</@movies_country><@movies_genre>,"@TITLE@"</@movies_genre><@movies_site>,"@TITLE@"</@movies_site><@movies_o_site>,"@TITLE@"</@movies_o_site><@movies_trailer>,"@TITLE@"</@movies_trailer><@movies_media_num>,"@TITLE@"</@movies_media_num><@movies_seen>,"@TITLE@"</@movies_seen><@movies_loaned>,"@TITLE@"</@movies_loaned><@movies_classification>,"@TITLE@"</@movies_classification><@movies_studio>,"@TITLE@"</@movies_studio><@movies_cast>,"@TITLE@"</@movies_cast><@movies_plot>,"@TITLE@"</@movies_plot><@movies_notes>,"@TITLE@"</@movies_notes><@vcodecs_name>,"@TITLE@"</@vcodecs_name>
++<!-- ITEMS --><@item>"@DATA@"</@item><@movies_image><@item>,</@item>"@DATA@"</@movies_image><@movies_title>,"@DATA@"</@movies_title><@movies_o_title>,"@DATA@"</@movies_o_title><@movies_number>,"@DATA@"</@movies_number><@movies_year>,"@DATA@"</@movies_year><@movies_director>,"@DATA@"</@movies_director><@movies_rating>,"@DATA@"</@movies_rating><@movies_runtime>,"@DATA@"</@movies_runtime><@movies_country>,"@DATA@"</@movies_country><@movies_genre>,"@DATA@"</@movies_genre><@movies_site>,"@DATA@"</@movies_site><@movies_o_site>,"@DATA@"</@movies_o_site><@movies_trailer>,"@DATA@"</@movies_trailer><@movies_media_num>,"@DATA@"</@movies_media_num><@movies_seen>,"@DATA@"</@movies_seen><@movies_loaned>,"@DATA@"</@movies_loaned><@movies_classification>,"@DATA@"</@movies_classification><@movies_studio>,"@DATA@"</@movies_studio><@movies_cast>,"@DATA@"</@movies_cast><@movies_plot>,"@DATA@"</@movies_plot><@movies_notes>,"@DATA@"</@movies_notes><@vcodecs_name>,"@DATA@"</@vcodecs_name>
+ <!-- /ITEMS -->
+
+Modified: trunk/export_templates/html_table/page.tpl
+===================================================================
+--- trunk/export_templates/html_table/page.tpl	2007-11-29 21:50:42 UTC (rev 885)
++++ trunk/export_templates/html_table/page.tpl	2007-11-30 22:07:57 UTC (rev 886)
+@@ -27,7 +27,8 @@
+ 			<th>@TITLE@</th></@movies_o_site><@movies_trailer>
+ 			<th>@TITLE@</th></@movies_trailer><@media_name>
+ 			<th>@TITLE@</th></@media_name><@movies_media_num>
+-			<th>@TITLE@</th></@movies_media_num><@collections_name>
++			<th>@TITLE@</th></@movies_media_num><@vcodecs_name>
++			<th>@TITLE@</th></@vcodecs_name><@collections_name>
+ 			<th>@TITLE@</th></@collections_name><@volumes_name>
+ 			<th>@TITLE@</th></@volumes_name><@movies_seen>
+ 			<th>@TITLE@</th></@movies_seen><@movies_loaned>
+@@ -56,7 +57,8 @@
+ 		<td class="links"><a href="@DATA@">link</a></td></@movies_o_site><@movies_trailer>
+ 		<td class="links"><a href="@DATA@">link</a></td></@movies_trailer><@media_name>
+ 		<td class="media">@DATA@</td></@media_name><@movies_media_num>
+-		<td class="media">@DATA@</td></@movies_media_num><@collections_name>
++		<td class="media">@DATA@</td></@movies_media_num><@vcodecs_name>
++		<td class="media">@DATA@</td></@vcodecs_name><@collections_name>
+ 		<td class="media">@DATA@</td></@collections_name><@volumes_name>
+ 		<td class="media">@DATA@</td></@volumes_name><@movies_seen>
+ 		<td class="seen">@DATA@</td></@movies_seen><@movies_loaned>
+
+Modified: trunk/export_templates/html_tables/page.tpl
+===================================================================
+--- trunk/export_templates/html_tables/page.tpl	2007-11-29 21:50:42 UTC (rev 885)
++++ trunk/export_templates/html_tables/page.tpl	2007-11-30 22:07:57 UTC (rev 886)
+@@ -72,7 +72,11 @@
+ 	<tr class="media">
+ 		<th>@TITLE@</th>
+ 		<td>@DATA@</td>
+-	</tr></@movies_media_num><@collections_name>
++	</tr></@movies_media_num><@vcodecs_name>
++	<tr class="media">
++		<th>@TITLE@</th>
++		<td>@DATA@</td>
++	</tr></@vcodecs_name><@collections_name>
+ 	<tr class="collection">
+ 		<th>@TITLE@</th>
+ 		<td>@DATA@</td>
+
+Modified: trunk/export_templates/latex/page.tpl
+===================================================================
+--- trunk/export_templates/latex/page.tpl	2007-11-29 21:50:42 UTC (rev 885)
++++ trunk/export_templates/latex/page.tpl	2007-11-30 22:07:57 UTC (rev 886)
+@@ -40,8 +40,10 @@
+ 		\item {@TITLE@: @DATA@}
+ </@media_name><@movies_media_num>
+ 		\item {@TITLE@: @DATA@}
+-</@movies_media_num><@collections_name>
++</@movies_media_num><@vcodecs_name>
+ 		\item {@TITLE@: @DATA@}
++</@vcodecs_name><@collections_name>
++		\item {@TITLE@: @DATA@}
+ </@collections_name><@volumes_name>
+ 		\item {@TITLE@: @DATA@}
+ </@volumes_name><@movies_seen>
+
+Modified: trunk/export_templates/xml/page.tpl
+===================================================================
+--- trunk/export_templates/xml/page.tpl	2007-11-29 21:50:42 UTC (rev 885)
++++ trunk/export_templates/xml/page.tpl	2007-11-30 22:07:57 UTC (rev 886)
+@@ -17,7 +17,8 @@
+ 		<site>@DATA@</site></@movies_o_site><@movies_trailer>
+ 		<trailer>@DATA@</trailer></@movies_trailer><@media_name>
+ 		<media_name>@DATA@</media_name></@media_name><@movies_media_num>
+-		<media>@DATA@</media></@movies_media_num><@collections_name>
++		<media>@DATA@</media></@movies_media_num><@vcodecs_name>
++		<vcodec_name>@DATA@</vcodec_name></@vcodecs_name><@collections_name>
+ 		<collection>@DATA@</collection></@collections_name><@volumes_name>
+ 		<volume>@DATA@</volume></@volumes_name><@movies_seen>
+ 		<seen>@DATA@</seen></@movies_seen><@movies_loaned>
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2007-11-29 21:50:42 UTC (rev 885)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2007-11-30 22:07:57 UTC (rev 886)
+@@ -90,6 +90,8 @@
+ 		'media_name'            : True,
+ 		'collections_name'      : True,
+ 		'volumes_name'          : True,
++#		'acodecs_name'          : True,
++		'vcodecs_name'          : True,
+ 	}
+ 	
+ 	fields_as_columns = {
+@@ -123,6 +125,8 @@
+ 		'media_name'            : 'name',
+ 		'collections_name'      : 'name',
+ 		'volumes_name'          : 'name',
++#		'acodecs_name'          : 'name',
++		'vcodecs_name'          : 'name',
+ 	}
+ 	
+ 	names = {
+@@ -156,6 +160,8 @@
+ 		_('Media')          : 'media_name',
+ 		_('Collection')     : 'collections_name',
+ 		_('Volume')         : 'volumes_name',
++#		_('Audio codecs')   : 'acodecs_name',
++		_('Video codec')    : 'vcodecs_name',
+ 	}
+ 	#}}}
+ 
+@@ -163,6 +169,10 @@
+ 		self.db = database
+ 		self.debug = debug
+ 		self.locations = locations
++		if kwargs.has_key('config'):
++			self.persistent_config = kwargs['config']
++		else:
++			self.persistent_config = None
+ 		self.widgets = {}
+ 		self.style_list = {}
+ 		self.templates = self.make_template_list()
+@@ -373,6 +383,11 @@
+ 		else:
+ 			self.widgets['cb_convert'].set_active(False)
+ 			self.widgets['vb_posters'].set_sensitive(False)
++		# persistent config
++		if not self.persistent_config is None:
++			tmp = self.persistent_config.get('exported_dir', None, section='export-html')
++			if not tmp is None:
++				self.widgets['fcw'].set_current_folder(tmp)
+ 	#}}}
+ 
+ 	#==[ callbacks ]================================{{{
+@@ -553,7 +568,24 @@
+ 		volume_join = collection_join.outerjoin( \
+ 			self.db.metadata.tables['volumes'], \
+ 			self.db.metadata.tables['movies'].c.volume_id==self.db.metadata.tables['volumes'].c.volume_id)
+-
++		# use outer join to volumes table to get the name of the volume
++		columns.append(self.db.VCodec.c['name'])
++		vcodec_join = volume_join.outerjoin( \
++			self.db.metadata.tables['vcodecs'], \
++			self.db.metadata.tables['movies'].c.vcodec_id==self.db.metadata.tables['vcodecs'].c.vcodec_id)
++		#
++		# selecting the audio codec doesn't work with joins because if more than one codec per movie is
++		# added it would duplicate the movie in the result set as many as audio codecs are added to the movie
++		#
++		# use outer join to language and acodec table to get the name of the audio codec
++		#movie_lang_join = vcodec_join.outerjoin( \
++		#	self.db.metadata.tables['movie_lang'], \
++		#	self.db.metadata.tables['movies'].c.movie_id==self.db.metadata.tables['movie_lang'].c.movie_id)
++		#columns.append(self.db.ACodec.c['name'])
++		#acodec_join = movie_lang_join.outerjoin( \
++		#	self.db.metadata.tables['acodec'], \
++		#	self.db.metadata.tables['movie_lang'].c.acodec_id==self.db.metadata.tables['acodec'].c.acodec_id)
++		
+ 		# sort order	TODO: more than one sort column
+ 		sort_columns = []
+ 		if config['sorting2'] == 'ASC':
+@@ -563,7 +595,7 @@
+ 			from sqlalchemy import desc
+ 			sort_columns.append(desc(self.db.Movie.c[self.fields_as_columns[config['sorting']]]))
+ 
+-		statement = select(columns=columns, order_by=sort_columns, from_obj=[media_join, collection_join, volume_join], use_labels = True)
++		statement = select(columns=columns, order_by=sort_columns, from_obj=[media_join, collection_join, volume_join, vcodec_join], use_labels = True)
+ 
+ 		# where clause
+ 		if config['seen_only'] == 1:
+@@ -621,6 +653,11 @@
+ 				gutils.copytree(data_path, config['exported_dir'])
+ 			except Exception, err:
+ 				gutils.warning(self, str(err))
++		
++		# persist config
++		if not self.persistent_config is None:
++			self.persistent_config.set('exported_dir', config['exported_dir'], section='export-html')
++			self.persistent_config.save()
+ 
+ 		if fields['movies_image']:
+ 			# import modules needed later
+
+
+
+From mikej06 at mail.berlios.de  Fri Nov 30 23:17:32 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 30 Nov 2007 23:17:32 +0100
+Subject: [Griffith-svn] r887 - in trunk: . glade lib
+Message-ID: <200711302217.lAUMHW13017236@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-30 23:17:10 +0100 (Fri, 30 Nov 2007)
+New Revision: 887
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/quick_filter.py
+   trunk/lib/widgets.py
+Log:
+quick filter for volumes
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/ChangeLog	2007-11-30 22:17:10 UTC (rev 887)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-11-30  Michael Jahn
++	* HTML export supports video codec name
++	* quick filter for volumes
++
+ 2007-11-29 Vasco Nunes
+ 	* Russian language file updated
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/glade/griffith.glade	2007-11-30 22:17:10 UTC (rev 887)
+@@ -725,6 +725,38 @@
+               </packing>
+             </child>
+             <child>
++              <widget class="GtkToolItem" id="toolitem14">
++                <property name="visible">True</property>
++                <child>
++                  <widget class="GtkLabel" id="label291">
++                    <property name="visible">True</property>
++                    <property name="xpad">6</property>
++                    <property name="label" translatable="yes">By Volume</property>
++                  </widget>
++                </child>
++              </widget>
++              <packing>
++                <property name="expand">False</property>
++                <property name="homogeneous">False</property>
++              </packing>
++            </child>
++            <child>
++              <widget class="GtkToolItem" id="toolitem15">
++                <property name="visible">True</property>
++                <child>
++                  <widget class="GtkComboBox" id="f_volume">
++                    <property name="visible">True</property>
++                    <property name="items" translatable="yes"></property>
++                    <signal name="changed" handler="on_f_volume_changed"/>
++                  </widget>
++                </child>
++              </widget>
++              <packing>
++                <property name="expand">False</property>
++                <property name="homogeneous">False</property>
++              </packing>
++            </child>
++            <child>
+               <widget class="GtkToolItem" id="toolitem13">
+                 <property name="visible">True</property>
+                 <child>
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/griffith	2007-11-30 22:17:10 UTC (rev 887)
+@@ -943,6 +943,9 @@
+ 	def filter_collection(self, *args):
+ 		quick_filter.change_filter(self)
+ 
++	def filter_volume(self, *args):
++		quick_filter.change_filter(self)
++
+ 	# windows/dialogs -----------------------------------------------------
+ 
+ 	def results_cancel_ck(self, *args):
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/lib/initialize.py	2007-11-30 22:17:10 UTC (rev 887)
+@@ -696,6 +696,7 @@
+ 
+ def fill_volumes_combo(self, default=0):
+ 	self.widgets['add']['volume'].get_model().clear()
++	self.widgets['filter']['volume'].get_model().clear()
+ 	for i in self.volume_combo_ids:
+ 		vol_id = self.volume_combo_ids[i]
+ 		if vol_id>0:
+@@ -703,7 +704,10 @@
+ 		else:
+ 			name = ''
+ 		self.widgets['add']['volume'].insert_text(int(i), str(name))
++		self.widgets['filter']['volume'].insert_text(int(i), str(name))
+ 	self.widgets['add']['volume'].show_all()
++	self.widgets['filter']['volume'].show_all()
++	self.widgets['filter']['volume'].set_active(0)
+ 	i = gutils.findKey(default, self.volume_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['volume'].set_active(int(i))
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/lib/main_treeview.py	2007-11-30 22:17:10 UTC (rev 887)
+@@ -358,6 +358,10 @@
+ 			col_id = self.collection_combo_ids[self.widgets['filter']['collection'].get_active()]
+ 			if col_id > 0:
+ 				movies.append_whereclause(self.db.Movie.c.collection_id==col_id)
++			# volume
++			vol_id = self.volume_combo_ids[self.widgets['filter']['volume'].get_active()]
++			if vol_id > 0:
++				movies.append_whereclause(self.db.Movie.c.volume_id==vol_id)
+ 		
+ 		# select sort column
+ 		sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/lib/quick_filter.py	2007-11-30 22:17:10 UTC (rev 887)
+@@ -50,6 +50,7 @@
+ 	self.widgets['filter']['text'].set_text('')
+ 	self.widgets['filter']['criteria'].set_active(0)
+ 	self.widgets['filter']['collection'].set_active(0)
++	self.widgets['filter']['volume'].set_active(0)
+ 	self.initialized = True
+ 	self.populate_treeview()
+ 
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2007-11-30 22:07:57 UTC (rev 886)
++++ trunk/lib/widgets.py	2007-11-30 22:17:10 UTC (rev 887)
+@@ -276,6 +276,7 @@
+ 		'text':		get('filter_txt'),
+ 		'criteria':	get('filter_criteria'),
+ 		'collection':	get('f_col'),
++		'volume':	get('f_volume'),
+ 	}#}}}
+ 	
+ 	self.widgets['menu'] = {#{{{
+@@ -416,6 +417,7 @@
+ 		'on_am_remove_volume_button_clicked'	: self.remove_volume,
+ 		'on_am_remove_collection_button_clicked': self.remove_collection,
+ 		'on_f_col_changed'			: self.filter_collection,
++		'on_f_volume_changed'			: self.filter_volume,
+ 		'on_results_cancel_clicked'		: self.results_cancel_ck,
+ 		# languages
+ 		'on_lang_add_clicked'			: self.on_lang_add_clicked,
+
+
+
+From mikej06 at mail.berlios.de  Fri Nov 30 23:57:57 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 30 Nov 2007 23:57:57 +0100
+Subject: [Griffith-svn] r888 - in trunk: . lib/plugins/export
+Message-ID: <200711302257.lAUMvvJ1021218@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-11-30 23:57:45 +0100 (Fri, 30 Nov 2007)
+New Revision: 888
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportXML.py
+Log:
+export plugins remember the last directory which was used
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/ChangeLog	2007-11-30 22:57:45 UTC (rev 888)
+@@ -7,6 +7,7 @@
+ 2007-11-30  Michael Jahn
+ 	* HTML export supports video codec name
+ 	* quick filter for volumes
++	* export plugins remember the last directory which was used
+ 
+ 2007-11-29 Vasco Nunes
+ 	* Russian language file updated
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -39,12 +39,26 @@
+         self.db = database
+         self.locations = locations
+         self.parent = parent
++        if kwargs.has_key('config'):
++            self.persistent_config = kwargs['config']
++        else:
++            self.persistent_config = None
+         self.export_csv()
+ 
+     def export_csv(self):
+-        filename = gutils.file_chooser(_("Export a %s document")%"CSV", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-            buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv')
++        basedir = None
++        if not self.persistent_config is None:
++            basedir = self.persistent_config.get('export_dir', None, section='export-csv')
++        if basedir is None:
++            filename = gutils.file_chooser(_("Export a %s document")%"CSV", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv')
++        else:
++            filename = gutils.file_chooser(_("Export a %s document")%"CSV", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv',folder=basedir)
+         if filename[0]:
++            if not self.persistent_config is None and filename[1]:
++                self.persistent_config.set('export_dir', filename[1], section='export-csv')
++                self.persistent_config.save()
+             overwrite = None
+             if os.path.isfile(filename[0]):
+                 response = gutils.question(self, _("File exists. Do you want to overwrite it?"), 1, self.parent)
+@@ -55,7 +69,7 @@
+                     
+             if overwrite == True or overwrite is None:
+                 writer = csv.writer(file(filename[0], 'w'), dialect=csv.excel)
+-		for movie in self.db.Movie.select():
++                for movie in self.db.Movie.select():
+                     t = []
+                     for s in ('number', 'o_title', 'title', 'director', 'year', 'classification', 'country',
+                             'genre', 'rating', 'runtime', 'studio', 'seen', 'loaned', 'o_site', 'site', 'trailer',
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -385,7 +385,7 @@
+ 			self.widgets['vb_posters'].set_sensitive(False)
+ 		# persistent config
+ 		if not self.persistent_config is None:
+-			tmp = self.persistent_config.get('exported_dir', None, section='export-html')
++			tmp = self.persistent_config.get('export_dir', None, section='export-html')
+ 			if not tmp is None:
+ 				self.widgets['fcw'].set_current_folder(tmp)
+ 	#}}}
+@@ -656,7 +656,7 @@
+ 		
+ 		# persist config
+ 		if not self.persistent_config is None:
+-			self.persistent_config.set('exported_dir', config['exported_dir'], section='export-html')
++			self.persistent_config.set('export_dir', config['exported_dir'], section='export-html')
+ 			self.persistent_config.save()
+ 
+ 		if fields['movies_image']:
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -68,8 +68,17 @@
+         else:
+                 self.fontName = "Helvetica"
+ 
+-        filename = gutils.file_chooser(_("Export a PDF"), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name="griffith_simple_list.pdf")
++        basedir = None
++        if not self.config is None:
++            basedir = self.config.get('export_dir', None, section='export-pdf')
++        if basedir is None:
++            filename = gutils.file_chooser(_("Export a PDF"), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name="griffith_simple_list.pdf")
++        else:
++            filename = gutils.file_chooser(_("Export a PDF"), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name="griffith_simple_list.pdf",folder=basedir)
+         if filename[0]:
++            if not self.config is None and filename[1]:
++                self.config.set('export_dir', filename[1], section='export-pdf')
++                self.config.save()
+             overwrite = None
+             pdffilename = filename[0].decode('utf-8')
+             if os.path.isfile(pdffilename):
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2007-11-30 22:17:10 UTC (rev 887)
++++ trunk/lib/plugins/export/PluginExportXML.py	2007-11-30 22:57:45 UTC (rev 888)
+@@ -40,12 +40,26 @@
+ 		self.db = database
+ 		self.locations = locations
+ 		self.parent = parent_window
++		if kwargs.has_key('config'):
++			self.persistent_config = kwargs['config']
++		else:
++			self.persistent_config = None
+ 		self.export_xml()
+ 
+ 	def export_xml(self):
+-		filename = gutils.file_chooser(_("Export a %s document")%"XML", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml')
++		basedir = None
++		if not self.persistent_config is None:
++			basedir = self.persistent_config.get('export_dir', None, section='export-xml')
++		if basedir is None:
++			filename = gutils.file_chooser(_("Export a %s document")%"XML", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml')
++		else:
++			filename = gutils.file_chooser(_("Export a %s document")%"XML", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.xml',folder=basedir)
+ 		if filename[0]:
++			if not self.persistent_config is None and filename[1]:
++				self.persistent_config.set('export_dir', filename[1], section='export-xml')
++				self.persistent_config.save()
+ 			overwrite = None
+ 			if os.path.isfile(filename[0]):
+ 				response = gutils.question(self, _("File exists. Do you want to overwrite it?"), 1, self.parent)
+
+
+

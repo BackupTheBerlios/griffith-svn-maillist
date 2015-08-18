@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1575 - in trunk: . lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1575%20-%20in%20trunk%3A%20.%20lib/plugins/extensions&In-Reply-To=%3C20110823194527.99085481462%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001033.html">
+   <LINK REL="Next"  HREF="001035.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1575 - in trunk: . lib/plugins/extensions</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1575%20-%20in%20trunk%3A%20.%20lib/plugins/extensions&In-Reply-To=%3C20110823194527.99085481462%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1575 - in trunk: . lib/plugins/extensions">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 23 21:45:27 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001033.html">[Griffith-svn] r1574 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="001035.html">[Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1034">[ date ]</a>
+              <a href="thread.html#1034">[ thread ]</a>
+              <a href="subject.html#1034">[ subject ]</a>
+              <a href="author.html#1034">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-08-23 21:45:27 +0200 (Tue, 23 Aug 2011)
+New Revision: 1575
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/extensions/ge_remover.py
+Log:
+fixed bug in extension &quot;remover&quot;, it doesn't work if a criteria is required
+(f.e. adv filter with &quot;required tag&quot; did only remove the tags not the movie entries)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-23 18:52:04 UTC (rev 1574)
++++ trunk/ChangeLog	2011-08-23 19:45:27 UTC (rev 1575)
+@@ -7,6 +7,8 @@
+ 
+ 2011-08-23  Michael Jahn
+ 	* added buttons to remove and add a poster within the movie edit dialog
++	* fixed bug in extension &quot;remover&quot;, it doesn't work if a criteria is required
++	  (f.e. adv filter with &quot;required tag&quot; did only remove the tags not the movie entries)
+ 
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
+
+Modified: trunk/lib/plugins/extensions/ge_remover.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 18:52:04 UTC (rev 1574)
++++ trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 19:45:27 UTC (rev 1575)
+@@ -54,23 +54,29 @@
+             # FIXME: self.app._search_conditions contains advfilter conditions only (no other filters)
+             query = update_whereclause(query, self.app._search_conditions)
+             query = query.where(movies_table.c.loaned==False) # don't delete loaned movies
++            log.debug(query)
++            movie_ids = []
+             for movie_entry in session.execute(query):
++                movie_ids.append(movie_entry.movie_id)
+                 # tags
+                 query_movie_tags = delete(movie_tag_table)
+                 query_movie_tags = query_movie_tags.where(movie_tag_table.c.movie_id==movie_entry.movie_id)
++                log.debug(query_movie_tags)
+                 session.execute(query_movie_tags)
+                 # languages
+                 query_movie_lang = delete(movie_lang_table)
+                 query_movie_lang = query_movie_lang.where(movie_lang_table.c.movie_id==movie_entry.movie_id)
++                log.debug(query_movie_lang)
+                 session.execute(query_movie_lang)
+                 # TODO: removing posters if no longer used by another movie?
+ 
+             # second: remove the movie entries
+             query = delete(movies_table)
+-            # FIXME: self.app._search_conditions contains advfilter conditions only (no other filters)
+-            query = update_whereclause(query, self.app._search_conditions)
+-            query = query.where(movies_table.c.loaned==False) # don't delete loaned movies
++            # use the collected movie ids because other conditions are not true anymore
++            # (f.e. tags are already deleted)
++            query = query.where(movies_table.c.movie_id.in_(movie_ids))
+ 
++            log.debug(query)
+             session.execute(query)
+             session.commit()
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001033.html">[Griffith-svn] r1574 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="001035.html">[Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1034">[ date ]</a>
+              <a href="thread.html#1034">[ thread ]</a>
+              <a href="subject.html#1034">[ subject ]</a>
+              <a href="author.html#1034">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

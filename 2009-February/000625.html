@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1150 - branches/0.9.x/lib trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1150%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200902082111.n18LBcEK007218%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000624.html">
+   <LINK REL="Next"  HREF="000626.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1150 - branches/0.9.x/lib trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1150%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200902082111.n18LBcEK007218%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1150 - branches/0.9.x/lib trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Feb  8 22:11:38 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000624.html">[Griffith-svn] r1149 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000626.html">[Griffith-svn] r1151 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#625">[ date ]</a>
+              <a href="thread.html#625">[ thread ]</a>
+              <a href="subject.html#625">[ subject ]</a>
+              <a href="author.html#625">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-02-08 22:11:17 +0100 (Sun, 08 Feb 2009)
+New Revision: 1150
+
+Modified:
+   branches/0.9.x/lib/initialize.py
+   trunk/lib/gconsole.py
+   trunk/lib/initialize.py
+Log:
+* fixed a start error with non-ascii characters (especially greek characters) within path names
+* ported the 0.9.5 compatibility code (windows) to trunk
+
+Modified: branches/0.9.x/lib/initialize.py
+===================================================================
+--- branches/0.9.x/lib/initialize.py	2009-02-07 21:27:00 UTC (rev 1149)
++++ branches/0.9.x/lib/initialize.py	2009-02-08 21:11:17 UTC (rev 1150)
+@@ -48,11 +48,10 @@
+ 	locations['lib']  = os.path.dirname(__file__)
+ 	
+ 	if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+-		import winshell
+ 		from win32com.shell import shellcon, shell
+ 		import shutil
+ 		
+-		mydocs = winshell.my_documents()
++		locations['home']           = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0), u'griffith')
+ 		locations['movie_plugins']  = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+ 		locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+ 		locations['images']         = &quot;%s\\images&quot; % locations['exec']
+@@ -64,9 +63,10 @@
+ 		
+ 		# griffith dir location should point to 'Application Data'
+ 		# this is changed on 0.9.5+svn so we need to make it backward compatible
+-		if os.path.exists(os.path.join(mydocs, 'griffith').decode(defaultEnc)):
+-			shutil.move(os.path.join(mydocs, 'griffith').decode(defaultEnc),os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0), 'griffith').decode(defaultEnc))
+-		locations['home']           = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0), 'griffith').decode(defaultEnc)
++		if not os.path.exists(locations['home']):
++			mydocs = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL | 0x4000, 0, 0), u'griffith')
++			if os.path.exists(mydocs):
++				shutil.move(mydocs, locations['home'])
+ 		
+ 		# windows hack for locale setting
+ 		lang = os.getenv('LANG')
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2009-02-07 21:27:00 UTC (rev 1149)
++++ trunk/lib/gconsole.py	2009-02-08 21:11:17 UTC (rev 1150)
+@@ -41,7 +41,16 @@
+     
+     if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+         from win32com.shell import shellcon, shell
+-        home = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0), 'griffith').decode(default_enc)
++        import shutil
++        home = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0), u'griffith')
++        # griffith dir location should point to 'Application Data'
++        # this is changed on 0.9.5+svn so we need to make it backward compatible
++        # I think the following lines can be savely removed with version 0.11 or 0.12
++        if not os.path.exists(home):
++            mydocs = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL | 0x4000, 0, 0), u'griffith')
++            if os.path.exists(mydocs):
++                shutil.move(mydocs, home)
++        
+     else:
+         home = os.path.join(os.path.expanduser('~'), '.griffith').decode(default_enc)
+     config = 'griffith.cfg'
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-02-07 21:27:00 UTC (rev 1149)
++++ trunk/lib/initialize.py	2009-02-08 21:11:17 UTC (rev 1150)
+@@ -55,7 +55,6 @@
+         from win32com.shell import shellcon, shell
+         import shutil
+         
+-        mydocs = winshell.my_documents()
+         locations['movie_plugins']  = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+         locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+         locations['images']         = &quot;%s\\images&quot; % locations['exec']
+@@ -65,11 +64,6 @@
+         locations['i18n']           = &quot;%s\\i18n&quot; % locations['exec']
+         os.environ['PATH'] += &quot;;lib;&quot;
+         
+-        # griffith dir location should point to 'Application Data'
+-        # this is changed on 0.9.5+svn so we need to make it backward compatible
+-        if os.path.exists(os.path.join(mydocs, 'griffith').decode(defaultEnc)):
+-            shutil.move(os.path.join(mydocs, 'griffith').decode(defaultEnc),os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0), 'griffith').decode(defaultEnc))
+-        
+         # windows hack for locale setting
+         lang = os.getenv('LANG')
+         if lang is None:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000624.html">[Griffith-svn] r1149 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000626.html">[Griffith-svn] r1151 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#625">[ date ]</a>
+              <a href="thread.html#625">[ thread ]</a>
+              <a href="subject.html#625">[ subject ]</a>
+              <a href="author.html#625">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1531 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1531%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110208001240.1B702481391%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000990.html">
+   <LINK REL="Next"  HREF="000992.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1531 - in trunk: . lib</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1531%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110208001240.1B702481391%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1531 - in trunk: . lib">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb  8 01:12:39 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000990.html">[Griffith-svn] r1530 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000992.html">[Griffith-svn] r1532 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#991">[ date ]</a>
+              <a href="thread.html#991">[ thread ]</a>
+              <a href="subject.html#991">[ subject ]</a>
+              <a href="author.html#991">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2011-02-08 01:12:39 +0100 (Tue, 08 Feb 2011)
+New Revision: 1531
+
+Modified:
+   trunk/griffith
+   trunk/lib/gutils.py
+Log:
+some code cleanup.
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-02-07 17:07:35 UTC (rev 1530)
++++ trunk/griffith	2011-02-08 00:12:39 UTC (rev 1531)
+@@ -52,7 +52,9 @@
+ # end macosx
+ 
+ # check dependencies
++
+ import gutils
++
+ (required, extra) = gutils.get_dependencies()
+ missing = []
+ for i in required:
+@@ -72,7 +74,6 @@
+ 
+ # other imports
+ import gtk
+-
+ import add
+ import config
+ import db
+@@ -141,8 +142,8 @@
+         self.initialized = True
+         
+         # macosx integration
+-        #hide gtk menubar and implement a native Cocoa replacement
+-        #using gtk_osxapplication 
++        # hide gtk menubar and implement a native Cocoa replacement
++        # using gtk_osxapplication 
+         if self.mac:
+             import gtk_osxapplication  
+             self.macapp = gtk_osxapplication.OSXApplication()
+@@ -215,11 +216,11 @@
+ 
+     def destroy(self, widget, data=None):
+         self.save_state()
+-        #macosx - macosx integration fails with gtk.main_quit()
+-        #this is just a dirty workaround
++        # macosx - macosx integration fails with gtk.main_quit()
++        # this is just a dirty workaround
+         if self.mac:
+-        	sys.exit(0)
+-        #end macosx
++            sys.exit(0)
++        # end macosx
+         gtk.main_quit()
+ 
+     def on_configure(self, widget, data=None):
+@@ -604,6 +605,7 @@
+ 
+     def on_am_lang_add_clicked(self, widget):
+         self.create_language_row()
++        
+     def on_am_lang_remove_clicked(self, widget):
+         treeselection = self.widgets['add']['lang_treeview'].get_selection()
+         if treeselection:
+@@ -1024,32 +1026,14 @@
+         create(self)
+ 
+     def restore(self, *args):
+-	if self.mac:
+-	    if gutils.questionmac(_(&quot;&quot;&quot;Are you sure you want to restore?
+-Your current movie collection will be replaced.
+-You can't undo this operation.&quot;&quot;&quot;), self.widgets['window']):
+-		from backup import restore
+-		restore(self)
+-	else:
+-	    if gutils.question(_(&quot;&quot;&quot;Are you sure you want to restore?
+-Your current movie collection will be replaced.
+-You can't undo this operation.&quot;&quot;&quot;), self.widgets['window']):
+-		from backup import restore
+-		restore(self)
++        if gutils.question(_(&quot;&quot;&quot;Are you sure you want to restore? Your current movie collection will be replaced. You can't undo this operation.&quot;&quot;&quot;), self.widgets['window']):
++            from backup import restore
++            restore(self)
+ 
+     def merge(self, *args):
+-        if self.mac:
+-	    if gutils.questionmac(_(&quot;&quot;&quot;Are you sure you want to merge?
+-Your current movie collection will be merged with a backup.
+-You can't undo this operation.&quot;&quot;&quot;), self.widgets['window']):
+-		from backup import restore
+-		restore(self, merge=True)
+-	else:
+-	    if gutils.question(_(&quot;&quot;&quot;Are you sure you want to merge?
+-Your current movie collection will be merged with a backup.
+-You can't undo this operation.&quot;&quot;&quot;), self.widgets['window']):
+-		from backup import restore
+-		restore(self, merge=True)
++        if gutils.question(_(&quot;&quot;&quot;Are you sure you want to merge? Your current movie collection will be merged with a backup. You can't undo this operation.&quot;&quot;&quot;), self.widgets['window']):
++            from backup import restore
++            restore(self, merge=True)
+ 
+     # cover ---------------------------------------------------------------
+ 
+@@ -1338,56 +1322,51 @@
+ 
+     def new_dbb(self, *args):
+         &quot;&quot;&quot;initializes a new Griffith Database file&quot;&quot;&quot;
+-	if self.mac:
+-	    if gutils.questionmac(_('Are you sure you want to create a new database?\nYou will lose ALL your current data!'), self.widgets['window']):
+-	        log.debug('NEW DATABASE')
+-	        if gutils.questionmac(_('Last chance!\nDo you confirm that you want\nto lose your current data?'), self.widgets['window']):
+-		    from shutil import rmtree
+-		    rmtree(os.path.expanduser('~/.griffith'))
+-		    log.debug(&quot;Deleting database&quot;)
+-		    python = sys.executable
+-		    os.execl(python, python, * sys.argv)
+-	    
+-	else:	
+-	    if gutils.question(_('Are you sure you want to create a new database?\nYou will lose ALL your current data!'), self.widgets['window']):
+-	        log.debug('NEW DATABASE')
+-	        if gutils.question(_('Last chance!\nDo you confirm that you want\nto lose your current data?'), self.widgets['window']):
+-	            from sqlalchemy import select
+-		    from sql import GriffithSQL
+-		    from delete import delete_poster_from_cache
+-		    # delete images
+-		    posters_dir = self.locations['posters']
+-		    # NOTE: only used images are removed (posters are shared between various db)
+-		    log.debug('removing old images...')
++        if gutils.question(_('Are you sure you want to create a new database?\nYou will lose ALL your current data!'), self.widgets['window']):
++            log.debug('NEW DATABASE')
++            if gutils.question(_('Last chance!\nDo you confirm that you want\nto lose your current data?'), self.widgets['window']):
++                from sqlalchemy import select
++                from sql import GriffithSQL
++                from delete import delete_poster_from_cache
++                # TODO: change this! seems sqlalchemy are crashing under mac when creating new db...
++                if self.mac:
++                    from shutil import rmtree
++                    rmtree(os.path.expanduser('~/.griffith'))
++                    log.debug(&quot;Deleting database&quot;)
++                    python = sys.executable
++                    os.execl(python, python, * sys.argv)
++                else:
++                    # delete images
++                    posters_dir = self.locations['posters']
++                    # NOTE: only used images are removed (posters are shared between various db)
++                    log.debug('removing old images...')
++                    posters = self.db.session.query(db.Movie.poster_md5).all()
++                    for poster in posters:
++                        delete_poster_from_cache(poster[0], posters_dir)
++                    log.debug('dropping old tables...')
++                    self.db.session.rollback() # cancel all pending operations
++                    db.metadata.drop_all(self.db.session.bind.engine)
++                    #from sqlalchemy.orm import clear_mappers
++                    #clear_mappers()
++                    # disposing current db connection
++                    self.db.dispose()
++                    # dispose isn't enough here, I don't know why, but unlink fails
++                    # but I think unlink should not be necessary because all tables are dropped
++                    #if self.config.get('type', 'sqlite', section='database') == 'sqlite':
++                    #    os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
++                    #    if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
++                    #        self.config.set('file', 'griffith.db', section='database')
++                    #    create/connect db
++                    log.debug('creating new ones...')
++                    self.db = GriffithSQL(self.config, self.griffith_dir)
++                    self.clear_details()
++                    self.total = 0
++                    self.count_statusbar()
++                    self.treemodel.clear()
++                    from initialize import dictionaries, people_treeview
++                    dictionaries(self)
++                    people_treeview(self)
+ 
+-		    posters = self.db.session.query(db.Movie.poster_md5).all()
+-		    for poster in posters:
+-			delete_poster_from_cache(poster[0], posters_dir)
+-
+-		    log.debug('dropping old tables...')
+-		    self.db.session.rollback() # cancel all pending operations
+-		    db.metadata.drop_all(self.db.session.bind.engine)
+-		    #from sqlalchemy.orm import clear_mappers
+-		    #clear_mappers()
+-		    # disposing current db connection
+-		    self.db.dispose()
+-		    # dispose isn't enough here, I don't know why, but unlink fails
+-		    # but I think unlink should not be necessary because all tables are dropped
+-		    #if self.config.get('type', 'sqlite', section='database') == 'sqlite':
+-		    #    os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
+-		    #    if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
+-		    #        self.config.set('file', 'griffith.db', section='database')
+-		    #	 create/connect db
+-		    log.debug('creating new ones...')
+-		    self.db = GriffithSQL(self.config, self.griffith_dir)
+-		    self.clear_details()
+-		    self.total = 0
+-		    self.count_statusbar()
+-		    self.treemodel.clear()
+-		    from initialize import dictionaries, people_treeview
+-		    dictionaries(self)
+-		    people_treeview(self)
+-
+     # key events ----------------------------------------------------------
+ 
+     def on_key_press_event(self, widget, event):
+@@ -1519,4 +1498,4 @@
+     griffith = Griffith(home_dir, config)
+     griffith.main()
+ 
+-# vim: fdm=marker
++# vim: fdm=marker
+\ No newline at end of file
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-02-07 17:07:35 UTC (rev 1530)
++++ trunk/lib/gutils.py	2011-02-08 00:12:39 UTC (rev 1531)
+@@ -30,6 +30,8 @@
+ import sys
+ import webbrowser
+ from StringIO import StringIO
++import platform
++
+ try:
+     import gtk
+     import db
+@@ -273,36 +275,33 @@
+ 
+ 
+ def info(msg, parent=None):
+-    dialog = gtk.MessageDialog(parent,
+-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+-            gtk.MESSAGE_INFO, gtk.BUTTONS_OK, msg)
+-    dialog.set_skip_taskbar_hint(False)
+-    dialog.run()
+-    dialog.destroy()
++    if platform.system() == 'Darwin':
++        EasyDialogs.Message(str(msg))
++    else:
++        dialog = gtk.MessageDialog(parent,
++                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
++                gtk.MESSAGE_INFO, gtk.BUTTONS_OK, msg)
++        dialog.set_skip_taskbar_hint(False)
++        dialog.run()
++        dialog.destroy()
+ 
+-
+ def question(msg, window=None):
+-    dialog = gtk.MessageDialog(window,
++    if platform.system() == 'Darwin':
++        response = EasyDialogs.AskYesNoCancel(str(msg))
++        if response == -1: response = 0
++        return response
++    else:
++        dialog = gtk.MessageDialog(window,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+             gtk.MESSAGE_QUESTION, gtk.BUTTONS_NONE, msg)
+-    dialog.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
++        dialog.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
+             gtk.STOCK_NO, gtk.RESPONSE_NO)
+-    dialog.set_default_response(gtk.RESPONSE_NO)
+-    dialog.set_skip_taskbar_hint(False)
+-    response = dialog.run()
+-    dialog.destroy()
+-    return response in (gtk.RESPONSE_OK, gtk.RESPONSE_YES)
++        dialog.set_default_response(gtk.RESPONSE_NO)
++        dialog.set_skip_taskbar_hint(False)
++        response = dialog.run()
++        dialog.destroy()
++        return response in (gtk.RESPONSE_OK, gtk.RESPONSE_YES)
+     
+-
+-def questionmac(msg, window=None):
+-    response = EasyDialogs.AskYesNoCancel(str(msg))
+-    if response == -1:
+-        response = 0
+-    return response
+-
+-def infomac(msg, parent=None):
+-    EasyDialogs.Message(str(msg))
+-    
+ def warningmac(msg, parent=None):
+     EasyDialogs.Message(str(msg))
+     
+@@ -805,4 +804,4 @@
+     if pagesize &lt; 1024:
+         pagesize = 1024
+ 
+-    return pagesize
++    return pagesize
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000990.html">[Griffith-svn] r1530 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000992.html">[Griffith-svn] r1532 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#991">[ date ]</a>
+              <a href="thread.html#991">[ thread ]</a>
+              <a href="subject.html#991">[ subject ]</a>
+              <a href="author.html#991">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

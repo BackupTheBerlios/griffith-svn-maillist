@@ -1,0 +1,496 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r958 - branches/0.9.x branches/0.9.x/glade	branches/0.9.x/lib trunk trunk/glade trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r958%20-%20branches/0.9.x%20branches/0.9.x/glade%0A%09branches/0.9.x/lib%20trunk%20trunk/glade%20trunk/lib&In-Reply-To=%3C200807172101.m6HL1jLX003117%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000445.html">
+   <LINK REL="Next"  HREF="000447.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r958 - branches/0.9.x branches/0.9.x/glade	branches/0.9.x/lib trunk trunk/glade trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r958%20-%20branches/0.9.x%20branches/0.9.x/glade%0A%09branches/0.9.x/lib%20trunk%20trunk/glade%20trunk/lib&In-Reply-To=%3C200807172101.m6HL1jLX003117%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r958 - branches/0.9.x branches/0.9.x/glade	branches/0.9.x/lib trunk trunk/glade trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 17 23:01:45 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000445.html">[Griffith-svn] r957 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000447.html">[Griffith-svn] r959 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#446">[ date ]</a>
+              <a href="thread.html#446">[ thread ]</a>
+              <a href="subject.html#446">[ subject ]</a>
+              <a href="author.html#446">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-07-17 23:01:21 +0200 (Thu, 17 Jul 2008)
+New Revision: 958
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/glade/griffith.glade
+   branches/0.9.x/griffith
+   branches/0.9.x/lib/initialize.py
+   branches/0.9.x/lib/main_treeview.py
+   branches/0.9.x/lib/preferences.py
+   branches/0.9.x/lib/widgets.py
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/preferences.py
+   trunk/lib/widgets.py
+Log:
+* added column rating to the mainlist
+* [#226269] default folders hardcoded (not fully fixed)
+  Windows: use shell.SHGetFolderPath
+  Linux: use os.path.join(sys.prefix, 'share', 'fonts')
+* [#244676] Griffith loses focus - exit preferences dialog
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/ChangeLog	2008-07-17 21:01:21 UTC (rev 958)
+@@ -6,6 +6,8 @@
+ 
+ 2008-07-17  Michael Jahn
+ 	* updated OFDb plugin
++	* added column rating to the mainlist
++	* [#226269] default folders hardcoded (not fully fixed)
+ 
+ 2008-07-13  Michael Jahn
+ 	* updated DVDEmpire plugin
+
+Modified: branches/0.9.x/glade/griffith.glade
+===================================================================
+--- branches/0.9.x/glade/griffith.glade	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/glade/griffith.glade	2008-07-17 21:01:21 UTC (rev 958)
+@@ -2763,6 +2763,24 @@
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkCheckButton&quot; id=&quot;view_rating&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Rating&lt;/property&gt;
++                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                                &lt;property name=&quot;draw_indicator&quot;&gt;True&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;4&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
+                           &lt;/widget&gt;
+                         &lt;/child&gt;
+                       &lt;/widget&gt;
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/griffith	2008-07-17 21:01:21 UTC (rev 958)
+@@ -139,12 +139,13 @@
+ 
+ 		# add default folders to some select widgets
+ 		if self.windows:
+-			fonts_dir = os.path.join(os.environ['SYSTEMROOT'],'fonts')
++			from win32com.shell import shellcon, shell
++			fonts_dir = shell.SHGetFolderPath(0, shellcon.CSIDL_FONTS, 0, 0)
+ 			self.widgets['preferences']['font'].set_current_folder(fonts_dir)
+ 		elif self.mac:
+ 			self.widgets['preferences']['font'].set_current_folder(&quot;/System/Library/Fonts/&quot;)
+ 		else:
+-			self.widgets['preferences']['font'].set_current_folder(&quot;/usr/share/fonts/&quot;)
++			self.widgets['preferences']['font'].set_current_folder(os.path.join(sys.prefix, 'share', 'fonts'))
+ 
+ 	def main(self):
+ 		gtk.gdk.threads_init()
+@@ -240,6 +241,7 @@
+ 		show_preferences(self)
+ 
+ 	def hide_preferences(self, *args):
++		self.widgets['window'].present()
+ 		self.widgets['preferences']['window'].hide()
+ 
+ 	def save_preferences(self, *args):
+@@ -1021,6 +1023,9 @@
+ 			elif treeview_column == self.runtime_column:
+ 				columnorder = columnorder + delimiter + 'runtime'
+ 				delimiter = ','
++			elif treeview_column == self.rating_column:
++				columnorder = columnorder + delimiter + 'rating'
++				delimiter = ','
+ 		self.config.set('columnorder',  columnorder,  section='mainlist')
+ 		self.config.save()
+ 
+
+Modified: branches/0.9.x/lib/initialize.py
+===================================================================
+--- branches/0.9.x/lib/initialize.py	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/lib/initialize.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -248,6 +248,15 @@
+ 	self.runtime_column.set_alignment(1)
+ 	self.runtime_column.set_reorderable(True)
+ 	self.widgets['treeview'].append_column(self.runtime_column)
++	# rating column
++	renderer=gtk.CellRendererText()
++	renderer.set_property('xalign', 0.5)
++	self.rating_column=gtk.TreeViewColumn(_('Rating'), renderer, text=9)
++	self.rating_column.set_sort_column_id(9)
++	self.rating_column.set_resizable(True)
++	self.rating_column.set_alignment(0.5)
++	self.rating_column.set_reorderable(True)
++	self.widgets['treeview'].append_column(self.rating_column)
+ 	# reflect saved column order
+ 	columnorder = self.config.get('columnorder', None, section='mainlist')
+ 	if not columnorder is None:
+@@ -281,6 +290,9 @@
+ 			elif col == 'runtime':
+ 				self.widgets['treeview'].move_column_after(self.runtime_column, currentcol)
+ 				currentcol = self.runtime_column
++			elif col == 'rating':
++				self.widgets['treeview'].move_column_after(self.rating_column, currentcol)
++				currentcol = self.rating_column
+ 	# add data to treeview
+ 	self.total = int(self.db.Movie.count())
+ 	self.widgets['treeview'].show()
+
+Modified: branches/0.9.x/lib/main_treeview.py
+===================================================================
+--- branches/0.9.x/lib/main_treeview.py	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/lib/main_treeview.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -344,7 +344,8 @@
+ 			self.db.Movie.c.o_title, self.db.Movie.c.title,
+ 			self.db.Movie.c.director, self.db.Movie.c.image,
+ 			self.db.Movie.c.genre, self.db.Movie.c.seen,
+-			self.db.Movie.c.year, self.db.Movie.c.runtime])
++			self.db.Movie.c.year, self.db.Movie.c.runtime,
++			self.db.Movie.c.rating])
+ 
+ 	if isinstance(movies, Select):
+ 		if not where: # because of possible 'seen', 'loaned', 'collection_id' in where
+@@ -416,7 +417,7 @@
+ 	sort_column_id, order = self.treemodel.get_sort_column_id()
+ 
+ 	# new treemodel (faster and prevents some problems)
+-	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str)
++	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int)
+ 
+ 	# check preferences to hide or show columns
+ 	if self.config.get('number', True, 'mainlist') == True:
+@@ -455,6 +456,10 @@
+ 		self.runtime_column.set_visible(True)
+ 	else:
+ 		self.runtime_column.set_visible(False)
++	if self.config.get('rating', True, 'mainlist') == True:
++		self.rating_column.set_visible(True)
++	else:
++		self.rating_column.set_visible(False)
+ 		
+ 	for movie in movies:
+ 		myiter = self.treemodel.append(None)
+@@ -490,6 +495,7 @@
+ 		self.treemodel.set_value(myiter,7,movie.year)
+ 		if movie.runtime is not None:
+ 			self.treemodel.set_value(myiter,8, '%003d' % movie.runtime + _(' min'))
++		self.treemodel.set_value(myiter,9,movie.rating)
+ 		
+ 	# restore user sort column
+ 	if sort_column_id is not None:
+
+Modified: branches/0.9.x/lib/preferences.py
+===================================================================
+--- branches/0.9.x/lib/preferences.py	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/lib/preferences.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -80,6 +80,11 @@
+ 		w['view_runtime'].set_active(False)
+ 	else:
+ 		w['view_runtime'].set_active(True)
++	# rating
++	if self.config.get('rating', True, 'mainlist') == False:
++		w['view_rating'].set_active(False)
++	else:
++		w['view_rating'].set_active(True)
+ 
+ 	# email reminder
+ 	if self.config.get('use_auth', False, section='mail') == False:
+@@ -253,6 +258,11 @@
+ 		c.set('runtime', 'True', section='mainlist')
+ 	else:
+ 		c.set('runtime', 'False', section='mainlist')
++	# rating
++	if w['view_rating'].get_active():
++		c.set('rating', 'True', section='mainlist')
++	else:
++		c.set('rating', 'False', section='mainlist')
+ 	
+ 	# sortby
+ 	if w['sortby'].get_active():
+
+Modified: branches/0.9.x/lib/widgets.py
+===================================================================
+--- branches/0.9.x/lib/widgets.py	2008-07-17 20:47:37 UTC (rev 957)
++++ branches/0.9.x/lib/widgets.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -188,6 +188,7 @@
+ 		'view_seen':	get('view_seen'),
+ 		'view_year':	get('view_year'),
+ 		'view_runtime':	get('view_runtime'),
++		'view_rating':	get('view_rating'),
+ 		'rating_image':		get('rating_image'),
+ 		'spellchecker':		get('spellchecker_pref'),
+ 		'spell_notes':		get('spell_notes'),
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/ChangeLog	2008-07-17 21:01:21 UTC (rev 958)
+@@ -6,6 +6,8 @@
+ 
+ 2008-07-17  Michael Jahn
+ 	* updated OFDb plugin
++	* added column rating to the mainlist
++	* [#226269] default folders hardcoded (not fully fixed)
+ 
+ 2008-07-13  Michael Jahn
+ 	* updated DVDEmpire plugin
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/glade/griffith.glade	2008-07-17 21:01:21 UTC (rev 958)
+@@ -2763,6 +2763,24 @@
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkCheckButton&quot; id=&quot;view_rating&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Rating&lt;/property&gt;
++                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                                &lt;property name=&quot;draw_indicator&quot;&gt;True&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;4&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
+                           &lt;/widget&gt;
+                         &lt;/child&gt;
+                       &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/griffith	2008-07-17 21:01:21 UTC (rev 958)
+@@ -51,7 +51,7 @@
+ 
+ # other imports
+ import gtk, gtk.glade
+-import add, config, gconsole, gutils, gdebug, initialize, main_treeview, quick_filter
++import add, config, gconsole, gutils, gdebug, initialize, main_treeview, quick_filter, update
+ from gettext import gettext as _
+ 
+ class Griffith:
+@@ -137,12 +137,13 @@
+ 
+ 		# add default folders to some select widgets
+ 		if self.windows:
+-			fonts_dir = os.path.join(os.environ['SYSTEMROOT'],'fonts')
++			from win32com.shell import shellcon, shell
++			fonts_dir = shell.SHGetFolderPath(0, shellcon.CSIDL_FONTS, 0, 0)
+ 			self.widgets['preferences']['font'].set_current_folder(fonts_dir)
+ 		elif self.mac:
+ 			self.widgets['preferences']['font'].set_current_folder(&quot;/System/Library/Fonts/&quot;)
+ 		else:
+-			self.widgets['preferences']['font'].set_current_folder(&quot;/usr/share/fonts/&quot;)
++			self.widgets['preferences']['font'].set_current_folder(os.path.join(sys.prefix, 'share', 'fonts'))
+ 
+ 	def main(self):
+ 		gtk.gdk.threads_init()
+@@ -238,6 +239,7 @@
+ 		show_preferences(self)
+ 
+ 	def hide_preferences(self, *args):
++		self.widgets['window'].present()
+ 		self.widgets['preferences']['window'].hide()
+ 
+ 	def save_preferences(self, *args):
+@@ -1019,6 +1021,9 @@
+ 			elif treeview_column == self.runtime_column:
+ 				columnorder = columnorder + delimiter + 'runtime'
+ 				delimiter = ','
++			elif treeview_column == self.rating_column:
++				columnorder = columnorder + delimiter + 'rating'
++				delimiter = ','
+ 		self.config.set('columnorder',  columnorder,  section='mainlist')
+ 		self.config.save()
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/lib/initialize.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -248,6 +248,15 @@
+ 	self.runtime_column.set_alignment(1)
+ 	self.runtime_column.set_reorderable(True)
+ 	self.widgets['treeview'].append_column(self.runtime_column)
++	# rating column
++	renderer=gtk.CellRendererText()
++	renderer.set_property('xalign', 0.5)
++	self.rating_column=gtk.TreeViewColumn(_('Rating'), renderer, text=9)
++	self.rating_column.set_sort_column_id(9)
++	self.rating_column.set_resizable(True)
++	self.rating_column.set_alignment(0.5)
++	self.rating_column.set_reorderable(True)
++	self.widgets['treeview'].append_column(self.rating_column)
+ 	# reflect saved column order
+ 	columnorder = self.config.get('columnorder', None, section='mainlist')
+ 	if not columnorder is None:
+@@ -281,6 +290,9 @@
+ 			elif col == 'runtime':
+ 				self.widgets['treeview'].move_column_after(self.runtime_column, currentcol)
+ 				currentcol = self.runtime_column
++			elif col == 'rating':
++				self.widgets['treeview'].move_column_after(self.rating_column, currentcol)
++				currentcol = self.rating_column
+ 	# add data to treeview
+ 	self.total = int(self.db.Movie.query.count())
+ 	self.widgets['treeview'].show()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/lib/main_treeview.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -345,8 +345,8 @@
+ 			self.db.Movie.c.o_title, self.db.Movie.c.title,
+ 			self.db.Movie.c.director, self.db.Movie.c.image,
+ 			self.db.Movie.c.genre, self.db.Movie.c.seen,
+-			self.db.Movie.c.year, self.db.Movie.c.runtime])
+-
++			self.db.Movie.c.year, self.db.Movie.c.runtime,
++			self.db.Movie.c.rating])
+ 	#if isinstance(movies, Select):
+ 	if 1==1: # FIXME
+ 		if not where: # because of possible 'seen', 'loaned', 'collection_id' in where
+@@ -418,7 +418,7 @@
+ 	sort_column_id, order = self.treemodel.get_sort_column_id()
+ 
+ 	# new treemodel (faster and prevents some problems)
+-	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str)
++	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int)
+ 
+ 	# check preferences to hide or show columns
+ 	if self.config.get('number', True, 'mainlist') == True:
+@@ -457,6 +457,10 @@
+ 		self.runtime_column.set_visible(True)
+ 	else:
+ 		self.runtime_column.set_visible(False)
++	if self.config.get('rating', True, 'mainlist') == True:
++		self.rating_column.set_visible(True)
++	else:
++		self.rating_column.set_visible(False)
+ 		
+ 	for movie in movies:
+ 		myiter = self.treemodel.append(None)
+@@ -492,6 +496,7 @@
+ 		self.treemodel.set_value(myiter,7,movie.year)
+ 		if movie.runtime is not None:
+ 			self.treemodel.set_value(myiter,8, '%003d' % movie.runtime + _(' min'))
++		self.treemodel.set_value(myiter,9,movie.rating)
+ 		
+ 	# restore user sort column
+ 	if sort_column_id is not None:
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/lib/preferences.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -80,6 +80,11 @@
+ 		w['view_runtime'].set_active(False)
+ 	else:
+ 		w['view_runtime'].set_active(True)
++	# rating
++	if self.config.get('rating', True, 'mainlist') == False:
++		w['view_rating'].set_active(False)
++	else:
++		w['view_rating'].set_active(True)
+ 
+ 	# email reminder
+ 	if self.config.get('use_auth', False, section='mail') == False:
+@@ -253,6 +258,11 @@
+ 		c.set('runtime', 'True', section='mainlist')
+ 	else:
+ 		c.set('runtime', 'False', section='mainlist')
++	# rating
++	if w['view_rating'].get_active():
++		c.set('rating', 'True', section='mainlist')
++	else:
++		c.set('rating', 'False', section='mainlist')
+ 	
+ 	# sortby
+ 	if w['sortby'].get_active():
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-07-17 20:47:37 UTC (rev 957)
++++ trunk/lib/widgets.py	2008-07-17 21:01:21 UTC (rev 958)
+@@ -188,6 +188,7 @@
+ 		'view_seen':	get('view_seen'),
+ 		'view_year':	get('view_year'),
+ 		'view_runtime':	get('view_runtime'),
++		'view_rating':	get('view_rating'),
+ 		'rating_image':		get('rating_image'),
+ 		'spellchecker':		get('spellchecker_pref'),
+ 		'spell_notes':		get('spell_notes'),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000445.html">[Griffith-svn] r957 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000447.html">[Griffith-svn] r959 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#446">[ date ]</a>
+              <a href="thread.html#446">[ thread ]</a>
+              <a href="subject.html#446">[ subject ]</a>
+              <a href="author.html#446">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

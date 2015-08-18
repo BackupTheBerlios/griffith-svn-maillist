@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1505 - in trunk: . glade lib lib/db
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1505%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/db&In-Reply-To=%3C20110121215702.7CDAB480757%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000965.html">
+   <LINK REL="Next"  HREF="000967.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1505 - in trunk: . glade lib lib/db</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1505%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/db&In-Reply-To=%3C20110121215702.7CDAB480757%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1505 - in trunk: . glade lib lib/db">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 21 22:57:02 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000965.html">[Griffith-svn] r1504 - in trunk: . lib/db
+</A></li>
+        <LI>Next message: <A HREF="000967.html">[Griffith-svn] r1506 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#966">[ date ]</a>
+              <a href="thread.html#966">[ thread ]</a>
+              <a href="subject.html#966">[ subject ]</a>
+              <a href="author.html#966">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-01-21 22:57:02 +0100 (Fri, 21 Jan 2011)
+New Revision: 1505
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/add.py
+   trunk/lib/db/_movie.py
+   trunk/lib/initialize.py
+Log:
+drop-down combobox for resolution field
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/ChangeLog	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-01-21  Michael Jahn
++	* drop-down combobox for resolution field
++
+ 2011-01-19  Michael Jahn
+ 	* [#700704] Incorrect dialog size for posters
+ 	* [#493148] The Save button in the preferences window does not work well
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/glade/griffith.glade	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -6834,10 +6834,15 @@
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_resolution&quot;&gt;
++                  &lt;widget class=&quot;GtkComboBoxEntry&quot; id=&quot;am_resolution&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;items&quot; translatable=&quot;no&quot;&gt;&lt;/property&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                    &lt;child internal-child=&quot;entry&quot;&gt;
++                      &lt;widget class=&quot;GtkEntry&quot; id=&quot;comboboxentry-entry11&quot;&gt;
++                      &lt;/widget&gt;
++                    &lt;/child&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+                     &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/lib/add.py	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -341,7 +341,7 @@
+         'o_title': w['o_title'].get_text().decode('utf-8'),
+         'rating': w['rating_slider'].get_value(),
+         'region': w['region'].get_active(),
+-        'resolution': w['resolution'].get_text().strip().decode('utf-8'),
++        'resolution': w['resolution'].get_child().get_text().strip().decode('utf-8'),
+         'runtime': w['runtime'].get_text().decode('utf-8'),
+         'screenplay': w['screenplay'].get_text().decode('utf-8'),
+         'site': w['site'].get_text().decode('utf-8'),
+@@ -447,13 +447,13 @@
+         w['year'].set_value(0)
+     if 'resolution' in item and item['resolution']:
+         if self.config.get('use_resolution_alias', True):
+-            w['resolution'].set_text(item['resolution'])
++            w['resolution'].get_child().set_text(item['resolution'])
+         elif 'height' in item and item['height'] and 'width' in item and item['width']:
+-            w['resolution'].set_text(&quot;%dx%d&quot; % (item['width'], item['height']))
++            w['resolution'].get_child().set_text(&quot;%dx%d&quot; % (item['width'], item['height']))
+         else: # failback to 'resolution'
+-            w['resolution'].set_text(item['resolution'])
++            w['resolution'].get_child().set_text(item['resolution'])
+     else:
+-        w['resolution'].set_text('')
++        w['resolution'].get_child().set_text('')
+     if 'runtime' in item and item['runtime']:
+         w['runtime'].set_value(gutils.digits_only(item['runtime']))
+     else:
+
+Modified: trunk/lib/db/_movie.py
+===================================================================
+--- trunk/lib/db/_movie.py	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/lib/db/_movie.py	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -1,7 +1,7 @@
+ # -*- coding: UTF-8 -*-
+ __revision__ = '$Id$'
+ 
+-# Copyright &#169; 2009 Piotr O&#380;arowski
++# Copyright &#169; 2009-2011 Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -34,7 +34,7 @@
+ res_aliases = {(2560, 1600): ('QSXGA',),
+                 (2048, 1536): ('QXGA',),
+                 (1920, 1200): ('WUXGA',),
+-                (1920, 1080): ('HD 1080', '1080p', '1080'),
++                (1920, 1080): ('1080p', 'HD 1080', '1080'),
+                 (1920, 540): ('1080i',),
+                 (1680, 1050): ('WSXGA+',),
+                 (1600, 1200): ('UXGA',),
+@@ -42,7 +42,7 @@
+                 #(1440, 960): ('',),
+                 #(1280, 960): ('',),
+                 #(1280, 854): ('',),
+-                (1280, 720): ('HD 720', '720p', '720'),
++                (1280, 720): ('720p', 'HD 720', '720'),
+                 (1280, 360): ('720i',),
+                 (1280, 1024): ('SXGA',),
+                 #(1152, 768): ('',),
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/lib/initialize.py	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -741,6 +741,7 @@
+     fill_collections_combo(self)
+     fill_advfilter_combo(self)
+     fill_preferences_tags_combo(self)
++    fill_resolutions_combo(self)
+     language_combos(self)
+     acodec_combos(self)
+     achannel_combos(self)
+@@ -968,6 +969,21 @@
+     self.initialized = _tmp
+ 
+ 
++def fill_resolutions_combo(self, default=0):
++    _tmp = self.initialized
++    self.initialized = False # don't refresh main treeview
++    self.widgets['add']['resolution'].get_model().clear()
++    #resolutions = [names[0] for names in db._movie.res_aliases.values()]
++    resolutions = [names[0] for (res, names) in db._movie.res_aliases.iteritems()]
++    resolutions.sort()
++    i = 0
++    for name in resolutions:
++        self.widgets['add']['resolution'].insert_text(i, name)
++        i = i + 1
++    self.widgets['add']['resolution'].show_all()
++    self.initialized = _tmp
++
++
+ def language_combos(self):
+     self.widgets['preferences']['lang_name'].get_model().clear()
+     self.languages_ids = {}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000965.html">[Griffith-svn] r1504 - in trunk: . lib/db
+</A></li>
+	<LI>Next message: <A HREF="000967.html">[Griffith-svn] r1506 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#966">[ date ]</a>
+              <a href="thread.html#966">[ thread ]</a>
+              <a href="subject.html#966">[ subject ]</a>
+              <a href="author.html#966">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r778 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r778%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200706201832.l5KIWfL6030656%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000294.html">
+   <LINK REL="Next"  HREF="000296.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r778 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r778%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200706201832.l5KIWfL6030656%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r778 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 20 20:32:41 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000294.html">[Griffith-svn] r777 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000296.html">[Griffith-svn] r779 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-06-20 20:32:21 +0200 (Wed, 20 Jun 2007)
+New Revision: 778
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+Log:
+fixed bug #11088: Clone doesn't produce a new entry
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-20 16:09:29 UTC (rev 777)
++++ trunk/ChangeLog	2007-06-20 18:32:21 UTC (rev 778)
+@@ -6,6 +6,7 @@
+ 
+ 2007-06-20  Michael Jahn
+ 	* fixed bug #11103: windows are not &quot;on top&quot;
++	* fixed bug #11088: Clone doesn't produce a new entry
+ 	* added script for database creation under Microsoft SQL Server (README)
+ 
+ 2007-06-19  Vasco Nunes
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2007-06-20 16:09:29 UTC (rev 777)
++++ trunk/lib/add.py	2007-06-20 18:32:21 UTC (rev 778)
+@@ -608,7 +608,10 @@
+ 		return False
+ 
+ 	next_number = gutils.find_next_available(self.db)
+-	new_image = str(movie.image) + '_' + str(next_number)
++	if movie.image is not None:
++		new_image = str(movie.image) + '_' + str(next_number)
++	else:
++		new_image = None
+ 	
+ 	# integer problem workaround
+ 	if int(movie.seen)==1:
+@@ -662,10 +665,16 @@
+ 		image_path = os.path.join(tmp_dest, str(movie.image)+&quot;.jpg&quot;)
+ 		clone_path = os.path.join(tmp_dest, new_image+&quot;.jpg&quot;)
+ 		# clone image
+-		shutil.copyfile(image_path, clone_path)
+-		image_path = clone_path
+-		gutils.make_thumbnail(self, &quot;%s.jpg&quot; % new_image)
+-		gutils.make_medium_image(self, &quot;%s.jpg&quot; % new_image)
++		# catch IOError otherwise you would not see the cloned entry in
++		# the list before the next start of griffith or another refresh
++		# of the list
++		try:
++			shutil.copyfile(image_path, clone_path)
++			image_path = clone_path
++			gutils.make_thumbnail(self, &quot;%s.jpg&quot; % new_image)
++			gutils.make_medium_image(self, &quot;%s.jpg&quot; % new_image)
++		except IOError:
++			image_path = os.path.join(self.locations['images'], &quot;default.png&quot;)
+ 	else:
+ 		image_path = os.path.join(self.locations['images'], &quot;default.png&quot;)
+ 	handler = self.Image.set_from_file(image_path)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000294.html">[Griffith-svn] r777 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000296.html">[Griffith-svn] r779 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

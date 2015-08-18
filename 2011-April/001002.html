@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1542 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1542%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110427192943.1E5FF480D97%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001001.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1542 - in trunk: . lib/plugins/movie</H1>
+    <B>filosottile at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1542%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110427192943.1E5FF480D97%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1542 - in trunk: . lib/plugins/movie">filosottile at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 27 21:29:42 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001001.html">[Griffith-svn] r1541 - in trunk: i18n/it/LC_MESSAGES	lib/plugins/movie po
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1002">[ date ]</a>
+              <a href="thread.html#1002">[ thread ]</a>
+              <a href="subject.html#1002">[ subject ]</a>
+              <a href="author.html#1002">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: filosottile
+Date: 2011-04-27 21:29:42 +0200 (Wed, 27 Apr 2011)
+New Revision: 1542
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieInterfilmes.py
+Modified:
+   trunk/ChangeLog
+Log:
+New Interfilmes plugin by Elencarlos Soares; updated ChangeLog for last 2 commits
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-04-22 23:11:37 UTC (rev 1541)
++++ trunk/ChangeLog	2011-04-27 19:29:42 UTC (rev 1542)
+@@ -4,7 +4,14 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2011-04-27  Filippo Valsorda
++    * New Interfilmes plugin by Elencarlos Soares
+ 
++2011-04-22  Filippo Valsorda
++    * New CSFD plugin by Kamil Hanus
++    * Minor fixes in IMDB-it and MyMoviesIt plugins
++    * Fixed a typo in it.po
++
+ 2011-03-20  Piotr O&#380;arowski
+ 	* &quot;spellchekcer&quot; typo fixed (thanks to Olivier BOURSIN)
+ 
+
+Added: trunk/lib/plugins/movie/PluginMovieInterfilmes.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieInterfilmes.py	                        (rev 0)
++++ trunk/lib/plugins/movie/PluginMovieInterfilmes.py	2011-04-27 19:29:42 UTC (rev 1542)
+@@ -0,0 +1,146 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id: PluginMovieE-Pipoca.py 1467 2010-10-14 18:16:49Z mikej06 $'
++
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#380;arowski
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++# Updated on 04/29/2007 by Djohnson &quot;Joe&quot; Lima
++# <A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joe1310 at terra.com.br</A> - S&#227;o Paulo/Brasil
++
++
++import gutils
++import movie
++import string
++
++plugin_name         = &quot;Interfilmes&quot;
++plugin_description  = &quot;Interfilmes Brasil&quot;
++plugin_url          = &quot;www.interfilmes.com&quot;
++plugin_language     = _(&quot;Brazilian Portuguese&quot;)
++plugin_author       = &quot;Elencarlos Soares&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">elencarlos at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.3&quot;
++
++class Plugin(movie.Movie):
++
++    def __init__(self, id):
++        self.encode   = 'iso-8859-1'
++        self.movie_id = id
++        self.url      = &quot;<A HREF="http://www.interfilmes.com/filme_">http://www.interfilmes.com/filme_</A>&quot; + str(self.movie_id) + &quot;_.html&quot;
++        print(self.url)
++
++    def get_image(self):
++        &quot;&quot;&quot;Finds the film's poster image&quot;&quot;&quot;
++        tmp_pic = gutils.trim(self.page, &quot;content=\&quot;<A HREF="http://www.interfilmes.com/FILMES/">http://www.interfilmes.com/FILMES/</A>&quot;, &quot;\&quot;&quot;)
++        self.image_url = &quot;<A HREF="http://www.interfilmes.com/FILMES/">http://www.interfilmes.com/FILMES/</A>&quot; + tmp_pic
++        print(self.image_url)
++
++    def get_o_title(self):
++        self.o_title = string.capwords(gutils.trim(self.page, &quot;&lt;u&gt;T&#237;tulo Original:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&quot;))
++        print(self.o_title)
++        
++    def get_title(self):
++        self.title = gutils.trim(self.page, &quot;&lt;u&gt;T&#237;tulo no Brasil:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&lt;u&gt;&quot;)
++        print(self.title)
++
++    def get_director(self):
++        self.director = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;u&gt;Dire&#231;&#227;o:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&lt;/font&gt;&quot;))
++        print(self.director)
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, &quot;&lt;div align=\&quot;justify\&quot;&gt;&quot;, &quot;&lt;/div&gt;&quot;)
++        print(self.plot)
++
++    def get_year(self):
++        self.year = gutils.trim(self.page, &quot;&lt;u&gt;Ano de Lan&#231;amento:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&quot;)
++
++    def get_runtime(self):
++        &quot;Find the film's running time&quot;
++        self.runtime = gutils.trim(self.page, &quot;&lt;u&gt;Tempo de Dura&#231;&#227;o:&lt;/u&gt;&quot;, &quot; minutos&lt;br&gt;&quot;)
++        print(self.runtime)
++        self.runtime = self.runtime[4:]
++        print(self.runtime)
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, &quot;nero:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&quot;)
++
++    def get_cast(self):
++        self.cast = &quot;&quot;
++
++    def get_classification(self):
++        self.classification = &quot;&quot;
++
++    def get_studio(self):
++        self.studio = gutils.trim(self.page, &quot;&lt;u&gt;Est&#250;dio/Distrib.:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&quot;)
++
++    def get_o_site(self):
++        self.o_site = &quot;&quot;
++
++    def get_site(self):
++        tmp_site = gutils.trim(self.page, &quot;content=\&quot;<A HREF="http://www.interfilmes.com/filme_">http://www.interfilmes.com/filme_</A>&quot;, &quot;\&quot;&quot;)
++        self.site = &quot;<A HREF="http://www.interfilmes.com/filme_">http://www.interfilmes.com/filme_</A>&quot; + tmp_site
++        print(self.site)
++
++    def get_trailer(self):        
++        self.trailer = &quot;&quot;
++            
++    def get_country(self):  
++        self.country = gutils.trim(self.page, &quot;&lt;u&gt;Pa&#237;s de Origem:&lt;/u&gt;&nbsp;&quot;, &quot;&lt;br&gt;&quot;)
++
++    def get_rating(self):
++        self.rating = &quot;&quot;
++
++    def get_screenplay(self):
++        self.screenplay = &quot;&quot;
++
++    def get_cameraman(self):
++        self.cameraman = &quot;&quot;
++
++class SearchPlugin(movie.SearchMovie):
++    def __init__(self):
++        self.original_url_search = &quot;<A HREF="http://interfilmes.com/busca.%s.html">http://interfilmes.com/busca.%s.html</A>&quot;
++        self.translated_url_search = self.original_url_search
++        self.encode = 'iso-8859-1'        
++        
++    def search(self, parent_window):
++	    
++        if not self.open_search(parent_window):
++            return None
++        self.sub_search()
++        return self.page
++
++    def sub_search(self):
++        &quot;Isolating just a portion (with the data we want) of the results&quot;
++        self.page = gutils.trim(self.page, &quot;&lt;td bgcolor=#DEFEE6 width=100% height=1 colspan=3&gt;&quot;, &quot;&lt;/tr&gt;&lt;/table&gt;    &lt;/td&gt;&quot;)
++
++    def get_searches(self):
++
++        elements = string.split(self.page, &quot;&lt;td width=100% height=18&quot;)
++        self.number_results = elements[-1]
++
++        if (elements[0] != ''):
++            for element in elements:
++                print (gutils.trim(element, &quot;align=center valign=top&gt;&lt;a href=\&quot;filme_&quot;, &quot;_&quot;))
++                self.ids.append(gutils.trim(element, &quot;align=center valign=top&gt;&lt;a href=\&quot;filme_&quot;, &quot;_&quot;))
++                print(gutils.strip_tags(gutils.trim(element, &quot;&lt;font color=#FFFFFF face=Verdana size=2&gt;&quot;, &quot;&lt;/font&gt;&lt;/a&gt;&lt;/b&gt;&lt;/td&gt;&quot;)+' - '+gutils.trim(element, &quot;Ano de Lan&#231;amento:&quot;, &quot;&lt;br&gt;&quot;)))
++                self.titles.append(gutils.strip_tags(gutils.trim(element, &quot;&lt;font color=#FFFFFF face=Verdana size=2&gt;&quot;, &quot;&lt;/font&gt;&lt;/a&gt;&lt;/b&gt;&lt;/td&gt;&quot;)+' - '+gutils.trim(element, &quot;Ano de Lan&#231;amento:&quot;, &quot;&lt;br&gt;&quot;)))
++        else:
++            self.number_results = 0
++
++			
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001001.html">[Griffith-svn] r1541 - in trunk: i18n/it/LC_MESSAGES	lib/plugins/movie po
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1002">[ date ]</a>
+              <a href="thread.html#1002">[ thread ]</a>
+              <a href="subject.html#1002">[ subject ]</a>
+              <a href="author.html#1002">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

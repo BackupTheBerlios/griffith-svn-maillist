@@ -1,0 +1,412 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r979 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r979%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200808022308.m72N8XAx009583%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000461.html">
+   <LINK REL="Next"  HREF="000463.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r979 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r979%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200808022308.m72N8XAx009583%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r979 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug  3 01:08:33 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000461.html">[Griffith-svn] r978 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000463.html">[Griffith-svn] r980 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#462">[ date ]</a>
+              <a href="thread.html#462">[ thread ]</a>
+              <a href="subject.html#462">[ subject ]</a>
+              <a href="author.html#462">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-08-03 01:08:31 +0200 (Sun, 03 Aug 2008)
+New Revision: 979
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/gutils.py
+   trunk/lib/main_treeview.py
+   trunk/lib/sql.py
+Log:
+Move all posters to database, create local cache
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/ChangeLog	2008-08-02 23:08:31 UTC (rev 979)
+@@ -7,6 +7,7 @@
+ 
+ 2008-08-02  Piotr O&#380;arowski
+ 	* Use unicode in gettext and SQLAlchemy
++	* Move all posters to database, create local cache
+ 
+ 2008-07-31  Piotr O&#380;arowski
+ 	* Replace gdebug with Python's logging module
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/griffith	2008-08-02 23:08:31 UTC (rev 979)
+@@ -347,10 +347,9 @@
+             return
+         number = tmp_model.get_value(tmp_iter, 0)
+         movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+-        if movie is not None:
+-            tmp_dest = self.locations['posters']
+-            tmp_img = os.path.join(tmp_dest, str(movie.image)+&quot;.jpg&quot;)
+-            self.widgets['big_poster'].set_from_file(tmp_img)
++        if movie:
++            filename = gutils.get_image_fname(movie.poster_md5, self.db)
++            self.widgets['big_poster'].set_from_file(filename)
+             self.widgets['poster_window'].show()
+ 
+     def z_poster_hide(self, *args):
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/lib/db.py	2008-08-02 23:08:31 UTC (rev 979)
+@@ -31,6 +31,12 @@
+ metadata = MetaData()
+ 
+ class DBTable(object):#{{{
++    def __init__(self, **kwargs):
++        for i in kwargs:
++            if hasattr(self, i):
++                setattr(self, i, kwargs[i])
++            else:
++                log.warn(&quot;%s.%s not set&quot; % (self.__class__.__name__, i))
+     def __repr__(self):
+         return &quot;&lt;%s:%s&gt;&quot; % (self.__class__.__name__, self.name)
+     def add_to_db(self):
+@@ -46,7 +52,7 @@
+         try:
+             self.flush()
+         except exceptions.SQLError, e:
+-            log.info(&quot;%s: add_to_db: %s&quot; % (self.__class__.__name__, e))
++            log.error(&quot;%s: add_to_db: %s&quot; % (self.__class__.__name__, e))
+             return False
+         self.refresh()
+         return True
+@@ -115,7 +121,13 @@
+ class Volume(DBTable):
+     pass
+ class Poster(object):
+-    pass
++    def __init__(self, md5sum=None, data=None):
++        if md5sum and data:
++            if len(md5sum) == 32:
++                self.md5sum = md5sum
++                self.data = data
++            else:
++                log.error(&quot;md5sum has wrong size&quot;)
+ class Configuration(object):
+     def __repr__(self):
+         return &quot;&lt;Config:%s=%s&gt;&quot; % (self.param, self.value)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/lib/dbupgrade.py	2008-08-02 23:08:31 UTC (rev 979)
+@@ -120,13 +120,42 @@
+         # create new table
+         db.posters_table.create(checkfirst=True, bind=b)
+ 
+-        # add new column
++        log.info(&quot;... adding new columns&quot;)
+         query = &quot;ALTER TABLE movies ADD COLUMN poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum)&quot; # SQLite, PostgreSQL
+         if e_type == 'mysql':
+             pass
+         elif e_type == 'mssql':
+             pass
+         self.session.bind.execute(query)
++        
++        log.info(&quot;... saving posters in database&quot;)
++        for movie in self.session.query(db.Movie).all():
++            poster_file_name = os.path.join(self.data_dir, self.config.get(&quot;poster&quot;, &quot;posters&quot;), movie.image + '.jpg')
++            if os.path.isfile(poster_file_name):
++                poster_md5  = gutils.md5sum(file(poster_file_name, 'rb'))
++                poster_file = file(poster_file_name, 'rb')
++                if poster_file:
++                    poster = self.session.query(db.Poster).filter_by(md5sum=poster_md5).first()
++                    if not poster:
++                        poster = db.Poster(md5sum=poster_md5, data=poster_file.read())
++                        self.session.add(poster)
++                    movie.md5sum = poster_md5
++                    self.session.add(movie)
++                    try:
++                        self.session.commit()
++                    except Exception, e:
++                        self.session.rollback()
++                        log.warn(str(e))
++                    else:
++                        try:
++                            os.remove(poster_file_name)
++                        except:
++                            log.warn(&quot;cannot remove %s&quot; % poster_file_name)
++                    poster_file.close()
++                else:
++                    log.warn(&quot;cannot read %s&quot; % poster_file_name)
++                
++                movie.poster_md5 = poster_md5
+ 
+         db_version = self.session.query(db.Configuration).filter_by(param='version').one()
+         db_version.value = version
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/lib/gutils.py	2008-08-02 23:08:31 UTC (rev 979)
+@@ -190,6 +190,7 @@
+     return text
+ 
+ def save_pixmap(self, pixmap, filename):
++    &quot;&quot;&quot;XXX: deprecated&quot;&quot;&quot;
+     pixmap.save(filename, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
+ 
+ def clean(text):
+@@ -321,16 +322,18 @@
+     pass
+ 
+ def make_thumbnail(self, file_name):
++    &quot;&quot;&quot;XXX: deprecated&quot;&quot;&quot;
+     source = os.path.join(self.locations['posters'], file_name)
+     if os.path.isfile(source):
+-        self.Image.set_from_file(source)
+-        pixbuf = self.Image.get_pixbuf()
++        self.image.set_from_file(source)
++        pixbuf = self.image.get_pixbuf()
+         pixbuf = pixbuf.scale_simple(30, 40, 'bilinear')
+         save_pixmap(self, pixbuf, os.path.join(self.locations['posters'], &quot;t_%s&quot;%file_name))
+     else:
+         return 0
+ 
+ def make_medium_image(self, file_name):
++    &quot;&quot;&quot;XXX: deprecated&quot;&quot;&quot;
+     source = os.path.join(self.locations['posters'], file_name)
+     if os.path.isfile(source):
+         self.Image.set_from_file(source)
+@@ -584,10 +587,56 @@
+ 
+ def md5sum(fobj):
+     &quot;&quot;&quot;Returns an md5 hash for an object with read() method.&quot;&quot;&quot;
++    import md5
+     m = md5.new()
+     while True:
+         d = fobj.read(8096)
+         if not d:
+             break
+         m.update(d)
+-    return m.hexdigest()
++    return unicode(m.hexdigest())
++
++def create_image_cache(md5sum, gsql):
++    poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
++    if not poster:
++        log.warn(&quot;poster not available: %s&quot; % md5sum)
++        return False
++    if not poster.data:
++        log.warn(&quot;poster not available: %s&quot; % md5sum)
++        return False
++    
++    fn_big    = os.path.join(gsql.data_dir, 'posters', md5sum+'.jpg')
++    fn_small  = os.path.join(gsql.data_dir, 'posters', md5sum+'_s.jpg')
++    fn_medium = os.path.join(gsql.data_dir, 'posters', md5sum+'_m.jpg')
++
++    if not os.path.isfile(fn_big):
++        f = file(fn_big, 'wb')
++        f.write(poster.data)
++        f.close()
++    
++    image = gtk.Image()
++    image.set_from_file(fn_big)
++
++    if not os.path.isfile(fn_medium):
++        pixbuf = image.get_pixbuf()
++        pixbuf = pixbuf.scale_simple(100, 140, 'bilinear')
++        pixbuf.save(fn_medium, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
++    
++    if not os.path.isfile(fn_small):
++        pixbuf = image.get_pixbuf()
++        pixbuf = pixbuf.scale_simple(30, 40, 'bilinear')
++        pixbuf.save(fn_small, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
++        
++
++def get_image_fname(md5sum, gsql, size=None):
++    &quot;&quot;&quot;size: s - small; m - medium, b or None - big&quot;&quot;&quot;
++
++    if not size or size=='b': size=''
++    else: size = &quot;_%s&quot; % size
++
++    file_name = os.path.join(gsql.data_dir, 'posters', md5sum+size+'.jpg')
++
++    if not os.path.isfile(file_name) and not create_image_cache(md5sum, gsql):
++        return False
++    return file_name
++
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/lib/main_treeview.py	2008-08-02 23:08:31 UTC (rev 979)
+@@ -191,12 +191,10 @@
+         w['vcodec'].set_text('')
+ 
+     # poster
+-    if 'image' in item and item['image']:
+-        tmp_dest = self.locations['posters']
+-        tmp_img = os.path.join(tmp_dest, &quot;m_%s.jpg&quot;%item['image'])
+-        tmp_img2 = os.path.join(tmp_dest, &quot;%s.jpg&quot;%item['image'])
+-        if os.path.isfile(tmp_img2):
+-            image_path = tmp_img
++    if 'poster_md5' in item and item['poster_md5']:
++        filename = gutils.get_image_fname(item['poster_md5'], self.db, 'm')
++        if os.path.isfile(filename):
++            image_path = filename
+             self.widgets['add']['delete_poster'].set_sensitive(True)
+             self.widgets['menu']['delete_poster'].set_sensitive(True)
+             w['picture_button'].set_sensitive(True)
+@@ -205,12 +203,6 @@
+             self.widgets['add']['delete_poster'].set_sensitive(False)
+             self.widgets['menu']['delete_poster'].set_sensitive(False)
+             w['picture_button'].set_sensitive(False)
+-        # lets see if we have a scaled down medium image already created
+-        if not os.path.isfile(image_path):
+-            # if not, lets make one for future use :D
+-            original_image = os.path.join(tmp_dest, &quot;%s.jpg&quot;%item.image)
+-            if os.path.isfile(original_image):
+-                gutils.make_medium_image(self, &quot;%s.jpg&quot;%item.image)
+     else:
+         image_path = os.path.join(self.locations['images'], 'default.png')
+         w['picture_button'].set_sensitive(False)
+@@ -348,7 +340,7 @@
+     if movies is None:
+         movies = select([db.Movie.number,
+                  db.Movie.o_title, db.Movie.title,
+-                 db.Movie.director, db.Movie.image,
++                 db.Movie.director, db.Movie.poster_md5,
+                  db.Movie.genre, db.Movie.seen,
+                  db.Movie.year, db.Movie.runtime,
+                  db.Movie.rating], bind=self.db.session.bind)
+@@ -473,24 +465,13 @@
+         self.treemodel.set_value(myiter,0,'%004d' % int(movie.number))
+ 
+         if self.config.get('image', True, section='mainlist') == True:
+-            tmp_dest = self.locations['posters']
+-            tmp_img = os.path.join(tmp_dest, &quot;t_%s.jpg&quot; % str(movie.image))
+-            if movie.image and os.path.isfile(tmp_img):
+-                image_path = tmp_img
+-            else:
+-                image_path = os.path.join(self.locations['images'], 'default_thumbnail.png')
+-            # lets see if we have a scaled down thumbnail already created
+-            if os.path.isfile(os.path.join(tmp_dest, &quot;t_%s.jpg&quot; % str(movie.image))):
+-                pass
+-            else:
+-                # if not, lets make one for future use :D
+-                original_image = os.path.join(tmp_dest, &quot;%s.jpg&quot; % movie.image)
+-                if os.path.isfile(original_image):
+-                    gutils.make_thumbnail(self, &quot;%s.jpg&quot; % movie.image)
+-                else:
+-                    self.Image.set_from_file(&quot;%s/default_thumbnail.png&quot; % self.locations['images'])
+-                    pixbuf = self.Image.get_pixbuf()
+-            self.Image.set_from_file(image_path)
++            filename = None
++            if movie.poster_md5:
++                filename = gutils.get_image_fname(movie.poster_md5, self.db, &quot;s&quot;)
++            if not filename:
++                filename = os.path.join(self.locations['images'], 'default_thumbnail.png')
++
++            self.Image.set_from_file(filename)
+             pixbuf = self.Image.get_pixbuf()
+             self.treemodel.set_value(myiter, 1, pixbuf)
+         self.treemodel.set_value(myiter,2,movie.o_title)
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-08-02 19:32:52 UTC (rev 978)
++++ trunk/lib/sql.py	2008-08-02 23:08:31 UTC (rev 979)
+@@ -37,8 +37,10 @@
+ class GriffithSQL:
+     version = 3    # database format version, increase after changing data structures
+ 
+-    def __init__(self, config, griffith_dir):
++    def __init__(self, config, griffith_dir, reconnect=True):
+         #mapper = Session.mapper
++        self.config = config
++        self.data_dir = griffith_dir
+ 
+         if config.get('type', None, section='database') is None:
+             config.set('type', 'sqlite', section='database')
+@@ -100,6 +102,8 @@
+             conn = engine.connect()
+         except Exception, e:    # InvalidRequestError, ImportError
+             log.info(&quot;MetaData: %s&quot; % e)
++            if not reconnect:
++                return False
+             config.set('type', 'sqlite', section='database')
+             gutils.warning(self, &quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+@@ -113,6 +117,8 @@
+             #self.metadata.bind.connect()
+         except Exception, e:
+             log.info(&quot;engine connection: %s&quot; % e)
++            if not reconnect:
++                return False
+             gutils.error(self, _('Database connection failed.'))
+             config.set('type', 'sqlite', section='database')
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+@@ -126,7 +132,7 @@
+         try:
+             v = self.session.query(db.Configuration).filter_by(param=u'version').first()    # returns None if table exists &amp;&amp; param ISNULL
+         except OperationalError, e:
+-			log.info(str(e))
++            log.info(str(e))
+             v = 0
+         except Exception, e:
+             log.error(str(e))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000461.html">[Griffith-svn] r978 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000463.html">[Griffith-svn] r980 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#462">[ date ]</a>
+              <a href="thread.html#462">[ thread ]</a>
+              <a href="subject.html#462">[ subject ]</a>
+              <a href="author.html#462">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

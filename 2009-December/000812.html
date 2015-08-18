@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1345 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1345%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912231427.nBNERXRl012297%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000811.html">
+   <LINK REL="Next"  HREF="000813.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1345 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1345%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912231427.nBNERXRl012297%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1345 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 23 15:27:33 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000811.html">[Griffith-svn] r1343 - trunk/lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000813.html">[Griffith-svn] r1346 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#812">[ date ]</a>
+              <a href="thread.html#812">[ thread ]</a>
+              <a href="subject.html#812">[ subject ]</a>
+              <a href="author.html#812">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-23 15:27:13 +0100 (Wed, 23 Dec 2009)
+New Revision: 1345
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+Log:
+updated movie plugin Cinematografo
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-22 21:57:40 UTC (rev 1344)
++++ trunk/ChangeLog	2009-12-23 14:27:13 UTC (rev 1345)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-12-23  Michael Jahn
++	* updated movie plugin Cinematografo
++
+ 2009-12-22  Piotr O&#380;arowski
+ 	* Fix few spelling mistakes (thanks to Sean Cass)
+ 	* Version changed to 0.11
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-12-22 21:57:40 UTC (rev 1344)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-12-23 14:27:13 UTC (rev 1345)
+@@ -21,7 +21,10 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie, string, re
++import string
++import re
++import gutils
++import movie
+ 
+ plugin_name         = &quot;Cinematografo&quot;
+ plugin_description  = &quot;Rivista del Cinematografo dal 1928&quot;
+@@ -29,9 +32,11 @@
+ plugin_language     = _(&quot;Italian&quot;)
+ plugin_author       = &quot;Vasco Nunes, Piotr O&#380;arowski&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version      = &quot;1.3&quot;
++plugin_version      = &quot;1.4&quot;
+ 
++
+ class Plugin(movie.Movie):
++
+     def __init__(self, id):
+         self.encode   = 'iso-8859-1'
+         self.movie_id = id
+@@ -43,7 +48,7 @@
+         if tmp_poster != &quot;&quot;:
+             self.image_url = &quot;<A HREF="http://www.cinematografo.it/bancadati/images_locandine/%s/%s.jpg">http://www.cinematografo.it/bancadati/images_locandine/%s/%s.jpg</A>&quot; % (self.movie_id, tmp_poster)
+         else:
+-            self.image_url=&quot;&quot;
++            self.image_url = &quot;&quot;
+ 
+     def get_o_title(self):
+         # Find the film's original title
+@@ -69,7 +74,7 @@
+ 
+     def get_plot(self):
+         # Find the film's plot
+-        self.plot = gutils.trim(self.page, &quot;\&quot;fontYellowB\&quot;&gt;Trama&lt;/font&gt;&quot;, &quot;\n&quot;)
++        self.plot = gutils.regextrim(self.page, '&quot;fontYellowB&quot;&gt;Trama&lt;/font&gt;', &quot;(\n|Critica&lt;)&quot;)
+ 
+     def get_year(self):
+         # Find the film's year
+@@ -89,7 +94,7 @@
+         # Find the actors. Try to make it comma separated.
+         self.cast = gutils.regextrim(self.page, &quot;&gt;Attori&lt;/font&gt;&quot;, '(&lt;font class=&quot;fontViolaB&quot;&gt;|\n)')
+         self.cast = string.replace(self.cast, &quot;target='_self'&gt;&quot;, &quot;\n&gt;&quot;)
+-        self.cast = string.replace(self.cast, &quot;&lt;a&gt;&quot;,_(&quot; as &quot;).encode('utf8'))
++        self.cast = string.replace(self.cast, &quot;&lt;a&gt;&quot;, _(&quot; as &quot;).encode('utf8'))
+         self.cast = string.replace(self.cast, &quot;&lt;/tr&gt;&lt;tr&gt;&quot;, '\n')
+         self.cast = string.replace(self.cast, &quot;...vedi il resto del cast&quot;, '')
+         self.cast = gutils.clean(self.cast)
+@@ -115,7 +120,12 @@
+ 
+     def get_trailer(self):
+         # Find the film's trailer page or location
+-        self.trailer = &quot;&quot;
++        self.trailer = ''
++        pos_end = string.find(self.page, '&gt;guarda il trailer&lt;')
++        if pos_end &gt; -1:
++            pos_beg = string.rfind(self.page[:pos_end], '&lt;a href')
++            if pos_beg &gt; -1:
++                self.trailer = gutils.trim(self.page[pos_beg:pos_end], '&quot;', '&quot;')
+ 
+     def get_country(self):
+         # Find the film's country
+@@ -126,7 +136,29 @@
+         # Convert if needed when assigning.
+         self.rating = 0
+ 
++    def get_screenplay(self):
++        # Find the screenplay
++        self.screenplay = gutils.trim(self.page, 'Sceneggiatura&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;', '&lt;td colspan=&quot;2&quot;')
++        self.screenplay = string.replace(self.screenplay, '&lt;tr&gt;', ', ')
++        # beautification
++        self.screenplay = gutils.clean(self.screenplay)
++        self.screenplay = string.replace(self.screenplay, ' ,', ',')
++        self.screenplay = re.sub('[ ]+', ' ', self.screenplay)
++        self.screenplay = re.sub('[,][ ]*$', '', self.screenplay)
++
++    def get_cameraman(self):
++        # Find the cameraman
++        self.cameraman = gutils.trim(self.page, 'Fotografia&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;', '&lt;td colspan=&quot;2&quot;')
++        self.cameraman = string.replace(self.cameraman, '&lt;tr&gt;', ', ')
++        # beautification
++        self.cameraman = gutils.clean(self.cameraman)
++        self.cameraman = string.replace(self.cameraman, ' ,', ',')
++        self.cameraman = re.sub('[ ]+', ' ', self.cameraman)
++        self.cameraman = re.sub('[,][ ]*$', '', self.cameraman)
++
++
+ class SearchPlugin(movie.SearchMovie):
++
+     # A movie search object
+     def __init__(self):
+         self.encode                = 'iso-8859-1'
+@@ -161,17 +193,19 @@
+ #
+ # Plugin Test
+ #
++
++
+ class SearchPluginTest(SearchPlugin):
+     #
+     # Configuration for automated tests:
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky'      : [ 12, 12 ],
+-        'per&#242;'       : [  6,  6 ],
+-        'il ritorno' : [ 97, 97 ]
+-    }
++        'Rocky'      : [12, 12],
++        'per&#242;'       : [6, 6],
++        'il ritorno' : [97, 97]}
+ 
++
+ class PluginTest:
+     #
+     # Configuration for automated tests:
+@@ -181,7 +215,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '3996' : { 
++        '3996' : {
+             'title'             : 'Amor non ho, per&#242;... per&#242;...',
+             'o_title'           : 'Amor non ho, per&#242;... per&#242;...',
+             'director'          : 'Giorgio Bianchi',
+@@ -220,6 +254,6 @@
+             'notes'             : False,
+             'runtime'           : 90,
+             'image'             : False,
+-            'rating'            : False
+-        },
+-    }
++            'rating'            : False,
++            'screenplay'        : 'Giuseppe Marotta, Mario Brancacci, Vittorio Veltroni, Augusto Borselli, Franco Riganti',
++            'cameraman'         : 'Mario Bava'}, }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000811.html">[Griffith-svn] r1343 - trunk/lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000813.html">[Griffith-svn] r1346 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#812">[ date ]</a>
+              <a href="thread.html#812">[ thread ]</a>
+              <a href="subject.html#812">[ subject ]</a>
+              <a href="author.html#812">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

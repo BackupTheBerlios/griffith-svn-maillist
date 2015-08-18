@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1096 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1096%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200812191138.mBJBcKEm002092%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000570.html">
+   <LINK REL="Next"  HREF="000572.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1096 - trunk/lib/plugins/movie</H1>
+    <B>kura666 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1096%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200812191138.mBJBcKEm002092%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1096 - trunk/lib/plugins/movie">kura666 at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 19 12:38:20 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000570.html">[Griffith-svn] r1095 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000572.html">[Griffith-svn] r1097 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#571">[ date ]</a>
+              <a href="thread.html#571">[ thread ]</a>
+              <a href="subject.html#571">[ subject ]</a>
+              <a href="author.html#571">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: kura666
+Date: 2008-12-19 12:38:17 +0100 (Fri, 19 Dec 2008)
+New Revision: 1096
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieOnet.py
+   trunk/lib/plugins/movie/PluginMovieStopklatka.py
+Log:
+Stopklatka movie plugin updated
+
+
+Modified: trunk/lib/plugins/movie/PluginMovieOnet.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOnet.py	2008-12-19 10:31:41 UTC (rev 1095)
++++ trunk/lib/plugins/movie/PluginMovieOnet.py	2008-12-19 11:38:17 UTC (rev 1096)
+@@ -28,9 +28,9 @@
+ plugin_description  = 'Onet Film'
+ plugin_url          = 'film.onet.pl'
+ plugin_language     = _('Polish')
+-plugin_author       = 'Piotr O&#380;arowski'
+-plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '1.7'
++plugin_author       = 'Piotr O&#380;arowski, Bartosz Kurczewski'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
++plugin_version      = '1.8'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+
+Modified: trunk/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieStopklatka.py	2008-12-19 10:31:41 UTC (rev 1095)
++++ trunk/lib/plugins/movie/PluginMovieStopklatka.py	2008-12-19 11:38:17 UTC (rev 1096)
+@@ -30,7 +30,7 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O&#380;arowski, Bartosz Kurczewski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
+-plugin_version      = '1.10'
++plugin_version      = '1.11'
+ 
+ class Plugin(movie.Movie):
+     IMAGE_PATTERN = re.compile('(<A HREF="http://img.stopklatka.pl/film/.*?">http://img.stopklatka.pl/film/.*?</A>)&quot;')
+@@ -38,18 +38,18 @@
+     def __init__(self, id):
+         self.movie_id = id
+         self.url = &quot;<A HREF="http://www.stopklatka.pl/film/film.asp?fi=%s">http://www.stopklatka.pl/film/film.asp?fi=%s</A>&quot; % str(self.movie_id)
+-        self.encode = 'iso-8859-2' # with some cp-1250 data (sic!)
++        self.encode = 'utf-8' 
+ 
+     def initialize(self):
+         self.page = self.page.replace('\x9c','&#347;')
+         self.page = self.page.replace('&#353;','&#261;')
+-        self.res = re.findall(&quot;&quot;&quot;&lt;/td&gt;&lt;td class=&quot;middle_cell&quot;&gt;&lt;span class=&quot;bold&quot;&gt;(.*?)&lt;/span&gt;, &lt;span class=&quot;bold&quot;&gt;(.*?)&lt;/span&gt;, &lt;span class=&quot;bold&quot;&gt;(.*?)&lt;/span&gt;, &lt;span class=&quot;bold&quot;&gt;(.*?) min&lt;/span&gt;&quot;&quot;&quot;, self.page)
++        self.res = re.findall(&quot;&quot;&quot;&lt;td class=&quot;middle_cell&quot;&gt;&lt;span class=&quot;bold&quot;&gt;(.*?)&lt;/span&gt;, (.*?), (.*?), (.*?) min&lt;/td&gt;&quot;&quot;&quot;, self.page)
+         if len(self.res) == 0:
+             self.res = [( '','','','' )]
+ 
+     def get_image(self):
+         image = self.IMAGE_PATTERN.findall(self.page)
+-        if len(image):
++        if len(image) and image[0] != '<A HREF="http://img.stopklatka.pl/film/0.jpg">http://img.stopklatka.pl/film/0.jpg</A>':
+             self.image_url = image[0]
+ 
+     def get_o_title(self):
+@@ -65,12 +65,12 @@
+             self.title = data
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, '&gt;re\xbfyseria:&lt;', '&lt;/td&gt;&lt;/tr&gt;')
++        self.director = gutils.trim(self.page, '&gt;re&#380;yseria: &lt;', '&lt;/span&gt;&lt;/a&gt;')
+         self.director = gutils.after(self.director, '&gt;')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '&lt;p&gt;', '&lt;/p&gt;')
+-        self.plot = gutils.before(self.plot, '&lt;b&gt;Wi\xEAcej ')
++        self.plot = gutils.before(self.plot, '&lt;b&gt;Wi&#281;cej ')
+ 
+     def get_year(self):
+         self.year = self.res[0][2]
+@@ -85,7 +85,7 @@
+         self.cast = gutils.trim(self.page, '&gt;obsada:&lt;', '&lt;/td&gt;&lt;/tr&gt;')
+         self.cast = gutils.after(self.cast, '&gt;')
+         self.cast = string.replace(self.cast, ', ', &quot;\n&quot;)
+-        self.cast = gutils.before(self.cast, '&lt;b&gt;Wi\xEAcej ')
++        self.cast = gutils.before(self.cast, '&lt;b&gt;Wi&#281;cej')
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -114,7 +114,7 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+-        self.encode='iso-8859-2'
++        self.encode='utf-8'
+         self.original_url_search    = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
+         self.translated_url_search    = &quot;<A HREF="http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=">http://www.stopklatka.pl/szukaj/szukaj.asp?kategoria=film&amp;szukaj=</A>&quot;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000570.html">[Griffith-svn] r1095 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000572.html">[Griffith-svn] r1097 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#571">[ date ]</a>
+              <a href="thread.html#571">[ thread ]</a>
+              <a href="subject.html#571">[ subject ]</a>
+              <a href="author.html#571">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

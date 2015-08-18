@@ -1,0 +1,886 @@
+From mikej06 at mail.berlios.de  Sun Feb  3 21:21:24 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 3 Feb 2008 21:21:24 +0100
+Subject: [Griffith-svn] r912 - branches/0.9.x branches/0.9.x/lib trunk
+	trunk/lib
+Message-ID: <200802032021.m13KLOiZ012651@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-02-03 21:21:06 +0100 (Sun, 03 Feb 2008)
+New Revision: 912
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/griffith
+   branches/0.9.x/lib/widgets.py
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/widgets.py
+Log:
+hit enter key in title/original title box starts retrieving data from web for a new entry
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-29 20:48:39 UTC (rev 911)
++++ branches/0.9.x/ChangeLog	2008-02-03 20:21:06 UTC (rev 912)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-03  Michael Jahn
++	* hit enter key in title/original title box starts retrieving data from web for a new entry
++
+ ---- 0.9.6 ---
+ 
+ 2008-01-27  Michael Jahn
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2008-01-29 20:48:39 UTC (rev 911)
++++ branches/0.9.x/griffith	2008-02-03 20:21:06 UTC (rev 912)
+@@ -227,6 +227,11 @@
+ 	def source_changed(self, *args):
+ 		add.source_changed(self)
+ 
++	def on_enter(self, *args):
++		# push Get From Web button if return key is pressed in title box 
++		if self._am_movie_id is None:
++			self.widgets['add']['b_get_from_web'].clicked()
++
+ 	# preferences ---------------------------------------------------------
+ 
+ 	def show_preferences(self, *args):
+
+Modified: branches/0.9.x/lib/widgets.py
+===================================================================
+--- branches/0.9.x/lib/widgets.py	2008-01-29 20:48:39 UTC (rev 911)
++++ branches/0.9.x/lib/widgets.py	2008-02-03 20:21:06 UTC (rev 912)
+@@ -138,6 +138,8 @@
+ 	}
+ 	self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+ 	self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
++	self.widgets['add']['o_title'].connect('activate', self.on_enter)
++	self.widgets['add']['title'].connect('activate', self.on_enter)
+ 	self.widgets['add']['window'].set_transient_for(self.widgets['window'])
+ 	#}}}
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-29 20:48:39 UTC (rev 911)
++++ trunk/ChangeLog	2008-02-03 20:21:06 UTC (rev 912)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-03  Michael Jahn
++	* hit enter key in title/original title box starts retrieving data from web for a new entry
++
+ ---- 0.9.6 ---
+ 
+ 2008-01-27  Michael Jahn
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-01-29 20:48:39 UTC (rev 911)
++++ trunk/griffith	2008-02-03 20:21:06 UTC (rev 912)
+@@ -225,6 +225,11 @@
+ 	def source_changed(self, *args):
+ 		add.source_changed(self)
+ 
++	def on_enter(self, *args):
++		# push Get From Web button if return key is pressed in title box 
++		if self._am_movie_id is None:
++			self.widgets['add']['b_get_from_web'].clicked()
++
+ 	# preferences ---------------------------------------------------------
+ 
+ 	def show_preferences(self, *args):
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-01-29 20:48:39 UTC (rev 911)
++++ trunk/lib/widgets.py	2008-02-03 20:21:06 UTC (rev 912)
+@@ -138,6 +138,8 @@
+ 	}
+ 	self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+ 	self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
++	self.widgets['add']['o_title'].connect('activate', self.on_enter)
++	self.widgets['add']['title'].connect('activate', self.on_enter)
+ 	self.widgets['add']['window'].set_transient_for(self.widgets['window'])
+ 	#}}}
+ 
+
+
+
+From mikej06 at mail.berlios.de  Sun Feb  3 21:23:24 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 3 Feb 2008 21:23:24 +0100
+Subject: [Griffith-svn] r913 - branches/0.9.x/lib trunk/lib
+Message-ID: <200802032023.m13KNOOF012842@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-02-03 21:23:14 +0100 (Sun, 03 Feb 2008)
+New Revision: 913
+
+Modified:
+   branches/0.9.x/lib/preferences.py
+   trunk/lib/preferences.py
+Log:
+reflect spell settings at the first opening of the preferences dialog
+
+Modified: branches/0.9.x/lib/preferences.py
+===================================================================
+--- branches/0.9.x/lib/preferences.py	2008-02-03 20:21:06 UTC (rev 912)
++++ branches/0.9.x/lib/preferences.py	2008-02-03 20:23:14 UTC (rev 913)
+@@ -174,6 +174,7 @@
+ 		w['spellchecker'].set_active(False)
+ 	else:
+ 		w['spellchecker'].set_active(True)
++	self.on_cb_spellchecker_pref_toggled(w['spellchecker'])
+ 
+ 	if self.config.get('notes', True, section='spell') == False:
+ 		w['spell_notes'].set_active(False)
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2008-02-03 20:21:06 UTC (rev 912)
++++ trunk/lib/preferences.py	2008-02-03 20:23:14 UTC (rev 913)
+@@ -174,6 +174,7 @@
+ 		w['spellchecker'].set_active(False)
+ 	else:
+ 		w['spellchecker'].set_active(True)
++	self.on_cb_spellchecker_pref_toggled(w['spellchecker'])
+ 
+ 	if self.config.get('notes', True, section='spell') == False:
+ 		w['spell_notes'].set_active(False)
+
+
+
+From mikej06 at mail.berlios.de  Sun Feb  3 21:27:36 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 3 Feb 2008 21:27:36 +0100
+Subject: [Griffith-svn] r914 - branches/0.9.x
+	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+Message-ID: <200802032027.m13KRa56013007@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-02-03 21:27:25 +0100 (Sun, 03 Feb 2008)
+New Revision: 914
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/export/PluginExportHTML.py
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+HTML export: replace linebreaks with <br /> in the data if "XHTML 1.0" is found in the template header
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-02-03 20:23:14 UTC (rev 913)
++++ branches/0.9.x/ChangeLog	2008-02-03 20:27:25 UTC (rev 914)
+@@ -6,6 +6,7 @@
+ 
+ 2008-02-03  Michael Jahn
+ 	* hit enter key in title/original title box starts retrieving data from web for a new entry
++	* HTML export: replace linebreaks with <br /> in the data if "XHTML 1.0" is found in the template header
+ 
+ ---- 0.9.6 ---
+ 
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportHTML.py	2008-02-03 20:23:14 UTC (rev 913)
++++ branches/0.9.x/lib/plugins/export/PluginExportHTML.py	2008-02-03 20:27:25 UTC (rev 914)
+@@ -767,6 +767,12 @@
+ 			else:
+ 				tpl_header = self.fill_template(tpl_header, self.names[j], remove=True)
+ 
++		# check if line break needs conversion
++		if tpl_header.find('XHTML 1.0') > -1:
++			linebreak_replacement = '<br />'
++		else:
++			linebreak_replacement = None
++
+ 		item=1	# item's position on page (1 - first, ...)
+ 		i = 1
+ 		page=1	# page number
+@@ -804,10 +810,18 @@
+ 						tmp = self.fill_template(tmp, self.names[j], _('No'), j)
+ 					else:
+ 						try:
+-							tmp = self.fill_template(tmp, self.names[j], str(row[self.names[j]]).encode('utf-8'), j)
++							data = str(row[self.names[j]]).encode('utf-8')
++							if linebreak_replacement is not None:
++								data = data.replace('\r\n', linebreak_replacement)
++								data = data.replace('\n', linebreak_replacement)
++							tmp = self.fill_template(tmp, self.names[j], data, j)
+ 						except UnicodeDecodeError:
+ 							self.debug.show("Unicode Decode Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['movies_number']))
+-							tmp = self.fill_template(tmp, self.names[j], str(row[self.names[j]]), j)
++							data = str(row[self.names[j]])
++							if linebreak_replacement is not None:
++								data = data.replace('\r\n', linebreak_replacement)
++								data = data.replace('\n', linebreak_replacement)
++							tmp = self.fill_template(tmp, self.names[j], data, j)
+ 						except Exception, ex:
+ 							self.debug.show("Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['movies_number']))
+ 				else:
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-03 20:23:14 UTC (rev 913)
++++ trunk/ChangeLog	2008-02-03 20:27:25 UTC (rev 914)
+@@ -6,6 +6,7 @@
+ 
+ 2008-02-03  Michael Jahn
+ 	* hit enter key in title/original title box starts retrieving data from web for a new entry
++	* HTML export: replace linebreaks with <br /> in the data if "XHTML 1.0" is found in the template header
+ 
+ ---- 0.9.6 ---
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2008-02-03 20:23:14 UTC (rev 913)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2008-02-03 20:27:25 UTC (rev 914)
+@@ -767,6 +767,12 @@
+ 			else:
+ 				tpl_header = self.fill_template(tpl_header, self.names[j], remove=True)
+ 
++		# check if line break needs conversion
++		if tpl_header.find('XHTML 1.0') > -1:
++			linebreak_replacement = '<br />'
++		else:
++			linebreak_replacement = None
++
+ 		item=1	# item's position on page (1 - first, ...)
+ 		i = 1
+ 		page=1	# page number
+@@ -804,10 +810,18 @@
+ 						tmp = self.fill_template(tmp, self.names[j], _('No'), j)
+ 					else:
+ 						try:
+-							tmp = self.fill_template(tmp, self.names[j], str(row[self.names[j]]).encode('utf-8'), j)
++							data = str(row[self.names[j]]).encode('utf-8')
++							if linebreak_replacement is not None:
++								data = data.replace('\r\n', linebreak_replacement)
++								data = data.replace('\n', linebreak_replacement)
++							tmp = self.fill_template(tmp, self.names[j], data, j)
+ 						except UnicodeDecodeError:
+ 							self.debug.show("Unicode Decode Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['movies_number']))
+-							tmp = self.fill_template(tmp, self.names[j], str(row[self.names[j]]), j)
++							data = str(row[self.names[j]])
++							if linebreak_replacement is not None:
++								data = data.replace('\r\n', linebreak_replacement)
++								data = data.replace('\n', linebreak_replacement)
++							tmp = self.fill_template(tmp, self.names[j], data, j)
+ 						except Exception, ex:
+ 							self.debug.show("Error occurred while decoding %s (movie number: %s)" % (self.names[j], row['movies_number']))
+ 				else:
+
+
+
+From mikej06 at mail.berlios.de  Sat Feb  9 17:55:57 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat, 9 Feb 2008 17:55:57 +0100
+Subject: [Griffith-svn] r915 - branches/0.9.x branches/0.9.x/lib trunk
+	trunk/lib
+Message-ID: <200802091655.m19GtvmL032045@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-02-09 17:55:37 +0100 (Sat, 09 Feb 2008)
+New Revision: 915
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/update.py
+   trunk/ChangeLog
+   trunk/lib/update.py
+Log:
+sort collection list and volume list by name
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-02-03 20:27:25 UTC (rev 914)
++++ branches/0.9.x/ChangeLog	2008-02-09 16:55:37 UTC (rev 915)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-09  Michael Jahn
++	* sort collection list and volume list by name
++
+ 2008-02-03  Michael Jahn
+ 	* hit enter key in title/original title box starts retrieving data from web for a new entry
+ 	* HTML export: replace linebreaks with <br /> in the data if "XHTML 1.0" is found in the template header
+
+Modified: branches/0.9.x/lib/update.py
+===================================================================
+--- branches/0.9.x/lib/update.py	2008-02-03 20:27:25 UTC (rev 914)
++++ branches/0.9.x/lib/update.py	2008-02-09 16:55:37 UTC (rev 915)
+@@ -22,22 +22,25 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
++from sqlalchemy import Select, desc
+ import gutils
+ import os
+ 
+ def update_volume_combo_ids(self):
+-	self.volume_combo_ids = {}
+-	self.volume_combo_ids[0] = 0
+-	i = 1
+-	for volume in self.db.Volume.select():
+-		self.volume_combo_ids[i] = volume.volume_id
+-		i += 1
++    self.volume_combo_ids = {}
++    self.volume_combo_ids[0] = 0
++    i = 1
++    volumes = Select(self.db.Volume.c, order_by='name')
++    for volume in volumes.execute().fetchall():
++        self.volume_combo_ids[i] = volume.volume_id
++        i += 1
+ 
+ def update_collection_combo_ids(self):
+ 	self.collection_combo_ids = {}
+ 	self.collection_combo_ids[0] = 0
+ 	i = 1
+-	for collection in self.db.Collection.select():
++	collections = Select(self.db.Collection.c, order_by='name')
++	for collection in collections.execute().fetchall():
+ 		self.collection_combo_ids[i] = collection.collection_id
+ 		i += 1
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-03 20:27:25 UTC (rev 914)
++++ trunk/ChangeLog	2008-02-09 16:55:37 UTC (rev 915)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-09  Michael Jahn
++	* sort collection list and volume list by name
++
+ 2008-02-03  Michael Jahn
+ 	* hit enter key in title/original title box starts retrieving data from web for a new entry
+ 	* HTML export: replace linebreaks with <br /> in the data if "XHTML 1.0" is found in the template header
+
+Modified: trunk/lib/update.py
+===================================================================
+--- trunk/lib/update.py	2008-02-03 20:27:25 UTC (rev 914)
++++ trunk/lib/update.py	2008-02-09 16:55:37 UTC (rev 915)
+@@ -29,7 +29,7 @@
+ 	self.volume_combo_ids = {}
+ 	self.volume_combo_ids[0] = 0
+ 	i = 1
+-	for volume in self.db.Volume.query.all():
++	for volume in self.db.Volume.query.order_by('name').all():
+ 		self.volume_combo_ids[i] = volume.volume_id
+ 		i += 1
+ 
+@@ -37,7 +37,7 @@
+ 	self.collection_combo_ids = {}
+ 	self.collection_combo_ids[0] = 0
+ 	i = 1
+-	for collection in self.db.Collection.query.all():
++	for collection in self.db.Collection.query.order_by('name').all():
+ 		self.collection_combo_ids[i] = collection.collection_id
+ 		i += 1
+ 
+
+
+
+From piotrek at mail.berlios.de  Sat Feb  9 20:29:18 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sat, 9 Feb 2008 20:29:18 +0100
+Subject: [Griffith-svn] r916 - trunk/lib
+Message-ID: <200802091929.m19JTIva001684@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-02-09 20:29:17 +0100 (Sat, 09 Feb 2008)
+New Revision: 916
+
+Modified:
+   trunk/lib/sql.py
+   trunk/lib/update.py
+Log:
+ordering Volumes/Collections by name is default now
+
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-02-09 16:55:37 UTC (rev 915)
++++ trunk/lib/sql.py	2008-02-09 19:29:17 UTC (rev 916)
+@@ -455,9 +455,9 @@
+ 
+ 		# mappers -------------------------------------------------#{{{
+ 		mapper(self.Configuration, configuration)
+-		mapper(self.Volume,volumes, properties={
++		mapper(self.Volume, volumes, order_by=volumes.c.name, properties={
+ 			'movies': relation(self.Movie, backref='volume')})
+-		mapper(self.Collection, collections, properties={
++		mapper(self.Collection, collections, order_by=collections.c.name, properties={
+ 			'movies': relation(self.Movie, backref='collection')})
+ 		mapper(self.Medium, media, properties={
+ 			'movies': relation(self.Movie, backref='medium')})
+
+Modified: trunk/lib/update.py
+===================================================================
+--- trunk/lib/update.py	2008-02-09 16:55:37 UTC (rev 915)
++++ trunk/lib/update.py	2008-02-09 19:29:17 UTC (rev 916)
+@@ -29,7 +29,7 @@
+ 	self.volume_combo_ids = {}
+ 	self.volume_combo_ids[0] = 0
+ 	i = 1
+-	for volume in self.db.Volume.query.order_by('name').all():
++	for volume in self.db.Volume.query.all():
+ 		self.volume_combo_ids[i] = volume.volume_id
+ 		i += 1
+ 
+@@ -37,7 +37,7 @@
+ 	self.collection_combo_ids = {}
+ 	self.collection_combo_ids[0] = 0
+ 	i = 1
+-	for collection in self.db.Collection.query.order_by('name').all():
++	for collection in self.db.Collection.query.all():
+ 		self.collection_combo_ids[i] = collection.collection_id
+ 		i += 1
+ 
+
+
+
+From iznogoud at mail.berlios.de  Mon Feb 11 11:48:28 2008
+From: iznogoud at mail.berlios.de (iznogoud at BerliOS)
+Date: Mon, 11 Feb 2008 11:48:28 +0100
+Subject: [Griffith-svn] r917 - trunk
+Message-ID: <200802111048.m1BAmSto003108@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2008-02-11 11:48:28 +0100 (Mon, 11 Feb 2008)
+New Revision: 917
+
+Modified:
+   trunk/ChangeLog
+Log:
+added serbian language file (thanks to Sasa Petrovic)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-09 19:29:17 UTC (rev 916)
++++ trunk/ChangeLog	2008-02-11 10:48:28 UTC (rev 917)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-11  Vasco Nunes
++	* Added serbian language file (thanks to Sasa Petrovic) 
++
+ 2008-02-09  Michael Jahn
+ 	* sort collection list and volume list by name
+ 
+
+
+
+From mikej06 at mail.berlios.de  Tue Feb 12 11:56:15 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 12 Feb 2008 11:56:15 +0100
+Subject: [Griffith-svn] r919 - branches/0.9.x trunk
+Message-ID: <200802121056.m1CAuFVW024520@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-02-12 11:56:01 +0100 (Tue, 12 Feb 2008)
+New Revision: 919
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/griffith
+   trunk/ChangeLog
+   trunk/griffith
+Log:
+fixed selecting of quick filter volume and collection in main view
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-02-11 10:51:00 UTC (rev 918)
++++ branches/0.9.x/ChangeLog	2008-02-12 10:56:01 UTC (rev 919)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-12  Michael Jahn
++	* fixed selecting of quick filter volume and collection in main view
++
+ 2008-02-09  Michael Jahn
+ 	* sort collection list and volume list by name
+ 
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2008-02-11 10:51:00 UTC (rev 918)
++++ branches/0.9.x/griffith	2008-02-12 10:56:01 UTC (rev 919)
+@@ -451,11 +451,13 @@
+ 					initialize.fill_collections_combo(self, default=col_id)
+ 
+ 	def show_volume(self, widget):
+-		from view import filter_by_volume
++		quick_filter.clear_filter(self)
+ 		vol_id = self.db.Movie.get_by(movie_id=self._movie_id).volume_id
+-		filter_by_volume(self, vol_id)
++		pos = gutils.findKey(vol_id, self.volume_combo_ids)
++		self.widgets['filter']['volume'].set_active(pos)
+ 
+ 	def show_collection(self, widget):
++		quick_filter.clear_filter(self)
+ 		col_id = self.db.Movie.get_by(movie_id=self._movie_id).collection_id
+ 		pos = gutils.findKey(col_id, self.collection_combo_ids)
+ 		self.widgets['filter']['collection'].set_active(pos)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-11 10:51:00 UTC (rev 918)
++++ trunk/ChangeLog	2008-02-12 10:56:01 UTC (rev 919)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-12  Michael Jahn
++	* fixed selecting of quick filter volume and collection in main view
++
+ 2008-02-11  Vasco Nunes
+ 	* Added serbian language file (thanks to Sasa Petrovic) 
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-02-11 10:51:00 UTC (rev 918)
++++ trunk/griffith	2008-02-12 10:56:01 UTC (rev 919)
+@@ -449,11 +449,13 @@
+ 					initialize.fill_collections_combo(self, default=col_id)
+ 
+ 	def show_volume(self, widget):
+-		from view import filter_by_volume
++		quick_filter.clear_filter(self)
+ 		vol_id = self.db.Movie.query.filter_by(movie_id=self._movie_id).first().volume_id
+-		filter_by_volume(self, vol_id)
++		pos = gutils.findKey(vol_id, self.volume_combo_ids)
++		self.widgets['filter']['volume'].set_active(pos)
+ 
+ 	def show_collection(self, widget):
++		quick_filter.clear_filter(self)
+ 		col_id = self.db.Movie.query.filter_by(movie_id=self._movie_id).first().collection_id
+ 		pos = gutils.findKey(col_id, self.collection_combo_ids)
+ 		self.widgets['filter']['collection'].set_active(pos)
+
+
+
+From piotrek at mail.berlios.de  Mon Feb 18 20:44:50 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 18 Feb 2008 20:44:50 +0100
+Subject: [Griffith-svn] r920 - in trunk: . lib lib/plugins/movie
+Message-ID: <200802181944.m1IJiotv029473@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-02-18 20:44:49 +0100 (Mon, 18 Feb 2008)
+New Revision: 920
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+   trunk/lib/sql.py
+Log:
+* Filmweb movie plugin updated (thanks to Mariusz)
+* Windows 64 bit is not detected correctly
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/ChangeLog	2008-02-18 19:44:49 UTC (rev 920)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-02-18  Piotr O?arowski
++	* Filmweb movie plugin updated (thanks to Mariusz)
++	* Windows 64 bit is not detected correctly
++
+ 2008-02-12  Michael Jahn
+ 	* fixed selecting of quick filter volume and collection in main view
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/lib/initialize.py	2008-02-18 19:44:49 UTC (rev 920)
+@@ -47,7 +47,7 @@
+ 	locations['exec'] = os.path.abspath(os.path.dirname(sys.argv[0])) # deprecated
+ 	locations['lib']  = os.path.dirname(__file__)
+ 	
+-	if os.name == 'nt' or os.name == 'win32':
++	if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+ 		import winshell
+ 		from win32com.shell import shellcon, shell
+ 		import shutil
+@@ -144,7 +144,7 @@
+ def gui(self):
+ 	self._ = None
+ 	self.debug.show("running on %s - %s" % (os.name, platform.system()))
+-	if os.name == 'win32' or os.name == 'nt':
++	if os.name == 'nt' or os.name.startswith('win'):
+ 		self.windows = True
+ 	else:
+ 		self.windows = False
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-02-18 19:44:49 UTC (rev 920)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O?arowski'
+ plugin_author_email	= '<ozarow+griffith at gmail.com>'
+-plugin_version		= '1.11'
++plugin_version		= '1.12'
+ 
+ class Plugin(movie.Movie):
+ 	TRAILER_PATTERN     = re.compile("""<a class=["']notSelected["'].*?href=["'](.*?)["']>zwiastuny</a>\s*\[\d+\]\s*&raquo;""")
+@@ -101,11 +101,11 @@
+ 		self.genre = string.replace(self.genre, "\n",'')
+ 
+ 	def get_cast(self):
+-		self.cast = "<%s" % gutils.trim(self.page, '/ob.gif"',"<br/>\n\t")
++		self.cast = "<%s" % gutils.trim(self.page, '/ob.gif"',"zobacz wi?cej")
+ 		self.cast = string.replace(self.cast, "\n",'')
+ 		self.cast = string.replace(self.cast, "\t",'')
+-		self.cast = string.replace(self.cast, '<div class="filmActor">', "\n")
+ 		self.cast = string.replace(self.cast, ":", _(" as "))
++		self.cast = string.replace(self.cast, '</span>', "\n")
+ 		self.cast = gutils.strip_tags(self.cast)
+ 
+ 	def get_classification(self):
+@@ -128,11 +128,11 @@
+ 			self.trailer = trailer[0]
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,"\tprodukcja:", '</a>')
++		self.country = gutils.trim(self.page,"\tprodukcja:", '</b>')
+ 		self.country = string.replace(self.country, "\t",'')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '<b class="rating">', '</b>')
++		self.rating = gutils.trim(self.page, '<b id="filmRating" class="rating">', '</b>')
+ 		self.rating = string.replace(self.rating, ',', '.')
+ 		if self.rating != '':
+ 			self.rating = str( float(string.strip(self.rating)) )
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-02-12 10:56:01 UTC (rev 919)
++++ trunk/lib/sql.py	2008-02-18 19:44:49 UTC (rev 920)
+@@ -36,7 +36,7 @@
+ 		if self.name is None or len(self.name)==0:
+ 			debug.show("%s: name can't be empty" % self.__class__.__name__)
+ 			return False
+-		# check if achannel already exists
++		# check if item already exists
+ 		if self.query.filter_by(name=self.name).first() is not None:
+ 			debug.show("%s: '%s' already exists" % (self.__class__.__name__, self.name))
+ 			return False
+
+
+
+From mikej06 at mail.berlios.de  Tue Feb 19 14:27:39 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 19 Feb 2008 14:27:39 +0100
+Subject: [Griffith-svn] r921 - branches/0.9.x trunk
+Message-ID: <200802191327.m1JDRdFG021738@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-02-19 14:27:28 +0100 (Tue, 19 Feb 2008)
+New Revision: 921
+
+Modified:
+   branches/0.9.x/winsetup.bat
+   trunk/winsetup.bat
+Log:
+winsetup.bat checks the success of py2exe and if extra artwork is found
+
+Modified: branches/0.9.x/winsetup.bat
+===================================================================
+--- branches/0.9.x/winsetup.bat	2008-02-18 19:44:49 UTC (rev 920)
++++ branches/0.9.x/winsetup.bat	2008-02-19 13:27:28 UTC (rev 921)
+@@ -1,41 +1,53 @@
+- at rem *** Used to create a Python exe  
++ at echo off
+ 
+- at set GTKDIR=%GTK_BASEPATH%
++rem *** Used to create a Python exe  
+ 
+- at set GRIFFITHDIR=.\
++set GTKDIR=%GTK_BASEPATH%
+ 
+- at rem *** check the configuration
+- at if not exist "%GTKDIR%" (
+-   @echo Can't find directory %GTKDIR%.
+-   @goto END
++set GRIFFITHDIR=.\
++
++rem *** check the configuration
++if not exist "%GTKDIR%" (
++   echo Can't find directory %GTKDIR%.
++   goto END
+ )
+ 
+- at if not exist "%GRIFFITHDIR%" (
+-   @echo Can't find directory %GRIFFITHDIR%.
+-   @goto END
++if not exist "%GRIFFITHDIR%" (
++   echo Can't find directory %GRIFFITHDIR%.
++   goto END
+ )
+ 
+- at rem ***** get rid of all the old files in the build folder
+- at if exist "%GRIFFITHDIR%\build" @rd /S /Q build 
+- at if exist "%GRIFFITHDIR%\dist" @rd /S /Q dist 
++rem ***** get rid of all the old files in the build folder
++if exist "%GRIFFITHDIR%\build" rd /S /Q build 
++if exist "%GRIFFITHDIR%\dist" rd /S /Q dist 
+ 
+- at mkdir dist\etc
+- at mkdir dist\share
+- at mkdir dist\lib
+- at mkdir dist\share\locale
++mkdir dist\etc
++mkdir dist\share
++mkdir dist\lib
++mkdir dist\share\locale
+ 
+- at rem ***** create the exe 
++rem ***** create the exe 
+ 
+- at python.exe -OO winsetup.py py2exe
++python.exe -OO winsetup.py py2exe
+ 
+- at xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
+- at xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
+- at xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
++if not "%ERRORLEVEL%" == "0" (
++   pause
++)
+ 
+- at copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
+- at copy "%GTKDIR%\bin\jpeg62.dll" "%GRIFFITHDIR%\dist\"
++if not exist "dist\images\PluginMovieIMDB.png" (
++   echo dist\images\PluginMovieIMDB.png not found.
++   echo Extra-artwork missing ?
++   pause
++)
+ 
++xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
++xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
++xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
++
++copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
++copy "%GTKDIR%\bin\jpeg62.dll" "%GRIFFITHDIR%\dist\"
++
+ :END
+ 
+- at rem **** pause so we can see the exit codes
+- at pause
+\ No newline at end of file
++rem **** pause so we can see the exit codes
++pause
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2008-02-18 19:44:49 UTC (rev 920)
++++ trunk/winsetup.bat	2008-02-19 13:27:28 UTC (rev 921)
+@@ -1,41 +1,53 @@
+- at rem *** Used to create a Python exe  
++ at echo off
+ 
+- at set GTKDIR=%GTK_BASEPATH%
++rem *** Used to create a Python exe  
+ 
+- at set GRIFFITHDIR=.\
++set GTKDIR=%GTK_BASEPATH%
+ 
+- at rem *** check the configuration
+- at if not exist "%GTKDIR%" (
+-   @echo Can't find directory %GTKDIR%.
+-   @goto END
++set GRIFFITHDIR=.\
++
++rem *** check the configuration
++if not exist "%GTKDIR%" (
++   echo Can't find directory %GTKDIR%.
++   goto END
+ )
+ 
+- at if not exist "%GRIFFITHDIR%" (
+-   @echo Can't find directory %GRIFFITHDIR%.
+-   @goto END
++if not exist "%GRIFFITHDIR%" (
++   echo Can't find directory %GRIFFITHDIR%.
++   goto END
+ )
+ 
+- at rem ***** get rid of all the old files in the build folder
+- at if exist "%GRIFFITHDIR%\build" @rd /S /Q build 
+- at if exist "%GRIFFITHDIR%\dist" @rd /S /Q dist 
++rem ***** get rid of all the old files in the build folder
++if exist "%GRIFFITHDIR%\build" rd /S /Q build 
++if exist "%GRIFFITHDIR%\dist" rd /S /Q dist 
+ 
+- at mkdir dist\etc
+- at mkdir dist\share
+- at mkdir dist\lib
+- at mkdir dist\share\locale
++mkdir dist\etc
++mkdir dist\share
++mkdir dist\lib
++mkdir dist\share\locale
+ 
+- at rem ***** create the exe 
++rem ***** create the exe 
+ 
+- at python.exe -OO winsetup.py py2exe
++python.exe -OO winsetup.py py2exe
+ 
+- at xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
+- at xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
+- at xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
++if not "%ERRORLEVEL%" == "0" (
++   pause
++)
+ 
+- at copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
+- at copy "%GTKDIR%\bin\jpeg62.dll" "%GRIFFITHDIR%\dist\"
++if not exist "dist\images\PluginMovieIMDB.png" (
++   echo dist\images\PluginMovieIMDB.png not found.
++   echo Extra-artwork missing ?
++   pause
++)
+ 
++xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
++xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
++xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
++
++copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
++copy "%GTKDIR%\bin\jpeg62.dll" "%GRIFFITHDIR%\dist\"
++
+ :END
+ 
+- at rem **** pause so we can see the exit codes
+- at pause
+\ No newline at end of file
++rem **** pause so we can see the exit codes
++pause
+
+
+

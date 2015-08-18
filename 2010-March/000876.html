@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1412 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1412%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201003282019.o2SKJ9Vi003695%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000875.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1412 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1412%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201003282019.o2SKJ9Vi003695%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1412 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar 28 22:19:09 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000875.html">[Griffith-svn] r1411 - trunk/lib
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#876">[ date ]</a>
+              <a href="thread.html#876">[ thread ]</a>
+              <a href="subject.html#876">[ subject ]</a>
+              <a href="author.html#876">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-03-28 22:18:54 +0200 (Sun, 28 Mar 2010)
+New Revision: 1412
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieWP.py
+Log:
+updated movie plugin WP
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-03-28 12:23:21 UTC (rev 1411)
++++ trunk/ChangeLog	2010-03-28 20:18:54 UTC (rev 1412)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-03-28  Michael Jahn
++	* updated movie plugin WP
++
+ 2010-03-27  Michael Jahn
+ 	* updated movie plugin IMDb-de, IMDb-es, Zelluloid
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieWP.py	2010-03-28 12:23:21 UTC (rev 1411)
++++ trunk/lib/plugins/movie/PluginMovieWP.py	2010-03-28 20:18:54 UTC (rev 1412)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Piotr O&#380;arowski
++# Copyright (c) 2005-2010 Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O&#380;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '2.3'
++plugin_version      = '2.4'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -42,19 +42,18 @@
+     def initialize(self):
+         self.page = gutils.trim(self.page, '&lt;h1 class=&quot;mp0&quot;&gt;', '&lt;/div&gt;\n&lt;/div&gt;')
+         self.cast_page = self.open_page(url=&quot;<A HREF="http://film.wp.pl/id,%s,film_obsada_i_tworcy.html">http://film.wp.pl/id,%s,film_obsada_i_tworcy.html</A>&quot; % self.movie_id)
+-        self.cast_page = gutils.trim(self.cast_page, '&lt;h1 class=&quot;mp0&quot;&gt;', &quot;&lt;/div&gt;\r\n&lt;/div&gt;\r\n&quot;)
+ 
+     def get_image(self):
+         self.image_url = gutils.trim(self.page, '&lt;img src=&quot;', '&quot; name=&quot;o')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;b&gt;Tytu\xB3 orygina\xB3u:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++        self.o_title = gutils.trim(self.page, u'&lt;b&gt;Tytu&#322; orygina&#322;u:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+         self.o_title = gutils.clean(self.o_title)
+         if self.o_title == '':
+             self.o_title = gutils.trim(self.page, '&lt;/h1&gt;', '&lt;div')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;b&gt;Tytu\xB3 polski:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++        self.title = gutils.trim(self.page, u'&lt;b&gt;Tytu&#322; polski:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+         if self.title == '':
+             self.title = gutils.before(self.page, '&lt;/h1&gt;')
+             pos = string.find(self.title, '(')
+@@ -62,11 +61,11 @@
+                 self.title = self.title[:pos]
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.cast_page, '&gt;re\xBFyser\t&lt;/div&gt;', '&lt;/div&gt;')
++        self.director = gutils.regextrim(self.cast_page, u'&gt;re&#380;yser[^/]+/div&gt;', '&lt;/div&gt;')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, ' /&gt;', '\t\t&lt;div class=&quot;clr&quot;&gt;')
+-        pos = string.find(self.plot, &quot;&lt;br&gt;Zobacz tak\xBFe:&lt;br&gt;&quot;)
++        pos = string.find(self.plot, u&quot;&lt;br&gt;Zobacz tak\xBFe:&lt;br&gt;&quot;)
+         if pos &gt; 0:
+             self.plot = self.plot[:pos]
+         self.plot = string.replace(self.plot,&quot;\r\n\r\n&quot;, '')
+@@ -89,19 +88,23 @@
+         self.genre = string.replace(self.genre, '&lt;br /&gt;', ' / ')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.cast_page, '&lt;h2&gt;OBSADA:&lt;/h2&gt;', '&lt;div class=&quot;b')
+-        self.cast = gutils.after(self.cast, '&lt;div class=&quot;clr&quot;&gt;&lt;/div&gt;')
+-        self.cast = string.replace(self.cast, '\t', '')
+-        self.cast = string.replace(self.cast, '\n&lt;/div&gt;\n&lt;', _(' as ')+'&lt;')
+-        self.cast = gutils.strip_tags(self.cast)
+-        self.cast = string.replace(self.cast,  &quot;%s\n&quot; % _(' as '), &quot;\n&quot;)
++        self.cast = ''
++        tmp = gutils.trim(self.cast_page, '&lt;h2&gt;OBSADA:&lt;/h2&gt;', '&lt;div class=&quot;b')
++        parts = string.split(tmp, '&lt;a href=&quot;/id')
++        for part in parts[1:]:
++            actor = self.cast + gutils.trim(part, '&gt;', '&lt;')
++            role = gutils.after(gutils.trim(part, '&lt;div ', '&lt;/div&gt;'), '&gt;')
++            if role:
++                self.cast = actor + _(' as ') + role + '\n'
++            else:
++                self.cast = actor + '\n'
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page, '&lt;b&gt;Przedzia\xB3 wiekowy:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++        self.classification = gutils.regextrim(self.page, u'&lt;b&gt;Przedzia&#322; wiekowy:&lt;/b&gt;', '&lt;/div&gt;[^/]+/div&gt;[^&lt;]+&lt;div')
+         self.classification = gutils.trim(self.classification, 'od ', ' ')
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '&lt;b&gt;Wytw\xF3rnia:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++        self.studio = gutils.regextrim(self.page, u'&lt;b&gt;Wytw&#243;rnia:&lt;/b&gt;', '&lt;/div&gt;[^/]+/div&gt;[^&lt;]+&lt;div')
+ 
+     def get_o_site(self):
+         self.o_site = ''
+@@ -125,11 +128,17 @@
+     def get_notes(self):
+         self.notes = ''
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.regextrim(self.cast_page, u'&gt;scenarzysta[^/]+/div&gt;', '&lt;/div&gt;')
++
++    def get_cameraman(self):
++        self.cameraman = gutils.regextrim(self.cast_page, u'&gt;zdj&#281;cia[^/]+/div&gt;', '&lt;/div&gt;')
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode='iso-8859-2'
+-        self.original_url_search    = '<A HREF="http://film.wp.pl/szukaj,%s,type,f,szukaj.html">http://film.wp.pl/szukaj,%s,type,f,szukaj.html</A>'
+-        self.translated_url_search    = '<A HREF="http://film.wp.pl/szukaj,%s,type,f,szukaj.html">http://film.wp.pl/szukaj,%s,type,f,szukaj.html</A>'
++        self.original_url_search = '<A HREF="http://film.wp.pl/szukaj,%s,type,f,szukaj.html">http://film.wp.pl/szukaj,%s,type,f,szukaj.html</A>'
++        self.translated_url_search = '<A HREF="http://film.wp.pl/szukaj,%s,type,f,szukaj.html">http://film.wp.pl/szukaj,%s,type,f,szukaj.html</A>'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -143,7 +152,7 @@
+ 
+         if elements[0] != '':
+             for element in elements:
+-                tmp_id = gutils.trim(element,'&lt;div class=&quot;rgt&quot;&gt;&lt;a href=&quot;id,', ',')
++                tmp_id = gutils.trim(element,'&lt;div class=&quot;rgt&quot;&gt;&lt;a href=&quot;/id,', ',')
+                 self.ids.append(tmp_id)
+                 tmp_title = gutils.trim(element, 'html&quot;&gt;&lt;b&gt;', '&lt;/b&gt;')
+                 self.titles.append(tmp_title)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000875.html">[Griffith-svn] r1411 - trunk/lib
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#876">[ date ]</a>
+              <a href="thread.html#876">[ thread ]</a>
+              <a href="subject.html#876">[ subject ]</a>
+              <a href="author.html#876">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,522 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1111 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1111%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901042224.n04MOngU032036%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000584.html">
+   <LINK REL="Next"  HREF="000586.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1111 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1111%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901042224.n04MOngU032036%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1111 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  4 23:24:49 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000584.html">[Griffith-svn] r1110 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000586.html">[Griffith-svn] r1112 - branches/0.9.x/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#585">[ date ]</a>
+              <a href="thread.html#585">[ thread ]</a>
+              <a href="subject.html#585">[ subject ]</a>
+              <a href="author.html#585">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-01-04 23:24:48 +0100 (Sun, 04 Jan 2009)
+New Revision: 1111
+
+Added:
+   branches/0.9.x/lib/plugins/movie/PluginMovieMyMoviesIt.py
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+Modified:
+   branches/0.9.x/ChangeLog
+   trunk/ChangeLog
+Log:
+MyMoviesIt movie plugin added (thanks to Giovanni Sposito)
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-01-03 20:49:00 UTC (rev 1110)
++++ branches/0.9.x/ChangeLog	2009-01-04 22:24:48 UTC (rev 1111)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-04  Piotr O&#380;arowski
++	* MyMoviesIt movie plugin added (thanks to Giovanni Sposito)
++
+ 2009-01-03  Michael Jahn
+ 	* [#313012] correctly round ratings
+ 
+
+Added: branches/0.9.x/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieMyMoviesIt.py	2009-01-03 20:49:00 UTC (rev 1110)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieMyMoviesIt.py	2009-01-04 22:24:48 UTC (rev 1111)
+@@ -0,0 +1,196 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name = &quot;MyMoviesIt&quot;
++plugin_description = &quot;mymovies.it&quot;
++plugin_url = &quot;www.mymovies.it&quot;
++plugin_language = _(&quot;Italian&quot;)
++plugin_author = &quot;Giovanni Sposito&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">giovanni.sposito at gmail.com</A>&gt;&quot;
++plugin_version = &quot;0.1&quot;
++
++class Plugin(movie.Movie):
++
++    def __init__(self, id):
++        self.encode = 'iso-8859-1'
++        self.movie_id = id
++        self.url = &quot;<A HREF="http://www.mymovies.it/dizionario/recensione.asp?id=%s">http://www.mymovies.it/dizionario/recensione.asp?id=%s</A>&quot; % self.movie_id
++
++    def get_image(self):
++        tmp_image = string.find(self.page, '&lt;img style=&quot;border:solid 1px #737373; padding:3px&quot; src=&quot;')
++        if tmp_image == -1:
++            self.image_url = ''
++        else:
++            self.image_url = gutils.trim(self.page[tmp_image:], 'src=&quot;', '&quot;')
++
++    def get_o_title(self):
++        tmp = gutils.trim(self.page, 'Titolo originale &lt;em&gt;', '&lt;/em&gt;')
++        if not tmp:
++            self.o_title = gutils.trim(self.page, '&lt;meta name=&quot;titolo_tag&quot; content=&quot;', 'titolo_tag_fine')
++        else:
++            self.o_title = tmp
++
++    def get_title(self):
++        self.title = gutils.trim(self.page, '&lt;meta name=&quot;titolo_tag&quot; content=&quot;', 'titolo_tag_fine')
++
++    def get_director(self):
++        pos_iniziale = string.find(self.page, '&lt;div style=&quot;margin:0px&quot; class=&quot;linkblu&quot;&gt;')
++        self.director = gutils.trim(self.page[pos_iniziale:],'Un film di &lt;a','&lt;/a&gt;')
++        self.director = gutils.after(self.director,'&gt;')
++        if not self.director:
++            self.director = gutils.trim(self.page[pos_iniziale:], 'Un film di ', 'Con')
++        if len(self.director) &gt; 25:
++            self.director = gutils.trim(self.page[pos_iniziale:],'Un film di ','&lt;')
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page,'&lt;p style=&quot;text-align:justify;&quot;&gt;','&lt;/p&gt;')
++
++    def get_year(self):
++        self.year = gutils.trim(self.page,'&quot; href=&quot;<A HREF="http://www.mymovies.it/film/?anno=">http://www.mymovies.it/film/?anno=</A>', '&quot;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, 'durata ', ' min.')
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, 'document.write(\'&quot;<A HREF="http://ad.it.doubleclick.net/adj/MyMdizionario.it/scheda;genere=">http://ad.it.doubleclick.net/adj/MyMdizionario.it/scheda;genere=</A>', ';')
++
++    def get_cast(self):
++        tmp = string.find(self.page, 'Con &lt;a')
++        self.cast = gutils.trim(self.page[tmp-6:],'Con ','&lt;/a&gt;.')
++        self.cast = string.replace(self.cast, ',', '\n')
++
++    def get_classification(self):
++        self.classification = ''
++
++    def get_studio(self):
++        self.studio = ''
++
++    def get_o_site(self):
++        self.o_site = ''
++        #tmp = gutils.trim(self.page, '<A HREF="http://www.imdb.com">http://www.imdb.com</A>', '&quot;')
++        #if tmp != '':
++        #    self.o_site = '<A HREF="http://www.imdb.com">http://www.imdb.com</A>' + tmp
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        tmp = gutils.trim(self.page, '&lt;a title=&quot;Trailer', '&quot;&gt;Trailer&lt;/a&gt;&lt;/span&gt;')
++        if tmp:
++            self.trailer = re.sub('.*href=&quot;', '' ,tmp)
++        else:
++            self.trailer = ''
++
++    def get_country(self):
++        pos = string.find(self.page, ' min.')
++        self.country = gutils.trim(self.page[pos+2:], '- ', '  &lt;')
++
++    def get_rating(self):
++        #posizione della parte intera della votazione TODO: translate it :-)
++        rat = gutils.trim(self.page, '&lt;i&gt;mymonetro&lt;/i&gt; ', ',')
++        if rat != '':
++            self.rating = int(rat)
++            #posizione di un'eventuale parte decimale # TODO: see above
++            pos_rating = string.find(self.page, '&lt;i&gt;mymonetro&lt;/i&gt; ')
++            pos_rating_dec = gutils.trim(self.page[pos_rating+18:], ',', ' stelle')
++            if pos_rating_dec != '':
++                if int(pos_rating_dec) &gt; 51:
++                    self.rating = self.rating + 1
++        else:
++            self.rating = 0
++
++    def get_notes(self):
++        #self.notes = ''
++        #tmp = gutils.trim(self.page, 'Alt. titel:', '&lt;/span&gt;')
++        #if tmp:
++        #    self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
++        self.notes = ''
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search = &quot;<A HREF="http://www.mymovies.it/database/ricerca/?q=">http://www.mymovies.it/database/ricerca/?q=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.mymovies.it/database/ricerca/?q=">http://www.mymovies.it/database/ricerca/?q=</A>&quot;
++        self.encode = 'iso-8859-1'
++
++    def search(self,parent_window):
++        self.open_search(parent_window)
++        #self.sub_search()
++        return self.page
++
++    def sub_search(self):
++        self.page = gutils.trim(self.page, &quot;ho trovato i seguenti risultati:&quot;, &quot;Altri risultati tra i film con la parola&quot;)
++
++    def get_searches(self):
++        elements = string.split(self.page,&quot;&lt;h3 style=\&quot;margin:0px;\&quot;&gt;&quot;)
++        self.number_results = len(elements) - 1
++
++        if self.number_results &gt; 0:
++            i = 1
++            while i &lt; len(elements):
++                element = gutils.trim(elements[i],&quot;&lt;a&quot;,&quot;&lt;/a&gt;&quot;)
++#                print &quot;******* elemento &quot;+str(i)+&quot; **********\n\n\n\n\n&quot;+element+&quot;\n******fine*******\n\n\n\n\n\n&quot;
++#                print &quot;id = &quot;+gutils.trim(element,&quot;recensione.asp?id=&quot;,&quot;\&quot;&quot;)
++#                print &quot;title = &quot;+gutils.convert_entities(gutils.strip_tags(gutils.trim(element,'&quot; title=&quot;', '&quot;')))
++
++                self.ids.append(gutils.trim(element,&quot;recensione.asp?id=&quot;,&quot;\&quot;&quot;))
++                self.titles.append(gutils.convert_entities(gutils.strip_tags(gutils.trim(element,'&quot; title=&quot;', '&quot;'))))
++                i += 1
++        else:
++            self.number_results = 0
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; expected result count }
++    #
++    test_configuration = {
++        'Rocky Balboa'            : 1
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute should only be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '44566' : {
++            'title'             : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'genre'                : 'Sportivo',
++            'year'                : 2006
++        }
++    }
+
+
+Property changes on: branches/0.9.x/lib/plugins/movie/PluginMovieMyMoviesIt.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-03 20:49:00 UTC (rev 1110)
++++ trunk/ChangeLog	2009-01-04 22:24:48 UTC (rev 1111)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-04  Piotr O&#380;arowski
++	* MyMoviesIt movie plugin added (thanks to Giovanni Sposito)
++
+ 2009-01-03  Michael Jahn
+ 	* [#313012] correctly round ratings
+ 
+
+Added: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2009-01-03 20:49:00 UTC (rev 1110)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2009-01-04 22:24:48 UTC (rev 1111)
+@@ -0,0 +1,197 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name = &quot;MyMoviesIt&quot;
++plugin_description = &quot;mymovies.it&quot;
++plugin_url = &quot;www.mymovies.it&quot;
++plugin_language = _(&quot;Italian&quot;)
++plugin_author = &quot;Giovanni Sposito&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">giovanni.sposito at gmail.com</A>&gt;&quot;
++plugin_version = &quot;0.1&quot;
++
++class Plugin(movie.Movie):
++
++    def __init__(self, id):
++        self.encode = 'iso-8859-1'
++        self.movie_id = id
++        self.url = &quot;<A HREF="http://www.mymovies.it/dizionario/recensione.asp?id=%s">http://www.mymovies.it/dizionario/recensione.asp?id=%s</A>&quot; % self.movie_id
++
++    def get_image(self):
++        tmp_image = string.find(self.page, '&lt;img style=&quot;border:solid 1px #737373; padding:3px&quot; src=&quot;')
++        if tmp_image == -1:
++            self.image_url = ''
++        else:
++            self.image_url = gutils.trim(self.page[tmp_image:], 'src=&quot;', '&quot;')
++
++    def get_o_title(self):
++        tmp = gutils.trim(self.page, 'Titolo originale &lt;em&gt;', '&lt;/em&gt;')
++        if not tmp:
++            self.o_title = gutils.trim(self.page, '&lt;meta name=&quot;titolo_tag&quot; content=&quot;', 'titolo_tag_fine')
++        else:
++            self.o_title = tmp
++
++    def get_title(self):
++        self.title = gutils.trim(self.page, '&lt;meta name=&quot;titolo_tag&quot; content=&quot;', 'titolo_tag_fine')
++
++    def get_director(self):
++        pos_iniziale = string.find(self.page, '&lt;div style=&quot;margin:0px&quot; class=&quot;linkblu&quot;&gt;')
++        self.director = gutils.trim(self.page[pos_iniziale:],'Un film di &lt;a','&lt;/a&gt;')
++        self.director = gutils.after(self.director,'&gt;')
++        if not self.director:
++            self.director = gutils.trim(self.page[pos_iniziale:], 'Un film di ', 'Con')
++        if len(self.director) &gt; 25:
++            self.director = gutils.trim(self.page[pos_iniziale:],'Un film di ','&lt;')
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page,'&lt;p style=&quot;text-align:justify;&quot;&gt;','&lt;/p&gt;')
++
++    def get_year(self):
++        self.year = gutils.trim(self.page,'&quot; href=&quot;<A HREF="http://www.mymovies.it/film/?anno=">http://www.mymovies.it/film/?anno=</A>', '&quot;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, 'durata ', ' min.')
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, 'document.write(\'&quot;<A HREF="http://ad.it.doubleclick.net/adj/MyMdizionario.it/scheda;genere=">http://ad.it.doubleclick.net/adj/MyMdizionario.it/scheda;genere=</A>', ';')
++
++    def get_cast(self):
++        tmp = string.find(self.page, 'Con &lt;a')
++        self.cast = gutils.trim(self.page[tmp-6:],'Con ','&lt;/a&gt;.')
++        self.cast = string.replace(self.cast, ',', '\n')
++
++    def get_classification(self):
++        self.classification = ''
++
++    def get_studio(self):
++        self.studio = ''
++
++    def get_o_site(self):
++        self.o_site = ''
++        #tmp = gutils.trim(self.page, '<A HREF="http://www.imdb.com">http://www.imdb.com</A>', '&quot;')
++        #if tmp != '':
++        #    self.o_site = '<A HREF="http://www.imdb.com">http://www.imdb.com</A>' + tmp
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        tmp = gutils.trim(self.page, '&lt;a title=&quot;Trailer', '&quot;&gt;Trailer&lt;/a&gt;&lt;/span&gt;')
++        if tmp:
++            self.trailer = re.sub('.*href=&quot;', '' ,tmp)
++        else:
++            self.trailer = ''
++
++    def get_country(self):
++        pos = string.find(self.page, ' min.')
++        self.country = gutils.trim(self.page[pos+2:], '- ', '  &lt;')
++
++    def get_rating(self):
++        #posizione della parte intera della votazione TODO: translate it :-)
++        rat = gutils.trim(self.page, '&lt;i&gt;mymonetro&lt;/i&gt; ', ',')
++        if rat != '':
++            self.rating = int(rat)
++            #posizione di un'eventuale parte decimale # TODO: see above
++            pos_rating = string.find(self.page, '&lt;i&gt;mymonetro&lt;/i&gt; ')
++            pos_rating_dec = gutils.trim(self.page[pos_rating+18:], ',', ' stelle')
++            if pos_rating_dec != '':
++                if int(pos_rating_dec) &gt; 51:
++                    self.rating = self.rating + 1
++        else:
++            self.rating = 0
++
++    def get_notes(self):
++        #self.notes = ''
++        #tmp = gutils.trim(self.page, 'Alt. titel:', '&lt;/span&gt;')
++        #if tmp:
++        #    self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
++        self.notes = ''
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search = &quot;<A HREF="http://www.mymovies.it/database/ricerca/?q=">http://www.mymovies.it/database/ricerca/?q=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.mymovies.it/database/ricerca/?q=">http://www.mymovies.it/database/ricerca/?q=</A>&quot;
++        self.encode = 'iso-8859-1'
++
++    def search(self,parent_window):
++        if not self.open_search(parent_window):
++            return None
++        #self.sub_search()
++        return self.page
++
++    def sub_search(self):
++        self.page = gutils.trim(self.page, &quot;ho trovato i seguenti risultati:&quot;, &quot;Altri risultati tra i film con la parola&quot;)
++
++    def get_searches(self):
++        elements = string.split(self.page,&quot;&lt;h3 style=\&quot;margin:0px;\&quot;&gt;&quot;)
++        self.number_results = len(elements) - 1
++
++        if self.number_results &gt; 0:
++            i = 1
++            while i &lt; len(elements):
++                element = gutils.trim(elements[i],&quot;&lt;a&quot;,&quot;&lt;/a&gt;&quot;)
++#                print &quot;******* elemento &quot;+str(i)+&quot; **********\n\n\n\n\n&quot;+element+&quot;\n******fine*******\n\n\n\n\n\n&quot;
++#                print &quot;id = &quot;+gutils.trim(element,&quot;recensione.asp?id=&quot;,&quot;\&quot;&quot;)
++#                print &quot;title = &quot;+gutils.convert_entities(gutils.strip_tags(gutils.trim(element,'&quot; title=&quot;', '&quot;')))
++
++                self.ids.append(gutils.trim(element,&quot;recensione.asp?id=&quot;,&quot;\&quot;&quot;))
++                self.titles.append(gutils.convert_entities(gutils.strip_tags(gutils.trim(element,'&quot; title=&quot;', '&quot;'))))
++                i += 1
++        else:
++            self.number_results = 0
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; expected result count }
++    #
++    test_configuration = {
++        'Rocky Balboa'            : 1
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute should only be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '44566' : {
++            'title'             : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'genre'                : 'Sportivo',
++            'year'                : 2006
++        }
++    }
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000584.html">[Griffith-svn] r1110 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000586.html">[Griffith-svn] r1112 - branches/0.9.x/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#585">[ date ]</a>
+              <a href="thread.html#585">[ thread ]</a>
+              <a href="subject.html#585">[ subject ]</a>
+              <a href="author.html#585">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

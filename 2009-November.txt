@@ -1,0 +1,2027 @@
+From mikej06 at mail.berlios.de  Fri Nov  6 21:44:56 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 6 Nov 2009 21:44:56 +0100
+Subject: [Griffith-svn] r1317 - in trunk: . lib/plugins/imp
+Message-ID: <200911062044.nA6KiuVq017441@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-06 21:44:21 +0100 (Fri, 06 Nov 2009)
+New Revision: 1317
+
+Added:
+   trunk/lib/plugins/imp/PersonalVideoDatabase.py
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+Log:
+Personal Video Database import plugin added
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-10-16 20:33:21 UTC (rev 1316)
++++ trunk/ChangeLog	2009-11-06 20:44:21 UTC (rev 1317)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2009-11-06  Michael Jahn
++	* Personal Video Database import plugin added
++
+ 2009-10-16  Michael Jahn
+ 	* eXtreme Movie Manager import plugin added
+ 	* import support for movie detail video codec
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-10-16 20:33:21 UTC (rev 1316)
++++ trunk/NEWS	2009-11-06 20:44:21 UTC (rev 1317)
+@@ -2,7 +2,7 @@
+ =============
+ * Griffith extensions feature added. You can add your own extensions in
+   ~/.griffith/lib/extensions
+-* New import plugins: GCstar, DVD Profiler
++* New import plugins: GCstar, DVD Profiler, eXtreme Movie Manager, Personal Video Database
+ 
+ 
+ Griffith 0.10.1
+
+Added: trunk/lib/plugins/imp/PersonalVideoDatabase.py
+===================================================================
+--- trunk/lib/plugins/imp/PersonalVideoDatabase.py	2009-10-16 20:33:21 UTC (rev 1316)
++++ trunk/lib/plugins/imp/PersonalVideoDatabase.py	2009-11-06 20:44:21 UTC (rev 1317)
+@@ -0,0 +1,195 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import os
++import sys
++import gutils
++import string
++import struct
++import db
++from xml.dom import minidom, Node
++import logging
++log = logging.getLogger("Griffith")
++
++class ImportPlugin(IP):
++    description  = _('Personal Video Database (version 0.9.9.x)')
++    author       = 'Michael Jahn'
++    email        = 'griffith-private at lists.berlios.de'
++    version      = '1.0'
++    file_filters = '*.[xX][mM][lL]'
++    mime_types   = None
++
++    fileversion  = None
++    filedom      = None
++    items        = None
++    itemindex    = 0
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        """Returns number of movies in file which is about to be imported"""
++        count = 0
++        if self.filedom:
++            try:
++                xmlElement = self.filedom.getElementsByTagName('xml')[0]
++                for element in xmlElement.childNodes:
++                    if element.nodeType == Node.ELEMENT_NODE and element.nodeName == 'viddb':
++                        for viddbElement in element.childNodes:
++                            if viddbElement.nodeType == Node.ELEMENT_NODE and viddbElement.nodeName == 'movies':
++                                count = int(viddbElement.childNodes[0].data.strip())
++                                break
++                        break
++            except:
++                log.exception('')
++        else:
++            log.error('Personal Video Database Import: No filedom object.')
++        log.info('Personal Video Database Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        """Returns dictionary with movie details"""
++        if not self.filedom:
++            self.filedom = minidom.parse(self.filename)
++        if not self.items:
++            xmlElement = self.filedom.getElementsByTagName('xml')[0]
++            viddbElement = self.filedom.getElementsByTagName('viddb')[0]
++            self.items = viddbElement.childNodes
++            self.itemindex = 0
++        if not self.items or len(self.items) < 1:
++            return None
++        if len(self.items) <= self.itemindex:
++            return None
++        item = self.items[self.itemindex]
++        while not (item.nodeType == Node.ELEMENT_NODE and item.nodeName == 'movie') and len(self.items) > self.itemindex + 1:
++            self.itemindex = self.itemindex + 1
++            item = self.items[self.itemindex]
++        if len(self.items) <= self.itemindex:
++            return None
++        if not len(item.childNodes):
++            return None
++
++        details = {}
++        try:
++            for node in item.childNodes:
++                if node.nodeType == Node.ELEMENT_NODE and len(node.childNodes) > 0:
++                    if node.nodeName == 'title':
++                        details['title'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'origtitle':
++                        details['o_title'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'year':
++                        details['year'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'genre':
++                        details['genre'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'country':
++                        details['country'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'studio':
++                        details['studio'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'director':
++                        details['director'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'actors':
++                        details['cast'] = string.replace(node.childNodes[0].data.strip(), ', ', '\n')
++                    elif node.nodeName == 'description':
++                        details['plot'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'length':
++                        details['runtime'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'type':
++                        # setting medium_id to string mediumname; mapping is done in base class
++                        details['medium_id'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'count':
++                        details['media_num'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'videocodec':
++                        # setting vcodec_id to string codecname; mapping is done in base class
++                        details['vcodec_id'] = node.childNodes[0].data
++                    elif node.nodeName == 'comment':
++                        details['notes'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'mpaa':
++                        details['classification'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'scenario':
++                        details['screenplay'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'tags':
++                        details['tags'] = string.split(node.childNodes[0].data.strip(), ', ')
++                    elif node.nodeName == 'url':
++                        details['o_site'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'path':
++                        details['trailer'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'barcode':
++                        details['barcode'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'poster':
++                        details['poster'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'num':
++                        details['number'] = node.childNodes[0].data.strip()
++                    elif node.nodeName == 'rating':
++                        try:
++                            details['rating'] = round(float(node.childNodes[0].data.strip().replace(',', '.')), 0)
++                        except:
++                            pass
++        except EOFError:
++            details = None
++        except Exception, e:
++            log.exception('')
++            details = None
++        self.itemindex = self.itemindex +  1
++        return details
++
++    def clear(self):
++        """clear plugin before next source file"""
++        IP.clear(self)
++        if self.filedom:
++            self.filedom.unlink()
++            self.filedom = None
++            self.fileversion = None
++            self.items = None
++            self.itemindex = 0
++
++    def destroy(self):
++        """close all resources"""
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        self.filedom = minidom.parse(self.filename)
++        try:
++            xmlElement = self.filedom.getElementsByTagName('xml')[0]
++            viddbElement = self.filedom.getElementsByTagName('viddb')[0]
++            version = 0.9
++        except Exception, e:
++            log.error(str(e))
++            self.filedom.unlink()
++            self.filedom = None
++        log.info('Personal Video Database Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/PersonalVideoDatabase.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+
+From mikej06 at mail.berlios.de  Fri Nov  6 23:07:19 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 6 Nov 2009 23:07:19 +0100
+Subject: [Griffith-svn] r1318 - in trunk: . lib/plugins/extensions
+	lib/plugins/movie
+Message-ID: <200911062207.nA6M7JDw025977@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-06 23:06:46 +0100 (Fri, 06 Nov 2009)
+New Revision: 1318
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/extensions/amazon.py
+   trunk/lib/plugins/extensions/ge_amazon.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+Log:
+fixed amazon binding (generation of signed urls added but every user needs an amazon account for the access key and secret key)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/ChangeLog	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -7,6 +7,8 @@
+ 
+ 2009-11-06  Michael Jahn
+ 	* Personal Video Database import plugin added
++	* fixed amazon binding (generation of signed urls added but
++	  every user needs an amazon account for the access key and secret key)
+ 
+ 2009-10-16  Michael Jahn
+ 	* eXtreme Movie Manager import plugin added
+
+Modified: trunk/lib/plugins/extensions/amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/amazon.py	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/lib/plugins/extensions/amazon.py	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -1,3 +1,4 @@
++# -*- coding: UTF-8 -*-
+ __all__ = []
+ """Python wrapper
+ 
+@@ -74,7 +75,10 @@
+ # Support for BlendedSearch contributed by Alex Choo
+ 
+ from xml.dom import minidom
+-import os, sys, getopt, cgi, urllib, string
++import os, sys, getopt, cgi, urllib, string, time
++import base64
++import hmac
++from hashlib import sha256
+ try:
+     import timeoutsocket # http://www.timo-tasi.org/python/timeoutsocket.py
+     timeoutsocket.setDefaultSocketTimeout(10)
+@@ -84,11 +88,12 @@
+ log = logging.getLogger("Griffith")
+ 
+ LICENSE_KEY = ""
++SECRET_KEY = ""
+ ASSOCIATE = "webservices-20"
+ HTTP_PROXY = None
+ LOCALE = "us"
+ # default API version is from 2005-10-05
+-APIVERSION='2008-06-26'
++APIVERSION='2009-03-31'
+ 
+ # don't touch the rest of these constants
+ class AmazonError(Exception): pass
+@@ -107,12 +112,12 @@
+     (lambda key: _contentsOf(_getScriptDir(), _amazonfile2), '%s in the amazon.py directory' % _amazonfile2)
+     )
+ _supportedLocales = {
+-        "us" : (None, "ecs.amazonaws.com/onca/xml?Service=AWSECommerceService"),   
+-        "uk" : ("uk", "ecs.amazonaws.co.uk/onca/xml?Service=AWSECommerceService"),
+-        "de" : ("de", "ecs.amazonaws.de/onca/xml?Service=AWSECommerceService"),
+-        "ca" : ("ca", "ecs.amazonaws.ca/onca/xml?Service=AWSECommerceService"),
+-        "fr" : ("fr", "ecs.amazonaws.fr/onca/xml?Service=AWSECommerceService"),
+-        "jp" : ("jp", "ecs.amazonaws.jp/onca/xml?Service=AWSECommerceService")
++        "us" : (None, "ecs.amazonaws.com/onca/xml"),   
++        "uk" : ("uk", "ecs.amazonaws.co.uk/onca/xml"),
++        "de" : ("de", "ecs.amazonaws.de/onca/xml"),
++        "ca" : ("ca", "ecs.amazonaws.ca/onca/xml"),
++        "fr" : ("fr", "ecs.amazonaws.fr/onca/xml"),
++        "jp" : ("jp", "ecs.amazonaws.jp/onca/xml")
+     }
+ 
+ ## administrative functions
+@@ -146,10 +151,12 @@
+     """get locale"""
+     return locale or LOCALE
+ 
+-def setLicense(license_key):
++def setLicense(license_key, secret_key):
+     """set license key"""
+-    global LICENSE_KEY
++    global LICENSE_KEY, SECRET_KEY, HMAC
+     LICENSE_KEY = license_key
++    SECRET_KEY = secret_key
++    HMAC = hmac.new(SECRET_KEY, digestmod=sha256)
+ 
+ def getLicense(license_key = None):
+     """get license key
+@@ -224,37 +231,89 @@
+             rc = int(rc)
+     return rc
+ 
+-def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate):
++def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate, timestamp = None):
+     _checkLocaleSupported(locale)
+     if isinstance(searchvalue, unicode):
+         searchvalue = searchvalue.encode('utf-8') # needed for urllib.quote
+     url = "http://" + _supportedLocales[locale][1]
+     if search_type == 'ItemLookup':
+-        url += "&AssociateTag=%s" % associate
+-        url += "&AWSAccessKeyId=%s" % license_key.strip()
+-        url += "&ResponseGroup=%s" % type
++        params = dict(
++            Service='AWSECommerceService',
++            AWSAccessKeyId=license_key,
++            Operation=search_type,
++            ResponseGroup=type,
++            IdType=searchfield,
++            ItemId=urllib.quote(searchvalue))
+         if product_line:
+-            url += "&SearchIndex=%s" % product_line
+-        url += "&Operation=%s" % search_type
+-        url += "&IdType=%s" % searchfield
+-        url += "&ItemId=%s" % searchvalue
++            params['SearchIndex'] = product_line
+     else:
+-        url += "&AssociateTag=%s" % associate
+-        url += "&AWSAccessKeyId=%s" % license_key.strip()
+-        url += "&ResponseGroup=%s" % type
++        params = dict(
++            Service='AWSECommerceService',
++            AWSAccessKeyId=license_key,
++            Operation=search_type,
++            ResponseGroup=type,
++            Sort='titlerank')
++        params[searchfield] = urllib.quote(searchvalue)
+         if page:
+-            url += "&ItemPage=%s" % page
++            params['ItemPage'] = str(page)
+         if product_line:
+-            url += "&SearchIndex=%s" % product_line
+-        url += "&Operation=%s" % search_type
+-        url += "&%s=%s" % (searchfield, urllib.quote(searchvalue))
+-        url += "&Sort=titlerank"
+-    if not APIVERSION is None:
+-        url += "&Version=%s" % APIVERSION
++            params['SearchIndex'] = product_line
++    if APIVERSION:
++        params['Version'] = APIVERSION
++    log.info(params)
++    url = getSignedUrl(url, params, timestamp)
+     log.info('URL: ' + url)
+     return url
+ 
++def getSignedUrl(base_url, params, timestamp = None):
++    global HMAC
++    hmac = HMAC.copy()
++    
++    # Add a ISO 8601 compliant timestamp (in GMT)
++    if timestamp:
++        params['Timestamp'] = timestamp
++    else:
++        params['Timestamp'] = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
++    #params['SignatureVersion']='1'
++    
++    # Sort the URL parameters by key
++    keys = params.keys()
++    #keys.sort(cmp = lambda x, y: cmp(x.lower(), y.lower()))
++    keys.sort()
++    
++    # Reconstruct the URL parameters and encode them
++    pairs = []
++    for key in keys:
++        #val = urllib.quote(params[key])
++        val = params[key]
++        pairs.append(key + '=' + val)
++    url_string = '&'.join(pairs)
++    url_string = url_string.replace('+', "%20")
++    url_string = url_string.replace(':', "%3A")
++    
++    #Construct the string to sign
++    urlparts = base_url.split('/')
++    string_to_sign = """GET
++%s
++/%s/%s
++%s""" % (urlparts[2], urlparts[3], urlparts[4], url_string)
++    url_string = url_string.replace(';', urllib.quote(';'))
++    
++    # Sign the request
++    hmac.update(string_to_sign)
++    signature = hmac.digest()
++    
++    # Base64 encode the signature
++    signature = base64.encodestring(signature).strip()
++    signature = signature.replace('+','%2B');
++    signature = signature.replace('=','%3D');
++    signature = signature.replace('/','%2F');
+ 
++    # Make the signature URL safe
++    url_string += "&Signature=%s" % signature
++    return "%s?%s" % (base_url, url_string)
++
++
+ ## main functions
+ 
+ 
+@@ -395,3 +454,17 @@
+ 
+ def searchByBlended(keyword, type="Large", page=1, license_key=None, http_proxy=None, locale=None, associate=None):
+     return search("BlendedSearch", 'Keywords', keyword, None, type, page, license_key, http_proxy, locale, associate)
++
++if __name__ == "__main__":
++    # check the generation of a sample url
++    expectedUrl = 'http://ecs.amazonaws.de/onca/xml?AWSAccessKeyId=ABCDEFGHIJKLMNOPQRST&AssociateTag=webservices-20&IdType=Title&ItemId=Prison%C2%A0Break&ItemPage=1&Operation=ItemSearch&ResponseGroup=Large&SearchIndex=DVD&Service=AWSECommerceService&Sort=titlerank&Timestamp=2009-11-04T13%3A12%3A51&Title=Prison%C2%A0Break&Version=2008-06-26&Signature=zCHdyoI5busTseJrYcVO%2Bz6u9pmULHBp3E%2F%2FGAdAM2g%3D'
++    setLicense('ABCDEFGHIJKLMNOPQRST', 'ancnhH/kdfsk739/dfsjkjikJHFJKJHRih7hHZgd')
++    url = buildURL('ItemSearch', 'Title', 'Prison?Break', 'DVD', 'Large', 1, 'ABCDEFGHIJKLMNOPQRST', 'de', 'webservices-20', '2009-11-04T13%3A12%3A51')
++    # compare with a generated one from http://associates-amazon.s3.amazonaws.com/signed-requests/helper/index.html
++    result = cmp(url, expectedUrl)
++    if result == 0:
++        print 'Signed URL generation seems to be ok.'
++    else:
++        print url
++        print expectedUrl
++        print 'Something seems to be wrong with the signed URL generation.'
+
+Modified: trunk/lib/plugins/extensions/ge_amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_amazon.py	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/lib/plugins/extensions/ge_amazon.py	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -37,7 +37,6 @@
+ import amazon
+ 
+ log = logging.getLogger('Griffith')
+-amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
+ 
+ class GriffithExtension(Base):
+     name = 'Amazon'
+@@ -48,24 +47,40 @@
+     api = 1
+ 
+     preferences = {'locale': {'name': _('Select source'),
+-                              'type': (u'US', u'UK', u'DE', u'CA', u'FR', u'JP')}}
++                              'default': u'US',
++                              'type': (u'US', u'UK', u'DE', u'CA', u'FR', u'JP')},
++                   'accesskey': {'name': _('Access Key ID'),
++                                 'hint': u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
++                                 'default': u'',
++                                 'type': unicode},
++                   'secretkey': {'name': _('Secret Key'),
++                                 'hint': u'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html',
++                                 'default': u'',
++                                 'type': unicode}}
+     toolbar_icon = 'gtk-network'
+ 
+     def toolbar_icon_clicked(self, widget, movie):
+         log.info('fetching poster from Amazon...')
+         self.movie = movie
+ 
++        locale = self.get_config_value('locale', 'US').lower()
++        accesskey = self.get_config_value('accesskey')
++        secretkey = self.get_config_value('secretkey')
++
++        if not accesskey or not secretkey:
++            gutils.error(self.app, _('Please configure you Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++            return False
++
+         if movie is None:
+             gutils.error(self.app, _('You have no movies in your database'), self.widgets['window'])
+             return False
+ 
+-        locale = self.get_config_value('locale', 'US').lower()
+-
+         keyword = movie.o_title
+         if locale == 'de':
+             keyword = movie.title
+ 
+         try:
++            amazon.setLicense(accesskey, secretkey)
+             result = amazon.searchByTitle(keyword, type='Large', product_line='DVD', locale=locale)
+             if hasattr(result, 'TotalPages'):
+                 # get next result pages
+@@ -89,6 +104,7 @@
+             self._result = result
+             log.info("... %s posters found" % result.TotalResults)
+         except:
++            log.exception('')
+             gutils.warning(_('No posters found for this movie.'))
+             return
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-11-06 20:44:21 UTC (rev 1317)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-11-06 22:06:46 UTC (rev 1318)
+@@ -39,7 +39,7 @@
+ plugin_language     = _("International")
+ plugin_author       = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version      = "1.1"
++plugin_version      = "1.2"
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -53,7 +53,14 @@
+         # use the Amazon Web API
+         self.parent_window = parent_window
+         try:
+-            locale = self.config.get('amazon_locale', 0, section='add')
++            accesskey = self.config.get('amazon_accesskey', None, section='extensions')
++            secretkey = self.config.get('amazon_secretkey', None, section='extensions')
++            if not accesskey or not secretkey:
++                gutils.error(self.app, _('Please configure you Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++                return False
++            amazon.setLicense(accesskey, secretkey)
++
++            locale = self.config.get('amazon_locale', 0, section='extensions')
+             if locale == '1':
+                 locale = 'uk'
+             elif locale == '2':
+@@ -76,7 +83,7 @@
+         except:
+             self.page = ''
+             try:
+-                log.error("Error retrieving results from amazon.")
++                log.exception('Error retrieving results from amazon.')
+                 log.error(retriever.result.Request.Errors.Error.Message)
+             except:
+                 pass
+@@ -240,7 +247,14 @@
+         self.titles = [""]
+         self.ids = [""]
+         try:
+-            locale = self.config.get('amazon_locale', 0, section='add')
++            accesskey = self.config.get('amazon_accesskey', None, section='extensions')
++            secretkey = self.config.get('amazon_secretkey', None, section='extensions')
++            if not accesskey or not secretkey:
++                gutils.error(self.app, _('Please configure you Amazon Access Key ID and Secret Key correctly in the preferences dialog.'))
++                return False
++            amazon.setLicense(accesskey, secretkey)
++
++            locale = self.config.get('amazon_locale', 0, section='extensions')
+             if locale == '1':
+                 locale = 'uk'
+             elif locale == '2':
+@@ -262,7 +276,7 @@
+             self.page = retriever.result
+         except:
+             try:
+-                log.error("Error retrieving results from amazon.")
++                log.exception('Error retrieving results from amazon.')
+                 log.error(retriever.result.Request.Errors.Error.Message)
+             except:
+                 pass
+@@ -323,7 +337,6 @@
+     def run_search(self):
+         self.result = []
+         try:
+-            amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
+             try:
+                 tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=1)
+                 self.result.append(tmp)
+@@ -334,8 +347,8 @@
+                         tmp = amazon.searchByTitle(self.title, type='ItemAttributes', product_line='Video', locale=self.locale, page=page)
+                         self.result.append(tmp)
+                         page = page + 1
+-            except amazon.AmazonError, e:
+-                log.error(e.Message)
++            except amazon.AmazonError:
++                log.exception('Error retrieving results from amazon.')
+             # if all digits then try to find an EAN / UPC
+             if self.title.isdigit():
+                 if len(self.title) == 13:
+@@ -343,32 +356,34 @@
+                         tmp = amazon.searchByEAN(self.title, type='ItemAttributes', product_line='Video', locale=self.locale)
+                         self.result.append(tmp)
+                     except amazon.AmazonError, e:
+-                        log.error(e.Message)
++                        log.exception('Error retrieving results from amazon.')
+                 elif len(self.title) == 12:
+                     try:
+                         tmp = amazon.searchByUPC(self.title, type='ItemAttributes', product_line='Video', locale=self.locale)
+                         self.result.append(tmp)
+                     except amazon.AmazonError, e:
+-                        log.error(e.Message)
++                        log.exception('Error retrieving results from amazon.')
+         except IOError:
+-            self.progress.dialog.hide()
+-            gutils.urllib_error(_('Connection error'), self.parent_window)
+-            self.suspend()
++            log.exception('Error retrieving results from amazon.')
++            #self.progress.dialog.hide()
++            #gutils.urllib_error(_('Connection error'), self.parent_window)
++            #self.suspend()
+ 
+     def run_get(self):
+         self.result = None
+         try:
+-            amazon.setLicense('04GDDMMXX8X9CJ1B22G2')
+             # get by ASIN
+             try:
+                 self.result = amazon.searchByASIN(self.title, type='Large', locale=self.locale)
+             except amazon.AmazonError, e:
+-                log.error(e.Message)
++                log.exception('Error retrieving results from amazon.')
+         except IOError:
+-            self.progress.dialog.hide()
+-            gutils.urllib_error(_('Connection error'), self.parent_window)
+-            self.suspend()
++            log.exception('Error retrieving results from amazon.')
++            #self.progress.dialog.hide()
++            #gutils.urllib_error(_('Connection error'), self.parent_window)
++            #self.suspend()
+ 
++
+ #
+ # Plugin Test
+ #
+
+
+
+From mikej06 at mail.berlios.de  Tue Nov 10 23:10:33 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 10 Nov 2009 23:10:33 +0100
+Subject: [Griffith-svn] r1319 - in trunk: . lib/plugins/movie
+Message-ID: <200911102210.nAAMAXDN021333@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-10 23:10:14 +0100 (Tue, 10 Nov 2009)
+New Revision: 1319
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+* updated movie plugins Allocine and FilmAffinity
+* updated some movie test data
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/ChangeLog	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2009-11-10  Michael Jahn
++	* updated movie plugins Allocine and FilmAffinity
++
+ 2009-11-06  Michael Jahn
+ 	* Personal Video Database import plugin added
+ 	* fixed amazon binding (generation of signed urls added but
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -37,15 +37,16 @@
+     def __init__(self, id):
+         self.movie_id = id
+         self.url      = "http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html" % str(self.movie_id)
+-        self.encode   = 'iso-8859-1'
++        self.encode   = 'utf-8'
+ 
+     def initialize(self):
+         self.page_cast = self.open_page(self.parent_window, url = "http://www.allocine.fr/film/casting_gen_cfilm=%s.html" % str(self.movie_id))
+ 
+     def get_image(self):
+-        urls = re.split('<img[ \t]+src=[\'"]', gutils.trim(self.page, '</h1>', '</h2>'))
++        urls = re.split('<img[ \t]+src=[\'"]', gutils.trim(self.page, '<div class="poster">', '</div>'))
+         for url in urls[1:]:
+             url = gutils.before(url, '"')
++            url = gutils.before(url, '\'')
+             if string.find(url, '.jpg') >= 0:
+                 self.image_url = url
+                 break
+@@ -54,38 +55,38 @@
+         self.o_title = ""
+         self.o_title = gutils.trim(self.page,"Titre original : <i>","</i>")
+         if (self.o_title==''):
+-            self.o_title = string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin??', '')
++            self.o_title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin??', ''))
+ 
+     def get_title(self):
+-        self.title = string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin??', '')
++        self.title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin??', ''))
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, u'R??alis?? par ', '</a></h3>')
++        self.director = gutils.trim(self.page, u'R??alis?? par ', '</a>')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, 'Synopsis', '</h4></div>')
++        self.plot = gutils.trim(self.page, 'Synopsis : ', '</div>')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, u'Ann??e de production : ', '<')
++        self.year = gutils.clean(gutils.trim(self.page, u'Ann??e de production : ', '</a>'))
+ 
+     def get_runtime(self):
+-        self.runtime = ""
+-        self.runtime = gutils.trim(self.page, u'>Dur??e : ', 'min')
++        self.runtime = gutils.clean(gutils.trim(self.page, u'Dur??e :', 'min'))
+         if self.runtime:
+             self.runtime = str (int(gutils.before(self.runtime,"h"))*60 + int(gutils.after(self.runtime,"h")))
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, 'Genre : ', '<h3')
++        self.genre = gutils.trim(self.page, 'Genre : ', '</a')
+         self.genre = gutils.strip_tags(self.genre)
+ 
+     def get_cast(self):
+         self.cast = ""
+-        casts = gutils.trim(self.page_cast, 'Acteurs', '</table>')
+-        parts = string.split(casts, '<td ')
+-        for index in range(1, len(parts) - 1, 3):
+-            character = gutils.after(parts[index + 1], '>')
+-            actor = gutils.after(parts[index + 2], '>')
+-            self.cast = self.cast + gutils.clean(actor) + _(' as ') + gutils.clean(character) + '\n'
++        casts = gutils.trim(self.page_cast, 'Acteurs, r??les, personnages', '<h2>')
++        parts = string.split(casts, 'href="/personne/fichepersonne_gen_cpersonne=')
++        for index in range(1, len(parts), 1):
++            character = gutils.clean(gutils.trim(parts[index], 'R??le :', '<'))
++            actor = gutils.clean(gutils.trim(parts[index], '>', '<'))
++            if actor:
++                self.cast = self.cast + actor + _(' as ') + character + '\n'
+ 
+     def get_classification(self):
+         self.classification = ""
+@@ -103,13 +104,16 @@
+         self.trailer = "http://www.allocine.fr/film/video_gen_cfilm=%s.html" % self.movie_id
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '>Film ', '.&nbsp;<')
++        self.country = gutils.trim(self.page, 'Long-m??trage', '</a>')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, 'Spectateurs</a>', '</tr>')
+-        self.rating = gutils.trim(self.rating, 'etoile_', '"')
++        self.rating = gutils.trim(self.page, 'Spectateurs</a>', 'src=')
++        self.rating = gutils.trim(self.rating, 'class="stareval n', ' ')
+         if self.rating:
+-            self.rating = str(round(float(int(self.rating)*2.25)))
++            try:
++                self.rating = str(round(float(int(self.rating)*.225)))
++            except:
++                self.rating = 0
+ 
+     def get_screenplay(self):
+         self.screenplay = gutils.clean(gutils.trim(self.page_cast, u'Sc??nariste', '</tr>'))
+@@ -120,9 +124,9 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search   = "http://www.allocine.fr/recherche/?rub=1&motcle="
+-        self.translated_url_search = "http://www.allocine.fr/recherche/?rub=1&motcle="
+-        self.encode                = 'iso-8859-1'
++        self.original_url_search   = "http://www.allocine.fr/recherche/?q="
++        self.translated_url_search = "http://www.allocine.fr/recherche/?q="
++        self.encode                = 'utf-8'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -131,20 +135,21 @@
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.trim(self.page, 'Recherche : <b>', '</table><script');
++        self.page = gutils.trim(self.page, 'r??sultats trouv??s', '<div class="spacer"')
+ 
+     def get_searches(self):
+-        elements = string.split(self.page, '<h4><a href="/film/fichefilm_gen_cfilm=')
++        elements = string.split(self.page, '<a href=\'/film/fichefilm_gen_cfilm=')
+         if (elements[0]<>''):
+             for index in range(1, len(elements), 1):
+                 element = elements[index]
+-                self.ids.append(gutils.before(element, '.'))
+-                title = gutils.strip_tags(gutils.convert_entities(gutils.trim(element, '>', '</a>')))
+-                year = gutils.clean(gutils.trim(element, '</h4>', '</h4>'))
+-                if year:
+-                    self.titles.append(title + ' (' + year + ')')
+-                else:
+-                    self.titles.append(title)
++                title = gutils.clean(gutils.convert_entities(gutils.trim(element, '>', '</a>')))
++                year = gutils.clean(gutils.trim(element, '<span class="fs11">', '<br'))
++                if title:
++                    self.ids.append(gutils.before(element, '.'))
++                    if year:
++                        self.titles.append(title + ' (' + year + ')')
++                    else:
++                        self.titles.append(title)
+ 
+ #
+ # Plugin Test
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -169,7 +169,7 @@
+     test_configuration = {
+         'Rocky'      : [ 12, 12 ],
+         'per??'       : [  6,  6 ],
+-        'il ritorno' : [ 96, 96 ]
++        'il ritorno' : [ 97, 97 ]
+     }
+ 
+ class PluginTest:
+@@ -187,68 +187,66 @@
+             'director'          : 'Sylvester Stallone',
+             'plot'              : True,
+             'cast'              : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
+-Burt Young' + _(' as ') + 'Paulie\n\
+-Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
+-Geraldine Hughes' + _(' as ') + 'Marie\n\
++Burt Young' + _(' as ') + 'Pauliev\n\
+ Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
+-James Francis Kelly III' + _(' as ') + 'Steps\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+ Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian (imagens de arquivo)\n\
++Lou DiBella' + _(' as ') + 'Lou DiBella\n\
++Mike Tyson (1)' + _(' as ') + 'Mike Tyson\n\
+ Henry G. Sanders' + _(' as ') + 'Martin\n\
+-Tim Carr' + _(' as ') + 'Buddy\n\
+-James Binns' + _(' as ') + 'Procuratore\n\
+-Rick Collum' + _(' as ') + 'Impiegato nell\'ufficio\n\
+-Michael Ahl' + _(' as ') + 'Proprietario del ristorante\n\
+-Nancy de Zutter' + _(' as ') + 'Proprietaria del ristorante\n\
+-Peter Defeo' + _(' as ') + 'Venditore\n\
+-Angela Boyd' + _(' as ') + 'Ragazza ubriaca al banco del bar\n\
+-Ron Borges' + _(' as ') + 'Reporter\n\
+-A.J. Benza' + _(' as ') + 'L.C. Luco\n\
+-Frank Bednarz' + _(' as ') + 'Tifoso al bordo del ring\n\
+-Marvin Beck' + _(' as ') + 'Uomo d\'affari nel pub irlandese\n\
+-Frank Hansen' + _(' as ') + 'Proprietario del bar\n\
+-Tony Devon' + _(' as ') + 'Vicino di casa\n\
+-Michael Buffer' + _(' as ') + 'Se stesso',
+-            'country'           : 'USA',
+-            'genre'             : 'drammatico, sportivo',
+-            'classification'    : False,
+-            'studio'            : '20th Century Fox Italia, Dvd E Blu-ray: 20th Century Fox Home Entertainment',
+-            'o_site'            : False,
+-            'site'              : 'http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&codice=47931',
+-            'trailer'           : False,
+-            'year'              : 2006,
+-            'notes'             : False,
+-            'runtime'           : 102,
+-            'image'             : True,
+-            'rating'            : False
+-        },
+-        '3996' : { 
+-            'title'             : 'Amor non ho, per??... per??...',
+-            'o_title'           : 'Amor non ho, per??... per??...',
+-            'director'          : 'Giorgio Bianchi',
+-            'plot'              : True,
+-            'cast'              : 'Renato Rascel' + _(' as ') + 'Teodoro\n\
+-Gina Lollobrigida' + _(' as ') + 'Gina\n\
+-Luigi Pavese' + _(' as ') + 'Antonio Scutipizzo\n\
+-Aroldo Tieri' + _(' as ') + 'Giuliano\n\
+-Carlo Ninchi' + _(' as ') + 'Maurizio\n\
+-Kiki Urbani' + _(' as ') + 'Kiki, la ballerina\n\
+-Adriana Danieli' + _(' as ') + 'Olga\n\
+-Strelsa Brown' + _(' as ') + 'Mabel\n\
+-Virgilio Riento' + _(' as ') + 'Il contadino\n\
+-Gabriele Tinti' + _(' as ') + '(Gastone Tinti) Un componente dell\'orchestra\n\
+-Guglielmo Barnab??' + _(' as ') + '\n\
+-Giuseppe De Martino' + _(' as ') + '\n\
+-Raimondo Vianello' + _(' as ') + '(Riccardo Vianello) \n\
+-Maria Carla Vittone' + _(' as ') + '\n\
+-Marco Tulli' + _(' as ') + '\n\
+-Giuseppe Ricagno' + _(' as ') + '\n\
+-Luciano Rebeggiani' + _(' as ') + '\n\
+-Kurt Lary' + _(' as ') + '\n\
+-Giovanni Lesa' + _(' as ') + '\n\
+-Riccardo Ferri' + _(' as ') + '\n\
+-Pia De Doses' + _(' as ') + '\n\
+-Guido Barbarisi' + _(' as ') + '\n\
+-Galeazzo Benti as',
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Ana Gerena' + _(' as ') + 'Isabel\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Louis Giansante' + _(' as ') + 'Bandido do bar\n\
++Maureen Schilling' + _(' as ') + 'Bartender do Lucky\n\
++Lahmard Tate??' + _(' as ') + 'X-Cell\n\
++Woodrow W. Paige??' + _(' as ') + 'Comentarista da ESPN\n\
++Skip Bayless' + _(' as ') + 'Comentarista da ESPN\n\
++Jay Crawford' + _(' as ') + 'Comentarista da ESPN\n\
++Brian Kenny' + _(' as ') + 'Apresentador da ESPN\n\
++Dana Jacobson' + _(' as ') + 'Apresentador da ESPN\n\
++Chuck Johnson??' + _(' as ') + 'Apresentador da ESPN\n\
++James Binns' + _(' as ') + 'Comiss??rio\n\
++Johnnie Hobbs Jr.' + _(' as ') + 'Comiss??rio\n\
++Barney Fitzpatrick' + _(' as ') + 'Comiss??rio\n\
++Jim Lampley' + _(' as ') + 'Comentarista da HBO\n\
++Larry Merchant' + _(' as ') + 'Comentarista da HBO\n\
++Max Kellerman' + _(' as ') + 'Comentarista da HBO\n\
++LeRoy Neiman' + _(' as ') + 'LeRoy Neiman\n\
++Bert Randolph Sugar' + _(' as ') + 'Rep??rter da Ring Magazine\n\
++Bernard Fern??ndez' + _(' as ') + 'Articulista da Boxing Association of America\n\
++Gunnar Peterson' + _(' as ') + 'Treinador de levantamento de peso\n\
++Yahya' + _(' as ') + 'Oponente de Dixon\n\
++Marc Ratner (1)' + _(' as ') + 'Oficial de luta\n\
++Anthony Lato Jr.' + _(' as ') + 'Inspetor de Rocky\n\
++Jack Lazzarado' + _(' as ') + 'Inspetor de Dixon\n\
++Michael Buffer' + _(' as ') + 'Anunciador de luta\n\
++Joe Cortez' + _(' as ') + '??rbitro\n\
++Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
++Vinod Kumar (1)' + _(' as ') + 'Ravi\n\
++Fran Pultro' + _(' as ') + 'Pai no restaurante\n\
++Frank Stallone Jr.??' + _(' as ') + 'Cliente do restaurante\n\
++Jody Giambelluca' + _(' as ') + 'Cliente do restaurante\n\
++Tobias Segal' + _(' as ') + 'Amigo de Robert\n\
++Tim Carr' + _(' as ') + 'Amigo de Robert\n\
++Matt Frack' + _(' as ') + 'Amigo de Robert\n\
++Paul Dion Monte' + _(' as ') + 'Amigo de Robert\n\
++Kevin King Templeton' + _(' as ') + 'Amigo de Robert\n\
++Robert Michael Kelly' + _(' as ') + 'Senhor Tomilson\n\
++Rick Buchborn' + _(' as ') + 'F?? de Rocky\n\
++Nick Baker' + _(' as ') + 'Bartender do pub irland??s\n\
++Don Sherman' + _(' as ') + 'Andy\n\
++Stu Nahan' + _(' as ') + 'Comentarista da luta pelo computador\n\
++Gary Compton' + _(' as ') + 'Seguran??a\n\
++Ricky Cavazos' + _(' as ') + 'Espectador da luta (n??o creditado)\n\
++Dolph Lundgren' + _(' as ') + 'Capit??o Ivan Drago (imagens de arquivo) (n??o creditado)\n\
++Burgess Meredith' + _(' as ') + 'Mickey (imagens de arquivo) (n??o creditado)\n\
++Mr. T' + _(' as ') + 'Clubber Lang (imagens de arquivo) (n??o creditado)\n\
++Carl Weathers' + _(' as ') + 'Apollo Creed (imagens de arquivo) (n??o creditado)',
+             'country'           : 'ITALIA',
+             'genre'             : 'commedia',
+             'classification'    : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -51,7 +51,7 @@
+             self.image_url = 'http://' + gutils.before(self.page[tmp:], '"')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '<b>TITULO ORIGINAL</b></td>', '</b></td>')
++        self.o_title = gutils.trim(self.page, u'<b>T?TULO ORIGINAL</b></td>', '</b></td>')
+         self.o_title = gutils.after(self.o_title, '<b>')
+         self.o_title = re.sub('[ ]+', ' ', self.o_title)
+ 
+@@ -185,7 +185,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 9, 9 ],
++        'Rocky' : [ 10, 10 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -341,8 +341,10 @@
+ Gary Compton' + _(' as ') + 'Sicherheitsbediensteter ??brige Besetzung in alphabetischer Reihenfolge:\n\
+ Michael Ahl' + _(' as ') + 'Restaurant patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
++Lacy Bevis' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Tim Brooks' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
++Rennie Cowan' + _(' as ') + 'Boxing spectator (nicht im Abspann)\n\
+ Deon Derrico' + _(' as ') + 'High roller at limo (nicht im Abspann)\n\
+ Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (nicht im Abspann)\n\
+ David Gere' + _(' as ') + 'Patron at Adrian\'s (nicht im Abspann)\n\
+@@ -360,9 +362,9 @@
+ Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
+ Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)\n\
+-Kim Villanova' + _(' as ') + 'Business woman (nicht im Abspann)',
++Kimberly Villanova' + _(' as ') + 'Business woman (nicht im Abspann)',
+             'country'           : 'USA',
+-            'genre'             : 'Action | Drama | Sport',
++            'genre'             : 'Drama | Sport',
+             'classification'    : False,
+             'studio'            : 'Metro-Goldwyn-Mayer (MGM)',
+             'o_site'            : False,
+@@ -419,6 +421,6 @@
+ + _('Color') + ': Farbe (Eastmancolor)',
+             'runtime'            : 90,
+             'image'              : True,
+-            'rating'             : 7
++            'rating'             : 8
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -255,7 +255,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 17, 17 ],
+-        'Ein gl??ckliches Jahr' : [ 23, 23 ]
++        'Ein gl??ckliches Jahr' : [ 24, 24 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -292,7 +292,7 @@
+     test_configuration = {
+         'Rocky Balboa'         : [ 8, 8 ],
+         'Arahan'               : [ 6, 6 ],
+-        'Ein gl??ckliches Jahr' : [ 3, 3 ]
++        'Ein gl??ckliches Jahr' : [ 4, 4 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -248,8 +248,8 @@
+             'director'            : 'Claude Lelouch',
+             'plot'                 : False,
+             'cast'                : 'Lino Ventura' + _(' as ') + 'Simon \n\
+-Fran??oise Fabian\n\
+-Charles G??rard\n\
++Fran??oise Fabian' + _(' as ') + 'Fran??oise\n\
++Charles G??rard' + _(' as ') + 'Charlot\n\
+ Andr?? Falcon' + _(' as ') + 'Le bijoutier\n\
+ Mireille Mathieu\n\
+ Lilo\n\
+
+
+
+From mikej06 at mail.berlios.de  Tue Nov 17 22:08:16 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 17 Nov 2009 22:08:16 +0100
+Subject: [Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions
+Message-ID: <200911172108.nAHL8Gpw016920@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-17 22:07:29 +0100 (Tue, 17 Nov 2009)
+New Revision: 1320
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/plugins/extensions/__init__.py
+   trunk/lib/preferences.py
+Log:
+load and save of extensions preferences
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/ChangeLog	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2009-11-17  Michael Jahn
++	* load and save of extensions preferences
++
+ 2009-11-10  Michael Jahn
+ 	* updated movie plugins Allocine and FilmAffinity
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/lib/initialize.py	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -486,7 +486,7 @@
+         except (NotImplementedError, DeprecationWarning), e:
+             log.warning('extension skipped: %s', e.message)
+             log.debug('extension skipped: %s', module.__file__)
+-            return False
++            return [None, None]
+         if module.toolbar_icon:
+             toolbar = self.widgets['extensions']['toolbar']
+             if module.toolbar_icon.endswith('.png'):
+@@ -508,6 +508,8 @@
+ 
+     p_vbox = self.widgets['extensions']['preferences_vbox']
+ 
++    configwidgets = {}
++
+     label = "%s v%s <i>(%s &lt;%s&gt;)</i>" % (module.name, module.version, module.author, module.email)
+     expander = gtk.Expander(label=label)
+     expander.get_label_widget().set_tooltip_markup(module.description)
+@@ -519,13 +521,14 @@
+     vbox.pack_start(hbox, expand=False)
+     enabled_cb = gtk.CheckButton(label=_('use this extension'))
+     enabled_cb.set_active(enabled)
++    configwidgets['enabled'] = enabled_cb
+     vbox.pack_start(enabled_cb, expand=False)
+ 
+     for pref_name in module.preferences:
+         name = module.preferences[pref_name].get('name', pref_name)
+         hint = module.preferences[pref_name].get('hint')
+         value = module.preferences[pref_name].get('default')
+-        #TODO: get value from config
++        value = self.config.get("%s_%s" % (module.name, pref_name), value, section='extensions')
+         type_ = module.preferences[pref_name].get('type', unicode)
+ 
+         hbox = gtk.HBox()
+@@ -538,16 +541,26 @@
+         # elif type is int: # TODO
+         elif isinstance(type_, (list, tuple, dict)):
+             model = gtk.TreeStore(str, str)
+-            myiter = model.append(None, None)
+             if isinstance(type_, dict):
+                 iterable = type_.iteritems()
+             else:
+                 iterable = enumerate(type_)
+-            for code, value in iterable:
++            pos = None
++            count = 0
++            for code, codevalue in iterable:
++                myiter = model.append(None, None)
+                 model.set_value(myiter, 0, unicode(code))
+-                model.set_value(myiter, 1, unicode(value))
++                model.set_value(myiter, 1, unicode(codevalue))
++                if value and value == codevalue:
++                    pos = count
++                count = count + 1
++            # combobox with complex binding to a model needs cell renderer
+             w = gtk.ComboBox(model=model)
+-            # TODO: select default value
++            renderer=gtk.CellRendererText()
++            w.pack_start(renderer)
++            w.add_attribute(renderer, 'text', 1);
++            if pos is not None:
++                w.set_active(int(pos))
+         else:
+             log.error('type not recognized %s', type(type_))
+             continue
+@@ -558,11 +571,13 @@
+ 
+         vbox.pack_start(hbox, expand=False)
+ 
++        configwidgets[pref_name] = w
++
+     expander.add(vbox)
+     p_vbox.pack_start(expander, expand=False)
+     p_vbox.show_all()
+ 
+-    return ext
++    return [ext, configwidgets]
+ 
+ def extensions(self):
+     import plugins.extensions
+@@ -574,14 +589,16 @@
+         for ext in self.extensions:
+             ext.clear()
+     self.extensions = [] # deletes previous instances
++    self.extensionsconfigwidgets = {}
+ 
+     for ext_name in plugins.extensions.by_name:
+         ext_module = plugins.extensions.by_name[ext_name]
+-        enabled = ext_module.enabled
+-        # TODO: get list of disabled extensions from config
+-        ext = extension(self, ext_module, enabled)
++        enabled = self.config.get("%s_enabled" % ext_name, ext_module.enabled, section='extensions')
++        ext, configwidgets = extension(self, ext_module, enabled)
+         if ext:
+             self.extensions.append(ext)
++        if configwidgets:
++            self.extensionsconfigwidgets[ext_name] = configwidgets
+ 
+ def people_treeview(self, create=True):
+     row = None
+
+Modified: trunk/lib/plugins/extensions/__init__.py
+===================================================================
+--- trunk/lib/plugins/extensions/__init__.py	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/lib/plugins/extensions/__init__.py	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -80,6 +80,10 @@
+     def get_config_value(self, key, default=None):
+         return self.config.get("%s_%s" % (self.id, key), default, section='extensions')
+ 
++    def set_config_value(self, key, value=None):
++        self.config.set("%s_%s" % (self.id, key), value, section='extensions')
++        self.config.save()
++
+     def _on_toolbar_icon_clicked(self, button_widget):
+         session = self.db.Session()
+         movie = session.query(db.Movie).filter(db.Movie.movie_id==self.app._movie_id).first()
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2009-11-10 22:10:14 UTC (rev 1319)
++++ trunk/lib/preferences.py	2009-11-17 21:07:29 UTC (rev 1320)
+@@ -23,6 +23,7 @@
+ 
+ import logging
+ import os
++import gtk
+ 
+ import db
+ import gutils
+@@ -407,6 +408,24 @@
+                 pass
+     self.pdf_reader = save_reader
+ 
++    # extensions settings
++    for extname in self.extensionsconfigwidgets:
++        configwidgets = self.extensionsconfigwidgets[extname]
++        for prefname in configwidgets:
++            widget = configwidgets[prefname]
++            if isinstance(widget, gtk.CheckButton):
++                value = widget.get_active()
++            elif isinstance(widget, gtk.Entry):
++                value = widget.get_text()
++            elif isinstance(widget, gtk.ComboBox):
++                iter = widget.get_active_iter()
++                if iter:
++                    value = widget.get_model().get_value(iter, 1)
++            else:
++                log.error('widget type not supported %s', type(widget))
++                continue
++            c.set("%s_%s" % (extname, prefname), value, section='extensions')
++
+     # database
+     old = c.to_dict(section='database')
+     
+
+
+
+From mikej06 at mail.berlios.de  Tue Nov 17 22:53:51 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 17 Nov 2009 22:53:51 +0100
+Subject: [Griffith-svn] r1321 - in trunk: . lib lib/plugins/export
+Message-ID: <200911172153.nAHLrpIB021595@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-17 22:53:24 +0100 (Tue, 17 Nov 2009)
+New Revision: 1321
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/gutils.py
+   trunk/lib/plugins/export/PluginExportXML.py
+Log:
+[#484385] Export to XML: no image filename exported to XML-File
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/ChangeLog	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -7,6 +7,7 @@
+ 
+ 2009-11-17  Michael Jahn
+ 	* load and save of extensions preferences
++	* [#484385] Export to XML: no image filename exported to XML-File
+ 
+ 2009-11-10  Michael Jahn
+ 	* updated movie plugins Allocine and FilmAffinity
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/griffith	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -177,7 +177,7 @@
+             try:
+                 plugin.run()
+             except Exception, e:
+-                log.error(str(e))
++                log.exception('')
+             plugin.cleanup()
+ 
+     def on_import_activate(self, *args):
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/lib/gutils.py	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -663,8 +663,29 @@
+         pixbuf.save(fn_small, "jpeg", {"quality":"70"})
+ 
+     return True
+-        
+ 
++def create_imagefile(destdir, md5sum, gsql, destfilename = None):
++    poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
++    if not poster:
++        log.warn("poster not available: %s", md5sum)
++        return False
++    if not poster.data:
++        log.warn("poster data not available: %s", md5sum)
++        return False
++    
++    if destfilename:
++        fulldestpath = os.path.join(destdir, destfilename + '.jpg')
++    else:
++        fulldestpath = os.path.join(destdir, md5sum + '.jpg')
++
++    f = file(fulldestpath, 'wb')
++    try:
++        f.write(poster.data)
++    finally:
++        f.close()
++
++    return True
++
+ def get_image_fname(md5sum, gsql, size=None):
+     """size: s - small; m - medium, b or None - big"""
+     if size not in (None, 's', 'm', 'b'):
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/lib/plugins/export/PluginExportXML.py	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -22,7 +22,6 @@
+ # GNU General Public License, version 2 or later
+ 
+ import xml.dom.minidom
+-import xml.dom.ext
+ import gtk
+ import os
+ import db
+@@ -38,7 +37,7 @@
+ 
+     fields_to_export = ('number', 'o_title', 'title', 'director', 'year', 'classification', 'country',
+                         'genre', 'rating', 'runtime', 'studio', 'seen', 'loaned', 'o_site', 'site', 'trailer',
+-                        'plot', 'cast', 'notes', 'image', 'volumes.name', 'collections.name', 'media.name')
++                        'plot', 'cast', 'notes', 'poster_md5', 'volumes.name', 'collections.name', 'media.name')
+ 
+     def run(self):
+         basedir = None
+@@ -60,7 +59,11 @@
+                     overwrite = True
+                 else:
+                     overwrite = False
+-                    
++            
++            posterdir = os.path.join(os.path.dirname(filename[0]), 'posters')
++            if not os.path.exists(posterdir):
++                os.mkdir(posterdir)
++            
+             if overwrite or overwrite is None:
+                 # create document
+                 impl = xml.dom.minidom.getDOMImplementation()
+@@ -86,10 +89,28 @@
+                         t = doc.createTextNode(value)
+                         e2.appendChild(t)
+                         e.appendChild(e2)
++                    # create image file in ./posters/...
++                    md5sum = None
++                    posterfilepath = ''
++                    if 'poster_md5' in self.exported_columns and movie['poster_md5']:
++                        md5sum = movie['poster_md5']
++                    if 'movies_poster_md5' in self.exported_columns and movie['movies_poster_md5']:
++                        md5sum = movie['movies_poster_md5']
++                    if md5sum:
++                        if gutils.create_imagefile(posterdir, md5sum, self.db):
++                            posterfilepath = os.path.join('.', 'posters', md5sum + '.jpg')
++                    e2 = doc.createElement('image')
++                    # relative path to image related to xml file
++                    t = doc.createTextNode(posterfilepath)
++                    e2.appendChild(t)
++                    e.appendChild(e2)
+                     
+                 # write XML to file
++                xmldata = doc.toprettyxml(encoding='utf-8')
+                 fp = open(filename[0], "w")
+-                xml.dom.ext.PrettyPrint(doc, fp)
+-                fp.close()
++                try:
++                    fp.write(xmldata)
++                finally:
++                    fp.close()
+                 gutils.info( _("%s file has been created.")%"XML", self.parent_window)
+ 
+
+
+
+From mikej06 at mail.berlios.de  Wed Nov 18 21:43:36 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 18 Nov 2009 21:43:36 +0100
+Subject: [Griffith-svn] r1322 - in trunk: . lib
+Message-ID: <200911182043.nAIKhaXi031928@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-18 21:43:13 +0100 (Wed, 18 Nov 2009)
+New Revision: 1322
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/backup.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+fixed some issues with the functions "new db" and "restore db"
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-17 21:53:24 UTC (rev 1321)
++++ trunk/ChangeLog	2009-11-18 20:43:13 UTC (rev 1322)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2009-11-18  Michael Jahn
++	* fixed some issues with the functions "new db" and "restore db"
++
+ 2009-11-17  Michael Jahn
+ 	* load and save of extensions preferences
+ 	* [#484385] Export to XML: no image filename exported to XML-File
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-11-17 21:53:24 UTC (rev 1321)
++++ trunk/griffith	2009-11-18 20:43:13 UTC (rev 1322)
+@@ -1355,10 +1355,14 @@
+                 db.metadata.drop_all(self.db.session.bind.engine)
+                 #from sqlalchemy.orm import clear_mappers
+                 #clear_mappers()
+-                if self.config.get('type', 'sqlite', section='database') == 'sqlite':
+-                    os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
+-                    if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
+-                        self.config.set('file', 'griffith.db', section='database')
++                # disposing current db connection
++                self.db.dispose()
++                # dispose isn't enough here, I don't know why, but unlink fails
++                # but I think unlink should not be necessary because all tables are dropped
++                #if self.config.get('type', 'sqlite', section='database') == 'sqlite':
++                #    os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
++                #    if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
++                #        self.config.set('file', 'griffith.db', section='database')
+                 # create/connect db
+                 log.debug('creating new ones...')
+                 self.db = GriffithSQL(self.config, self.griffith_dir)
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-11-17 21:53:24 UTC (rev 1321)
++++ trunk/lib/backup.py	2009-11-18 20:43:13 UTC (rev 1322)
+@@ -268,6 +268,11 @@
+         self.populate_treeview()
+         #gutils.info(_("Databases merged!\n\nProcessed movies: %s\nMerged movies: %s"%(movies, merged)), self.widgets['window'])
+         gutils.info(_("Backup restored"), self.widgets['window'])
++        # disposing the temporary db connection
++        tmp_db.dispose()
++    except:
++        log.exception('')
++        raise
+     finally:
+         log.debug('temporary directory no logger needed, removing %s', tmp_dir)
+         rmtree(tmp_dir)
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2009-11-17 21:53:24 UTC (rev 1321)
++++ trunk/lib/preferences.py	2009-11-18 20:43:13 UTC (rev 1322)
+@@ -460,9 +460,10 @@
+         if c.has_key('posters'):
+             c['posters'] = None # force update
+         try:
++            self.db.dispose()
+             self.db = sql.GriffithSQL(c, self.locations['home'], fallback=True)
+         except InvalidRequestError, e:
+-            log.error(e)
++            log.exception('')
+             c.set('type', 'sqlite', section='database')
+             w['db_type'].set_active(0)
+             self.db = sql.GriffithSQL(c, self.locations['home'])
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-11-17 21:53:24 UTC (rev 1321)
++++ trunk/lib/sql.py	2009-11-18 20:43:13 UTC (rev 1322)
+@@ -131,6 +131,18 @@
+             warning(_('This database requires newer version of Griffith.'))
+             raise Exception("database version mismatch")
+ 
++    def dispose(self):
++        # close every session and connection so that a sqlite database file can be removed
++        # otherwise it will remain opened by the current process and can't be deleted
++        try:
++            self.session.close()
++            self.Session.close_all()
++            self.engine.dispose()
++            del self.session
++            del self.Session
++            del self.engine
++        except:
++            log.exception('')
+ 
+ def update_whereclause(query, cond): # {{{
+     if cond['loaned'] is True:
+
+
+
+From mikej06 at mail.berlios.de  Wed Nov 18 21:51:35 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 18 Nov 2009 21:51:35 +0100
+Subject: [Griffith-svn] r1323 - trunk
+Message-ID: <200911182051.nAIKpZKo032418@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-18 21:51:17 +0100 (Wed, 18 Nov 2009)
+New Revision: 1323
+
+Modified:
+   trunk/ChangeLog
+   trunk/Makefile
+Log:
+[#480366] ImportError: No module named extensions
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-18 20:43:13 UTC (rev 1322)
++++ trunk/ChangeLog	2009-11-18 20:51:17 UTC (rev 1323)
+@@ -7,6 +7,7 @@
+ 
+ 2009-11-18  Michael Jahn
+ 	* fixed some issues with the functions "new db" and "restore db"
++	* [#480366] ImportError: No module named extensions
+ 
+ 2009-11-17  Michael Jahn
+ 	* load and save of extensions preferences
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2009-11-18 20:43:13 UTC (rev 1322)
++++ trunk/Makefile	2009-11-18 20:51:17 UTC (rev 1323)
+@@ -1,6 +1,6 @@
+ # Griffith makefile
+ #
+-# (c) 2005-2008 Vasco Nunes, Piotr Ozarowski
++# (c) 2005-2009 Vasco Nunes, Piotr Ozarowski
+ #
+ # $Id$
+ 
+@@ -31,6 +31,7 @@
+ MOVIEPLUGINSDIR = $(PLUGINSDIR)/movie
+ EXPORTPLUGINSDIR = $(PLUGINSDIR)/export
+ IMPORTPLUGINSDIR = $(PLUGINSDIR)/imp
++EXTENSIONSPLUGINSDIR = $(PLUGINSDIR)/extensions
+ TPLDIR = $(DATADIR)/export_templates
+ APPLICATIONSDIR = $(PREFIX)/share/applications
+ ICONDIR = $(PREFIX)/share/pixmaps
+@@ -53,7 +54,7 @@
+ 	@echo "installing Griffith"
+ 	@echo "^^^^^^^^^^^^^^^^^^^"
+ 	$(INSTALL) -m 755 -d $(BINDIR) $(DATADIR) $(LIBDIR) $(LIBDIR)/db \
+-		$(PLUGINSDIR) $(MOVIEPLUGINSDIR) $(EXPORTPLUGINSDIR) $(IMPORTPLUGINSDIR) \
++		$(PLUGINSDIR) $(MOVIEPLUGINSDIR) $(EXPORTPLUGINSDIR) $(IMPORTPLUGINSDIR) $(EXTENSIONSPLUGINSDIR) \
+ 		$(FONTSDIR) $(APPLICATIONSDIR) $(ICONDIR) $(TPLDIR) \
+ 		$(IMAGESDIR) $(GLADEDIR) $(ETCDIR) $(BASHCOMPDIR)
+ 	$(INSTALL) -m 755 griffith $(LIBDIR)
+@@ -63,6 +64,7 @@
+ 	$(INSTALL) -m 644 lib/plugins/movie/*.py $(MOVIEPLUGINSDIR)
+ 	$(INSTALL) -m 644 lib/plugins/export/*.py $(EXPORTPLUGINSDIR)
+ 	$(INSTALL) -m 644 lib/plugins/imp/*.py $(IMPORTPLUGINSDIR)
++	$(INSTALL) -m 644 lib/plugins/extensions/*.py $(EXTENSIONSPLUGINSDIR)
+ 	$(INSTALL) -m 644 glade/*.glade $(GLADEDIR)
+ 	$(INSTALL) -m 644 glade/*.png $(GLADEDIR)
+ 	$(INSTALL) -m 644 images/*.png $(IMAGESDIR)
+@@ -97,6 +99,8 @@
+ 	${RM} -r $(TPLDIR)
+ 	${RM} -r $(MOVIEPLUGINSDIR)
+ 	${RM} -r $(EXPORTPLUGINSDIR)
++	${RM} -r $(IMPORTPLUGINSDIR)
++	${RM} -r $(EXTENSIONSPLUGINSDIR)
+ 	${RM} -r $(PLUGINSDIR)
+ 	${RM} -r $(LIBDIR)
+ 	${RM} -r $(IMAGESDIR)
+
+
+
+From mikej06 at mail.berlios.de  Sun Nov 22 20:47:09 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 22 Nov 2009 20:47:09 +0100
+Subject: [Griffith-svn] r1324 - in trunk: . lib/plugins/imp
+Message-ID: <200911221947.nAMJl98p020045@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-22 20:46:37 +0100 (Sun, 22 Nov 2009)
+New Revision: 1324
+
+Added:
+   trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+Log:
+wintoolz Filmdatenbank import plugin added
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-18 20:51:17 UTC (rev 1323)
++++ trunk/ChangeLog	2009-11-22 19:46:37 UTC (rev 1324)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2009-11-22  Michael Jahn
++	* wintoolz Filmdatenbank import plugin added
++
+ 2009-11-18  Michael Jahn
+ 	* fixed some issues with the functions "new db" and "restore db"
+ 	* [#480366] ImportError: No module named extensions
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-11-18 20:51:17 UTC (rev 1323)
++++ trunk/NEWS	2009-11-22 19:46:37 UTC (rev 1324)
+@@ -2,14 +2,18 @@
+ =============
+ * Griffith extensions feature added. You can add your own extensions in
+   ~/.griffith/lib/extensions
+-* New import plugins: GCstar, DVD Profiler, eXtreme Movie Manager, Personal Video Database
++* New import plugins: GCstar, DVD Profiler, eXtreme Movie Manager, Personal Video Database,
++  wintoolz Filmdatenbank
+ 
+ 
+ Griffith 0.10.1
+ ===============
+ * Few posters related fixes (updating, cleaning, etc.)
+ * FilmAffinity and Amazon movie plugins updated
+-  (Amazon access doesn't work anymore since 15th August 2009 because Amazon changed access rules significantly)
++  (Amazon access works only with a separate Amazon Account since 15th August 2009
++   because Amazon changed access rules significantly. Everyone who wants to use it has
++   to be registered here: https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html
++   The Access Key and the Secret Key have to be entered in the configuration of griffith.)
+ * Reconnect with MySQL servers once an hour (can be configured via pool_recycle
+   config option)
+ * Display a popup message during database upgrades
+
+Added: trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+===================================================================
+--- trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2009-11-18 20:51:17 UTC (rev 1323)
++++ trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2009-11-22 19:46:37 UTC (rev 1324)
+@@ -0,0 +1,188 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import os
++import sys
++import gutils
++import string
++import db
++
++try:
++    import sqlite3
++except ImportError:
++    from pysqlite2 import dbapi2 as sqlite3
++
++import logging
++log = logging.getLogger("Griffith")
++
++class ImportPlugin(IP):
++    description  = _('wintoolz Filmdatenbank (version 1.0.0.x)')
++    author       = 'Michael Jahn'
++    email        = 'griffith-private at lists.berlios.de'
++    version      = '1.0'
++    file_filters = '*.[dD][bB]'
++    mime_types   = None
++
++    fileversion  = None
++    connection   = None
++    cursor       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        """Returns number of movies in file which is about to be imported"""
++        count = 0
++        if self.connection:
++            try:
++                c = self.connection.execute('SELECT COUNT(*) FROM Main')
++                count = c.fetchone()[0]
++            except:
++                log.exception('')
++        else:
++            log.error('wintoolz Filmdatenbank: No connection object.')
++        log.info('wintoolz Filmdatenbank Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        """Returns dictionary with movie details"""
++        if not self.cursor:
++            self.cursor = self.connection.execute( \
++                'SELECT Titel, Original, Produktionsjahr, Laufzeit,\
++                 FSKZahl, Handlung, Ausstattung, EAN, Disks, Genre, Regie, Drehbuch,\
++                 Kamera, Studio, Produktionsland, Darsteller, Rolle, Notiz, Cover,\
++                 Mediendatei, BewertungHandlung, BewertungDarsteller, BewertungMusik,\
++                 BewertungEmotionen, BewertungSpecialEffects, GesehenZahl, Farbdarstellung \
++                 FROM Main')
++        
++        currentrow = self.cursor.fetchone()
++        if not currentrow:
++            return None
++        
++        details = {}
++        try:
++            if currentrow[0]:
++                details['title'] = currentrow[0]
++            if currentrow[1]:
++                details['o_title'] = currentrow[1]
++            if currentrow[2]:
++                details['year'] = currentrow[2]
++            if currentrow[3]:
++                details['runtime'] = currentrow[3]
++            if currentrow[4] and not currentrow[4] == 0:
++                details['classification'] = currentrow[4]
++            if currentrow[5]:
++                details['plot'] = currentrow[5]
++            if currentrow[6]:
++                # setting medium_id to string mediumname; mapping is done in base class
++                details['medium_id'] = currentrow[6]
++            if currentrow[7]:
++                details['barcode'] = currentrow[7]
++            if currentrow[8]:
++                details['media_num'] = currentrow[8]
++            if currentrow[9]:
++                details['genre'] = currentrow[9]
++            if currentrow[10]:
++                details['director'] = currentrow[10]
++            if currentrow[11]:
++                details['screenplay'] = currentrow[11]
++            if currentrow[12]:
++                details['cameraman'] = currentrow[12]
++            if currentrow[13]:
++                details['studio'] = currentrow[13]
++            if currentrow[14]:
++                details['country'] = currentrow[14]
++            if currentrow[15] and currentrow[16]:
++                cast = ''
++                actors = currentrow[15].split('\r\n')
++                roles = currentrow[16].split('\r\n')
++                length = len(actors)
++                if len(roles) > length:
++                    length = len(roles)
++                for index in range(0, length, 1):
++                    actorrole = ''
++                    if index < len(actors):
++                        actorrole = actorrole + actors[index]
++                    actorrole = actorrole + _(' as ')
++                    if index < len(roles):
++                        actorrole = actorrole + roles[index]
++                    cast = cast + actorrole + '\n'
++                details['cast'] = cast
++            if currentrow[17]:
++                details['notes'] = currentrow[17]
++            if currentrow[18]:
++                details['poster'] = currentrow[18]
++            if currentrow[19]:
++                details['trailer'] = currentrow[19]
++            try:
++                details['rating'] = round(0.4 * ( \
++                    float(currentrow[20]) + float(currentrow[21]) + \
++                    float(currentrow[22]) + float(currentrow[23]) + \
++                    float(currentrow[24])), 0)
++            except:
++                pass
++            if currentrow[25]:
++                details['seen'] = currentrow[25]
++            if currentrow[26] and currentrow[26] == 'Schwarz-Weiss':
++                details['color'] = 2
++        except Exception, e:
++            log.exception('')
++            details = None
++        
++        return details
++
++    def clear(self):
++        """clear plugin before next source file"""
++        IP.clear(self)
++        self.cursor = None
++        self.connection = None
++        self.fileversion = None
++
++    def destroy(self):
++        """close all resources"""
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            self.connection = sqlite3.connect(self.filename)
++            if self.connection.execute('PRAGMA table_info(Main)').fetchone():
++                version = 1.0
++        except Exception, e:
++            log.error(str(e))
++        log.info('wintoolz Filmdatenbank Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+
+From mikej06 at mail.berlios.de  Sun Nov 22 22:32:13 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 22 Nov 2009 22:32:13 +0100
+Subject: [Griffith-svn] r1325 - in trunk: . lib
+Message-ID: <200911222132.nAMLWDHL031318@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-11-22 22:31:47 +0100 (Sun, 22 Nov 2009)
+New Revision: 1325
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/preferences.py
+Log:
+[#480380] Extensions: Amazon and Remover
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-22 19:46:37 UTC (rev 1324)
++++ trunk/ChangeLog	2009-11-22 21:31:47 UTC (rev 1325)
+@@ -7,6 +7,7 @@
+ 
+ 2009-11-22  Michael Jahn
+ 	* wintoolz Filmdatenbank import plugin added
++	* [#480380] Extensions: Amazon and Remover
+ 
+ 2009-11-18  Michael Jahn
+ 	* fixed some issues with the functions "new db" and "restore db"
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-11-22 19:46:37 UTC (rev 1324)
++++ trunk/lib/initialize.py	2009-11-22 21:31:47 UTC (rev 1325)
+@@ -504,8 +504,10 @@
+     else:
+         ext = None
+ 
++    return ext
++
++def extension_preferences(self, module, enabled):
+     # preferences window
+-
+     p_vbox = self.widgets['extensions']['preferences_vbox']
+ 
+     configwidgets = {}
+@@ -577,7 +579,7 @@
+     p_vbox.pack_start(expander, expand=False)
+     p_vbox.show_all()
+ 
+-    return [ext, configwidgets]
++    return configwidgets
+ 
+ def extensions(self):
+     import plugins.extensions
+@@ -589,16 +591,15 @@
+         for ext in self.extensions:
+             ext.clear()
+     self.extensions = [] # deletes previous instances
+-    self.extensionsconfigwidgets = {}
+ 
+     for ext_name in plugins.extensions.by_name:
+         ext_module = plugins.extensions.by_name[ext_name]
+         enabled = self.config.get("%s_enabled" % ext_name, ext_module.enabled, section='extensions')
+-        ext, configwidgets = extension(self, ext_module, enabled)
++        if not hasattr(ext_module, 'preferenceswidgets'):
++            ext_module.preferenceswidgets = extension_preferences(self, ext_module, enabled)
++        ext = extension(self, ext_module, enabled)
+         if ext:
+             self.extensions.append(ext)
+-        if configwidgets:
+-            self.extensionsconfigwidgets[ext_name] = configwidgets
+ 
+ def people_treeview(self, create=True):
+     row = None
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2009-11-22 19:46:37 UTC (rev 1324)
++++ trunk/lib/preferences.py	2009-11-22 21:31:47 UTC (rev 1325)
+@@ -28,6 +28,7 @@
+ import db
+ import gutils
+ import initialize
++import plugins.extensions
+ 
+ try:
+     import gtkspell
+@@ -409,10 +410,10 @@
+     self.pdf_reader = save_reader
+ 
+     # extensions settings
+-    for extname in self.extensionsconfigwidgets:
+-        configwidgets = self.extensionsconfigwidgets[extname]
+-        for prefname in configwidgets:
+-            widget = configwidgets[prefname]
++    for ext_name in plugins.extensions.by_name:
++        preferenceswidgets = plugins.extensions.by_name[ext_name].preferenceswidgets
++        for prefname in preferenceswidgets:
++            widget = preferenceswidgets[prefname]
+             if isinstance(widget, gtk.CheckButton):
+                 value = widget.get_active()
+             elif isinstance(widget, gtk.Entry):
+@@ -424,7 +425,7 @@
+             else:
+                 log.error('widget type not supported %s', type(widget))
+                 continue
+-            c.set("%s_%s" % (extname, prefname), value, section='extensions')
++            c.set("%s_%s" % (ext_name, prefname), value, section='extensions')
+ 
+     # database
+     old = c.to_dict(section='database')
+@@ -479,3 +480,6 @@
+     self.clear_details()
+     self.filter_txt(None)
+     c.save()
++    
++    # reload extensions
++    initialize.extensions(self)
+
+
+

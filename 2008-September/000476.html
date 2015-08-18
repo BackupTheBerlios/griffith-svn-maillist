@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r996 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r996%20-%20trunk/lib&In-Reply-To=%3C200809092200.m89M0ovk028578%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000475.html">
+   <LINK REL="Next"  HREF="000477.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r996 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r996%20-%20trunk/lib&In-Reply-To=%3C200809092200.m89M0ovk028578%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r996 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 10 00:00:50 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000475.html">[Griffith-svn] r995 - in trunk: . lib lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000477.html">[Griffith-svn] r997 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#476">[ date ]</a>
+              <a href="thread.html#476">[ thread ]</a>
+              <a href="subject.html#476">[ subject ]</a>
+              <a href="author.html#476">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-09-10 00:00:48 +0200 (Wed, 10 Sep 2008)
+New Revision: 996
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/people.py
+   trunk/lib/widgets.py
+Log:
+* clone new fields
+* more unicode related updates
+
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-09-09 20:32:25 UTC (rev 995)
++++ trunk/lib/add.py	2008-09-09 22:00:48 UTC (rev 996)
+@@ -737,6 +737,7 @@
+     new_movie.cast           = movie.cast
+     new_movie.classification = movie.classification
+     new_movie.vcodec_id      = movie.vcodec_id
++    new_movie.cameraman      = movie.cameraman
+     new_movie.collection_id  = movie.collection_id
+     new_movie.volume_id      = movie.volume_id
+     new_movie.color          = movie.color
+@@ -754,9 +755,11 @@
+     new_movie.o_title        = movie.o_title
+     new_movie.plot           = movie.plot
+     new_movie.poster_md5     = movie.poster_md5
++    new_movie.ratio_id       = movie.ratio_id
+     new_movie.rating         = movie.rating
+     new_movie.region         = movie.region
+     new_movie.runtime        = movie.runtime
++    new_movie.screenplay     = movie.screenplay
+     new_movie.seen           = seen
+     new_movie.o_site         = movie.o_site
+     new_movie.studio         = movie.studio
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2008-09-09 20:32:25 UTC (rev 995)
++++ trunk/lib/people.py	2008-09-09 22:00:48 UTC (rev 996)
+@@ -48,11 +48,12 @@
+     self.widgets['person']['phone'].set_text(&quot;&quot;)
+ 
+ def add_person_db(self):
+-    if (self.widgets['person']['name'].get_text()&lt;&gt;''):
++    name = self.widgets['person']['name'].get_text().decode('utf-8')
++    if name:
+         p = db.Person()
+-        p.name = self.widgets['person']['name'].get_text()
+-        p.email = self.widgets['person']['email'].get_text()
+-        p.phone = self.widgets['person']['phone'].get_text()
++        p.name = self.widgets['person']['name'].get_text().decode('utf-8')
++        p.email = self.widgets['person']['email'].get_text().decode('utf-8')
++        p.phone = gutils.digits_only(self.widgets['person']['phone'].get_text().decode('utf-8'))
+         self.widgets['person']['window'].hide()
+         self.db.session.add(p)
+         try:
+@@ -61,8 +62,8 @@
+             log.info(str(e))
+         else:
+             myiter = self.p_treemodel.insert_after(None, None)
+-            self.p_treemodel.set_value(myiter,0,str(self.widgets['person']['name'].get_text()))
+-            self.p_treemodel.set_value(myiter,1,str(self.widgets['person']['email'].get_text()))
++            self.p_treemodel.set_value(myiter, 0, p.name)
++            self.p_treemodel.set_value(myiter, 1, p.email)
+         self.widgets['people']['window'].present()
+     else:
+         gutils.error(self.widgets['results']['window'],_(&quot;You should fill the person name&quot;))
+@@ -87,12 +88,12 @@
+     self.widgets['people']['window'].present()
+ 
+ def update_person(self):
+-    p = self.db.session.query(db.Person).filter_by(person_id=self.widgets['person']['e_id'].get_text()).first()
++    p = self.db.session.query(db.Person).filter_by(person_id=self.widgets['person']['e_id'].get_text().decode('utf-8')).first()
+     if p is None:
+         return False
+-    p.name = self.widgets['person']['e_name'].get_text()
+-    p.email = self.widgets['person']['e_email'].get_text()
+-    p.phone = self.widgets['person']['e_phone'].get_text()
++    p.name = self.widgets['person']['e_name'].get_text().decode('utf-8')
++    p.email = self.widgets['person']['e_email'].get_text().decode('utf-8')
++    p.phone = self.widgets['person']['e_phone'].get_text().decode('utf-8')
+     self.db.session.add(p)
+     try:
+         self.db.session.commit()
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-09-09 20:32:25 UTC (rev 995)
++++ trunk/lib/widgets.py	2008-09-09 22:00:48 UTC (rev 996)
+@@ -147,9 +147,10 @@
+     self.widgets['advfilter'] = {#{{{
+         'window':         get('w_advfilter'),
+         'advfilter_vbox': get('advfilter_rules_vbox'),
+-    }#}}}
++    }
+     self.widgets['advfilter']['window'].connect('delete_event', self.hide_advfilter_window)
+     self.widgets['advfilter']['window'].set_transient_for(self.widgets['window'])
++    #}}}
+ 
+     self.widgets['preferences'] = {#{{{
+         'window'            : get('w_preferences'),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000475.html">[Griffith-svn] r995 - in trunk: . lib lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000477.html">[Griffith-svn] r997 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#476">[ date ]</a>
+              <a href="thread.html#476">[ thread ]</a>
+              <a href="subject.html#476">[ subject ]</a>
+              <a href="author.html#476">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1532 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1532%20-%20trunk/lib&In-Reply-To=%3C20110208015848.03B57481391%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000991.html">
+   <LINK REL="Next"  HREF="000993.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1532 - trunk/lib</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1532%20-%20trunk/lib&In-Reply-To=%3C20110208015848.03B57481391%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1532 - trunk/lib">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb  8 02:58:47 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000991.html">[Griffith-svn] r1531 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000993.html">[Griffith-svn] r1533 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#992">[ date ]</a>
+              <a href="thread.html#992">[ thread ]</a>
+              <a href="subject.html#992">[ subject ]</a>
+              <a href="author.html#992">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2011-02-08 02:58:47 +0100 (Tue, 08 Feb 2011)
+New Revision: 1532
+
+Modified:
+   trunk/lib/backup.py
+Log:
+code cleanup
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2011-02-08 00:12:39 UTC (rev 1531)
++++ trunk/lib/backup.py	2011-02-08 01:58:47 UTC (rev 1532)
+@@ -58,7 +58,6 @@
+     
+     if mac:
+         filename = EasyDialogs.AskFileForSave()
+-
+     else:
+         default_name = &quot;%s_backup_%s.zip&quot; % (self.config.get('name', 'griffith', section='database'),\
+                         datetime.date.isoformat(datetime.datetime.now()))
+@@ -71,7 +70,6 @@
+         
+         if mac:
+             zipfilename = filename + &quot;.zip&quot;
+-            
+         else:
+             zipfilename = filename[0].decode('utf-8')
+             log.debug('Backup filename: %s', zipfilename)
+@@ -88,10 +86,7 @@
+                     log.debug('Creating zip file without compression')
+                     mzip = zipfile.ZipFile(zipfilename, 'w')
+             except:
+-                if mac:
+-                    gutils.errormac(&quot;Error creating backup&quot;)
+-                else:
+-                    gutils.error(_(&quot;Error creating backup&quot;), self.widgets['window'])
++                gutils.error(_(&quot;Error creating backup&quot;), self.widgets['window'])
+                 return False
+             log.debug('Preparing data and saving it to the zip archive')
+             if self.db.session.bind.engine.name == 'sqlite':
+@@ -131,10 +126,7 @@
+                     # disposing the temporary db connection before rmtree and in finally block to avoid locked db file
+                     tmp_engine.dispose()
+                     rmtree(tmp_dir)
+-            if mac:
+-                gutils.infomac(&quot;Backup has been created&quot;)
+-            else:
+-                gutils.info(_(&quot;Backup has been created&quot;), self.widgets['window'])
++            gutils.info(_(&quot;Backup has been created&quot;), self.widgets['window'])
+ 
+ 
+ @gutils.popup_message(_('Restoring database...'))
+@@ -217,17 +209,16 @@
+     * SQLite2 *.gri file
+     * SQLite3 *.db file
+     &quot;&quot;&quot;
+-
+     # let user select a backup file
+     if mac:
+         filename = EasyDialogs.AskFileForOpen()
+     else:
+         filename = gutils.file_chooser(_(&quot;Restore Griffith backup&quot;), \
+-                        action=gtk.FILE_CHOOSER_ACTION_OPEN, backup=True, \
+-                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))[0]
+-        if not filename:
+-            log.debug('no file selected')
+-            return False
++                    action=gtk.FILE_CHOOSER_ACTION_OPEN, backup=True, \
++                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
++    if not filename:
++        log.debug('no file selected')
++        return False
+ 
+     try:
+         tmp_db = None
+@@ -238,10 +229,7 @@
+             try:
+                 zip_file = zipfile.ZipFile(filename, 'r')
+             except:
+-                if mac:
+-                    gutils.errormac(&quot;Can't read backup file&quot;)
+-                else:
+-                    gutils.error(_(&quot;Can't read backup file&quot;), self.widgets['window'])
++                gutils.error(_(&quot;Can't read backup file&quot;), self.widgets['window'])
+                 return False
+ 
+             old_config_file = False
+@@ -307,10 +295,10 @@
+             self.config.save()
+ 
+         if mac:
+-	    log.debug(&quot;Restoring database&quot;)
++            log.debug(&quot;Restoring database&quot;)
+             import sys
+-	    python = sys.executable
+-	    os.execl(python, python, * sys.argv)
++            python = sys.executable
++            os.execl(python, python, * sys.argv)
+         else:
+             dictionaries(self)
+             people_treeview(self)
+@@ -318,10 +306,7 @@
+             self.clear_details()
+             self.populate_treeview()
+         #gutils.info(_(&quot;Databases merged!\n\nProcessed movies: %s\nMerged movies: %s&quot;%(movies, merged)), self.widgets['window'])
+-        if mac:
+-            gutils.infomac(&quot;Backup restored&quot;)
+-        else:
+-            gutils.info(_(&quot;Backup restored&quot;), self.widgets['window'])
++        gutils.info(_(&quot;Backup restored&quot;), self.widgets['window'])
+     except:
+         log.exception('')
+         raise
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000991.html">[Griffith-svn] r1531 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000993.html">[Griffith-svn] r1533 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#992">[ date ]</a>
+              <a href="thread.html#992">[ thread ]</a>
+              <a href="subject.html#992">[ subject ]</a>
+              <a href="author.html#992">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

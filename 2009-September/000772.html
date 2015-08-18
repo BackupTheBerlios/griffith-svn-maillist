@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1304 - trunk/lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1304%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C200909291926.n8TJQBA2011771%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000771.html">
+   <LINK REL="Next"  HREF="000773.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1304 - trunk/lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1304%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C200909291926.n8TJQBA2011771%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1304 - trunk/lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 29 21:26:11 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000771.html">[Griffith-svn] r1303 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000773.html">[Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#772">[ date ]</a>
+              <a href="thread.html#772">[ thread ]</a>
+              <a href="subject.html#772">[ subject ]</a>
+              <a href="author.html#772">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-09-29 21:25:37 +0200 (Tue, 29 Sep 2009)
+New Revision: 1304
+
+Modified:
+   trunk/lib/plugins/imp/__init__.py
+Log:
+* reloading import plugins if in debug mode
+* don't block griffith if an exception occurs while importing
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2009-09-26 21:03:42 UTC (rev 1303)
++++ trunk/lib/plugins/imp/__init__.py	2009-09-29 19:25:37 UTC (rev 1304)
+@@ -124,50 +124,53 @@
+ 
+         begin = time.time()
+         processed = 0
+-        while self._continue:
+-            details = self.get_movie_details()
+-            if details is None:
+-                break
+-            
+-            processed += 1
+-            if processed in update_on:
+-                set_fraction(float(processed)/count)
+-                main_iteration()
+-                set_text(&quot;%s (%s/%s)&quot; % (self.imported, processed, count))
+-                main_iteration()
+-                main_iteration() # extra iteration for abort button
++        try:
++            while self._continue:
++                details = self.get_movie_details()
++                if details is None:
++                    break
++                
++                processed += 1
++                if processed in update_on:
++                    set_fraction(float(processed)/count)
++                    main_iteration()
++                    set_text(&quot;%s (%s/%s)&quot; % (self.imported, processed, count))
++                    main_iteration()
++                    main_iteration() # extra iteration for abort button
+ 
+-            o_title_lower = details.get('o_title', '').lower()
+-            title_lower = details.get('title', '').lower()
++                o_title_lower = details.get('o_title', '').lower()
++                title_lower = details.get('title', '').lower()
+ 
+-            if o_title_lower or title_lower:
+-                if o_title_lower and o_title_lower in o_titles:
+-                    if title_lower and title_lower in titles:
+-                        log.info(&quot;movie already exists (o_title=%s, title=%s)&quot;, details['o_title'], details['title'])
++                if o_title_lower or title_lower:
++                    if o_title_lower and o_title_lower in o_titles:
++                        if title_lower and title_lower in titles:
++                            log.info(&quot;movie already exists (o_title=%s, title=%s)&quot;, details['o_title'], details['title'])
++                            continue
++                    elif title_lower and title_lower in titles: # o_title is not available so lets check title only
++                        log.info(&quot;movie already exists (title=%s)&quot;, details['title'])
+                         continue
+-                elif title_lower and title_lower in titles: # o_title is not available so lets check title only
+-                    log.info(&quot;movie already exists (title=%s)&quot;, details['title'])
+-                    continue
+-                validate_details(details, self.fields_to_import)
+-                if self.edit: # XXX: not used for now
+-                    response = edit_movie(self.parent, details)    # FIXME: wait until save or cancel button pressed
+-                    if response == 1:
+-                        self.imported += 1
++                    validate_details(details, self.fields_to_import)
++                    if self.edit: # XXX: not used for now
++                        response = edit_movie(self.parent, details)    # FIXME: wait until save or cancel button pressed
++                        if response == 1:
++                            self.imported += 1
++                    else:
++                        number = details.get('number', 1)
++                        while number in numbers:
++                            number += 1
++                        details['number'] = number
++                        #movie = db.Movie()
++                        #movie.add_to_db(details)
++                        try:
++                            db.tables.movies.insert(bind=self.db.session.bind).execute(details)
++                            self.imported += 1
++                        except Exception, e:
++                            log.info(&quot;movie details are not unique, skipping: %s&quot;, e)
++                        numbers.add(number)
+                 else:
+-                    number = details.get('number', 1)
+-                    while number in numbers:
+-                        number += 1
+-                    details['number'] = number
+-                    #movie = db.Movie()
+-                    #movie.add_to_db(details)
+-                    try:
+-                        db.tables.movies.insert(bind=self.db.session.bind).execute(details)
+-                        self.imported += 1
+-                    except Exception, e:
+-                        log.info(&quot;movie details are not unique, skipping: %s&quot;, e)
+-                    numbers.add(number)
+-            else:
+-                log.info('skipping movie without title and original title')
++                    log.info('skipping movie without title and original title')
++        except Exception, e:
++            log.error(str(e))
+         log.info(&quot;Import process took %s s; %s/%s movies imported&quot;, (time.time() - begin), processed, count)
+         if gc_was_enabled:
+             gc.enable()
+@@ -231,6 +234,10 @@
+             fields.append(i)
+ 
+     __import__(&quot;plugins.imp.%s&quot; % plugin_name)
++    if self.debug_mode:
++        log.debug('reloading %s', plugin_name)
++        import sys
++        reload(sys.modules[&quot;plugins.imp.%s&quot; % plugin_name])
+     ip = eval(&quot;plugins.imp.%s.ImportPlugin(self, fields)&quot; % plugin_name)
+     if ip.initialize():
+         self.widgets['window'].set_sensitive(False)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000771.html">[Griffith-svn] r1303 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000773.html">[Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#772">[ date ]</a>
+              <a href="thread.html#772">[ thread ]</a>
+              <a href="subject.html#772">[ subject ]</a>
+              <a href="author.html#772">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

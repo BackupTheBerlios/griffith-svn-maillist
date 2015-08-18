@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1573 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1573%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C20110823184841.E1D33480EA9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001031.html">
+   <LINK REL="Next"  HREF="001033.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1573 - trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1573%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C20110823184841.E1D33480EA9%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1573 - trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 23 20:48:41 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001031.html">[Griffith-svn] r1572 - in trunk: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="001033.html">[Griffith-svn] r1574 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1032">[ date ]</a>
+              <a href="thread.html#1032">[ thread ]</a>
+              <a href="subject.html#1032">[ subject ]</a>
+              <a href="author.html#1032">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-08-23 20:48:41 +0200 (Tue, 23 Aug 2011)
+New Revision: 1573
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+Log:
+NoneType issue within plugin CSFD
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-23 18:47:22 UTC (rev 1572)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-23 18:48:41 UTC (rev 1573)
+@@ -145,15 +145,15 @@
+             self.trailer = &quot;&quot;
+ 
+     def get_rating(self):
++        self.rating = &quot;&quot;
+         a = re.sub(&quot;\t&quot;, &quot;&quot;, self.page)
+         a = re.sub(&quot;\n&quot;, &quot;&quot;, a)
+-        self.rating = re.search(r&quot;[\s]*([\d]+)%[\s]*&lt;/h2&gt;&quot;, a).group()[:-6]
++        search = re.search(r&quot;[\s]*([\d]+)%[\s]*&lt;/h2&gt;&quot;, a)
++        if search:
++            self.rating = search.group()[:-6]
++            if self.rating:
++                self.rating = str(float(self.rating) / 10)
+ 
+-        if self.rating:
+-            self.rating = str(float(self.rating) / 10)
+-        else:
+-            self.rating = &quot;&quot;
+-
+     def get_o_site(self):
+         try:
+             self.o_site = gutils.before(&quot;<A HREF="http://">http://</A>&quot; + re.findall(r'&lt;li&gt;&lt;a\ href=&quot;<A HREF="http://([^">http://([^</A>&gt; ]*)', self.page)[1], '&quot;')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001031.html">[Griffith-svn] r1572 - in trunk: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="001033.html">[Griffith-svn] r1574 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1032">[ date ]</a>
+              <a href="thread.html#1032">[ thread ]</a>
+              <a href="subject.html#1032">[ subject ]</a>
+              <a href="author.html#1032">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

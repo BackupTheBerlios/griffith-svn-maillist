@@ -1,0 +1,481 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r966 - branches/0.9.x branches/0.9.x/lib tags/0.9.7	tags/0.9.7/lib trunk trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r966%20-%20branches/0.9.x%20branches/0.9.x/lib%20tags/0.9.7%0A%09tags/0.9.7/lib%20trunk%20trunk/lib&In-Reply-To=%3C200807242042.m6OKgtUA021594%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000450.html">
+   <LINK REL="Next"  HREF="000452.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r966 - branches/0.9.x branches/0.9.x/lib tags/0.9.7	tags/0.9.7/lib trunk trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r966%20-%20branches/0.9.x%20branches/0.9.x/lib%20tags/0.9.7%0A%09tags/0.9.7/lib%20trunk%20trunk/lib&In-Reply-To=%3C200807242042.m6OKgtUA021594%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r966 - branches/0.9.x branches/0.9.x/lib tags/0.9.7	tags/0.9.7/lib trunk trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 24 22:42:55 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000450.html">[Griffith-svn] r962 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000452.html">[Griffith-svn] r967 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#451">[ date ]</a>
+              <a href="thread.html#451">[ thread ]</a>
+              <a href="subject.html#451">[ subject ]</a>
+              <a href="author.html#451">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-07-24 22:42:36 +0200 (Thu, 24 Jul 2008)
+New Revision: 966
+
+Modified:
+   branches/0.9.x/INSTALL
+   branches/0.9.x/lib/initialize.py
+   branches/0.9.x/winpackage.iss
+   branches/0.9.x/winsetup.bat
+   tags/0.9.7/INSTALL
+   tags/0.9.7/lib/initialize.py
+   tags/0.9.7/winpackage.iss
+   tags/0.9.7/winsetup.bat
+   trunk/INSTALL
+   trunk/lib/initialize.py
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+Log:
+* Windows only: set_wrap_width doesn't work in filter toolbar without side effects if gtk 2.12.9 is used
+* updated INSTALL file to new versions (GTK, Glade, PyGTK, py2exe, pywin32, Inno Setup)
+* fixed URL creation in setup script; added removing of .pyo files if deinstalled
+
+Modified: branches/0.9.x/INSTALL
+===================================================================
+--- branches/0.9.x/INSTALL	2008-07-21 20:35:06 UTC (rev 965)
++++ branches/0.9.x/INSTALL	2008-07-24 20:42:36 UTC (rev 966)
+@@ -70,27 +70,27 @@
+ 	
+ 2.2 Compiling and making a custom installer
+ 
+-	2.2.1 	This was tested with Griffith 0.9.5. Should work with later versions.
++	2.2.1 	This was tested with Griffith 0.9.7. Should work with later versions.
+ 			You will need the following packages installed on your system. You can grab them from the pointed urls:
+ 	
+-			* Python - python 2.5.1 (<A HREF="http://www.python.org/download/">http://www.python.org/download/</A>)
+-			* GTK development environment - gtk-dev-2.10.11-win32-1 (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/">http://gladewin32.sourceforge.net/modules/wfdownloads/</A>)
+-			* PyGTK - pygtk-2.10.4-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/</A>)
+-			* Glade 3 - glade-3-0-2-win32-1 (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2">http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2</A>)
+-			* PyCairo - pycairo-1.2.6-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/</A>)
+-			* PyGObject - pygobject-2.12.3-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/</A>)
+-			* ReportLab - ReportLab_2_1 (<A HREF="http://www.reportlab.org/downloads.html#dlls">http://www.reportlab.org/downloads.html#dlls</A>)
+-			* winshell - winshell-0.2 (<A HREF="http://timgolden.me.uk/python/winshell.html">http://timgolden.me.uk/python/winshell.html</A>)
+-			* PIL - PIL-1.1.6.win32-py2.5 (<A HREF="http://www.pythonware.com/products/pil/#pil116">http://www.pythonware.com/products/pil/#pil116</A>)
+-			* py2exe - py2exe-0.6.6.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800">http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800</A>)
+-			* Python For Windows Extensions (pywin32) - pywin32-210.win32-py2.5 (<A HREF="http://sourceforge.net/project/platformdownload.php?group_id=78018">http://sourceforge.net/project/platformdownload.php?group_id=78018</A>)
+-			* SQLAlchemy - SQLAlchemy-0.3.10 (<A HREF="http://www.sqlalchemy.org/download.html">http://www.sqlalchemy.org/download.html</A>)
+-			* PyXML - PyXML-0.8.4 (<A HREF="http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe">http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe</A>)
+-			* psycopg2 - psycopg2-2.0.6.win32-py2.5 (<A HREF="http://www.stickpeople.com/projects/python/win-psycopg/#Version2">http://www.stickpeople.com/projects/python/win-psycopg/#Version2</A>)
+-			* MySQLPython - MySQL-python-1.2.2.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012">http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012</A>)
+-			* Python-chardet - chardet-1.0 (<A HREF="http://chardet.feedparser.org/download/">http://chardet.feedparser.org/download/</A>)
+-			* Python SQLite - pysqlite-2.3.5.win32-py2.5 (<A HREF="http://www.initd.org/tracker/pysqlite/wiki/pysqlite">http://www.initd.org/tracker/pysqlite/wiki/pysqlite</A>)
+-			* Inno Setup - isetup-5.1.14 (<A HREF="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</A>)
++			* Python         - python 2.5.1                   (<A HREF="http://www.python.org/download/">http://www.python.org/download/</A>)
++			* GTK Dev Env.   - gtk-dev-2.12.9-win32-2         (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/">http://gladewin32.sourceforge.net/modules/wfdownloads/</A>)
++			* PyGTK          - pygtk-2.12.1-2.win32-py2.5     (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/</A>)
++			* Glade 3        - glade-3.4.3-win32-1            (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2">http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2</A>)
++			* PyCairo        - pycairo-1.2.6-1.win32-py2.5    (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/</A>)
++			* PyGObject      - pygobject-2.12.3-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/</A>)
++			* ReportLab      - ReportLab_2_1                  (<A HREF="http://www.reportlab.org/downloads.html#dlls">http://www.reportlab.org/downloads.html#dlls</A>)
++			* winshell       - winshell-0.2                   (<A HREF="http://timgolden.me.uk/python/winshell.html">http://timgolden.me.uk/python/winshell.html</A>)
++			* PIL            - PIL-1.1.6.win32-py2.5          (<A HREF="http://www.pythonware.com/products/pil/#pil116">http://www.pythonware.com/products/pil/#pil116</A>)
++			* py2exe         - py2exe-0.6.8.win32-py2.5       (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800">http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800</A>)
++			* Python For Windows Extensions (pywin32) - pywin32-211.win32-py2.5 (<A HREF="http://sourceforge.net/project/platformdownload.php?group_id=78018">http://sourceforge.net/project/platformdownload.php?group_id=78018</A>)
++			* SQLAlchemy     - SQLAlchemy-0.3.10              (<A HREF="http://www.sqlalchemy.org/download.html">http://www.sqlalchemy.org/download.html</A>)
++			* PyXML          - PyXML-0.8.4                    (<A HREF="http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe">http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe</A>)
++			* psycopg2       - psycopg2-2.0.6.win32-py2.5     (<A HREF="http://www.stickpeople.com/projects/python/win-psycopg/#Version2">http://www.stickpeople.com/projects/python/win-psycopg/#Version2</A>)
++			* MySQLPython    - MySQL-python-1.2.2.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012">http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012</A>)
++			* Python-chardet - chardet-1.0                    (<A HREF="http://chardet.feedparser.org/download/">http://chardet.feedparser.org/download/</A>)
++			* Python SQLite  - pysqlite-2.3.5.win32-py2.5     (<A HREF="http://www.initd.org/tracker/pysqlite/wiki/pysqlite">http://www.initd.org/tracker/pysqlite/wiki/pysqlite</A>)
++			* Inno Setup     - isetup-5.2.3                   (<A HREF="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</A>)
+ 			
+ 	2.2.2	After installing all the above packages, get griffith from SVN
+ 			or download the latest source tarball from the official site (<A HREF="http://griffith.berlios.de">http://griffith.berlios.de</A>)
+
+Modified: branches/0.9.x/lib/initialize.py
+===================================================================
+--- branches/0.9.x/lib/initialize.py	2008-07-21 20:35:06 UTC (rev 965)
++++ branches/0.9.x/lib/initialize.py	2008-07-24 20:42:36 UTC (rev 966)
+@@ -725,7 +725,6 @@
+ 	self.widgets['add']['volume'].show_all()
+ 	self.widgets['filter']['volume'].show_all()
+ 	self.widgets['filter']['volume'].set_active(0)
+-	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.volume_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['volume'].set_active(int(i))
+@@ -746,7 +745,6 @@
+ 	self.widgets['add']['collection'].show_all()
+ 	self.widgets['filter']['collection'].show_all()
+ 	self.widgets['filter']['collection'].set_active(0)
+-	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.collection_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['collection'].set_active(int(i))
+
+Modified: branches/0.9.x/winpackage.iss
+===================================================================
+--- branches/0.9.x/winpackage.iss	2008-07-21 20:35:06 UTC (rev 965)
++++ branches/0.9.x/winpackage.iss	2008-07-24 20:42:36 UTC (rev 966)
+@@ -56,12 +56,9 @@
+ Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+-[INI]
+-Filename: {app}\griffith.url; Section: InternetShortcut; Key: URL; String: <A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+-
+ [Icons]
+ Name: {group}\Griffith; Filename: {app}\griffith.exe
+-Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: {app}\griffith.url
++Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: <A HREF="http://griffith.berlios.de">http://griffith.berlios.de</A>
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
+ Name: {userdesktop}\Griffith; Filename: {app}\griffith.exe; Tasks: desktopicon
+ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Griffith; Filename: {app}\griffith.exe; Tasks: quicklaunchicon
+@@ -70,5 +67,8 @@
+ Filename: {app}\griffith.exe; Description: {cm:LaunchProgram,Griffith}; Flags: nowait postinstall skipifsilent
+ 
+ [UninstallDelete]
+-Type: files; Name: {app}\griffith.url
++Type: files; Name: {app}\lib\*.pyo
++Type: files; Name: {app}\lib\plugins\export\*.pyo
++Type: files; Name: {app}\lib\plugins\movie\*.pyo
++Type: files; Name: {app}\lib\plugins\imp\*.pyo
+ 
+
+Modified: branches/0.9.x/winsetup.bat
+===================================================================
+--- branches/0.9.x/winsetup.bat	2008-07-21 20:35:06 UTC (rev 965)
++++ branches/0.9.x/winsetup.bat	2008-07-24 20:42:36 UTC (rev 966)
+@@ -45,7 +45,14 @@
+ xcopy &quot;%GTKDIR%\share\locale&quot; &quot;%GRIFFITHDIR%\dist\share\locale&quot; /s /e
+ 
+ copy &quot;%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+-copy &quot;%GTKDIR%\bin\jpeg62.dll&quot; &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GTKDIR%\bin\jpeg62.dll&quot;   &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\AUTHORS&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\COPYING&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\INSTALL&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\NEWS&quot;        &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\README&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\THANKS&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\TRANSLATORS&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+ 
+ :END
+ 
+
+Modified: tags/0.9.7/INSTALL
+===================================================================
+--- tags/0.9.7/INSTALL	2008-07-21 20:35:06 UTC (rev 965)
++++ tags/0.9.7/INSTALL	2008-07-24 20:42:36 UTC (rev 966)
+@@ -70,27 +70,27 @@
+ 	
+ 2.2 Compiling and making a custom installer
+ 
+-	2.2.1 	This was tested with Griffith 0.9.5. Should work with later versions.
++	2.2.1 	This was tested with Griffith 0.9.7. Should work with later versions.
+ 			You will need the following packages installed on your system. You can grab them from the pointed urls:
+ 	
+-			* Python - python 2.5.1 (<A HREF="http://www.python.org/download/">http://www.python.org/download/</A>)
+-			* GTK development environment - gtk-dev-2.10.11-win32-1 (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/">http://gladewin32.sourceforge.net/modules/wfdownloads/</A>)
+-			* PyGTK - pygtk-2.10.4-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/</A>)
+-			* Glade 3 - glade-3-0-2-win32-1 (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2">http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2</A>)
+-			* PyCairo - pycairo-1.2.6-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/</A>)
+-			* PyGObject - pygobject-2.12.3-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/</A>)
+-			* ReportLab - ReportLab_2_1 (<A HREF="http://www.reportlab.org/downloads.html#dlls">http://www.reportlab.org/downloads.html#dlls</A>)
+-			* winshell - winshell-0.2 (<A HREF="http://timgolden.me.uk/python/winshell.html">http://timgolden.me.uk/python/winshell.html</A>)
+-			* PIL - PIL-1.1.6.win32-py2.5 (<A HREF="http://www.pythonware.com/products/pil/#pil116">http://www.pythonware.com/products/pil/#pil116</A>)
+-			* py2exe - py2exe-0.6.6.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800">http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800</A>)
+-			* Python For Windows Extensions (pywin32) - pywin32-210.win32-py2.5 (<A HREF="http://sourceforge.net/project/platformdownload.php?group_id=78018">http://sourceforge.net/project/platformdownload.php?group_id=78018</A>)
+-			* SQLAlchemy - SQLAlchemy-0.3.10 (<A HREF="http://www.sqlalchemy.org/download.html">http://www.sqlalchemy.org/download.html</A>)
+-			* PyXML - PyXML-0.8.4 (<A HREF="http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe">http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe</A>)
+-			* psycopg2 - psycopg2-2.0.6.win32-py2.5 (<A HREF="http://www.stickpeople.com/projects/python/win-psycopg/#Version2">http://www.stickpeople.com/projects/python/win-psycopg/#Version2</A>)
+-			* MySQLPython - MySQL-python-1.2.2.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012">http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012</A>)
+-			* Python-chardet - chardet-1.0 (<A HREF="http://chardet.feedparser.org/download/">http://chardet.feedparser.org/download/</A>)
+-			* Python SQLite - pysqlite-2.3.5.win32-py2.5 (<A HREF="http://www.initd.org/tracker/pysqlite/wiki/pysqlite">http://www.initd.org/tracker/pysqlite/wiki/pysqlite</A>)
+-			* Inno Setup - isetup-5.1.14 (<A HREF="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</A>)
++			* Python         - python 2.5.1                   (<A HREF="http://www.python.org/download/">http://www.python.org/download/</A>)
++			* GTK Dev Env.   - gtk-dev-2.12.9-win32-2         (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/">http://gladewin32.sourceforge.net/modules/wfdownloads/</A>)
++			* PyGTK          - pygtk-2.12.1-2.win32-py2.5     (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/</A>)
++			* Glade 3        - glade-3.4.3-win32-1            (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2">http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2</A>)
++			* PyCairo        - pycairo-1.2.6-1.win32-py2.5    (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/</A>)
++			* PyGObject      - pygobject-2.12.3-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/</A>)
++			* ReportLab      - ReportLab_2_1                  (<A HREF="http://www.reportlab.org/downloads.html#dlls">http://www.reportlab.org/downloads.html#dlls</A>)
++			* winshell       - winshell-0.2                   (<A HREF="http://timgolden.me.uk/python/winshell.html">http://timgolden.me.uk/python/winshell.html</A>)
++			* PIL            - PIL-1.1.6.win32-py2.5          (<A HREF="http://www.pythonware.com/products/pil/#pil116">http://www.pythonware.com/products/pil/#pil116</A>)
++			* py2exe         - py2exe-0.6.8.win32-py2.5       (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800">http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800</A>)
++			* Python For Windows Extensions (pywin32) - pywin32-211.win32-py2.5 (<A HREF="http://sourceforge.net/project/platformdownload.php?group_id=78018">http://sourceforge.net/project/platformdownload.php?group_id=78018</A>)
++			* SQLAlchemy     - SQLAlchemy-0.3.10              (<A HREF="http://www.sqlalchemy.org/download.html">http://www.sqlalchemy.org/download.html</A>)
++			* PyXML          - PyXML-0.8.4                    (<A HREF="http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe">http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe</A>)
++			* psycopg2       - psycopg2-2.0.6.win32-py2.5     (<A HREF="http://www.stickpeople.com/projects/python/win-psycopg/#Version2">http://www.stickpeople.com/projects/python/win-psycopg/#Version2</A>)
++			* MySQLPython    - MySQL-python-1.2.2.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012">http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012</A>)
++			* Python-chardet - chardet-1.0                    (<A HREF="http://chardet.feedparser.org/download/">http://chardet.feedparser.org/download/</A>)
++			* Python SQLite  - pysqlite-2.3.5.win32-py2.5     (<A HREF="http://www.initd.org/tracker/pysqlite/wiki/pysqlite">http://www.initd.org/tracker/pysqlite/wiki/pysqlite</A>)
++			* Inno Setup     - isetup-5.2.3                   (<A HREF="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</A>)
+ 			
+ 	2.2.2	After installing all the above packages, get griffith from SVN
+ 			or download the latest source tarball from the official site (<A HREF="http://griffith.berlios.de">http://griffith.berlios.de</A>)
+
+Modified: tags/0.9.7/lib/initialize.py
+===================================================================
+--- tags/0.9.7/lib/initialize.py	2008-07-21 20:35:06 UTC (rev 965)
++++ tags/0.9.7/lib/initialize.py	2008-07-24 20:42:36 UTC (rev 966)
+@@ -725,7 +725,6 @@
+ 	self.widgets['add']['volume'].show_all()
+ 	self.widgets['filter']['volume'].show_all()
+ 	self.widgets['filter']['volume'].set_active(0)
+-	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.volume_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['volume'].set_active(int(i))
+@@ -746,7 +745,6 @@
+ 	self.widgets['add']['collection'].show_all()
+ 	self.widgets['filter']['collection'].show_all()
+ 	self.widgets['filter']['collection'].set_active(0)
+-	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.collection_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['collection'].set_active(int(i))
+
+Modified: tags/0.9.7/winpackage.iss
+===================================================================
+--- tags/0.9.7/winpackage.iss	2008-07-21 20:35:06 UTC (rev 965)
++++ tags/0.9.7/winpackage.iss	2008-07-24 20:42:36 UTC (rev 966)
+@@ -56,12 +56,9 @@
+ Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+-[INI]
+-Filename: {app}\griffith.url; Section: InternetShortcut; Key: URL; String: <A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+-
+ [Icons]
+ Name: {group}\Griffith; Filename: {app}\griffith.exe
+-Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: {app}\griffith.url
++Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: <A HREF="http://griffith.berlios.de">http://griffith.berlios.de</A>
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
+ Name: {userdesktop}\Griffith; Filename: {app}\griffith.exe; Tasks: desktopicon
+ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Griffith; Filename: {app}\griffith.exe; Tasks: quicklaunchicon
+@@ -70,5 +67,8 @@
+ Filename: {app}\griffith.exe; Description: {cm:LaunchProgram,Griffith}; Flags: nowait postinstall skipifsilent
+ 
+ [UninstallDelete]
+-Type: files; Name: {app}\griffith.url
++Type: files; Name: {app}\lib\*.pyo
++Type: files; Name: {app}\lib\plugins\export\*.pyo
++Type: files; Name: {app}\lib\plugins\movie\*.pyo
++Type: files; Name: {app}\lib\plugins\imp\*.pyo
+ 
+
+Modified: tags/0.9.7/winsetup.bat
+===================================================================
+--- tags/0.9.7/winsetup.bat	2008-07-21 20:35:06 UTC (rev 965)
++++ tags/0.9.7/winsetup.bat	2008-07-24 20:42:36 UTC (rev 966)
+@@ -45,7 +45,14 @@
+ xcopy &quot;%GTKDIR%\share\locale&quot; &quot;%GRIFFITHDIR%\dist\share\locale&quot; /s /e
+ 
+ copy &quot;%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+-copy &quot;%GTKDIR%\bin\jpeg62.dll&quot; &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GTKDIR%\bin\jpeg62.dll&quot;   &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\AUTHORS&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\COPYING&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\INSTALL&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\NEWS&quot;        &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\README&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\THANKS&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\TRANSLATORS&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+ 
+ :END
+ 
+
+Modified: trunk/INSTALL
+===================================================================
+--- trunk/INSTALL	2008-07-21 20:35:06 UTC (rev 965)
++++ trunk/INSTALL	2008-07-24 20:42:36 UTC (rev 966)
+@@ -70,27 +70,27 @@
+ 	
+ 2.2 Compiling and making a custom installer
+ 
+-	2.2.1 	This was tested with Griffith 0.9.5. Should work with later versions.
++	2.2.1 	This was tested with Griffith 0.9.7. Should work with later versions.
+ 			You will need the following packages installed on your system. You can grab them from the pointed urls:
+ 	
+-			* Python - python 2.5.1 (<A HREF="http://www.python.org/download/">http://www.python.org/download/</A>)
+-			* GTK development environment - gtk-dev-2.10.11-win32-1 (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/">http://gladewin32.sourceforge.net/modules/wfdownloads/</A>)
+-			* PyGTK - pygtk-2.10.4-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/</A>)
+-			* Glade 3 - glade-3-0-2-win32-1 (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2">http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2</A>)
+-			* PyCairo - pycairo-1.2.6-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/</A>)
+-			* PyGObject - pygobject-2.12.3-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/</A>)
+-			* ReportLab - ReportLab_2_1 (<A HREF="http://www.reportlab.org/downloads.html#dlls">http://www.reportlab.org/downloads.html#dlls</A>)
+-			* winshell - winshell-0.2 (<A HREF="http://timgolden.me.uk/python/winshell.html">http://timgolden.me.uk/python/winshell.html</A>)
+-			* PIL - PIL-1.1.6.win32-py2.5 (<A HREF="http://www.pythonware.com/products/pil/#pil116">http://www.pythonware.com/products/pil/#pil116</A>)
+-			* py2exe - py2exe-0.6.6.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800">http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800</A>)
+-			* Python For Windows Extensions (pywin32) - pywin32-210.win32-py2.5 (<A HREF="http://sourceforge.net/project/platformdownload.php?group_id=78018">http://sourceforge.net/project/platformdownload.php?group_id=78018</A>)
+-			* SQLAlchemy - SQLAlchemy-0.3.10 (<A HREF="http://www.sqlalchemy.org/download.html">http://www.sqlalchemy.org/download.html</A>)
+-			* PyXML - PyXML-0.8.4 (<A HREF="http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe">http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe</A>)
+-			* psycopg2 - psycopg2-2.0.6.win32-py2.5 (<A HREF="http://www.stickpeople.com/projects/python/win-psycopg/#Version2">http://www.stickpeople.com/projects/python/win-psycopg/#Version2</A>)
+-			* MySQLPython - MySQL-python-1.2.2.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012">http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012</A>)
+-			* Python-chardet - chardet-1.0 (<A HREF="http://chardet.feedparser.org/download/">http://chardet.feedparser.org/download/</A>)
+-			* Python SQLite - pysqlite-2.3.5.win32-py2.5 (<A HREF="http://www.initd.org/tracker/pysqlite/wiki/pysqlite">http://www.initd.org/tracker/pysqlite/wiki/pysqlite</A>)
+-			* Inno Setup - isetup-5.1.14 (<A HREF="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</A>)
++			* Python         - python 2.5.1                   (<A HREF="http://www.python.org/download/">http://www.python.org/download/</A>)
++			* GTK Dev Env.   - gtk-dev-2.12.9-win32-2         (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/">http://gladewin32.sourceforge.net/modules/wfdownloads/</A>)
++			* PyGTK          - pygtk-2.12.1-2.win32-py2.5     (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.10/</A>)
++			* Glade 3        - glade-3.4.3-win32-1            (<A HREF="http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2">http://gladewin32.sourceforge.net/modules/wfdownloads/viewcat.php?cid=2</A>)
++			* PyCairo        - pycairo-1.2.6-1.win32-py2.5    (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.2/</A>)
++			* PyGObject      - pygobject-2.12.3-1.win32-py2.5 (<A HREF="http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/">http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.12/</A>)
++			* ReportLab      - ReportLab_2_1                  (<A HREF="http://www.reportlab.org/downloads.html#dlls">http://www.reportlab.org/downloads.html#dlls</A>)
++			* winshell       - winshell-0.2                   (<A HREF="http://timgolden.me.uk/python/winshell.html">http://timgolden.me.uk/python/winshell.html</A>)
++			* PIL            - PIL-1.1.6.win32-py2.5          (<A HREF="http://www.pythonware.com/products/pil/#pil116">http://www.pythonware.com/products/pil/#pil116</A>)
++			* py2exe         - py2exe-0.6.8.win32-py2.5       (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800">http://sourceforge.net/project/showfiles.php?group_id=15583&amp;package_id=35995&amp;release_id=474800</A>)
++			* Python For Windows Extensions (pywin32) - pywin32-211.win32-py2.5 (<A HREF="http://sourceforge.net/project/platformdownload.php?group_id=78018">http://sourceforge.net/project/platformdownload.php?group_id=78018</A>)
++			* SQLAlchemy     - SQLAlchemy-0.3.10              (<A HREF="http://www.sqlalchemy.org/download.html">http://www.sqlalchemy.org/download.html</A>)
++			* PyXML          - PyXML-0.8.4                    (<A HREF="http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe">http://downloads.nerdynick.org/files/Python/PyXML-0.8.4.win32-py2.5.exe</A>)
++			* psycopg2       - psycopg2-2.0.6.win32-py2.5     (<A HREF="http://www.stickpeople.com/projects/python/win-psycopg/#Version2">http://www.stickpeople.com/projects/python/win-psycopg/#Version2</A>)
++			* MySQLPython    - MySQL-python-1.2.2.win32-py2.5 (<A HREF="http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012">http://sourceforge.net/project/showfiles.php?group_id=22307&amp;package_id=15775&amp;release_id=491012</A>)
++			* Python-chardet - chardet-1.0                    (<A HREF="http://chardet.feedparser.org/download/">http://chardet.feedparser.org/download/</A>)
++			* Python SQLite  - pysqlite-2.3.5.win32-py2.5     (<A HREF="http://www.initd.org/tracker/pysqlite/wiki/pysqlite">http://www.initd.org/tracker/pysqlite/wiki/pysqlite</A>)
++			* Inno Setup     - isetup-5.2.3                   (<A HREF="http://www.jrsoftware.org/isdl.php">http://www.jrsoftware.org/isdl.php</A>)
+ 			
+ 	2.2.2	After installing all the above packages, get griffith from SVN
+ 			or download the latest source tarball from the official site (<A HREF="http://griffith.berlios.de">http://griffith.berlios.de</A>)
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-07-21 20:35:06 UTC (rev 965)
++++ trunk/lib/initialize.py	2008-07-24 20:42:36 UTC (rev 966)
+@@ -725,7 +725,6 @@
+ 	self.widgets['add']['volume'].show_all()
+ 	self.widgets['filter']['volume'].show_all()
+ 	self.widgets['filter']['volume'].set_active(0)
+-	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.volume_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['volume'].set_active(int(i))
+@@ -746,7 +745,6 @@
+ 	self.widgets['add']['collection'].show_all()
+ 	self.widgets['filter']['collection'].show_all()
+ 	self.widgets['filter']['collection'].set_active(0)
+-	self.widgets['filter']['volume'].set_wrap_width(2)
+ 	i = gutils.findKey(default, self.collection_combo_ids)
+ 	if i is not None:
+ 		self.widgets['add']['collection'].set_active(int(i))
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2008-07-21 20:35:06 UTC (rev 965)
++++ trunk/winpackage.iss	2008-07-24 20:42:36 UTC (rev 966)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.9.6
++AppVerName=Griffith 0.9.7
+ AppPublisher=Vasco Nunes, Piotr O&#380;arowski
+ AppPublisherURL=<A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+ AppSupportURL=<A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+@@ -14,7 +14,7 @@
+ LicenseFile=COPYING
+ InfoAfterFile=README
+ OutputDir=installer
+-OutputBaseFilename=griffith-0.9.6-win32
++OutputBaseFilename=griffith-0.9.7-win32
+ SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,8 +22,8 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.9.6
+-VersionInfoVersion=0.9.6
++AppVersion=0.9.7
++VersionInfoVersion=0.9.7
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -56,12 +56,9 @@
+ Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+-[INI]
+-Filename: {app}\griffith.url; Section: InternetShortcut; Key: URL; String: <A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+-
+ [Icons]
+ Name: {group}\Griffith; Filename: {app}\griffith.exe
+-Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: {app}\griffith.url
++Name: {group}\{cm:ProgramOnTheWeb,Griffith}; Filename: <A HREF="http://griffith.berlios.de">http://griffith.berlios.de</A>
+ Name: {group}\{cm:UninstallProgram,Griffith}; Filename: {uninstallexe}
+ Name: {userdesktop}\Griffith; Filename: {app}\griffith.exe; Tasks: desktopicon
+ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Griffith; Filename: {app}\griffith.exe; Tasks: quicklaunchicon
+@@ -70,5 +67,8 @@
+ Filename: {app}\griffith.exe; Description: {cm:LaunchProgram,Griffith}; Flags: nowait postinstall skipifsilent
+ 
+ [UninstallDelete]
+-Type: files; Name: {app}\griffith.url
++Type: files; Name: {app}\lib\*.pyo
++Type: files; Name: {app}\lib\plugins\export\*.pyo
++Type: files; Name: {app}\lib\plugins\movie\*.pyo
++Type: files; Name: {app}\lib\plugins\imp\*.pyo
+ 
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2008-07-21 20:35:06 UTC (rev 965)
++++ trunk/winsetup.bat	2008-07-24 20:42:36 UTC (rev 966)
+@@ -45,7 +45,14 @@
+ xcopy &quot;%GTKDIR%\share\locale&quot; &quot;%GRIFFITHDIR%\dist\share\locale&quot; /s /e
+ 
+ copy &quot;%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+-copy &quot;%GTKDIR%\bin\jpeg62.dll&quot; &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GTKDIR%\bin\jpeg62.dll&quot;   &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\AUTHORS&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\COPYING&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\INSTALL&quot;     &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\NEWS&quot;        &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\README&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\THANKS&quot;      &quot;%GRIFFITHDIR%\dist\&quot;
++copy &quot;%GRIFFITHDIR%\TRANSLATORS&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+ 
+ :END
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000450.html">[Griffith-svn] r962 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000452.html">[Griffith-svn] r967 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#451">[ date ]</a>
+              <a href="thread.html#451">[ thread ]</a>
+              <a href="subject.html#451">[ subject ]</a>
+              <a href="author.html#451">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,453 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1599 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1599%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20111202195203.887EB482569%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001056.html">
+   <LINK REL="Next"  HREF="001058.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1599 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1599%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20111202195203.887EB482569%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1599 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  2 20:52:03 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001056.html">[Griffith-svn] r1598 - in trunk: . lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="001058.html">[Griffith-svn] r1600 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1057">[ date ]</a>
+              <a href="thread.html#1057">[ thread ]</a>
+              <a href="subject.html#1057">[ subject ]</a>
+              <a href="author.html#1057">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-12-02 20:52:02 +0100 (Fri, 02 Dec 2011)
+New Revision: 1599
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllRovi.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+   trunk/lib/test_movieplugins.py
+Log:
+* [#888347] FilmAffinity plugin doesn't work
+* Zelluloid plugin updated
+* movie plugin test data updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/ChangeLog	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2011-12-02  Michael Jahn
++	* [#888347] FilmAffinity plugin doesn't work
++
+ 2011-12-01  Michael Jahn
+ 	* [#885914] Amazon Plugin in Griffith doesn't work
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllRovi.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -195,7 +195,7 @@
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+             'classification'      : False,
+-            'studio'              : 'Chartoff Winkler Productions, MGM, Revolution Studios, Columbia Pictures',
++            'studio'              : 'Columbia Pictures, MGM, Revolution Studios, Chartoff Winkler Productions',
+             'o_site'              : False,
+             'site'                : '<A HREF="http://www.allrovi.com/movies/movie/rocky-balboa-v337682">http://www.allrovi.com/movies/movie/rocky-balboa-v337682</A>',
+             'trailer'             : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -398,9 +398,9 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 21, 21 ],
+-        'Arahan'               : [  7,  7 ],
+-        'Ein gl&#195;&#188;ckliches Jahr' : [  3,  3 ]
++        'Rocky Balboa' : [  22,  22 ],
++        'Arahan'       : [   9,   9 ],
++        'Gl&#195;&#188;ck'        : [ 100, 100 ]
+     }
+ 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -214,7 +214,7 @@
+     #
+     test_configuration = {
+         'Cliffhanger' : [ 1, 1 ],
+-        'Rocky' : [ 37, 37 ]
++        'Rocky' : [ 38, 38 ]
+     }
+ 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -51,8 +51,8 @@
+             self.image_url = '<A HREF="http://">http://</A>' + gutils.before(self.page[tmp.start():], '&quot;')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, u'&lt;b&gt;T&#205;TULO ORIGINAL&lt;/b&gt;&lt;/td&gt;', '&lt;/b&gt;&lt;/td&gt;')
+-        self.o_title = gutils.after(self.o_title, '&lt;b&gt;')
++        self.o_title = gutils.trim(self.page, u'&lt;th&gt;T&Iacute;TULO ORIGINAL&lt;/th&gt;', '&lt;/strong&gt;&lt;/td&gt;')
++        self.o_title = gutils.after(self.o_title, '&lt;strong&gt;')
+         self.o_title = re.sub('[ ]+', ' ', self.o_title)
+         self.o_title = re.sub('([(]Serie de TV[)]|[(]TV[)]|[(]TV Series[)])', '', self.o_title)
+ 
+@@ -62,36 +62,32 @@
+         self.title = re.sub('([(]Serie de TV[)]|[(]TV[)]|[(]TV Series[)])', '', self.title)
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page,'&lt;b&gt;DIRECTOR&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        self.director = gutils.trim(self.page,'&lt;th&gt;DIRECTOR&lt;/th&gt;', '&lt;/td&gt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, u'&lt;b&gt;SINOPSIS&lt;/b&gt;', '&lt;/tr&gt;')
++        self.plot = gutils.trim(self.page, '&lt;th&gt;SINOPSIS&lt;/th&gt;', '&lt;/td&gt;')
+         self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+         self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, u'&lt;b&gt;A&#209;O&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        self.year = gutils.trim(self.page, '&lt;th&gt;A&Ntilde;O&lt;/th&gt;', '&lt;/td&gt;')
+         self.year = gutils.clean(self.year)
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, u'&lt;b&gt;DURACI&#211;N&lt;/b&gt;&lt;/td&gt;', ' min.&lt;/td&gt;')
+-        if self.runtime == '':
+-            self.runtime = gutils.trim(self.page, '&lt;b&gt;DURACI&Oacute;N&lt;/b&gt;&lt;/td&gt;', ' min.&lt;/td&gt;')
++        self.runtime = gutils.trim(self.page, '&lt;th&gt;DURACI&Oacute;N&lt;/th&gt;', ' min.')
+         self.runtime = gutils.after(self.runtime[-10:], '&lt;td&gt;')
+ 
+     def get_genre(self):
+         self.genre = ''
+-        tmp = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO&lt;/b&gt;', '&lt;b&gt;SINOPSIS&lt;/b&gt;')
+-        if tmp == '':
+-            tmp = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO&lt;/b&gt;', '&lt;b&gt;SINOPSIS&lt;/b&gt;')
+-        tmp = gutils.after(tmp, '&lt;td valign=&quot;top&quot;&gt;')
++        tmp = gutils.trim(self.page, '&lt;th&gt;G&Eacute;NERO&lt;/th&gt;', '&lt;/tr&gt;')
++        tmp = gutils.after(tmp, '&lt;td&gt;')
+         if tmp:
+             self.genre = gutils.clean(string.replace(tmp, ' | ', '. '))
+             self.genre = re.sub('[.][ \t]+', '. ', self.genre)
+ 
+     def get_cast(self):
+         self.cast = ''
+-        self.cast = gutils.trim(self.page, '&lt;b&gt;REPARTO&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        self.cast = gutils.trim(self.page, '&lt;th&gt;REPARTO&lt;/th&gt;', '&lt;/td&gt;')
+         self.cast = re.sub('&lt;/a&gt;,[ ]*', '\n', self.cast)
+         self.cast = string.strip(gutils.strip_tags(self.cast))
+         self.cast = re.sub('[ ]+', ' ', self.cast)
+@@ -101,11 +97,11 @@
+         self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '&lt;b&gt;PRODUCTORA&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-        self.studio = gutils.after(self.studio, '&lt;td  &gt;')
++        self.studio = gutils.trim(self.page, '&lt;th&gt;PRODUCTORA&lt;/th&gt;', '&lt;/td&gt;')
++        self.studio = gutils.after(self.studio, '&lt;td&gt;')
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page, '&lt;b&gt;WEB OFICIAL&lt;/b&gt;&lt;/td&gt;', '&lt;/a&gt;')
++        self.o_site = gutils.trim(self.page, '&lt;th&gt;WEB OFICIAL&lt;/th&gt;', '&lt;/a&gt;')
+         self.o_site = gutils.after(self.o_site, '&quot;&gt;')
+ 
+     def get_site(self):
+@@ -115,7 +111,7 @@
+         self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, u'&lt;b&gt;PA&#205;S&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        self.country = gutils.trim(self.page, '&lt;b&gt;PA&Iacute;S&lt;/th&gt;', '&lt;/td&gt;')
+         tmp = gutils.trim(self.country, 'alt=&quot;', '&quot;')
+         if tmp == '':
+             self.country = gutils.trim(self.country, 'title=&quot;', '&quot;')
+@@ -123,19 +119,15 @@
+             self.country = tmp
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, '&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;color:#990000; font-size:22px; font-weight: bold;&quot;&gt;', '&lt;/td&gt;&lt;/tr&gt;')
++        self.rating = gutils.trim(self.page, '&lt;div style=&quot;margin: 4px 0; color:#990000; font-size:22px; font-weight: bold;&quot;&gt;', '&lt;/div&gt;')
+         if self.rating:
+             self.rating = str(round(float(gutils.clean(string.replace(self.rating, ',', '.')))))
+ 
+     def get_cameraman(self):
+-        self.cameraman = gutils.trim(self.page, u'&lt;b&gt;FOTOGRAF&#205;A&lt;/b&gt;&lt;/td&gt;', u'&lt;/td&gt;')
+-        if self.cameraman == '':
+-            self.cameraman = gutils.trim(self.page, u'&lt;b&gt;FOTOGRAF&Iacute;A&lt;/b&gt;&lt;/td&gt;', u'&lt;/td&gt;')
++        self.cameraman = gutils.trim(self.page, '&lt;th&gt;FOTOGRAF&Iacute;A&lt;/th&gt;','&lt;/td&gt;')
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.trim(self.page, u'&lt;b&gt;GUI&#211;N&lt;/b&gt;&lt;/td&gt;', u'&lt;/td&gt;')
+-        if self.screenplay == '':
+-            self.screenplay = gutils.trim(self.page, u'&lt;b&gt;GUI&Oacute;N&lt;/b&gt;&lt;/td&gt;', u'&lt;/td&gt;')
++        self.screenplay = gutils.trim(self.page, '&lt;th&gt;GUI&Oacute;N&lt;/th&gt;', '&lt;/td&gt;')
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+@@ -156,17 +148,17 @@
+         return self.page
+ 
+     def sub_search(self, parent_window):
+-        moviepage = gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
++        moviepage = gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;div id=&quot;bpanel&quot;&gt;')
+         nextpage = self.get_nextpage_url()
+         while nextpage:
+             self.url = nextpage
+             self.open_search(parent_window)
+-            moviepage = moviepage + gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
++            moviepage = moviepage + gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;div id=&quot;bpanel&quot;&gt;')
+             nextpage = self.get_nextpage_url()
+         self.page = moviepage
+ 
+     def get_nextpage_url(self):
+-        match = re.search('(siguientes &gt;&gt;|siguientes &gt;&gt;)', self.page)
++        match = re.search('(siguientes &gt;|siguientes &gt;)', self.page)
+         if match:
+             start = string.rfind(self.page, '&lt;a href=&quot;', 0, match.start())
+             if start &gt;= 0:
+@@ -174,6 +166,8 @@
+         return None
+ 
+     def get_searches(self):
++        if not self.page:
++            return
+         if len(self.page) &lt; 20:    # immidietly redirection to movie page
+             self.number_results = 1
+             self.ids.append(self.page)
+@@ -185,9 +179,12 @@
+                 for index in range(0, len(elements) - 1, 1):
+                     element = elements[index]
+                     nextelement = elements[index + 1]
+-                    self.ids.append(gutils.trim(element, '&lt;b&gt;&lt;a href=&quot;/es/film', '.html'))
+-                    title = gutils.after(element, '&lt;b&gt;&lt;a href=&quot;/es/film')
+-                    self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.after(title, '&gt;'))) + ' ' + string.strip(gutils.before(nextelement, '&lt;')))
++                    id = gutils.trim(element, '&lt;b&gt;&lt;a href=&quot;/es/film', '.html')
++                    if id:
++                        self.ids.append(id)
++                        title = gutils.clean(gutils.after(element, '&lt;b&gt;&lt;a href=&quot;/es/film')).replace(&quot;\n&quot;, &quot;&quot;)
++                        title = gutils.strip_tags(gutils.convert_entities(gutils.after(title, '&gt;'))) + ' ' + string.strip(gutils.before(nextelement, '&lt;'))
++                        self.titles.append(title)
+ 
+ #
+ # Plugin Test
+@@ -198,8 +195,8 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 16, 16 ],
+-        'Darkness' : [56, 56 ]
++        'Rocky' : [ 17, 17 ],
++        'Darkness' : [59, 59 ]
+     }
+ 
+ class PluginTest:
+@@ -218,13 +215,14 @@
+             'plot'                : True,
+             'cast'                : 'Sylvester Stallone\n\
+ Burt Young\n\
+-Tony Burton\n\
++Antonio Tarver\n\
++Geraldine Hughes\n\
+ Milo Ventimiglia\n\
++Tony Burton\n\
+ James Francis Kelly III\n\
+ Talia Shire\n\
+ Angela Boyd\n\
+-Antonio Tarver\n\
+-Geraldine Hughes\n\
++A.J. Benza\n\
+ Mike Tyson',
+             'country'             : 'Estados Unidos',
+             'genre'               : u'Acci&#243;n. Drama. Deporte. Boxeo. Secuela',
+@@ -258,7 +256,8 @@
+ Claudia Otero\n\
+ Jordi Dauder\n\
+ Emilio Gavira\n\
+-Miriam Raya',
++Miriam Raya\n\
++Jan Cornet',
+             'country'             : u'Espa&#241;a',
+             'genre'               : u'Drama. Enfermedad. Religi&#243;n. Basado en hechos reales',
+             'classification'      : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -365,7 +365,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 9, 9 ],
+-        'Arahan'               : [ 9, 9 ],
++        'Arahan'               : [ 10, 10 ],
+         'Ein gl&#195;&#188;ckliches Jahr' : [ 4, 4 ]
+     }
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -249,6 +249,6 @@
+ De Uitdager',
+             'runtime'           : 119,
+             'image'             : True,
+-            'rating'            : 6
++            'rating'            : 7
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -178,26 +178,25 @@
+ Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+ Geraldine Hughes' + _(' as ') + 'Marie\n\
+ James Francis Kelly III' + _(' as ') + 'Steps\n\
+-Tony Burton\n\
++Tony Burton' + _(' as ') + 'Duke\n\
+ A.J. Benza\n\
+ Henry G. Sanders' + _(' as ') + 'Martin\n\
+ Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
+-Pedro Lovell\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
+ Ana Gerena\n\
+ Angela Boyd\n\
+ Louis Giansante\n\
+ Maureen Schilling\n\
+ Carter Mitchell\n\
+ Vinod Kumar\n\
+-Tobias Segal\n\
++Tobias Segal' + _(' as ') + 'Robert\'s Friend\n\
+ Tim Carr' + _(' as ') + 'Robert\'s Friend \n\
+-Paul Dion Monte' + _(' as ') + 'Robert\'s Friend \n\
++Paul Dion Monte' + _(' as ') + 'Robert\'s Friend\n\
+ Kevin King Templeton\n\
+ Robert Michael Kelly\n\
+-Don Sherman\n\
++Don Sherman' + _(' as ') + 'Andy\n\
+ Nick Baker\n\
+ Rick Buchborn\n\
+-Stu Nahan\n\
+ Gary Compton\n\
+ Jody Giambelluca\n\
+ Frank Stallone als Frank Stallone Jr.' + _(' as ') + 'Dinner Patron \n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -91,6 +91,7 @@
+ 
+     def get_cast(self):
+         self.cast = gutils.trim(self.detail_page, 'alt=&quot;Besetzung&quot;', '&lt;img')
++        self.cast = self.cast.replace('&nbsp;', '')
+         self.cast = self.cast.replace('&lt;a href=', '--flip--' + '&lt;a href=')
+         self.cast = self.cast.replace('&lt;/td&gt;&lt;/tr&gt;', '\n')
+         self.cast = gutils.strip_tags(self.cast)
+@@ -99,7 +100,7 @@
+         self.cast = ''
+         for element in elements:
+             elements2 = element.split(&quot;--flip--&quot;)
+-            if len(elements2) &gt; 1:
++            if len(elements2) &gt; 1 and elements2[1]:
+                 self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
+             else:
+                 self.cast += element + '\n'
+@@ -138,8 +139,9 @@
+                 delimiter = ', '
+ 
+     def get_rating(self):
+-        self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '&lt;/TABLE&gt;'))
++        self.rating = gutils.strip_tags(gutils.regextrim(self.page, '&lt;b&gt;Besucher&lt;/b&gt;[ ]*[(][0-9]+[)]', '&lt;/div&gt;'))
+         self.rating = self.rating.replace('%', '')
++        self.rating = self.rating.replace(':', '')
+         self.rating = self.rating.replace('&nbsp;', '')
+         self.rating = self.rating.replace('\n', '')
+         try:
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/test_movieplugins.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2009
++# Copyright (c) 2006-2011
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -41,6 +41,7 @@
+ #
+ 
+ import gettext
++gettext.install('griffith', unicode=1)
+ import sys
+ import initialize
+ import gutils
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001056.html">[Griffith-svn] r1598 - in trunk: . lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="001058.html">[Griffith-svn] r1600 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1057">[ date ]</a>
+              <a href="thread.html#1057">[ thread ]</a>
+              <a href="subject.html#1057">[ subject ]</a>
+              <a href="author.html#1057">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

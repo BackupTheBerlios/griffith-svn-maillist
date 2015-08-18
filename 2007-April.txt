@@ -1,0 +1,290 @@
+From piotrek at mail.berlios.de  Wed Apr 11 23:10:11 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 11 Apr 2007 23:10:11 +0200
+Subject: [Griffith-svn] r753 - in trunk: . lib
+Message-ID: <200704112110.l3BLABAp005073@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-04-11 23:10:10 +0200 (Wed, 11 Apr 2007)
+New Revision: 753
+
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+Fixed medium_id and vcodec_id column type in movies table
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/AUTHORS	2007-04-11 21:10:10 UTC (rev 753)
+@@ -20,7 +20,7 @@
+ * CSFD movie plugin
+ 
+ Michael Jahn <mikej06 at hotmail.com>
+-* Movie plugins: DVDEmpire, FilmDb,FilmeVonAZ, Kino.de, Zelluloid
++* Movie plugins: DVDEmpire, FilmDb, FilmeVonAZ, IMDb-de, Kino.de, Zelluloid
+ 
+ Jessica Katharina Parth <Jessica.K.P at women-at-work.org>
+ * OFDb movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/ChangeLog	2007-04-11 21:10:10 UTC (rev 753)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-04-11  Piotr O?arowski
++	* Fixed medium_id and vcodec_id column type in movies table
++
+ 2007-04-01  Piotr O?arowski
+ 	* Added Dutch translation (thanks to Marcel Dijkstra)
+ 
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/lib/preferences.py	2007-04-11 21:10:10 UTC (rev 753)
+@@ -83,12 +83,14 @@
+ 	w['region'].set_active( gutils.digits_only(self.config.get('region', 0), 8) )
+ 	w['layers'].set_active( gutils.digits_only(self.config.get('layers', 0), 4) )
+ 	w['color'].set_active( gutils.digits_only(self.config.get('color', 0), 3 ))
+-	if int(self.config.get('media', 0)) in self.media_ids:
++	tmp = self.config.get('media', 0)
++	if tmp is not None and int(tmp) in self.media_ids:
+ 		if int(self.config.get('media', 0)) > 0:
+ 			w['media'].set_active( gutils.findKey(int(self.config.get('media', 0)), self.media_ids) )
+ 		else:
+ 			w['media'].set_active(0)
+-	if int(self.config.get('vcodec', 0)) in self.vcodecs_ids:
++	tmp = self.config.get('vcodec', 0)
++	if tmp is not None and int(tmp) in self.vcodecs_ids:
+ 		if int(self.config.get('vcodec', 0)) > 0:
+ 			w['vcodec'].set_active(	int(gutils.findKey(int(self.config.get('vcodec', 0)), self.vcodecs_ids)) )
+ 		else:
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-04-01 14:47:12 UTC (rev 752)
++++ trunk/lib/sql.py	2007-04-11 21:10:10 UTC (rev 753)
+@@ -347,8 +347,8 @@
+ 			Column('number', Integer, nullable=False, unique=True),
+ 			Column('collection_id', Integer, ForeignKey('collections.collection_id')),
+ 			Column('volume_id', Integer, ForeignKey('volumes.volume_id')),
+-			Column('medium_id', Smallinteger, ForeignKey('media.medium_id')),
+-			Column('vcodec_id', Smallinteger, ForeignKey('vcodecs.vcodec_id')),
++			Column('medium_id', Integer, ForeignKey('media.medium_id')),
++			Column('vcodec_id', Integer, ForeignKey('vcodecs.vcodec_id')),
+ 			Column('loaned', Boolean, nullable=False, default=False),
+ 			Column('seen', Boolean, nullable=False, default=False),
+ 			Column('rating', Smallinteger(2)),
+
+
+
+From piotrek at mail.berlios.de  Sun Apr 15 18:07:09 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 15 Apr 2007 18:07:09 +0200
+Subject: [Griffith-svn] r754 - in trunk: . lib/plugins/movie
+Message-ID: <200704151607.l3FG79lV020086@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-04-15 18:07:08 +0200 (Sun, 15 Apr 2007)
+New Revision: 754
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDB movie plugin updated to version 1.2
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-11 21:10:10 UTC (rev 753)
++++ trunk/ChangeLog	2007-04-15 16:07:08 UTC (rev 754)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-04-15  Piotr O?arowski
++	* IMDB movie plugin updated to version 1.2
++
+ 2007-04-11  Piotr O?arowski
+ 	* Fixed medium_id and vcodec_id column type in movies table
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-04-11 21:10:10 UTC (rev 753)
++++ trunk/NEWS	2007-04-15 16:07:08 UTC (rev 754)
+@@ -1,6 +1,6 @@
+ Griffith 0.9.3 - UNRELEASED
+ ===========================
+-* Updated movie plugins: Filmweb
++* Updated movie plugins: Filmweb, IMDb
+ * New configuration file format (human readable)
+ * New movie plugins: FilmDb, Zelluloid, IMDb-de
+ * Added Dutch translation (thanks to Marcel Dijkstra)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-11 21:10:10 UTC (rev 753)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-15 16:07:08 UTC (rev 754)
+@@ -22,9 +22,8 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
+-import gutils
+-import movie
+-import string
++import gutils, movie
++import string, re
+ 
+ plugin_name		= 'IMDb'
+ plugin_description	= 'Internet Movie Database'
+@@ -32,7 +31,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O?arowski'
+ plugin_author_email	= 'griffith-private at lists.berlios.de'
+-plugin_version		= '1.1.1'
++plugin_version		= '1.2'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -54,8 +53,11 @@
+ 		self.title = gutils.trim(self.page, '<h1>', ' <span')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,'<h5>Directed by</h5>', '<br/>\n<br/>')
+-		self.director = self.director.replace('<br/>', ', ')
++		pattern = re.compile('<h5>Directors?:</h5>[\n\s\r]*(.*?)(?:<br/>)?(?:<a[^>]+>more</a>)?\n</div')
++		result = pattern.search(self.page)
++		if result:
++			self.director = result.groups()[0]
++			self.director = self.director.replace('<br/>', ', ')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, '<h5>Plot Outline:</h5>', '</div>')
+
+
+
+From piotrek at mail.berlios.de  Sun Apr 15 18:33:05 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 15 Apr 2007 18:33:05 +0200
+Subject: [Griffith-svn] r755 - in trunk: . lib lib/plugins/movie
+Message-ID: <200704151633.l3FGX52R031225@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-04-15 18:33:04 +0200 (Sun, 15 Apr 2007)
+New Revision: 755
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/edit.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+* IMDB movie plugin updated to version 1.3
+* Fetch from Amazon function fixed ("No image available" image issue)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-15 16:07:08 UTC (rev 754)
++++ trunk/ChangeLog	2007-04-15 16:33:04 UTC (rev 755)
+@@ -5,7 +5,8 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
+ 2007-04-15  Piotr O?arowski
+-	* IMDB movie plugin updated to version 1.2
++	* IMDB movie plugin updated to version 1.3 (director, rating)
++	* Fetch from Amazon function fixed ("No image available" image issue)
+ 
+ 2007-04-11  Piotr O?arowski
+ 	* Fixed medium_id and vcodec_id column type in movies table
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-04-15 16:07:08 UTC (rev 754)
++++ trunk/lib/edit.py	2007-04-15 16:33:04 UTC (rev 755)
+@@ -219,6 +219,10 @@
+ 		if im.size == (1,1):
+ 			from urllib import FancyURLopener, urlretrieve
+ 			url = FancyURLopener().open("http://www.amazon.com/gp/product/images/%s" % result[f].Asin).read()
++			if url.find('http://ec1.images-amazon.com/images/G/01/x-site/icons/no-img-sm._V47056216_.gif') > 0:
++				self.debug.show('No image available')
++				gutils.warning(self, _("Sorry. This movie is listed but has no poster available at Amazon.com."))
++				return False
+ 			url = gutils.after(url, 'id="imageViewerDiv"><img src="')
+ 			url = gutils.before(url, '" id="prodImage"')
+ 			urlretrieve(url, file_to_copy)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-15 16:07:08 UTC (rev 754)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-15 16:33:04 UTC (rev 755)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O?arowski'
+ plugin_author_email	= 'griffith-private at lists.berlios.de'
+-plugin_version		= '1.2'
++plugin_version		= '1.3'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -104,8 +104,13 @@
+ 
+ 	def get_rating(self):
+ 		self.rating = gutils.trim(self.page, '<b>User Rating:</b>', '/10')
+-		if self.rating:
+-			self.rating = str(float(gutils.clean(self.rating)))
++		if self.rating and self.rating.find('awaiting') == -1:
++			try:
++				self.rating = float(self.rating)
++			except Exception, e:
++				self.rating = 0
++		else:
++			self.rating = 0
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+
+
+
+From piotrek at mail.berlios.de  Sun Apr 15 18:36:21 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 15 Apr 2007 18:36:21 +0200
+Subject: [Griffith-svn] r756 - trunk/lib
+Message-ID: <200704151636.l3FGaLkU004386@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-04-15 18:36:14 +0200 (Sun, 15 Apr 2007)
+New Revision: 756
+
+Modified:
+   trunk/lib/edit.py
+Log:
+trim the url
+
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-04-15 16:33:04 UTC (rev 755)
++++ trunk/lib/edit.py	2007-04-15 16:36:14 UTC (rev 756)
+@@ -219,7 +219,7 @@
+ 		if im.size == (1,1):
+ 			from urllib import FancyURLopener, urlretrieve
+ 			url = FancyURLopener().open("http://www.amazon.com/gp/product/images/%s" % result[f].Asin).read()
+-			if url.find('http://ec1.images-amazon.com/images/G/01/x-site/icons/no-img-sm._V47056216_.gif') > 0:
++			if url.find('no-img-sm._V47056216_.gif') > 0:
+ 				self.debug.show('No image available')
+ 				gutils.warning(self, _("Sorry. This movie is listed but has no poster available at Amazon.com."))
+ 				return False
+
+
+

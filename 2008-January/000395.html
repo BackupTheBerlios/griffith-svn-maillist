@@ -1,0 +1,231 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r895%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200801092325.m09NPU9V032359%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000394.html">
+   <LINK REL="Next"  HREF="000396.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r895%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200801092325.m09NPU9V032359%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 10 00:25:30 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000394.html">[Griffith-svn] r894 - branches/0.9.x/lib/plugins/export	trunk/lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000396.html">[Griffith-svn] r897 - in branches/0.9.x: . debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#395">[ date ]</a>
+              <a href="thread.html#395">[ thread ]</a>
+              <a href="subject.html#395">[ subject ]</a>
+              <a href="author.html#395">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-01-10 00:25:10 +0100 (Thu, 10 Jan 2008)
+New Revision: 895
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-06 20:24:35 UTC (rev 894)
++++ branches/0.9.x/ChangeLog	2008-01-09 23:25:10 UTC (rev 895)
+@@ -4,6 +4,12 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-01-10  Michael Jahn
++	* OFDb plugin updated
++
++2008-01-06  Michael Jahn
++	* fixed pdf export with non-ascii characters [#174463]
++
+ 2007-12-08  Vasco Nunes
+ 	* Danish language file updated
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-01-06 20:24:35 UTC (rev 894)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-01-09 23:25:10 UTC (rev 895)
+@@ -49,7 +49,7 @@
+ 		self.director = gutils.trim(self.page,&quot;Regie: &quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+ 	def get_plot(self):
+-		storyid = gutils.trim(self.page, 'sid=', '&quot;&gt;')
++		storyid = self.regextrim(self.page, '([?]|[&amp;])sid=', '(&quot;&gt;|[&amp;])')
+ 		story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s">http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s</A>&quot; % (str(self.movie_id),storyid))
+ 		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+@@ -86,7 +86,7 @@
+ 
+ 	def get_studio(self):
+ 		# from imdb
+-		self.studio = gutils.trim(self.imdb_page, '&lt;h5&gt;Company:&lt;/h5&gt;', '&lt;/a&gt;')
++		self.studio = gutils.trim(self.imdb_page, '&lt;h5&gt;Firma:&lt;/h5&gt;', '&lt;/a&gt;')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = &quot;&quot;
+@@ -106,6 +106,19 @@
+ 			self.rating = &quot;0&quot;
+ 		self.rating = str(round(float(self.rating)))
+ 
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+ 		self.original_url_search    = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=</A>&quot;
+@@ -128,7 +141,7 @@
+ 				elementid = gutils.digits_only( gutils.trim(element,'&lt;a href=&quot;view.php?page=film&amp;fid=','&quot;&gt;') )
+ 				if elementid != 0:
+ 					self.ids.append(elementid)
+-					self.titles.append(gutils.trim(element,&quot;&gt;&quot;,&quot;&lt;/a&gt;&quot;))
++					self.titles.append(gutils.trim(element,'&quot;&gt;', '&lt;/a&gt;'))
+ 
+ #
+ # Plugin Test
+@@ -235,7 +248,7 @@
+ 			'cast'				: 'Lino Ventura\n\
+ Fran&#231;oise Fabian\n\
+ Charles G&#233;rard\n\
+-Andr&#233; Falcon\n\
++Andr&#233; Falcon as Le bijoutier\n\
+ Mireille Mathieu\n\
+ Lilo\n\
+ Claude Mann\n\
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-06 20:24:35 UTC (rev 894)
++++ trunk/ChangeLog	2008-01-09 23:25:10 UTC (rev 895)
+@@ -4,6 +4,12 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-01-10  Michael Jahn
++	* OFDb plugin updated
++
++2008-01-06  Michael Jahn
++	* fixed pdf export with non-ascii characters [#174463]
++
+ 2007-12-16  Piotr O&#380;arowski
+ 	* Version changed to 0.10~svn
+ 	* Started working on SQLAlchemy 0.4.x compatibility (NOT YET READY)
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-01-06 20:24:35 UTC (rev 894)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-01-09 23:25:10 UTC (rev 895)
+@@ -49,7 +49,7 @@
+ 		self.director = gutils.trim(self.page,&quot;Regie: &quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+ 	def get_plot(self):
+-		storyid = gutils.trim(self.page, 'sid=', '&quot;&gt;')
++		storyid = self.regextrim(self.page, '([?]|[&amp;])sid=', '(&quot;&gt;|[&amp;])')
+ 		story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s">http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s</A>&quot; % (str(self.movie_id),storyid))
+ 		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+@@ -86,7 +86,7 @@
+ 
+ 	def get_studio(self):
+ 		# from imdb
+-		self.studio = gutils.trim(self.imdb_page, '&lt;h5&gt;Company:&lt;/h5&gt;', '&lt;/a&gt;')
++		self.studio = gutils.trim(self.imdb_page, '&lt;h5&gt;Firma:&lt;/h5&gt;', '&lt;/a&gt;')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = &quot;&quot;
+@@ -106,6 +106,19 @@
+ 			self.rating = &quot;0&quot;
+ 		self.rating = str(round(float(self.rating)))
+ 
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+ 		self.original_url_search    = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=</A>&quot;
+@@ -128,7 +141,7 @@
+ 				elementid = gutils.digits_only( gutils.trim(element,'&lt;a href=&quot;view.php?page=film&amp;fid=','&quot;&gt;') )
+ 				if elementid != 0:
+ 					self.ids.append(elementid)
+-					self.titles.append(gutils.trim(element,&quot;&gt;&quot;,&quot;&lt;/a&gt;&quot;))
++					self.titles.append(gutils.trim(element,'&quot;&gt;', '&lt;/a&gt;'))
+ 
+ #
+ # Plugin Test
+@@ -235,7 +248,7 @@
+ 			'cast'				: 'Lino Ventura\n\
+ Fran&#231;oise Fabian\n\
+ Charles G&#233;rard\n\
+-Andr&#233; Falcon\n\
++Andr&#233; Falcon as Le bijoutier\n\
+ Mireille Mathieu\n\
+ Lilo\n\
+ Claude Mann\n\
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000394.html">[Griffith-svn] r894 - branches/0.9.x/lib/plugins/export	trunk/lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000396.html">[Griffith-svn] r897 - in branches/0.9.x: . debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#395">[ date ]</a>
+              <a href="thread.html#395">[ thread ]</a>
+              <a href="subject.html#395">[ subject ]</a>
+              <a href="author.html#395">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

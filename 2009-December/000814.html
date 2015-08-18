@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1347 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1347%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200912262111.nBQLBGEt003349%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000813.html">
+   <LINK REL="Next"  HREF="000815.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1347 - trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1347%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200912262111.nBQLBGEt003349%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1347 - trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 26 22:11:16 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000813.html">[Griffith-svn] r1346 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000815.html">[Griffith-svn] r1348 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#814">[ date ]</a>
+              <a href="thread.html#814">[ thread ]</a>
+              <a href="subject.html#814">[ subject ]</a>
+              <a href="author.html#814">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-26 22:11:03 +0100 (Sat, 26 Dec 2009)
+New Revision: 1347
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+Log:
+updated movie plugin Cinematografo
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-12-23 21:20:17 UTC (rev 1346)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-12-26 21:11:03 UTC (rev 1347)
+@@ -53,17 +53,19 @@
+     def get_o_title(self):
+         # Find the film's original title
+         self.o_title = gutils.trim(self.page, &quot;&gt;Titolo Originale&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+-        self.o_title = string.capwords(self.o_title)
++        self.o_title = self.capwords(self.o_title)
+         # if nothing found, use the title
+         if self.o_title == '':
+             self.o_title = gutils.trim(self.page, &quot;&lt;!--TITOLO--&gt;&quot;, &quot;&lt;!--FINE TITOLO--&gt;&quot;)
+             self.o_title = gutils.trim(self.o_title, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)
++        self.o_title = self.capwords(self.o_title)
+ 
+     def get_title(self):
+         # Find the film's local title.
+         # Probably the original title translation
+         self.title = gutils.trim(self.page, &quot;&lt;!--TITOLO--&gt;&quot;, &quot;&lt;!--FINE TITOLO--&gt;&quot;)
+         self.title = gutils.trim(self.title, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)
++        self.title = self.capwords(self.title)
+ 
+     def get_director(self):
+         # Find the film's director
+@@ -88,7 +90,7 @@
+ 
+     def get_genre(self):
+         # Find the film's genre
+-        self.genre = string.capwords(gutils.trim(self.page, &quot;&gt;Genere&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;))
++        self.genre = self.capwords(gutils.trim(self.page, &quot;&gt;Genere&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;))
+ 
+     def get_cast(self):
+         # Find the actors. Try to make it comma separated.
+@@ -108,7 +110,7 @@
+ 
+     def get_studio(self):
+         # Find the studio
+-        self.studio = string.capwords(gutils.clean(gutils.trim(self.page, &quot;&gt;Distribuzione&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)))
++        self.studio = self.capwords(gutils.clean(gutils.trim(self.page, &quot;&gt;Distribuzione&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)))
+ 
+     def get_o_site(self):
+         # Find the film's oficial site
+@@ -129,7 +131,7 @@
+ 
+     def get_country(self):
+         # Find the film's country
+-        self.country = string.replace(string.capwords(gutils.clean(gutils.trim(self.page, &quot;&gt;Origine&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;))), 'Usa', 'USA')
++        self.country = string.replace(self.capwords(gutils.clean(gutils.trim(self.page, &quot;&gt;Origine&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;))), 'Usa', 'USA')
+ 
+     def get_rating(self):
+         # Find the film's rating. From 0 to 10.
+@@ -141,9 +143,11 @@
+         critica = gutils.clean(string.replace(gutils.regextrim(self.page, 'Critica&lt;/font&gt;', &quot;(&lt;/td&gt;|\n|Note&lt;)&quot;), '&lt;br&gt;', '\n'))
+         if critica:
+             self.notes = 'Critica:\n\n' + critica + '\n\n'
+-        note = gutils.clean(string.replace(gutils.regextrim(self.page, 'Note&lt;/font&gt;', &quot;(&lt;/td&gt;|\n|Critica&lt;)&quot;), '&lt;br&gt;', '\n'))
++        note = gutils.clean(string.replace(gutils.regextrim(self.page, 'Note&lt;/font&gt;', &quot;(&lt;/td&gt;|\n|Critica&lt;)&quot;), '&lt;br&gt;', '--BR--'))
+         if note:
+-            self.notes = 'Note:\n\n' + string.capwords(note)
++            # string.capwords removes line breaks, preventing them with placeholder --BR--
++            note = self.capwords(note)
++            self.notes = self.notes + 'Note:\n\n' + string.replace(note, '--br--', '\n')
+ 
+     def get_screenplay(self):
+         # Find the screenplay
+@@ -165,6 +169,11 @@
+         self.cameraman = re.sub('[ ]+', ' ', self.cameraman)
+         self.cameraman = re.sub('[,][ ]*$', '', self.cameraman)
+ 
++    def capwords(self, name):
++        tmp = gutils.clean(name)
++        if tmp == string.upper(tmp):
++            return string.capwords(name)
++        return name
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+@@ -184,6 +193,12 @@
+         # Isolating just a portion (with the data we want) of the results
+         self.page = gutils.trim(self.page, '&lt;td valign=&quot;top&quot; width=&quot;73%&quot; bgcolor=&quot;#4d4d4d&quot;&gt;', '&lt;/td&gt;')
+ 
++    def capwords(self, name):
++        tmp = gutils.clean(name)
++        if tmp == string.upper(tmp):
++            return string.capwords(name)
++        return name
++
+     def get_searches(self):
+         # Try to find both id and film title for each search result
+         elements = string.split(self.page, &quot;&lt;li&gt;&quot;)
+@@ -194,7 +209,7 @@
+                 id = gutils.trim(element, &quot;?codice=&quot;, &quot;\&quot;&gt;&quot;)
+                 if id &lt;&gt; '':
+                     self.ids.append(id)
+-                    self.titles.append(gutils.convert_entities(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)))
++                    self.titles.append(self.capwords(gutils.convert_entities(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;))))
+         else:
+             self.number_results = 0
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000813.html">[Griffith-svn] r1346 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000815.html">[Griffith-svn] r1348 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#814">[ date ]</a>
+              <a href="thread.html#814">[ thread ]</a>
+              <a href="subject.html#814">[ subject ]</a>
+              <a href="author.html#814">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

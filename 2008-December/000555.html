@@ -1,0 +1,383 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1080 - in online/trunk: . deployment	deployment/mod_proxy deployment/mod_wsgi docs docs/deployment
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1080%20-%20in%20online/trunk%3A%20.%20deployment%0A%09deployment/mod_proxy%20deployment/mod_wsgi%20docs%20docs/deployment&In-Reply-To=%3C200812042202.mB4M2Ds2030277%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000554.html">
+   <LINK REL="Next"  HREF="000556.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1080 - in online/trunk: . deployment	deployment/mod_proxy deployment/mod_wsgi docs docs/deployment</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1080%20-%20in%20online/trunk%3A%20.%20deployment%0A%09deployment/mod_proxy%20deployment/mod_wsgi%20docs%20docs/deployment&In-Reply-To=%3C200812042202.mB4M2Ds2030277%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1080 - in online/trunk: . deployment	deployment/mod_proxy deployment/mod_wsgi docs docs/deployment">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  4 23:02:13 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000554.html">[Griffith-svn] r1079 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000556.html">[Griffith-svn] r1081 - online/trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#555">[ date ]</a>
+              <a href="thread.html#555">[ thread ]</a>
+              <a href="subject.html#555">[ subject ]</a>
+              <a href="author.html#555">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-12-04 23:02:12 +0100 (Thu, 04 Dec 2008)
+New Revision: 1080
+
+Added:
+   online/trunk/deployment/
+   online/trunk/deployment/mod_proxy/
+   online/trunk/deployment/mod_proxy/apache_directory.conf
+   online/trunk/deployment/mod_proxy/apache_domain.conf
+   online/trunk/deployment/mod_wsgi/
+   online/trunk/deployment/mod_wsgi/apache_directory.conf
+   online/trunk/deployment/mod_wsgi/apache_domain.conf
+   online/trunk/deployment/mod_wsgi/dispatch.wsgi
+   online/trunk/docs/deployment/
+   online/trunk/docs/deployment/index.txt
+   online/trunk/docs/deployment/mod_proxy.txt
+   online/trunk/docs/deployment/mod_wsgi.txt
+   online/trunk/init.sh
+   online/trunk/start.py
+Log:
+add deployment scripts/configs/docs
+
+
+Added: online/trunk/deployment/mod_proxy/apache_directory.conf
+===================================================================
+--- online/trunk/deployment/mod_proxy/apache_directory.conf	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/deployment/mod_proxy/apache_directory.conf	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,15 @@
++# Proxy
++# retry=5 - default is 60 seconds which means that Apache would show an error
++#         page for 60 seconds if any connection to the Paste HTTP server failed
++ProxyPass /webgriffith <A HREF="http://localhost:5000">http://localhost:5000</A> retry=5
++ProxyPassReverse /webgriffith <A HREF="http://localhost:5000">http://localhost:5000</A>
++ProxyPreserveHost On
++&lt;Proxy *&gt;
++    Order deny,allow
++    Allow from all
++&lt;/Proxy&gt;
++&lt;Directory /srv/webgriffith/deployment/mod_proxy&gt;
++	Order deny,allow
++	Allow from all
++&lt;/Directory&gt;
++# vim: ft=apache
+
+Added: online/trunk/deployment/mod_proxy/apache_domain.conf
+===================================================================
+--- online/trunk/deployment/mod_proxy/apache_domain.conf	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/deployment/mod_proxy/apache_domain.conf	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,21 @@
++&lt;VirtualHost *&gt;
++    ServerName webgriffith.mydomain.com
++    ServerAlias www.webgriffith.mydomain.com
++
++    # Logfiles
++    ErrorLog  /srv/webgriffith/logs/apache.error.log
++    CustomLog /srv/webgriffith/logs/apache.access.log combined
++
++    # Proxy
++    # retry=5 - default is 60 seconds which means that Apache would show an
++    #           error page for 60 seconds if any connection to the Paste HTTP
++    #           server failed
++    ProxyPass / <A HREF="http://localhost:5000/">http://localhost:5000/</A> retry=5
++    ProxyPassReverse / <A HREF="http://localhost:5000/">http://localhost:5000/</A>
++    ProxyPreserveHost On
++    &lt;Proxy *&gt;
++        Order deny,allow
++        Allow from all
++    &lt;/Proxy&gt;
++&lt;/VirtualHost&gt;
++# vim: ft=apache
+
+Added: online/trunk/deployment/mod_wsgi/apache_directory.conf
+===================================================================
+--- online/trunk/deployment/mod_wsgi/apache_directory.conf	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/deployment/mod_wsgi/apache_directory.conf	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,12 @@
++# XXX: remember to update paths  
++
++# Setup mod_wsgi
++WSGIScriptAlias /webgriffith /srv/webgriffith/deployment/mod_wsgi/dispatch.wsgi
++#WSGIDaemonProcess user=griffith group=www-data processes=2 threads=25 display-name=webgriffith
++WSGIDaemonProcess griffith display-name=webgriffith
++WSGIProcessGroup griffith
++&lt;Directory /srv/webgriffith/deployment/mod_wsgi&gt;
++	Order deny,allow
++	Allow from all
++&lt;/Directory&gt;
++# vim: ft=apache
+
+Added: online/trunk/deployment/mod_wsgi/apache_domain.conf
+===================================================================
+--- online/trunk/deployment/mod_wsgi/apache_domain.conf	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/deployment/mod_wsgi/apache_domain.conf	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,21 @@
++&lt;VirtualHost *&gt;
++    ServerName webgriffith.mydomain.com
++    ServerAlias www.webgriffith.mydomain.com
++
++    # Logfiles
++    ErrorLog  /srv/webgriffith/logs/apache.error.log
++    CustomLog /srv/webgriffith/logs/apache.access.log combined
++
++    # Setup mod_wsgi
++    WSGIScriptAlias / /srv/webgriffith/deployment/mod_wsgi/dispatch.wsgi
++    #WSGIDaemonProcess user=griffith group=www-data processes=2 threads=25 display-name=webgriffith
++    WSGIDaemonProcess griffith display-name=webgriffith
++    WSGIProcessGroup griffith
++
++    &lt;Directory /srv/webgriffith/deployment/mod_wsgi&gt;
++        Order deny,allow
++        Allow from all
++    &lt;/Directory&gt;
++
++&lt;/VirtualHost&gt;
++# vim: ft=apache
+
+Added: online/trunk/deployment/mod_wsgi/dispatch.wsgi
+===================================================================
+--- online/trunk/deployment/mod_wsgi/dispatch.wsgi	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/deployment/mod_wsgi/dispatch.wsgi	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,16 @@
++# vim: ft=python
++import site
++import sys
++import os
++
++root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
++sys.path.append(root_dir)
++
++lib = os.path.join(root_dir, '3rdparty')
++if os.path.isdir(lib):
++    sys.path.insert(1, lib)
++    #site.addsitedir(lib)
++
++# Load the Pylons application
++from paste.deploy import loadapp
++application = loadapp(&quot;config:%s/production.ini&quot; % root_dir)
+
+Added: online/trunk/docs/deployment/index.txt
+===================================================================
+--- online/trunk/docs/deployment/index.txt	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/docs/deployment/index.txt	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,45 @@
++built-in HTTP server
++====================
++
++preparing configuration file
++----------------------------
++
++ $ ./start.py make-config webgriffith production.ini
++ 
++ for developers:
++ $ ./start.py make-config webgriffith development.ini
++
++and tweak it as appropriate (set the right paths, domains, etc.)
++
++
++starting the server
++-------------------
++
++ development
++ ^^^^^^^^^^^
++
++$ ./start.py serve --reload development.ini
++or:
++$ ./start.py
++
++
++ production
++ ^^^^^^^^^^
++
++ $ ./start.py serve --daemon production.ini start
++ or:
++ $ ./init.sh start
++
++
++Apache
++======
++
++see mod_wsgi.txt and mod_proxy.txt for more details
++
++
++mod_wsgi vs. mod_proxy
++---------------------
++
++mod_proxy will not start the Pylons project itself (in opposite to mod_wsgi),
++you have to start it yourself, see &quot;built-in HTTP server&quot; above (and init.sh script)
++
+
+Added: online/trunk/docs/deployment/mod_proxy.txt
+===================================================================
+--- online/trunk/docs/deployment/mod_proxy.txt	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/docs/deployment/mod_proxy.txt	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,29 @@
++Deploying WebGriffith using Apache's mod_proxy
++==============================================
++
++* create production.ini file if you don't have it yet (see index.txt)
++* update paths in files under deployment/mod_proxy/ directory
++* update WebGriffith instance's domain/port if it's different than the default
++  localhost:5000 (you can change it in .ini file)
++* if you want to use new domain for webgriffith:
++  + update domain name in mod_proxy/apache_domain.conf
++* if you want to use a directory:
++  + update directory name in mod_proxy/apache_directory.conf
++  + in ini file (f.e. production.ini), set prefix (see filter-with) to directory name
++* run these commands:
++
++  $ a2enmode proxy # if not enabled already
++  $ a2enmode proxy_http # if not enabled already
++
++  if you want to use a new domain:
++  $ ln -s `pwd`/deployment/mod_proxy/apache_domain.conf /etc/apache2/sites-available/webgriffith
++  
++  or if you want to use directory:
++  $ ln -s `pwd`/deployment/mod_proxy/apache_directory.conf /etc/apache2/sites-available/webgriffith
++ 
++  and finally:
++  $ a2ensite webgriffith
++  $ /etc/init.d/apache2 reload
++  $ update-rc.d -f webgriffith defaults # start at boot time
++
++
+
+Added: online/trunk/docs/deployment/mod_wsgi.txt
+===================================================================
+--- online/trunk/docs/deployment/mod_wsgi.txt	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/docs/deployment/mod_wsgi.txt	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,25 @@
++Deploying WebGriffith using Apache's mod_wsgi
++=============================================
++
++* create production.ini file if you don't have it yet (see index.txt)
++* update paths in files under deployment/mod_wsgi/ directory
++* if you want to use new domain for webgriffith:
++  + update domain name in mod_wsgi/apache_domain.conf
++* if you want to use a directory:
++  + update directory name in mod_wsgi/apache_directory.conf
++  + in ini file (f.e. production.ini), set prefix (see filter-with) to directory name
++* run these commands:
++
++  $ a2enmode wsgi # if not enabled already
++
++  if you want to use a new domain:
++  $ ln -s `pwd`/deployment/mod_wsgi/apache2_conf-domain /etc/apache2/sites-available/webgriffith
++  
++  or if you want to use directory:
++  $ ln -s `pwd`/deployment/mod_wsgi/apache_directory.conf /etc/apache2/sites-available/webgriffith
++ 
++  and finally:
++  $ a2ensite webgriffith
++  $ /etc/init.d/apache2 reload
++  $ update-rc.d -f webgriffith defaults # start at boot time
++
+
+Added: online/trunk/init.sh
+===================================================================
+--- online/trunk/init.sh	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/init.sh	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,20 @@
++#!/bin/sh -e
++
++DIRECTORY=`pwd` # FIXME: replace it with real path
++
++case &quot;$1&quot; in
++  start)
++    $DIRECTORY/start.py serve --daemon --pid-file=$DIRECTORY/webgriffith.pid --log-file=$DIRECTORY/logs/deamon.log $DIRECTORY/production.ini start
++    ;;
++  stop)
++    $DIRECTORY/start.py serve --daemon --pid-file=$DIRECTORY/webgriffith.pid --log-file=$DIRECTORY/logs/deamon.log $DIRECTORY/production.ini stop
++    ;;
++  restart)
++    $DIRECTORY/start.py serve --daemon --pid-file=$DIRECTORY/webgriffith.pid --log-file=$DIRECTORY/logs/deamon.log $DIRECTORY/production.ini restart
++    ;;
++  *)
++    echo $&quot;Usage: $0 {start|stop|restart}&quot;
++    exit 1
++esac
++
++exit 0
+
+
+Property changes on: online/trunk/init.sh
+___________________________________________________________________
+Name: svn:executable
+   + *
+
+Added: online/trunk/start.py
+===================================================================
+--- online/trunk/start.py	2008-12-03 20:25:24 UTC (rev 1079)
++++ online/trunk/start.py	2008-12-04 22:02:12 UTC (rev 1080)
+@@ -0,0 +1,23 @@
++#!/usr/bin/env python2.5
++
++import sys
++import os
++
++try:
++    here = __file__
++except NameError:
++    here = sys.argv[0]
++
++lib = os.path.abspath(os.path.join(os.path.dirname(here), '3rdparty'))
++if os.path.isdir(lib):
++    sys.path.insert(1, lib)
++
++if len(sys.argv) == 1: # no arguments, lets prepare few for paster (development only)
++    sys.argv.append('serve')
++    sys.argv.append('--reload')
++    sys.argv.append('development.ini')
++
++# run paster
++from paste.script import command
++command.run()
++
+
+
+Property changes on: online/trunk/start.py
+___________________________________________________________________
+Name: svn:executable
+   + *
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000554.html">[Griffith-svn] r1079 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000556.html">[Griffith-svn] r1081 - online/trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#555">[ date ]</a>
+              <a href="thread.html#555">[ thread ]</a>
+              <a href="subject.html#555">[ subject ]</a>
+              <a href="author.html#555">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

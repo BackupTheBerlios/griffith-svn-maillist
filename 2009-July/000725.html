@@ -1,0 +1,870 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1255 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1255%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib%0A%09trunk/lib/plugins/movie&In-Reply-To=%3C200907062339.n66Nda6g017218%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000724.html">
+   <LINK REL="Next"  HREF="000726.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1255 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1255%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib%0A%09trunk/lib/plugins/movie&In-Reply-To=%3C200907062339.n66Nda6g017218%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1255 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul  7 01:39:36 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000724.html">[Griffith-svn] r1254 - trunk/lib/db
+</A></li>
+        <LI>Next message: <A HREF="000726.html">[Griffith-svn] r1256 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#725">[ date ]</a>
+              <a href="thread.html#725">[ thread ]</a>
+              <a href="subject.html#725">[ subject ]</a>
+              <a href="author.html#725">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-07-07 01:39:05 +0200 (Tue, 07 Jul 2009)
+New Revision: 1255
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieAllocine.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py
+   branches/0.9.x/lib/test_movieplugins.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+   trunk/lib/test_movieplugins.py
+Log:
+* updated Allocine, CineMovies, IMDb-de, Zelluloid plugin
+* some testdata fixed
+* new api key for MovieMeter plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/ChangeLog	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-07-07  Michael Jahn
++	* updated Allocine, CineMovies, IMDb-de, Zelluloid plugin
++
+ 2009-07-03  Michael Jahn
+ 	* updated IMDb plugin
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAllocine.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAllocine.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -44,9 +44,9 @@
+ 		self.page_cast = self.open_page(self.parent_window, url = &quot;<A HREF="http://www.allocine.fr/film/casting_gen_cfilm=%s.html">http://www.allocine.fr/film/casting_gen_cfilm=%s.html</A>&quot; % str(self.movie_id))
+ 
+ 	def get_image(self):
+-		urls = re.split('&lt;img[ \t]+src=[\'&quot;]', self.page)
+-		for index in range(1, len(urls), 1):
+-			url = gutils.before(urls[index], '&quot;')
++		urls = re.split('&lt;img[ \t]+src=[\'&quot;]', gutils.trim(self.page, '&lt;/h1&gt;', '&lt;/h2&gt;'))
++		for url in urls[1:]:
++			url = gutils.before(url, '&quot;')
+ 			if string.find(url, '.jpg') &gt;= 0:
+ 				self.image_url = url
+ 				break
+@@ -55,11 +55,11 @@
+ 		self.o_title = &quot;&quot;
+ 		self.o_title = gutils.trim(self.page,&quot;Titre original : &lt;i&gt;&quot;,&quot;&lt;/i&gt;&quot;)
+ 		if (self.o_title==''):
+-			self.o_title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), ' - Allocine.fr', '')
++			self.o_title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#233;', '')
+ 		self.o_title = self.o_title.encode(self.encode)
+ 
+ 	def get_title(self):
+-		self.title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), ' - Allocine.fr', '')
++		self.title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#233;', '')
+ 		self.title = self.title.encode(self.encode)
+ 
+ 	def get_director(self):
+@@ -89,9 +89,9 @@
+ 		self.cast = &quot;&quot;
+ 		casts = gutils.trim(self.page_cast, 'Acteurs', '&lt;/table&gt;')
+ 		parts = string.split(casts, '&lt;td ')
+-		for index in range(1, len(parts) - 1, 2):
+-			character = gutils.after(parts[index], '&gt;')
+-			actor = gutils.after(parts[index + 1], '&gt;')
++		for index in range(1, len(parts) - 1, 3):
++			character = gutils.after(parts[index + 1], '&gt;')
++			actor = gutils.after(parts[index + 2], '&gt;')
+ 			self.cast = self.cast + gutils.clean(actor) + _(' as ').encode(self.encode) + gutils.clean(character) + '\n'
+ 
+ 	def get_classification(self):
+@@ -140,4 +140,58 @@
+ 			for index in range(1, len(elements), 1):
+ 				element = elements[index]
+ 				self.ids.append(gutils.before(element, '.'))
+-				self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;'))))
++				title = gutils.strip_tags(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;')))
++				year = gutils.clean(gutils.trim(element, '&lt;/h4&gt;', '&lt;/h4&gt;'))
++				if year:
++					self.titles.append(title + ' (' + year + ')')
++				else:
++					self.titles.append(title)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Le Prix &#224; payer' : [ 4, 4 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '110585' : { 
++            'title'               : u'Le Prix &#224; payer',
++            'o_title'             : u'Le Prix &#224; payer',
++            'director'            : u'Alexandra Lecl&#232;re',
++            'plot'                : True,
++            'cast'                : u'Christian Clavier' + _(' as ') + 'Jean-Pierre M&#233;nard\n\
++Nathalie Baye' + _(' as ') + 'Odile M&#233;nard\n\
++G&#233;rard Lanvin' + _(' as ') + 'Richard\n\
++G&#233;raldine Pailhas' + _(' as ') + 'Caroline\n\
++Patrick Chesnais' + _(' as ') + 'Gr&#233;goire l\'amant\n\
++Ana&#239;s Demoustier' + _(' as ') + 'Justine\n\
++Maud Buquet' + _(' as ') + 'la prostitu&#233;e\n\
++Francis Leplay' + _(' as ') + 'l\'agent immobilier',
++            'country'             : u'fran&#231;ais',
++            'genre'               : u'Com&#233;die',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.allocine.fr/film/fichefilm_gen_cfilm=110585.html">http://www.allocine.fr/film/fichefilm_gen_cfilm=110585.html</A>',
++            'trailer'             : '<A HREF="http://www.allocine.fr/film/video_gen_cfilm=110585.html">http://www.allocine.fr/film/video_gen_cfilm=110585.html</A>',
++            'year'                : 2007,
++            'notes'               : False,
++            'runtime'             : 95,
++            'image'               : True,
++            'rating'              : 5
++        },
++    }
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -393,7 +393,7 @@
+ 			'cast'				: 'Sylvester Stallone\n\
+ Antonio Traver\n\
+ Burt Young',
+-			'country'			: False,
++			'country'			: 'USA',
+ 			'genre'				: 'Drama, Drama',
+ 			'classification'	: 'Freigegeben ab 12 Jahren',
+ 			'studio'			: 'MGM Home Entertainment GmbH (dt.)',
+@@ -414,7 +414,7 @@
+ 			'cast'				: 'Lino Ventura\n\
+ Fran&#231;oise Fabian\n\
+ Charles G&#233;rard',
+-			'country'			: 'Frankreich',
++			'country'			: 'Frankreich, Italien',
+ 			'genre'				: 'Krimikom&#246;die, Drama, General AAS, Drama, Kom&#246;die, Krimi',
+ 			'classification'	: 'Freigegeben ab 12 Jahren',
+ 			'studio'			: 'Warner Home Video - DVD',
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -78,7 +78,7 @@
+ 		self.genre = self.genre.encode(self.encode)
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.trim(self.page_cast, 'diens&lt;/b&gt; :', '&lt;/table&gt;')
++		self.cast = gutils.trim(self.page_cast, 'diens&lt;/h2&gt; :', '&lt;/table&gt;')
+ 		self.cast = self.cast.replace('\n', '')
+ 		self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
+ 		self.cast = gutils.clean(self.cast)
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -202,64 +202,64 @@
+ 			'plot'                : True,
+ 			'cast'                : 'Dolph Lundgren\n\
+ Sylvester Stallone\n\
++Mike Tyson\n\
+ Carl Weathers\n\
+-Mike Tyson\n\
+ Burt Young\n\
+ Talia Shire\n\
+ Burgess Meredith\n\
+-Tony Burton\n\
+ Milo Ventimiglia\n\
+ Mr. T\n\
++Tony Burton\n\
++Geraldine Hughes\n\
+ Frank Stallone\n\
+-Geraldine Hughes\n\
+ Michael Buffer\n\
+ Lahmard J. Tate\n\
+ Don Sherman\n\
++Gunnar Peterson\n\
+ LeRoy Neiman\n\
+-Robert Michael Kelly\n\
+-Gunnar Peterson\n\
++Tobias Segal\n\
+ Stu Nahan\n\
+-Tobias Segal\n\
+ Skip Bayless\n\
++Robert Michael Kelly\n\
+ Ricky Cavazos\n\
+-Marc Ratner\n\
+ Rick Buchborn\n\
+-Jim Lampley\n\
++Jody Giambelluca\n\
++Yahya\n\
++Charles Johnson\n\
++Barney Fitzpatrick\n\
+ Henry G. Sanders\n\
+-Charles Johnson\n\
+ Fran Pultro\n\
+-Angela Boyd\n\
+-Yahya\n\
++Dana Jacobson\n\
+ Tim Carr\n\
+ Joe Cortez\n\
++Jim Lampley\n\
++Max Kellerman\n\
++Ana Gerena\n\
++Marc Ratner\n\
++Jack Lazzarado\n\
+ Carter Mitchell\n\
++Angela Boyd\n\
+ Maureen Schilling\n\
+-Jody Giambelluca\n\
+-Barney Fitzpatrick\n\
++James Binns\n\
+ Antonio Tarver\n\
+-Ana Gerena\n\
+ A.J. Benza\n\
+-James Binns\n\
+ Nick Baker\n\
+-Jack Lazzarado\n\
++Louis Giansante\n\
+ Matt Frack\n\
+-Louis Giansante\n\
+-Kevin King Templeton\n\
+-Dana Jacobson\n\
+ Larry Merchant\n\
+-Woody Paige\n\
+-Brian Kenny\n\
+ Paul Dion Monte\n\
++Bernard Fern&#225;ndez\n\
+ Anthony Lato Jr.\n\
++Kevin King Templeton\n\
++Brian Kenny\n\
++Woody Paige\n\
++Lou DiBella\n\
+ Pedro Lovell\n\
+-Max Kellerman\n\
+ Bert Randolph Sugar\n\
+ Vinod Kumar\n\
+-Lou DiBella\n\
+-Bernard Fern&#225;ndez\n\
++Jay Crawford\n\
++Gary Compton\n\
+ Johnnie Hobbs Jr.\n\
+-Gary Compton\n\
+-Jay Crawford\n\
+ James Francis Kelly III',
+ 			'country'             : 'USA',
+ 			'genre'               : 'Drama',
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -137,8 +137,8 @@
+ 		self.cast = string.replace(self.cast, ' ... ', _(' as ').encode('utf8'))
+ 		self.cast = string.replace(self.cast, '...', _(' as ').encode('utf8'))
+ 		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr&gt;', &quot;\n&quot;)
+-		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;even&quot;&gt;', &quot;\n&quot;)
+-		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;odd&quot;&gt;', &quot;\n&quot;)
++		self.cast = re.sub('&lt;/tr&gt;[ \t]*&lt;tr[ \t]*class=&quot;even&quot;&gt;', &quot;\n&quot;, self.cast)
++		self.cast = re.sub('&lt;/tr&gt;[ \t]*&lt;tr[ \t]*class=&quot;odd&quot;&gt;', &quot;\n&quot;, self.cast)
+ 		self.cast = self.__before_more(self.cast)
+ 		self.cast = re.sub('[ ]+', ' ', self.cast)
+ 
+@@ -281,7 +281,7 @@
+ 	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+ 	#
+ 	test_configuration = {
+-		'Rocky Balboa'         : [ 17, 17 ],
++		'Rocky Balboa'         : [ 16, 16 ],
+ 		'Ein gl&#252;ckliches Jahr' : [  6,  6 ]
+ 	}
+ 
+@@ -370,6 +370,7 @@
+ Jacqueline Olivia' + _(' as ') + 'M&#228;dchen (nicht im Abspann)\n\
+ Brian H. Scott' + _(' as ') + 'Ringside Cop #1 (nicht im Abspann)\n\
+ Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
++Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)',
+ 			'country'			: 'USA',
+ 			'genre'				: 'Action | Sport',
+@@ -384,7 +385,7 @@
+ + _('Color') + ': Farbe',
+ 			'runtime'			: 102,
+ 			'image'				: True,
+-			'rating'			: 8
++			'rating'			: 7
+ 		},
+ 		'0069815' : { 
+ 			'title'				: 'Ein gl&#252;ckliches Jahr',
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -316,7 +316,7 @@
+ Bong Tae-gyu' + _(' as ') + 'Cameo\n\
+ Im Ha-ryong' + _(' as ') + 'Cameo\n\
+ Yoon Do-hyeon\n\
+-Lee Choon-yeon\n\
++Lee Choon-yeon' + _(' as ') + 'Cameo\n\
+ Kim Yeong-in\n\
+ Park Yoon-bae\n\
+ Lee Won\n\
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -59,7 +59,7 @@
+ 		self.title = gutils.trim(self.page, '&lt;title&gt;', '|')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.detail_page, 'Regie', '&lt;/A&gt;')
++		self.director = gutils.trim(self.detail_page, 'Regie', '&lt;/a&gt;')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, '&lt;DIV CLASS=bigtext&gt;', '&lt;/DIV&gt;')
+@@ -88,8 +88,9 @@
+ 				delimiter = ', '
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.trim(self.detail_page, 'alt=&quot;Besetzung&quot;', '&lt;TD COLSPAN=')
+-		self.cast = self.cast.replace('&lt;A HREF=', '--flip--' + '&lt;A HREF=')
++		self.cast = gutils.trim(self.detail_page, 'alt=&quot;Besetzung&quot;', '&lt;img')
++		self.cast = self.cast.replace('&lt;a href=', '--flip--' + '&lt;a href=')
++		self.cast = self.cast.replace('&lt;/td&gt;&lt;/tr&gt;', '\n')
+ 		self.cast = gutils.strip_tags(self.cast)
+ 		self.cast = gutils.after(self.cast, '&gt;')
+ 		elements = self.cast.split('\n')
+@@ -107,11 +108,12 @@
+ 		self.classification = re.sub('[,&lt;].*', '', self.classification)
+ 
+ 	def get_studio(self):
+-		self.studio = gutils.strip_tags(gutils.trim(self.detail_page, 'alt=&quot;Produktion&quot;', '&nbsp;'))
++		self.studio = gutils.trim(self.detail_page, 'alt=&quot;Produktion&quot;', '&lt;img')
+ 		if self.studio == '':
+ 			self.studio = gutils.trim(self.detail_page, 'alt=&quot;Produktion&quot;', '&lt;/TABLE&gt;')
+ 		self.studio = gutils.after(self.studio, '&gt;')
+-		self.studio = self.studio.replace('\n', ', ')
++		self.studio = self.studio.replace('&lt;tr&gt;', ', ')
++		self.studio = gutils.strip_tags(self.studio)
+ 		self.studio = re.sub('((^, )|(, $))', '', self.studio)
+ 		
+ 	def get_o_site(self):
+
+Modified: branches/0.9.x/lib/test_movieplugins.py
+===================================================================
+--- branches/0.9.x/lib/test_movieplugins.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ branches/0.9.x/lib/test_movieplugins.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -63,6 +63,7 @@
+ #
+ class PluginTester:
+ 	test_plugins = [
++		'PluginMovieAllocine',
+ 		'PluginMovieAllMovie',
+ 		'PluginMovieAmazon',
+ 		'PluginMovieCinematografo',
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/ChangeLog	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-07-07  Michael Jahn
++	* updated Allocine, CineMovies, IMDb-de, MovieMeter, Zelluloid plugin
++
+ 2009-07-06  Piotr O&#380;arowski
+ 	* Reorganize ORM stuff file structure (db module moved to db package)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -43,9 +43,9 @@
+         self.page_cast = self.open_page(self.parent_window, url = &quot;<A HREF="http://www.allocine.fr/film/casting_gen_cfilm=%s.html">http://www.allocine.fr/film/casting_gen_cfilm=%s.html</A>&quot; % str(self.movie_id))
+ 
+     def get_image(self):
+-        urls = re.split('&lt;img[ \t]+src=[\'&quot;]', self.page)
+-        for index in range(1, len(urls), 1):
+-            url = gutils.before(urls[index], '&quot;')
++        urls = re.split('&lt;img[ \t]+src=[\'&quot;]', gutils.trim(self.page, '&lt;/h1&gt;', '&lt;/h2&gt;'))
++        for url in urls[1:]:
++            url = gutils.before(url, '&quot;')
+             if string.find(url, '.jpg') &gt;= 0:
+                 self.image_url = url
+                 break
+@@ -54,10 +54,10 @@
+         self.o_title = &quot;&quot;
+         self.o_title = gutils.trim(self.page,&quot;Titre original : &lt;i&gt;&quot;,&quot;&lt;/i&gt;&quot;)
+         if (self.o_title==''):
+-            self.o_title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), ' - Allocine.fr', '')
++            self.o_title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#233;', '')
+ 
+     def get_title(self):
+-        self.title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), ' - Allocine.fr', '')
++        self.title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#233;', '')
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page, u'R&#233;alis&#233; par ', '&lt;/a&gt;&lt;/h3&gt;')
+@@ -82,9 +82,9 @@
+         self.cast = &quot;&quot;
+         casts = gutils.trim(self.page_cast, 'Acteurs', '&lt;/table&gt;')
+         parts = string.split(casts, '&lt;td ')
+-        for index in range(1, len(parts) - 1, 2):
+-            character = gutils.after(parts[index], '&gt;')
+-            actor = gutils.after(parts[index + 1], '&gt;')
++        for index in range(1, len(parts) - 1, 3):
++            character = gutils.after(parts[index + 1], '&gt;')
++            actor = gutils.after(parts[index + 2], '&gt;')
+             self.cast = self.cast + gutils.clean(actor) + _(' as ') + gutils.clean(character) + '\n'
+ 
+     def get_classification(self):
+@@ -139,4 +139,61 @@
+             for index in range(1, len(elements), 1):
+                 element = elements[index]
+                 self.ids.append(gutils.before(element, '.'))
+-                self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;'))))
++                title = gutils.strip_tags(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;')))
++                year = gutils.clean(gutils.trim(element, '&lt;/h4&gt;', '&lt;/h4&gt;'))
++                if year:
++                    self.titles.append(title + ' (' + year + ')')
++                else:
++                    self.titles.append(title)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Le Prix &#224; payer' : [ 4, 4 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '110585' : { 
++            'title'               : u'Le Prix &#224; payer',
++            'o_title'             : u'Le Prix &#224; payer',
++            'director'            : u'Alexandra Lecl&#232;re',
++            'plot'                : True,
++            'cast'                : u'Christian Clavier' + _(' as ') + 'Jean-Pierre M&#233;nard\n\
++Nathalie Baye' + _(' as ') + 'Odile M&#233;nard\n\
++G&#233;rard Lanvin' + _(' as ') + 'Richard\n\
++G&#233;raldine Pailhas' + _(' as ') + 'Caroline\n\
++Patrick Chesnais' + _(' as ') + 'Gr&#233;goire l\'amant\n\
++Ana&#239;s Demoustier' + _(' as ') + 'Justine\n\
++Maud Buquet' + _(' as ') + 'la prostitu&#233;e\n\
++Francis Leplay' + _(' as ') + 'l\'agent immobilier',
++            'country'             : u'fran&#231;ais',
++            'genre'               : u'Com&#233;die',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.allocine.fr/film/fichefilm_gen_cfilm=110585.html">http://www.allocine.fr/film/fichefilm_gen_cfilm=110585.html</A>',
++            'trailer'             : '<A HREF="http://www.allocine.fr/film/video_gen_cfilm=110585.html">http://www.allocine.fr/film/video_gen_cfilm=110585.html</A>',
++            'year'                : 2007,
++            'notes'               : False,
++            'runtime'             : 95,
++            'image'               : True,
++            'rating'              : 5,
++            'cameraman'           : u'Jean-Fran&#231;ois Robin',
++            'screenplay'          : u'Alexandra Lecl&#232;re',
++            'barcode'             : False
++        },
++    }
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -396,7 +396,7 @@
+             'cast'                : 'Sylvester Stallone\n\
+ Antonio Traver\n\
+ Burt Young',
+-            'country'             : False,
++            'country'             : 'USA',
+             'genre'               : 'Drama, Drama',
+             'classification'      : 'Freigegeben ab 12 Jahren',
+             'studio'              : 'MGM Home Entertainment GmbH (dt.)',
+@@ -418,7 +418,7 @@
+             'cast'                : 'Lino Ventura\n\
+ Fran&#231;oise Fabian\n\
+ Charles G&#233;rard',
+-            'country'             : 'Frankreich',
++            'country'             : 'Frankreich, Italien',
+             'genre'               : 'Krimikom&#246;die, Drama, General AAS, Drama, Kom&#246;die, Krimi',
+             'classification'      : 'Freigegeben ab 12 Jahren',
+             'studio'              : 'Warner Home Video - DVD',
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -71,7 +71,7 @@
+         self.genre = gutils.trim(self.page, 'Genre :', '&lt;/tr&gt;')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page_cast, 'diens&lt;/b&gt; :', '&lt;/table&gt;')
++        self.cast = gutils.trim(self.page_cast, 'diens&lt;/h2&gt; :', '&lt;/table&gt;')
+         self.cast = self.cast.replace('\n', '')
+         self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
+         self.cast = gutils.clean(self.cast)
+@@ -101,7 +101,7 @@
+         self.rating = gutils.clean(gutils.trim(self.page, '&lt;div id=scoree&gt;', '&lt;/div&gt;'))
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de&lt;/b&gt; :', '&lt;/a&gt;'))
++        self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de&lt;/h2&gt; :', '&lt;/a&gt;'))
+ 
+ 
+ class SearchPlugin(movie.SearchMovie):
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -201,64 +201,64 @@
+             'plot'                : True,
+             'cast'                : 'Dolph Lundgren\n\
+ Sylvester Stallone\n\
++Mike Tyson\n\
+ Carl Weathers\n\
+-Mike Tyson\n\
+ Burt Young\n\
+ Talia Shire\n\
+ Burgess Meredith\n\
+-Tony Burton\n\
+ Milo Ventimiglia\n\
+ Mr. T\n\
++Tony Burton\n\
++Geraldine Hughes\n\
+ Frank Stallone\n\
+-Geraldine Hughes\n\
+ Michael Buffer\n\
+ Lahmard J. Tate\n\
+ Don Sherman\n\
++Gunnar Peterson\n\
+ LeRoy Neiman\n\
+-Robert Michael Kelly\n\
+-Gunnar Peterson\n\
++Tobias Segal\n\
+ Stu Nahan\n\
+-Tobias Segal\n\
+ Skip Bayless\n\
++Robert Michael Kelly\n\
+ Ricky Cavazos\n\
+-Marc Ratner\n\
+ Rick Buchborn\n\
+-Jim Lampley\n\
++Jody Giambelluca\n\
++Yahya\n\
++Charles Johnson\n\
++Barney Fitzpatrick\n\
+ Henry G. Sanders\n\
+-Charles Johnson\n\
+ Fran Pultro\n\
+-Angela Boyd\n\
+-Yahya\n\
++Dana Jacobson\n\
+ Tim Carr\n\
+ Joe Cortez\n\
++Jim Lampley\n\
++Max Kellerman\n\
++Ana Gerena\n\
++Marc Ratner\n\
++Jack Lazzarado\n\
+ Carter Mitchell\n\
++Angela Boyd\n\
+ Maureen Schilling\n\
+-Jody Giambelluca\n\
+-Barney Fitzpatrick\n\
++James Binns\n\
+ Antonio Tarver\n\
+-Ana Gerena\n\
+ A.J. Benza\n\
+-James Binns\n\
+ Nick Baker\n\
+-Jack Lazzarado\n\
++Louis Giansante\n\
+ Matt Frack\n\
+-Louis Giansante\n\
+-Kevin King Templeton\n\
+-Dana Jacobson\n\
+ Larry Merchant\n\
+-Woody Paige\n\
+-Brian Kenny\n\
+ Paul Dion Monte\n\
++Bernard Fern&#225;ndez\n\
+ Anthony Lato Jr.\n\
++Kevin King Templeton\n\
++Brian Kenny\n\
++Woody Paige\n\
++Lou DiBella\n\
+ Pedro Lovell\n\
+-Max Kellerman\n\
+ Bert Randolph Sugar\n\
+ Vinod Kumar\n\
+-Lou DiBella\n\
+-Bernard Fern&#225;ndez\n\
++Jay Crawford\n\
++Gary Compton\n\
+ Johnnie Hobbs Jr.\n\
+-Gary Compton\n\
+-Jay Crawford\n\
+ James Francis Kelly III',
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -133,8 +133,8 @@
+         self.cast = string.replace(self.cast, ' ... ', _(' as ').encode('utf8'))
+         self.cast = string.replace(self.cast, '...', _(' as ').encode('utf8'))
+         self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr&gt;', &quot;\n&quot;)
+-        self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;even&quot;&gt;', &quot;\n&quot;)
+-        self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;odd&quot;&gt;', &quot;\n&quot;)
++        self.cast = re.sub('&lt;/tr&gt;[ \t]*&lt;tr[ \t]*class=&quot;even&quot;&gt;', &quot;\n&quot;, self.cast)
++        self.cast = re.sub('&lt;/tr&gt;[ \t]*&lt;tr[ \t]*class=&quot;odd&quot;&gt;', &quot;\n&quot;, self.cast)
+         self.cast = self.__before_more(self.cast)
+         self.cast = re.sub('[ ]+', ' ', self.cast)
+ 
+@@ -265,7 +265,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 17, 17 ],
++        'Rocky Balboa'         : [ 16, 16 ],
+         'Ein gl&#252;ckliches Jahr' : [  6,  6 ]
+     }
+ 
+@@ -354,6 +354,7 @@
+ Jacqueline Olivia' + _(' as ') + 'M&#228;dchen (nicht im Abspann)\n\
+ Brian H. Scott' + _(' as ') + 'Ringside Cop #1 (nicht im Abspann)\n\
+ Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
++Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)',
+             'country'           : 'USA',
+             'genre'             : 'Action | Sport',
+@@ -368,7 +369,7 @@
+ + _('Color') + ': Farbe',
+             'runtime'           : 102,
+             'image'             : True,
+-            'rating'            : 8
++            'rating'            : 7
+         },
+         '0069815' : { 
+             'title'             : 'Ein gl&#252;ckliches Jahr',
+
+Modified: trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -34,7 +34,7 @@
+ plugin_author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+ plugin_version      = '1.0'
+ # API key created for Griffith
+-moviemeter_api_key  = 'qs1bqrpqf89e9uht5b0q01y0xstcp3w0'
++moviemeter_api_key  = '6h70thfmkwhq55hst69gnr65ckbaqu6h'
+ 
+ #
+ # XMLRPC through proxy if necessary
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -304,7 +304,7 @@
+ Bong Tae-gyu' + _(' as ') + 'Cameo\n\
+ Im Ha-ryong' + _(' as ') + 'Cameo\n\
+ Yoon Do-hyeon\n\
+-Lee Choon-yeon\n\
++Lee Choon-yeon' + _(' as ') + 'Cameo\n\
+ Kim Yeong-in\n\
+ Park Yoon-bae\n\
+ Lee Won\n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -59,7 +59,7 @@
+         self.title = gutils.trim(self.page, '&lt;title&gt;', '|')
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.detail_page, 'Regie', '&lt;/A&gt;')
++        self.director = gutils.trim(self.detail_page, 'Regie', '&lt;/a&gt;')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '&lt;DIV CLASS=bigtext&gt;', '&lt;/DIV&gt;')
+@@ -88,8 +88,9 @@
+                 delimiter = ', '
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.detail_page, 'alt=&quot;Besetzung&quot;', '&lt;TD COLSPAN=')
+-        self.cast = self.cast.replace('&lt;A HREF=', '--flip--' + '&lt;A HREF=')
++        self.cast = gutils.trim(self.detail_page, 'alt=&quot;Besetzung&quot;', '&lt;img')
++        self.cast = self.cast.replace('&lt;a href=', '--flip--' + '&lt;a href=')
++        self.cast = self.cast.replace('&lt;/td&gt;&lt;/tr&gt;', '\n')
+         self.cast = gutils.strip_tags(self.cast)
+         self.cast = gutils.after(self.cast, '&gt;')
+         elements = self.cast.split('\n')
+@@ -107,11 +108,12 @@
+         self.classification = re.sub('[,&lt;].*', '', self.classification)
+ 
+     def get_studio(self):
+-        self.studio = gutils.strip_tags(gutils.trim(self.detail_page, 'alt=&quot;Produktion&quot;', '&nbsp;'))
++        self.studio = gutils.trim(self.detail_page, 'alt=&quot;Produktion&quot;', '&lt;img')
+         if self.studio == '':
+             self.studio = gutils.trim(self.detail_page, 'alt=&quot;Produktion&quot;', '&lt;/TABLE&gt;')
+         self.studio = gutils.after(self.studio, '&gt;')
+-        self.studio = self.studio.replace('\n', ', ')
++        self.studio = self.studio.replace('&lt;tr&gt;', ', ')
++        self.studio = gutils.strip_tags(self.studio)
+         self.studio = re.sub('((^, )|(, $))', '', self.studio)
+         
+     def get_o_site(self):
+@@ -147,6 +149,9 @@
+     def get_notes(self):
+         self.notes = &quot;&quot;
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.after(gutils.trim(self.detail_page, '&gt;Drehbuch&lt;', '&lt;/a&gt;'), '&gt;')
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+@@ -221,7 +226,8 @@
+             'notes'             : False,
+             'runtime'           : 102,
+             'image'             : True,
+-            'rating'            : 8.0
++            'rating'            : 8.0,
++            'screenplay'        : 'Sylvester Stallone'
+         },
+         '6342' : { 
+             'title'             : 'Die wilden H&#252;hner',
+@@ -264,6 +270,7 @@
+             'notes'             : False,
+             'runtime'           : 109,
+             'image'             : True,
+-            'rating'            : 8.0
++            'rating'            : 8.0,
++            'screenplay'        : 'G&#252;zin Kar, Uschi Reich'
+         }
+     }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2009-07-06 20:47:27 UTC (rev 1254)
++++ trunk/lib/test_movieplugins.py	2009-07-06 23:39:05 UTC (rev 1255)
+@@ -67,6 +67,7 @@
+ #
+ class PluginTester:
+     test_plugins = [
++        'PluginMovieAllocine',
+         'PluginMovieAllMovie',
+         'PluginMovieAmazon',
+         'PluginMovieCinematografo',
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000724.html">[Griffith-svn] r1254 - trunk/lib/db
+</A></li>
+	<LI>Next message: <A HREF="000726.html">[Griffith-svn] r1256 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#725">[ date ]</a>
+              <a href="thread.html#725">[ thread ]</a>
+              <a href="subject.html#725">[ subject ]</a>
+              <a href="author.html#725">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

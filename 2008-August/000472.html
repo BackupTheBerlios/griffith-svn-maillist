@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r992 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r992%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200808200641.m7K6ffoZ015391%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000471.html">
+   <LINK REL="Next"  HREF="000473.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r992 - trunk/lib/plugins/movie</H1>
+    <B>kura666 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r992%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200808200641.m7K6ffoZ015391%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r992 - trunk/lib/plugins/movie">kura666 at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug 20 08:41:41 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000471.html">[Griffith-svn] r991 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000473.html">[Griffith-svn] r993 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#472">[ date ]</a>
+              <a href="thread.html#472">[ thread ]</a>
+              <a href="subject.html#472">[ subject ]</a>
+              <a href="author.html#472">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: kura666
+Date: 2008-08-20 08:41:39 +0200 (Wed, 20 Aug 2008)
+New Revision: 992
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieFDb.py
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+Log:
+Filmweb plugin: added year in movie search
+Changed author and email of Filmweb and FDb plugin
+
+
+Modified: trunk/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFDb.py	2008-08-19 09:17:07 UTC (rev 991)
++++ trunk/lib/plugins/movie/PluginMovieFDb.py	2008-08-20 06:41:39 UTC (rev 992)
+@@ -32,9 +32,9 @@
+ plugin_description    = 'Internetowa baza filmowa'
+ plugin_url        = 'fdb.pl'
+ plugin_language        = _('Polish')
+-plugin_author        = 'Piotr O&#380;arowski'
+-plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version        = '1.9'
++plugin_author        = 'Piotr O&#380;arowski, Bartosz Kurczewski'
++plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
++plugin_version        = '1.10'
+ 
+ class Plugin(movie.Movie):
+     TRAILER_PATTERN = re.compile('<A HREF="http://.*\.fdb\.pl/zwiastuny/odtwarzaj/[0-9">http://.*\.fdb\.pl/zwiastuny/odtwarzaj/[0-9</A>]*')
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-08-19 09:17:07 UTC (rev 991)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2008-08-20 06:41:39 UTC (rev 992)
+@@ -30,9 +30,9 @@
+ plugin_description    = 'Web pe&#322;en film&#243;w'
+ plugin_url        = 'www.filmweb.pl'
+ plugin_language        = _('Polish')
+-plugin_author        = 'Piotr O&#380;arowski'
+-plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version        = '1.12'
++plugin_author        = 'Piotr O&#380;arowski, Bartosz Kurczewski'
++plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
++plugin_version        = '1.13'
+ 
+ class Plugin(movie.Movie):
+     TRAILER_PATTERN     = re.compile(&quot;&quot;&quot;&lt;a class=[&quot;']notSelected[&quot;'].*?href=[&quot;'](.*?)[&quot;']&gt;zwiastuny&lt;/a&gt;\s*\[\d+\]\s*&raquo;&quot;&quot;&quot;)
+@@ -174,7 +174,9 @@
+                 for element in elements:
+                     element = gutils.after(element, '&lt;a class=&quot;searchResultTitle&quot; href=&quot;')
+                     self.ids.append(gutils.before(element, '&quot;&gt;'))
+-                    element = gutils.trim(element, '&quot;&gt;', '&lt;/a&gt;')
++                    element_title = gutils.trim(element, '&quot;&gt;', '&lt;/a&gt;')
++		    element_year = gutils.trim(element, '&lt;/a&gt;', '&lt;span')
++		    element = string.strip(element_title) + ' ' + string.strip(element_year)
+                     element = gutils.convert_entities(element)
+                     element = gutils.strip_tags(element)
+                     self.titles.append(element)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000471.html">[Griffith-svn] r991 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000473.html">[Griffith-svn] r993 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#472">[ date ]</a>
+              <a href="thread.html#472">[ thread ]</a>
+              <a href="subject.html#472">[ subject ]</a>
+              <a href="author.html#472">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

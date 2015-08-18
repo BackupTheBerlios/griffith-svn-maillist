@@ -1,0 +1,428 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1029%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200811101659.mAAGxGEM012639%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000508.html">
+   <LINK REL="Next"  HREF="000510.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1029%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200811101659.mAAGxGEM012639%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 10 17:59:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000508.html">[Griffith-svn] r1028 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000510.html">[Griffith-svn] r1030 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#509">[ date ]</a>
+              <a href="thread.html#509">[ thread ]</a>
+              <a href="subject.html#509">[ subject ]</a>
+              <a href="author.html#509">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-10 17:58:54 +0100 (Mon, 10 Nov 2008)
+New Revision: 1029
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/gdebug.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+* updated plugins IMDB, IMDB-de, Amazon, Kino.de, FilmeVonAZ
+* fixed little problem with gdebug (only in 0.9 branch)
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/ChangeLog	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-10  Michael Jahn
++	* updated plugins IMDB-de, Amazon, Kino.de, FilmeVonAZ
++
+ 2008-11-01  Michael Jahn
+ 	* updated IMDB plugin
+ 
+
+Modified: branches/0.9.x/lib/gdebug.py
+===================================================================
+--- branches/0.9.x/lib/gdebug.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/lib/gdebug.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -86,8 +86,9 @@
+ 	def close(self):
+ 		self.dialog.destroy()
+ 	def add(self, txt):
+-		buffer = self.textview.get_buffer()
+-		buffer.insert(buffer.get_end_iter(), txt, -1)
++		if txt is not None:
++			buffer = self.textview.get_buffer()
++			buffer.insert(buffer.get_end_iter(), txt, -1)
+ 
+ #
+ # used on windows system
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -369,7 +369,7 @@
+ 	test_configuration = {
+ 		'Rocky Balboa'			: [ 10, 10 ],
+ 		'Arahan'				: [ 6, 6 ],
+-		'Ein gl&#252;ckliches Jahr'	: [ 1, 1 ]
++		'Ein gl&#252;ckliches Jahr'	: [ 2, 2 ]
+ 	}
+ 
+ class PluginTest:
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -80,7 +80,7 @@
+ 					self.delimiter = &quot;, &quot;
+ 
+ 	def get_cast(self):
+-		self.cast = self.regextrim(self.page, '[(]Darsteller[)]', '&lt;[pP]&gt;')
++		self.cast = self.regextrim(self.page, '[(]Darsteller[)]', '(&lt;[pP]&gt;|&lt;br&gt;&lt;span[^&gt;]+&gt;)')
+ 		self.cast = gutils.clean(self.cast)
+ 		self.cast = self.cast.replace(' als ', _(' as '))
+ 		self.cast = re.sub('( \t|\t|\r|\n)', '', self.cast)
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -65,7 +65,7 @@
+ 
+ 	def get_title(self):
+ 		self.title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;span')
+-		elements = string.split(gutils.trim(self.page, '&lt;h5&gt;Alternativ:', '&lt;/div&gt;'), '&lt;i class=&quot;transl&quot;')
++		elements = string.split(self.regextrim(self.page, '&lt;h5&gt;(Alternativ|Auch bekannt als):', '&lt;/div&gt;'), '&lt;i class=&quot;transl&quot;')
+ 		if len(elements) &gt; 1:
+ 			for element in elements:
+ 				tmp = gutils.before(gutils.trim(element, '&gt;', '[de]'), '(')
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -51,12 +51,12 @@
+ 			self.image_url = gutils.trim(self.page[tmp:], 'src=&quot;', '&quot;')
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++		self.o_title = self.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
+ 		if self.o_title == '':
+ 			self.o_title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+ 	def get_title(self):	# same as get_o_title()
+-		self.title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
++		self.title = self.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
+ 		if self.title == '':
+ 			self.title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
+ 
+@@ -171,6 +171,19 @@
+ 			data = data[:tmp] + '&gt;'
+ 		return data
+ 
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
+ class SearchPlugin(movie.SearchMovie):
+ 	PATTERN = re.compile(r&quot;&quot;&quot;&lt;A HREF=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/LI&gt;&quot;&quot;&quot;)
+ 	PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieKinoDe.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieKinoDe.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -139,20 +139,23 @@
+ 				self.cast = gutils.after(self.cast, '&gt;mehr&lt;')
+ 			self.cast = gutils.after(self.cast, '&gt;')
+ 			self.cast = re.sub('&lt;tr[ ]+class=&quot;(dbtrefferlight|dbtrefferdark)&quot;&gt;', &quot;\n&quot;, self.cast)
+-			self.cast = self.cast.replace(&quot;&nbsp;&quot;, &quot;--flip--&quot;)
++			self.cast = self.cast.replace('&nbsp;', '--flip--')
+ 			self.cast = gutils.clean(self.cast)
++			self.cast = re.sub(&quot;[\t]+&quot;, '', self.cast)
++			self.cast = re.sub(&quot;[\n]+&quot;, &quot;\n&quot;, self.cast)
++			self.cast = re.sub(&quot;--flip--[\n]+&quot;, '--flip--', self.cast)
+ 			elements = self.cast.split(&quot;\n&quot;)
+ 			self.cast = ''
+ 			for element in elements:
+-				elements2 = element.split(&quot;--flip--&quot;)
++				elements2 = element.split('--flip--')
+ 				if len(elements2) &gt; 1:
+ 					if elements2[0] &lt;&gt; '':
+-						self.cast += elements2[1] + &quot;--flip--&quot; + elements2[0] + &quot;\n&quot;
++						self.cast += elements2[1] + '--flip--' + elements2[0] + &quot;\n&quot;
+ 					else:
+ 						self.cast += elements2[1] + &quot;\n&quot;
+ 				else:
+-					self.cast = element
+-			self.cast = string.replace(self.cast, &quot;--flip--&quot;, _(&quot; as &quot;))
++					self.cast += element + &quot;\n&quot;
++			self.cast = string.replace(self.cast, '--flip--', _(' as '))
+ 
+ 	def get_classification(self):
+ 		self.classification = self.regextrim(self.tmp_page,'FSK:( |&nbsp;)+', '&lt;/strong&gt;')
+@@ -220,8 +223,8 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+ 	def __init__(self):
+-		self.original_url_search    = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;wort=">http://www.kino.de/megasuche.php4?typ=filme&amp;wort=</A>&quot;
+-		self.translated_url_search    = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;wort=">http://www.kino.de/megasuche.php4?typ=filme&amp;wort=</A>&quot;
++		self.original_url_search   = '<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=</A>'
++		self.translated_url_search = '<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=</A>'
+ #		self.encode='utf-8'
+ 		self.encode='iso-8859-1'
+ 
+@@ -231,7 +234,7 @@
+ 		#
+ 		# try to get all result pages (not so nice, but it works)
+ 		#
+-		tmp_pagecount = gutils.trim(tmp_pagemovie, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
++		tmp_pagecount = gutils.trim(tmp_pagemovie, '&gt;von', '&lt;/a&gt;')
+ 		try:
+ 			tmp_pagecountint = int(tmp_pagecount)
+ 		except:
+@@ -239,19 +242,19 @@
+ 		tmp_pagecountintcurrent = 1
+ 		while (tmp_pagecountint &gt; tmp_pagecountintcurrent and tmp_pagecountintcurrent &lt; 5):
+ 			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;page=">http://www.kino.de/megasuche.php4?typ=filme&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
++			self.url = '<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;page=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;page=</A>' + str(tmp_pagecountintcurrent) + &quot;&amp;inputSearch=&quot;
+ 			self.open_search(parent_window)
+ 			tmp_pagemovie = tmp_pagemovie + self.page
+ 		#
+ 		# Look for DVD and VHS
+ 		#
+-		self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;wort=">http://www.kino.de/megasuche.php4?typ=video&amp;wort=</A>&quot;
++		self.url = &quot;<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;inputSearch=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;inputSearch=</A>&quot;
+ 		self.open_search(parent_window)
+ 		tmp_pagevideo = tmp_pagemovie + self.page
+ 		#
+ 		# try to get all result pages (not so nice, but it works)
+ 		#
+-		tmp_pagecount = gutils.trim(self.page, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
++		tmp_pagecount = gutils.trim(self.page, '&gt;von', '&lt;/a&gt;')
+ 		try:
+ 			tmp_pagecountint = int(tmp_pagecount)
+ 		except:
+@@ -259,7 +262,7 @@
+ 		tmp_pagecountintcurrent = 1
+ 		while (tmp_pagecountint &gt; tmp_pagecountintcurrent and tmp_pagecountintcurrent &lt; 5):
+ 			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;page=">http://www.kino.de/megasuche.php4?typ=video&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
++			self.url = &quot;<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;page=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;inputSearch=&quot;
+ 			self.open_search(parent_window)
+ 			tmp_pagevideo = tmp_pagevideo + self.page
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-11-09 11:45:54 UTC (rev 1028)
++++ trunk/ChangeLog	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-11-10  Michael Jahn
++	* updated plugins IMDB-de, Amazon, Kino.de, FilmeVonAZ
++
+ 2008-11-01  Michael Jahn
+ 	* updated IMDB plugin
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -367,9 +367,9 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'            : [ 10, 10 ],
++        'Rocky Balboa'          : [ 10, 10 ],
+         'Arahan'                : [ 6, 6 ],
+-        'Ein gl&#252;ckliches Jahr'    : [ 1, 1 ]
++        'Ein gl&#252;ckliches Jahr'  : [ 2, 2 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -81,7 +81,7 @@
+                     self.delimiter = &quot;, &quot;
+ 
+     def get_cast(self):
+-        self.cast = self.regextrim(self.page, '[(]Darsteller[)]', '&lt;[pP]&gt;')
++        self.cast = self.regextrim(self.page, '[(]Darsteller[)]', '(&lt;[pP]&gt;|&lt;br&gt;&lt;span[^&gt;]+&gt;)')
+         self.cast = gutils.clean(self.cast)
+         self.cast = self.cast.replace(' als ', _(' as '))
+         self.cast = re.sub('( \t|\t|\r|\n)', '', self.cast)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -66,7 +66,7 @@
+ 
+     def get_title(self):
+         self.title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;span')
+-        elements = string.split(gutils.trim(self.page, '&lt;h5&gt;Alternativ:', '&lt;/div&gt;'), '&lt;i class=&quot;transl&quot;')
++        elements = string.split(self.regextrim(self.page, '&lt;h5&gt;(Alternativ|Auch bekannt als):', '&lt;/div&gt;'), '&lt;i class=&quot;transl&quot;')
+         if len(elements) &gt; 1:
+             for element in elements:
+                 tmp = gutils.before(gutils.trim(element, '&gt;', '[de]'), '(')
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2008-11-09 11:45:54 UTC (rev 1028)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2008-11-10 16:58:54 UTC (rev 1029)
+@@ -140,20 +140,23 @@
+                 self.cast = gutils.after(self.cast, '&gt;mehr&lt;')
+             self.cast = gutils.after(self.cast, '&gt;')
+             self.cast = re.sub('&lt;tr[ ]+class=&quot;(dbtrefferlight|dbtrefferdark)&quot;&gt;', &quot;\n&quot;, self.cast)
+-            self.cast = self.cast.replace(&quot;&nbsp;&quot;, &quot;--flip--&quot;)
++            self.cast = self.cast.replace('&nbsp;', '--flip--')
+             self.cast = gutils.clean(self.cast)
++            self.cast = re.sub(&quot;[\t]+&quot;, '', self.cast)
++            self.cast = re.sub(&quot;[\n]+&quot;, &quot;\n&quot;, self.cast)
++            self.cast = re.sub(&quot;--flip--[\n]+&quot;, '--flip--', self.cast)
+             elements = self.cast.split(&quot;\n&quot;)
+             self.cast = ''
+             for element in elements:
+-                elements2 = element.split(&quot;--flip--&quot;)
++                elements2 = element.split('--flip--')
+                 if len(elements2) &gt; 1:
+                     if elements2[0] &lt;&gt; '':
+-                        self.cast += elements2[1] + &quot;--flip--&quot; + elements2[0] + &quot;\n&quot;
++                        self.cast += elements2[1] + '--flip--' + elements2[0] + &quot;\n&quot;
+                     else:
+                         self.cast += elements2[1] + &quot;\n&quot;
+                 else:
+-                    self.cast = element
+-            self.cast = string.replace(self.cast, &quot;--flip--&quot;, _(&quot; as &quot;).encode('utf8'))
++                    self.cast += element + &quot;\n&quot;
++            self.cast = string.replace(self.cast, '--flip--', _(' as ').encode('utf8'))
+ 
+     def get_classification(self):
+         self.classification = self.regextrim(self.tmp_page,'FSK:( |&nbsp;)+', '&lt;/strong&gt;')
+@@ -221,8 +224,8 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search    = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;wort=">http://www.kino.de/megasuche.php4?typ=filme&amp;wort=</A>&quot;
+-        self.translated_url_search    = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;wort=">http://www.kino.de/megasuche.php4?typ=filme&amp;wort=</A>&quot;
++        self.original_url_search   = '<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=</A>'
++        self.translated_url_search = '<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;inputSearch=</A>'
+ #        self.encode='utf-8'
+         self.encode='iso-8859-1'
+ 
+@@ -232,7 +235,7 @@
+         #
+         # try to get all result pages (not so nice, but it works)
+         #
+-        tmp_pagecount = gutils.trim(tmp_pagemovie, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
++        tmp_pagecount = gutils.trim(tmp_pagemovie, '&gt;von', '&lt;/a&gt;')
+         try:
+             tmp_pagecountint = int(tmp_pagecount)
+         except:
+@@ -240,19 +243,19 @@
+         tmp_pagecountintcurrent = 1
+         while (tmp_pagecountint &gt; tmp_pagecountintcurrent and tmp_pagecountintcurrent &lt; 5):
+             tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-            self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;page=">http://www.kino.de/megasuche.php4?typ=filme&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
++            self.url = '<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;page=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=film&amp;page=</A>' + str(tmp_pagecountintcurrent) + &quot;&amp;inputSearch=&quot;
+             self.open_search(parent_window)
+             tmp_pagemovie = tmp_pagemovie + self.page
+         #
+         # Look for DVD and VHS
+         #
+-        self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;wort=">http://www.kino.de/megasuche.php4?typ=video&amp;wort=</A>&quot;
++        self.url = &quot;<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;inputSearch=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;inputSearch=</A>&quot;
+         self.open_search(parent_window)
+         tmp_pagevideo = tmp_pagemovie + self.page
+         #
+         # try to get all result pages (not so nice, but it works)
+         #
+-        tmp_pagecount = gutils.trim(self.page, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
++        tmp_pagecount = gutils.trim(self.page, '&gt;von', '&lt;/a&gt;')
+         try:
+             tmp_pagecountint = int(tmp_pagecount)
+         except:
+@@ -260,7 +263,7 @@
+         tmp_pagecountintcurrent = 1
+         while (tmp_pagecountint &gt; tmp_pagecountintcurrent and tmp_pagecountintcurrent &lt; 5):
+             tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-            self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;page=">http://www.kino.de/megasuche.php4?typ=video&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
++            self.url = &quot;<A HREF="http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;page=">http://www.kino.de/search.php?mode=megaSearch&amp;searchCategory=video&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;inputSearch=&quot;
+             self.open_search(parent_window)
+             tmp_pagevideo = tmp_pagevideo + self.page
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000508.html">[Griffith-svn] r1028 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000510.html">[Griffith-svn] r1030 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#509">[ date ]</a>
+              <a href="thread.html#509">[ thread ]</a>
+              <a href="subject.html#509">[ subject ]</a>
+              <a href="author.html#509">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

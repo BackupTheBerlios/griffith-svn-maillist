@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1514 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1514%20-%20trunk&In-Reply-To=%3C20110203200859.8FE1148135D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000974.html">
+   <LINK REL="Next"  HREF="000976.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1514 - trunk</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1514%20-%20trunk&In-Reply-To=%3C20110203200859.8FE1148135D%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1514 - trunk">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb  3 21:08:59 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000974.html">[Griffith-svn] r1513 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000976.html">[Griffith-svn] r1515 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#975">[ date ]</a>
+              <a href="thread.html#975">[ thread ]</a>
+              <a href="subject.html#975">[ subject ]</a>
+              <a href="author.html#975">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2011-02-03 21:08:59 +0100 (Thu, 03 Feb 2011)
+New Revision: 1514
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+Log:
+Added MacOSX UI integration. Will not work without a mac native gtk/pygtk.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-02-03 19:50:04 UTC (rev 1513)
++++ trunk/ChangeLog	2011-02-03 20:08:59 UTC (rev 1514)
+@@ -5,7 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 2011-02-03  Vasco Nunes
+-	* MoviePTGate plugin updated.
++	* MoviePTGate plugin updated
++	* Added MacOSX UI integration
++	* Some minor macosx specific changes
+ 
+ 2011-02-02  Michael Jahn
+ 	* [#710860] cannot import imdb movie titles starting with a bracket
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-02-03 19:50:04 UTC (rev 1513)
++++ trunk/griffith	2011-02-03 20:08:59 UTC (rev 1514)
+@@ -44,6 +44,13 @@
+     sys.path.insert(1, lib)
+ del lib
+ 
++# macosx
++import platform
++if platform.system() == 'Darwin':
++    import pygtk
++    pygtk.require('2.0')
++# end macosx
++
+ # check dependencies
+ import gutils
+ (required, extra) = gutils.get_dependencies()
+@@ -132,6 +139,18 @@
+         initialize.people_treeview(self)
+         initialize.web_results(self)
+         self.initialized = True
++        
++        # macosx integration
++        #hide gtk menubar and implement a native Cocoa replacement
++        #using gtk_osxapplication 
++        if self.mac:
++                import gtk_osxapplication  
++                self.macapp = gtk_osxapplication.OSXApplication()
++                self.macapp.connect(&quot;NSApplicationBlockTermination&quot;, self.destroy)
++                gtk.Widget.hide(self.widgets['menu']['menubar']);
++                self.macapp.set_menu_bar(self.widgets['menu']['menubar'])                self.macapp.insert_app_menu_item(self.widgets['menu']['preferences'],1)                self.macapp.insert_app_menu_item(self.widgets['menu']['about'],0)
++                self.macapp.ready()
++        # end macosx integration 
+ 
+         self.restore_state()
+         self.clear_details()
+@@ -194,6 +213,11 @@
+ 
+     def destroy(self, widget, data=None):
+         self.save_state()
++        #macosx - macosx integration fails with gtk.main_quit()
++        #this is just a dirty workaround
++        if self.mac:
++        	sys.exit(0)
++        #end macosx
+         gtk.main_quit()
+ 
+     def on_configure(self, widget, data=None):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000974.html">[Griffith-svn] r1513 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000976.html">[Griffith-svn] r1515 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#975">[ date ]</a>
+              <a href="thread.html#975">[ thread ]</a>
+              <a href="subject.html#975">[ subject ]</a>
+              <a href="author.html#975">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

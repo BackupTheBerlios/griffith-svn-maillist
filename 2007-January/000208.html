@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r684 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r684%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200701070059.l070xknw015112%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000207.html">
+   <LINK REL="Next"  HREF="000209.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r684 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r684%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200701070059.l070xknw015112%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r684 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  7 01:59:46 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000207.html">[Griffith-svn] r683 - trunk/debian
+</A></li>
+        <LI>Next message: <A HREF="000209.html">[Griffith-svn] r685 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#208">[ date ]</a>
+              <a href="thread.html#208">[ thread ]</a>
+              <a href="subject.html#208">[ subject ]</a>
+              <a href="author.html#208">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-07 01:59:45 +0100 (Sun, 07 Jan 2007)
+New Revision: 684
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFDb.py
+Log:
+Copy title if original title is not available in FDb.pl movie plugin
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-06 23:26:56 UTC (rev 683)
++++ trunk/ChangeLog	2007-01-07 00:59:45 UTC (rev 684)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-01-07  Piotr O&#380;arowski
++	* Copy title if original title is not available in FDb.pl movie plugin
++
+ 2007-01-06  Piotr O&#380;arowski
+ 	* Clear movie details if no movie is selected
+ 	* Speed up Griffith's startup a little bit
+
+Modified: trunk/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFDb.py	2007-01-06 23:26:56 UTC (rev 683)
++++ trunk/lib/plugins/movie/PluginMovieFDb.py	2007-01-07 00:59:45 UTC (rev 684)
+@@ -32,7 +32,7 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O&#380;arowski'
+ plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version		= '1.5'
++plugin_version		= '1.6'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, movie_id):
+@@ -51,6 +51,9 @@
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
++		self.o_title = gutils.strip_tags(self.o_title)
++		if self.o_title == '':
++			self.o_title = self.get_title(True)
+ 
+ 	def get_title(self, extra=False):
+ 		data = gutils.trim(self.page,'&lt;title&gt;', '&lt;/title&gt;')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000207.html">[Griffith-svn] r683 - trunk/debian
+</A></li>
+	<LI>Next message: <A HREF="000209.html">[Griffith-svn] r685 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#208">[ date ]</a>
+              <a href="thread.html#208">[ thread ]</a>
+              <a href="subject.html#208">[ subject ]</a>
+              <a href="author.html#208">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

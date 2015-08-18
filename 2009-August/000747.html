@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1279 - in trunk/lib: . plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1279%20-%20in%20trunk/lib%3A%20.%20plugins/extensions&In-Reply-To=%3C200908132043.n7DKhpe8026233%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000746.html">
+   <LINK REL="Next"  HREF="000748.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1279 - in trunk/lib: . plugins/extensions</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1279%20-%20in%20trunk/lib%3A%20.%20plugins/extensions&In-Reply-To=%3C200908132043.n7DKhpe8026233%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1279 - in trunk/lib: . plugins/extensions">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Aug 13 22:43:51 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000746.html">[Griffith-svn] r1278 - in trunk: . lib lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000748.html">[Griffith-svn] r1280 - in trunk: . lib lib/plugins/export	lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#747">[ date ]</a>
+              <a href="thread.html#747">[ thread ]</a>
+              <a href="subject.html#747">[ subject ]</a>
+              <a href="author.html#747">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-08-13 22:43:51 +0200 (Thu, 13 Aug 2009)
+New Revision: 1279
+
+Modified:
+   trunk/lib/plugins/extensions/ge_mark_seen.py
+   trunk/lib/sql.py
+Log:
+update_query hack no longer needed
+
+
+Modified: trunk/lib/plugins/extensions/ge_mark_seen.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_mark_seen.py	2009-08-13 20:06:54 UTC (rev 1278)
++++ trunk/lib/plugins/extensions/ge_mark_seen.py	2009-08-13 20:43:51 UTC (rev 1279)
+@@ -23,7 +23,7 @@
+ 
+ import logging
+ 
+-from sqlalchemy.sql import select, update
++from sqlalchemy.sql import update
+ 
+ from db.tables import movies as movies_table
+ from plugins.extensions import GriffithExtensionBase as Base
+@@ -48,7 +48,7 @@
+         session = self.db.Session()
+         update_query = update(movies_table, values={'seen': True})
+ 
+-        update_whereclause(update_query, self.app._search_conditions)
++        update_query = update_whereclause(update_query, self.app._search_conditions)
+ 
+         session.execute(update_query)
+         session.commit()
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-08-13 20:06:54 UTC (rev 1278)
++++ trunk/lib/sql.py	2009-08-13 20:43:51 UTC (rev 1279)
+@@ -132,123 +132,113 @@
+ 
+ 
+ def update_whereclause(query, cond): # {{{
+-    # Update class doesn't have .append_whereclause
+-    update_query = None
+-    if isinstance(query, Update):
+-        update_query = query
+-        query = select(db.tables.movies.columns)
+-
+     if cond['loaned'] is True:
+-        query.append_whereclause(db.Movie.loaned==True)
++        query = query.where(db.Movie.loaned==True)
+     if cond['loaned'] is False:
+-        query.append_whereclause(db.Movie.loaned==False)
++        query = query.where(db.Movie.loaned==False)
+     if cond['seen'] is True:
+-        query.append_whereclause(db.Movie.seen==True)
++        query = query.where(db.Movie.seen==True)
+     if cond['seen'] is False:
+-        query.append_whereclause(db.Movie.seen==False)
++        query = query.where(db.Movie.seen==False)
+ 
+     if cond[&quot;collections&quot;]:
+-        query.append_whereclause(db.Movie.collection_id.in_(cond[&quot;collections&quot;]))
++        query = query.where(db.Movie.collection_id.in_(cond[&quot;collections&quot;]))
+     if cond[&quot;no_collections&quot;]:
+-        query.append_whereclause(~db.Movie.collection_id.in_(cond[&quot;no_collections&quot;]))
++        query = query.where(~db.Movie.collection_id.in_(cond[&quot;no_collections&quot;]))
+ 
+     if cond[&quot;volumes&quot;]:
+-        query.append_whereclause(db.Movie.volume_id.in_(cond[&quot;volumes&quot;]))
++        query = query.where(db.Movie.volume_id.in_(cond[&quot;volumes&quot;]))
+     if cond[&quot;no_volumes&quot;]:
+-        query.append_whereclause(~db.Movie.volume_id.in_(cond[&quot;no_volumes&quot;]))
++        query = query.where(~db.Movie.volume_id.in_(cond[&quot;no_volumes&quot;]))
+ 
+     loaned_to = []
+     for per_id in cond[&quot;loaned_to&quot;]:
+         loaned_to.append(exists([db.tables.loans.c.movie_id],\
+                 and_(db.Movie.movie_id==db.tables.loans.c.movie_id, db.tables.loans.c.person_id==per_id, db.tables.loans.c.return_date==None)))
+     if loaned_to:
+-        query.append_whereclause(or_(*loaned_to))
++        query = query.where(or_(*loaned_to))
+ 
+     loan_history = []
+     for per_id in cond[&quot;loan_history&quot;]:
+         loan_history.append(exists([db.tables.loans.c.movie_id],\
+                 and_(db.Movie.movie_id==db.tables.loans.c.movie_id, db.tables.loans.c.person_id==per_id)))
+     if loan_history:
+-        query.append_whereclause(or_(*loan_history))
++        query = query.where(or_(*loan_history))
+ 
+     required_tags = []
+     for tag_id in cond[&quot;required_tags&quot;]:
+         required_tags.append(exists([db.MovieTag.movie_id], \
+             and_(db.Movie.movie_id==db.MovieTag.movie_id, db.MovieTag.tag_id==tag_id)))
+     if required_tags:
+-        query.append_whereclause(and_(*required_tags))
++        query = query.where(and_(*required_tags))
+ 
+     tags = []
+     for tag_id in cond[&quot;tags&quot;]:
+         tags.append(exists([db.MovieTag.movie_id], \
+             and_(db.Movie.movie_id==db.MovieTag.movie_id, db.MovieTag.tag_id==tag_id)))
+     if tags:
+-        query.append_whereclause(or_(*tags))
++        query = query.where(or_(*tags))
+ 
+     no_tags = []
+     for tag_id in cond[&quot;no_tags&quot;]:
+         no_tags.append(~exists([db.MovieTag.movie_id], \
+             and_(db.Movie.movie_id==db.MovieTag.movie_id, db.MovieTag.tag_id==tag_id)))
+     if no_tags:
+-        query.append_whereclause(and_(*no_tags))
++        query = query.where(and_(*no_tags))
+ 
+     for field in cond[&quot;equals_n&quot;]:
+         values = [ db.tables.movies.columns[field]!=value for value in cond[&quot;equals_n&quot;][field] ]
+-        query.append_whereclause(and_(*values))
++        query = query.where(and_(*values))
+ 
+     for field in cond[&quot;startswith_n&quot;]:
+         values = [ not_(db.tables.movies.columns[field].startswith(value)) for value in cond[&quot;startswith_n&quot;][field] ]
+-        query.append_whereclause(and_(*values))
++        query = query.where(and_(*values))
+ 
+     for field in cond[&quot;like_n&quot;]:
+         values = [ not_(db.tables.movies.columns[field].like(value)) for value in cond[&quot;like_n&quot;][field] ]
+-        query.append_whereclause(and_(*values))
++        query = query.where(and_(*values))
+ 
+     for field in cond[&quot;contains_n&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
+         values = [ not_(db.tables.movies.columns[field].like('%'+value+'%')) for value in cond[&quot;contains_n&quot;][field] ]
+-        query.append_whereclause(and_(*values))
++        query = query.where(and_(*values))
+ 
+     for field in cond[&quot;equals&quot;]:
+         values = [ db.tables.movies.columns[field]==value for value in cond[&quot;equals&quot;][field] ]
+-        query.append_whereclause(or_(*values))
++        query = query.where(or_(*values))
+ 
+     for field in cond[&quot;startswith&quot;]:
+         values = [ db.tables.movies.columns[field].startswith(value) for value in cond[&quot;startswith&quot;][field] ]
+-        query.append_whereclause(or_(*values))
++        query = query.where(or_(*values))
+ 
+     for field in cond[&quot;like&quot;]:
+         values = [ db.tables.movies.columns[field].like(value) for value in cond[&quot;like&quot;][field] ]
+-        query.append_whereclause(or_(*values))
++        query = query.where(or_(*values))
+ 
+     for field in cond[&quot;contains&quot;]: # XXX: it's not the SQLAlchemy's .contains() i.e. not for one-to-many or many-to-many collections
+         values = [ db.tables.movies.columns[field].like('%'+value+'%') for value in cond[&quot;contains&quot;][field] ]
+-        query.append_whereclause(or_(*values))
++        query = query.where(or_(*values))
+ 
+     # sorting
+-    for rule in cond.get('sort_by', []):
+-        if rule.endswith(&quot; DESC&quot;):
+-            reverse = True
+-            column = rule.replace(&quot; DESC&quot;, '')
+-        else:
+-            column = rule.replace(&quot; ASC&quot;, '') # note that &quot; ASC&quot; is optional
+-            reverse = False
++    if not isinstance(query, Update):
++        for rule in cond.get('sort_by', []):
++            if rule.endswith(&quot; DESC&quot;):
++                reverse = True
++                column = rule.replace(&quot; DESC&quot;, '')
++            else:
++                column = rule.replace(&quot; ASC&quot;, '') # note that &quot; ASC&quot; is optional
++                reverse = False
+ 
+-        table = 'movies'
+-        tmp = column.split('.')
+-        if len(tmp) &gt; 1:
+-            table = tmp[0]
+-            column = tmp[1]
++            table = 'movies'
++            tmp = column.split('.')
++            if len(tmp) &gt; 1:
++                table = tmp[0]
++                column = tmp[1]
+ 
+-        if reverse:
+-            query.append_order_by(desc(db.metadata.tables[table].columns[column]))
+-        else:
+-            query.append_order_by(asc(db.metadata.tables[table].columns[column]))
++            if reverse:
++                query = query.order_by(desc(db.metadata.tables[table].columns[column]))
++            else:
++                query = query.order_by(asc(db.metadata.tables[table].columns[column]))
+ 
+-    if update_query:
+-        update_query.where(query._whereclause)
+-        query = update_query
+-    else:
+-        log.debug(query.compile())
+-
++    log.debug(query)
+     return query #}}}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000746.html">[Griffith-svn] r1278 - in trunk: . lib lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000748.html">[Griffith-svn] r1280 - in trunk: . lib lib/plugins/export	lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#747">[ date ]</a>
+              <a href="thread.html#747">[ thread ]</a>
+              <a href="subject.html#747">[ subject ]</a>
+              <a href="author.html#747">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

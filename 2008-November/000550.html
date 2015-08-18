@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1075 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1075%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200811302105.mAUL5gW8031722%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000549.html">
+   <LINK REL="Next"  HREF="000551.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1075 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1075%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200811302105.mAUL5gW8031722%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1075 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 30 22:05:42 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000549.html">[Griffith-svn] r1074 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000551.html">[Griffith-svn] r1076 - in branches/0.9.x: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#550">[ date ]</a>
+              <a href="thread.html#550">[ thread ]</a>
+              <a href="subject.html#550">[ subject ]</a>
+              <a href="author.html#550">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-30 22:05:41 +0100 (Sun, 30 Nov 2008)
+New Revision: 1075
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+Log:
+CSFD movie plugin updated (thanks to Otakar)
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-11-25 22:21:44 UTC (rev 1074)
++++ branches/0.9.x/ChangeLog	2008-11-30 21:05:41 UTC (rev 1075)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2008-11-30  Piotr O&#197;&#188;arowski
++	* CSFD movie plugin updated (thanks to Otakar)
++
+ 2008-11-25  Michael Jahn
+ 	* fixed some amazon and unicode errors
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCSFD.py	2008-11-25 22:21:44 UTC (rev 1074)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCSFD.py	2008-11-30 21:05:41 UTC (rev 1075)
+@@ -1,4 +1,4 @@
+-# -*- coding: cp1250 -*-
++# -*- coding: utf-8 -*-
+ __revision__ = '$Id: PluginMovieCSFD.py 12 2007-01-05 09:08:06Z blondak $'
+ # Copyright (c) 2005 Blondak
+ #
+@@ -34,7 +34,7 @@
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+ 		self.movie_id = id
+-		self.encode = &quot;cp1250&quot;
++		self.encode = &quot;utf-8&quot;
+ 		self.url = &quot;<A HREF="http://www.csfd.cz/">http://www.csfd.cz/</A>&quot;+str(id)
+ 
+ 	def get_image(self):
+@@ -54,7 +54,7 @@
+ 			self.o_title = self.get_title(True)
+ 
+ 	def get_title(self, ret=False):
+-		data = re.search(r&quot;&lt;title&gt;([^,]*), &quot;,self.page)
++		data = re.search(r&quot;&lt;title&gt;CSFD.cz - ([^,]*)\(\d{4}\)&quot;,self.page)
+ 		if data:
+ 			data = data.group(1)
+ 		else:
+@@ -65,7 +65,7 @@
+ 			self.title = data
+ 
+ 	def get_director(self):
+-		self.director = re.search(r&quot;Re&#158;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#237;:&quot;,self.page)
++		self.director = re.search(r&quot;Re&#190;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#237;:&quot;,self.page)
+ 		if self.director:
+ 			self.director = gutils.strip_tags(self.director.group(1))
+ 		else:
+@@ -79,7 +79,7 @@
+ 			self.year = &quot;&quot;
+ 
+ 	def get_runtime(self):
+-		self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&#158;ie:&quot;,self.page)
++		self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&#190;ie:&quot;,self.page)
+ 		if self.runtime:
+ 			self.runtime = gutils.strip_tags(self.runtime.group(1))
+ 		else:
+@@ -107,7 +107,7 @@
+ 			self.cast = &quot;&quot;
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.strip_tags(string.replace(gutils.trim(self.page,&quot;Obsah / Info:&quot;,&quot;&lt;/td&gt;&quot;),&quot;(ofici&#225;ln&#237; text distributora)&quot;,&quot;&quot;))
++		self.plot = gutils.strip_tags(string.replace(gutils.trim(self.page,&quot;Obsah:&quot;,&quot;&lt;/td&gt;&quot;),&quot;(ofici&#225;ln&#237; text distributora)&quot;,&quot;&quot;))
+ 
+ 	def get_site(self):
+ 		self.site = re.search(r&quot;href=[\&quot;'](<A HREF="http://.*imdb\.com/title/[^\">http://.*imdb\.com/title/[^\</A>&quot;']*)&quot;,self.page)
+@@ -149,7 +149,7 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.encode = &quot;cp1250&quot;
++		self.encode = &quot;utf-8&quot;
+ 		self.original_url_search   = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
+ 		self.translated_url_search = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-11-25 22:21:44 UTC (rev 1074)
++++ trunk/ChangeLog	2008-11-30 21:05:41 UTC (rev 1075)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2008-11-30  Piotr O&#197;&#188;arowski
++	* CSFD movie plugin updated (thanks to Otakar)
++
+ 2008-11-25  Michael Jahn
+ 	* fixed some amazon and unicode errors
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2008-11-25 22:21:44 UTC (rev 1074)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2008-11-30 21:05:41 UTC (rev 1075)
+@@ -1,4 +1,4 @@
+-# -*- coding: cp1250 -*-
++# -*- coding: utf-8 -*-
+ __revision__ = '$Id: PluginMovieCSFD.py 12 2007-01-05 09:08:06Z blondak $'
+ # Copyright (c) 2005 Blondak
+ #
+@@ -34,7 +34,7 @@
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.movie_id = id
+-        self.encode = &quot;cp1250&quot;
++        self.encode = &quot;utf-8&quot;
+         self.url = &quot;<A HREF="http://www.csfd.cz/">http://www.csfd.cz/</A>&quot;+str(id)
+ 
+     def get_image(self):
+@@ -54,7 +54,7 @@
+             self.o_title = self.get_title(True)
+ 
+     def get_title(self, ret=False):
+-        data = re.search(r&quot;&lt;title&gt;([^,]*), &quot;,self.page)
++        data = re.search(r&quot;&lt;title&gt;CSFD.cz - ([^,]*)\(\d{4}\)&quot;,self.page)
+         if data:
+             data = data.group(1)
+         else:
+@@ -65,7 +65,7 @@
+             self.title = data
+ 
+     def get_director(self):
+-        self.director = re.search(r&quot;Re&#158;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#237;:&quot;,self.page)
++        self.director = re.search(r&quot;Re&#190;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#237;:&quot;,self.page)
+         if self.director:
+             self.director = gutils.strip_tags(self.director.group(1))
+         else:
+@@ -79,7 +79,7 @@
+             self.year = &quot;&quot;
+ 
+     def get_runtime(self):
+-        self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&#158;ie:&quot;,self.page)
++        self.runtime = re.search(r&quot;([\d]+) min&lt;/b&gt;&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Re&#190;ie:&quot;,self.page)
+         if self.runtime:
+             self.runtime = gutils.strip_tags(self.runtime.group(1))
+         else:
+@@ -107,7 +107,7 @@
+             self.cast = &quot;&quot;
+ 
+     def get_plot(self):
+-        self.plot = gutils.strip_tags(string.replace(gutils.trim(self.page,&quot;Obsah / Info:&quot;,&quot;&lt;/td&gt;&quot;),&quot;(ofici&#225;ln&#237; text distributora)&quot;,&quot;&quot;))
++        self.plot = gutils.strip_tags(string.replace(gutils.trim(self.page,&quot;Obsah:&quot;,&quot;&lt;/td&gt;&quot;),&quot;(ofici&#225;ln&#237; text distributora)&quot;,&quot;&quot;))
+ 
+     def get_site(self):
+         self.site = re.search(r&quot;href=[\&quot;'](<A HREF="http://.*imdb\.com/title/[^\">http://.*imdb\.com/title/[^\</A>&quot;']*)&quot;,self.page)
+@@ -149,7 +149,7 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+-        self.encode = &quot;cp1250&quot;
++        self.encode = &quot;utf-8&quot;
+         self.original_url_search   = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
+         self.translated_url_search = &quot;<A HREF="http://www.csfd.cz/search_pg.php?search=">http://www.csfd.cz/search_pg.php?search=</A>&quot;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000549.html">[Griffith-svn] r1074 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000551.html">[Griffith-svn] r1076 - in branches/0.9.x: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#550">[ date ]</a>
+              <a href="thread.html#550">[ thread ]</a>
+              <a href="subject.html#550">[ subject ]</a>
+              <a href="author.html#550">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

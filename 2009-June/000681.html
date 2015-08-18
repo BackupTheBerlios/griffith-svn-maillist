@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1210 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1210%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200906102109.n5AL9dLV012592%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000680.html">
+   <LINK REL="Next"  HREF="000682.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1210 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1210%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200906102109.n5AL9dLV012592%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1210 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 10 23:09:39 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000680.html">[Griffith-svn] r1209 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000682.html">[Griffith-svn] r1211 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#681">[ date ]</a>
+              <a href="thread.html#681">[ thread ]</a>
+              <a href="subject.html#681">[ subject ]</a>
+              <a href="author.html#681">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-10 23:09:37 +0200 (Wed, 10 Jun 2009)
+New Revision: 1210
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/backup.py
+   trunk/lib/config.py
+   trunk/lib/dbupgrade.py
+Log:
+Restoring from backup finally works with external databases
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-06-10 20:33:16 UTC (rev 1209)
++++ trunk/ChangeLog	2009-06-10 21:09:37 UTC (rev 1210)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-06-10  Piotr O&#380;arowski
++	* Restoring from backup finally works with external databases
++
+ 2009-06-08  Piotr O&#380;arowski
+ 	* Restoring from backup to PostgreSQL/MySQL partially works via merging
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-06-10 20:33:16 UTC (rev 1209)
++++ trunk/griffith	2009-06-10 21:09:37 UTC (rev 1210)
+@@ -1030,8 +1030,8 @@
+ Your current movie collection will be mixed with a backup.
+ You can't undo this operation.&quot;&quot;&quot;), True, self.widgets['window'])
+         if response == gtk.RESPONSE_YES:
+-            from backup import merge
+-            merge(self)
++            from backup import restore
++            restore(self, merge=True)
+ 
+     # cover ---------------------------------------------------------------
+ 
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-06-10 20:33:16 UTC (rev 1209)
++++ trunk/lib/backup.py	2009-06-10 21:09:37 UTC (rev 1210)
+@@ -106,71 +106,6 @@
+                     rmtree(tmp_dir)
+             gutils.info(_(&quot;Backup has been created&quot;), self.widgets['window'])
+ 
+-def restore(self):
+-    &quot;&quot;&quot;restores a griffith compressed backup&quot;&quot;&quot;
+-
+-    filename = gutils.file_chooser(_(&quot;Restore Griffith backup&quot;), \
+-                    action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons= \
+-                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+-    if filename[0]:
+-        try:
+-            zip = zipfile.ZipFile(filename[0], 'r')
+-        except:
+-            gutils.error(self, _(&quot;Can't read backup file&quot;), self.widgets['window'])
+-            return False
+-        mypath = os.path.join(self.locations['posters'])
+-        old_config_file = False
+-        for each in zip.namelist():
+-            file_to_restore = os.path.split(each)
+-            if not os.path.isdir(file_to_restore[1]):
+-                if file_to_restore[1] == '':
+-                    continue
+-                if file_to_restore[1].endswith('.jpg'):
+-                    myfile = os.path.join(mypath, file_to_restore[1])
+-                else:
+-                    myfile = os.path.join(self.locations['home'], file_to_restore[1])
+-                if file_to_restore[1].endswith('.conf'):
+-                    old_config_file = myfile
+-                outfile = open(myfile, 'wb')
+-                outfile.write(zip.read(each))
+-                outfile.flush()
+-                outfile.close()
+-        zip.close()
+-
+-        # restore config file
+-        self.config = config.Config(file=os.path.join(self.locations['home'],'griffith.cfg'))
+-        if old_config_file:
+-            log.info('Old config file detected. Please note that it will not be used.')
+-            f = open(old_config_file, 'r')
+-            old_config_raw_data = f.read()
+-            f.close()
+-            if old_config_raw_data.find('griffith.gri') &gt;= -1:
+-                self.config.set('file', 'griffith.gri', section='database')
+-
+-        self.db.session.bind.engine.dispose() # close DB
+-
+-        # check if file needs conversion
+-        if self.config.get('file', 'griffith.db', section='database').lower().endswith('.gri'):
+-            log.info('Old database format detected. Converting...')
+-            from dbupgrade import convert_from_old_db
+-            old_db_filename = os.path.join(self.locations['home'], self.config.get('file', section='database'))
+-            self.db = convert_from_old_db(self, old_db_filename, os.path.join(self.locations['home'], 'griffith.db'))
+-            if self.db:
+-                self.config.save()
+-            else:
+-                log.error('Cant convert old database, exiting.')
+-                import sys
+-                sys.exit(4)
+-        else:
+-            self.db = sql.GriffithSQL(self.config, self.locations['home'], self.locations)
+-
+-        dictionaries(self)
+-        people_treeview(self)
+-        # let's refresh the treeview
+-        self.clear_details()
+-        self.populate_treeview()
+-        gutils.info(_(&quot;Backup restored&quot;), self.widgets['window'])
+-
+ def copy_db(src_engine, dst_engine):
+     log.debug('replacing old database with new one')
+     db.metadata.drop_all(dst_engine) # remove all previous data
+@@ -222,7 +157,7 @@
+         merged += 1
+     return merged
+ 
+-def merge(self, replace=True):
++def restore(self, merge=False):
+     &quot;&quot;&quot;
+     Merge database from:
+     * compressed backup (*.zip)
+@@ -298,10 +233,18 @@
+         else:
+             tmp_db = sql.GriffithSQL(tmp_config, tmp_dir, locations)
+ 
+-        if replace: # FIXME:
+-            copy_db(tmp_db.session.bind, self.db.session.bind)
+-        else:
++        if merge:
+             merge_db(tmp_db, self.db)
++        else:
++            copy_db(tmp_db.session.bind, self.db.session.bind)
++            tmp_config # FIXME
++            # update old database section with curren't config values
++            # (important while restoring to external databases)
++            for key in ('name', 'passwd', 'host', 'user', 'file', 'type', 'port'):
++                tmp_config.set(key, self.config.get(key, section='database'), section='database')
++            tmp_config._file = self.config._file
++            self.config = tmp_config
++            self.config.save()
+ 
+         dictionaries(self)
+         people_treeview(self)
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2009-06-10 20:33:16 UTC (rev 1209)
++++ trunk/lib/config.py	2009-06-10 21:09:37 UTC (rev 1210)
+@@ -22,9 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ import os
+-import os.path
+ import ConfigParser
+-#import cPickle as pickle
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-06-10 20:33:16 UTC (rev 1209)
++++ trunk/lib/dbupgrade.py	2009-06-10 21:09:37 UTC (rev 1210)
+@@ -213,15 +213,6 @@
+                 log.error(&quot;Cannot add '%s' column: %s&quot;, key, e)
+                 return False
+ 
+-        log.info('... creating missing indexes')
+-        try:
+-            i = Index('ix_movies_title_2', db.movies_table.c.title)
+-            i.create(bind=b)
+-            i = Index('ix_movies_o_title_2', db.movies_table.c.o_title)
+-            i.create(bind=b)
+-        except Exception, e:
+-            log.error(&quot;Cannot create new index, skipping (%s)&quot;, e)
+-
+         db_version = self.session.query(db.Configuration).filter_by(param=u'version').one()
+         db_version.value = unicode(version)
+         self.session.add(db_version)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000680.html">[Griffith-svn] r1209 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000682.html">[Griffith-svn] r1211 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#681">[ date ]</a>
+              <a href="thread.html#681">[ thread ]</a>
+              <a href="subject.html#681">[ subject ]</a>
+              <a href="author.html#681">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

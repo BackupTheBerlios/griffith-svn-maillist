@@ -1,0 +1,1297 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1257 - in trunk: . lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1257%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200907102114.n6ALEhfT022523%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000726.html">
+   <LINK REL="Next"  HREF="000728.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1257 - in trunk: . lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1257%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200907102114.n6ALEhfT022523%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1257 - in trunk: . lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jul 10 23:14:43 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000726.html">[Griffith-svn] r1256 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000728.html">[Griffith-svn] r1258 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#727">[ date ]</a>
+              <a href="thread.html#727">[ thread ]</a>
+              <a href="subject.html#727">[ subject ]</a>
+              <a href="author.html#727">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-07-10 23:14:08 +0200 (Fri, 10 Jul 2009)
+New Revision: 1257
+
+Added:
+   trunk/lib/plugins/export/PluginExportAMC.py
+   trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py
+   trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py
+   trunk/lib/plugins/export/PluginExportGCstar.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/__init__.py
+Log:
+new export plugins: Ant Movie Catalog, GCstar, DVD Profiler XML Export V2 and V3
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-08 16:24:03 UTC (rev 1256)
++++ trunk/ChangeLog	2009-07-10 21:14:08 UTC (rev 1257)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-07-10  Michael Jahn
++	* new export plugins: Ant Movie Catalog, GCstar, DVD Profiler XML Export V2 and V3
++
+ 2009-07-07  Michael Jahn
+ 	* updated Allocine, CineMovies, IMDb-de, MovieMeter, Zelluloid plugin
+ 
+
+Added: trunk/lib/plugins/export/PluginExportAMC.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportAMC.py	2009-07-08 16:24:03 UTC (rev 1256)
++++ trunk/lib/plugins/export/PluginExportAMC.py	2009-07-10 21:14:08 UTC (rev 1257)
+@@ -0,0 +1,167 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import xml.dom.minidom
++import xml.dom.ext
++import datetime
++from plugins.export import XmlExportBase
++
++class ExportPlugin(XmlExportBase):
++    plugin_name         = &quot;Ant Movie Catalog Database XML Export&quot;
++    plugin_description  = _(&quot;Full Ant Movie Catalog database xml export plugin&quot;)
++    plugin_author       = &quot;Michael Jahn&quot;
++    plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&quot;
++    plugin_version      = &quot;1.0&quot;
++
++    def __init__(self, database, locations, parent_window, search_conditions, config):
++        XmlExportBase.__init__(self, database, locations, parent_window, search_conditions, config)
++        self.config_section = 'export-antmovie'
++        self.export_name    = 'Ant Movie Catalog database export'
++        self.filename       = 'ant-movie-catalog.xml'
++        self.encoding       = 'iso-8859-1'
++
++    def export_to_document(self, document, mainelement):
++        collelement = document.createElement('AntMovieCatalog')
++        collelement.setAttribute('Format', '35')
++        collelement.setAttribute('Version', '3.5.1 (2007-09-22)')
++        collelement.setAttribute('Date', datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
++        document.appendChild(collelement)
++        comment = document.createComment('Griffith Export in Ant Movie Catalog database format')
++        document.insertBefore(comment, collelement)
++        catalogelement = document.createElement('Catalog')
++        collelement.appendChild(catalogelement)
++        propertieselement = document.createElement('Properties')
++        catalogelement.appendChild(propertieselement)
++        contentselement = document.createElement('Contents')
++        catalogelement.appendChild(contentselement)
++        XmlExportBase.export_to_document(self, document, contentselement)
++
++    def process_movie(self, document, mainelement, movie, keys):
++        # create node
++        itemelement = document.createElement('Movie')
++        itemelement.setAttribute('Checked', 'False')
++        mainelement.appendChild(itemelement)
++        XmlExportBase.process_movie(self, document, itemelement, movie, keys)
++
++    def process_movie_value(self, document, dvdelement, key, value):
++        if key == 'movies_number':
++            dvdelement.setAttribute('Number', value)
++        elif key == 'movies_loaned':
++            pass
++        elif key == 'movies_seen':
++            dvdelement.setAttribute('Checked', value)
++        elif key == 'movies_rating':
++            dvdelement.setAttribute('Rating', value)
++        elif key == 'movies_color':             # SmallInteger
++            pass
++        elif key == 'movies_cond':              # SmallInteger
++            pass
++        elif key == 'movies_layers':            # SmallInteger
++            pass
++        elif key == 'movies_media_num':         # SmallInteger
++            dvdelement.setAttribute('Disks', value)
++        elif key == 'movies_runtime':           # Integer
++            dvdelement.setAttribute('Length', value)
++        elif key == 'movies_year':              # year
++            dvdelement.setAttribute('Year', value)
++        elif key == 'movies_o_title':           # VARCHAR
++            dvdelement.setAttribute('OriginalTitle', value)
++            dvdelement.setAttribute('FormattedTitle', value)
++        elif key == 'movies_title':             # VARCHAR
++            dvdelement.setAttribute('TranslatedTitle', value)
++        elif key == 'movies_director':          # VARCHAR
++            dvdelement.setAttribute('Director', value)
++        elif key == 'movies_o_site':            # VARCHAR
++            pass
++        elif key == 'movies_site':              # VARCHAR
++            dvdelement.setAttribute('URL', value)
++        elif key == 'movies_trailer':           # VARCHAR
++            pass
++        elif key == 'movies_country':           # VARCHAR
++            dvdelement.setAttribute('Country', value)
++        elif key == 'movies_genre':             # VARCHAR
++            dvdelement.setAttribute('Category', value.replace('\n', ''))
++        elif key == 'movies_region':            # SmallInteger
++            pass
++        elif key == 'movies_studio':            # VARCHAR
++            pass
++        elif key == 'movies_classification':    # VARCHAR
++            pass
++        elif key == 'movies_cast':              # VARCHAR
++            if len(value.strip()) &gt; 0:
++                actors = value.split('\n')
++                actorsstring = ''
++                delim = ''
++                for actor in actors:
++                    actorsplit = actor.split(_(' as '))
++                    actornames = actorsplit[0]
++                    if len(actorsplit) &gt; 1:
++                        actorsstring += delim + actornames.strip() + ' (' + actorsplit[1].strip() + ')'
++                    else:
++                        actorsstring += delim + actornames.strip()
++                    delim = ', '
++                dvdelement.setAttribute('Actors', actorsstring)
++        elif key == 'movies_plot':              # VARCHAR
++            dvdelement.setAttribute('Description', value.replace('\n', '|'))
++        elif key == 'movies_notes':             # VARCHAR
++            dvdelement.setAttribute('Comments', value.replace('\n', '|'))
++        elif key == 'vcodecs_name':             # VARCHAR
++            dvdelement.setAttribute('VideoFormat', value)
++
++    def process_movie_image(self, document, dvdelement, imagedata, imagemd5sum):
++        if imagemd5sum and imagedata:
++            dvdelement.setAttribute('Picture', self.filename + '_pictures/' + imagemd5sum + '.jpg')
++            self.save_image_to_file(imagedata, imagemd5sum, self.filename + '_pictures/')
++
++    def process_movie_tags(self, document, movieelement, movie):
++        pass
++
++    def process_acodecs(self, document, movieelement, acodecsquery):
++        acodecsstring = ''
++        delim = ''
++        codecsused = []
++        for acodec in acodecsquery.execute().fetchall():
++            if acodec['name'] not in codecsused:
++                acodecsstring += delim + self.convert_value(acodec['name'])
++                delim = ', '
++                codecsused.append(acodec['name'])
++        movieelement.setAttribute('AudioFormat', acodecsstring)
++        
++    def process_languages(self, document, movieelement, languagesquery):
++        languagesstring = ''
++        delim = ''
++        languagesused = []
++        for language in languagesquery.execute().fetchall():
++            if language['languages_name'] not in languagesused:
++                languagesstring += delim + self.convert_value(language['languages_name'])
++                delim = ', '
++                languagesused.append(language['languages_name'])
++        movieelement.setAttribute('Languages', languagesstring)
++
++    def process_subtitles(self, document, movieelement, subtitlesquery):
++        subtitlesstring = ''
++        delim = ''
++        for subtitle in subtitlesquery.execute().fetchall():
++            subtitlesstring += delim + self.convert_value(subtitle['name'])
++            delim = ', '
++        movieelement.setAttribute('Subtitles', subtitlesstring)
+
+Added: trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py	2009-07-08 16:24:03 UTC (rev 1256)
++++ trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py	2009-07-10 21:14:08 UTC (rev 1257)
+@@ -0,0 +1,252 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import xml.dom.minidom
++import xml.dom.ext
++from plugins.export import XmlExportBase
++
++class ExportPlugin(XmlExportBase):
++    plugin_name         = &quot;DVD Profiler XML Export&quot;
++    plugin_description  = _(&quot;Full DVD Profiler XML Export V2 plugin&quot;)
++    plugin_author       = &quot;Michael Jahn&quot;
++    plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&quot;
++    plugin_version      = &quot;1.0&quot;
++
++    def __init__(self, database, locations, parent_window, search_conditions, config):
++        XmlExportBase.__init__(self, database, locations, parent_window, search_conditions, config)
++        self.config_section = 'export-dvdprofilerxml'
++        self.export_name    = 'DVD Profiler XML Export V2'
++        self.filename       = 'CollectionV2.xml'
++
++    def export_to_document(self, document, mainelement):
++        collelement = document.createElement('Collection')
++        document.appendChild(collelement)
++        comment = document.createComment('Griffith Export in DVD Profiler Collection Export Format V2')
++        document.insertBefore(comment, collelement)
++        XmlExportBase.export_to_document(self, document, collelement)
++
++    def process_movie(self, document, mainelement, movie, keys):
++        # create node
++        dvdelement = document.createElement('DVD')
++        mainelement.appendChild(dvdelement)
++        tmpelem = document.createElement('ProfileTimestamp')
++        dvdelement.appendChild(tmpelem)
++        tmpelem = document.createElement('ID')
++        dvdelement.appendChild(tmpelem)
++        tmpelem = document.createElement('UPC')
++        dvdelement.appendChild(tmpelem)
++        XmlExportBase.process_movie(self, document, dvdelement, movie, keys)
++
++    def process_movie_value(self, document, dvdelement, key, value):
++        if key == 'movies_number':
++            elem = document.createElement('CollectionNumber')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++            tmpelem = document.createElement('CollectionType')
++            dvdelement.appendChild(tmpelem)
++            t = document.createTextNode('Owned')
++            tmpelem.appendChild(t)
++        elif key == 'movies_loaned':
++            loaninfoelem = document.createElement('LoanInfo')
++            dvdelement.appendChild(loaninfoelem)
++        elif key == 'movies_seen':
++            pass
++        elif key == 'movies_rating':
++            reviewelem = document.createElement('Review')
++            dvdelement.appendChild(reviewelem)
++            reviewfilmelem = document.createElement('ReviewFilm')
++            reviewelem.appendChild(reviewfilmelem)
++            t = document.createTextNode(value)
++            reviewfilmelem.appendChild(t)
++            reviewvideoelem = document.createElement('ReviewVideo')
++            reviewelem.appendChild(reviewvideoelem)
++            t = document.createTextNode('0')
++            reviewvideoelem.appendChild(t)
++            reviewaudioelem = document.createElement('ReviewAudio')
++            reviewelem.appendChild(reviewaudioelem)
++            t = document.createTextNode('0')
++            reviewaudioelem.appendChild(t)
++            reviewextraselem = document.createElement('ReviewExtras')
++            reviewelem.appendChild(reviewextraselem)
++            t = document.createTextNode('0')
++            reviewextraselem.appendChild(t)
++        elif key == 'movies_color':             # SmallInteger
++            pass
++        elif key == 'movies_cond':              # SmallInteger
++            pass
++        elif key == 'movies_layers':            # SmallInteger
++            pass
++        elif key == 'movies_media_num':         # SmallInteger
++            pass
++        elif key == 'movies_runtime':           # Integer
++            elem = document.createElement('RunningTime')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_year':              # year
++            elem = document.createElement('ProductionYear')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_o_title':           # VARCHAR
++            elem = document.createElement('SortTitle')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_title':             # VARCHAR
++            elem = document.createElement('Title')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_director':          # VARCHAR
++            directors = value.split(',')
++            directorselem = document.createElement('Credits')
++            dvdelement.appendChild(directorselem)
++            for director in directors:
++                directorsplit = director.split(' ')
++                firstname = ''
++                lastname = ''
++                if len(directorsplit) &gt; 1:
++                    firstname = directorsplit[0]
++                    directorsplit.pop(0)
++                    for directorname in directorsplit:
++                        lastname = lastname + directorname + ' '
++                directorelem = document.createElement('Credit')
++                directorselem.appendChild(directorelem)
++                fnameelem = document.createElement('FirstName')
++                directorelem.appendChild(fnameelem)
++                t = document.createTextNode(firstname)
++                fnameelem.appendChild(t)
++                lnameelem = document.createElement('LastName')
++                directorelem.appendChild(lnameelem)
++                t = document.createTextNode(lastname)
++                lnameelem.appendChild(t)
++                credittypeelem = document.createElement('CreditType')
++                directorelem.appendChild(credittypeelem)
++                t = document.createTextNode('Direction')
++                credittypeelem.appendChild(t)
++                credittypeelem = document.createElement('CreditSubtype')
++                directorelem.appendChild(credittypeelem)
++                t = document.createTextNode('Director')
++                credittypeelem.appendChild(t)
++        elif key == 'movies_o_site':            # VARCHAR
++            pass
++        elif key == 'movies_site':              # VARCHAR
++            pass
++        elif key == 'movies_trailer':           # VARCHAR
++            pass
++        elif key == 'movies_country':           # VARCHAR
++            elem = document.createElement('CountryOfOrigin')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_genre':             # VARCHAR
++            genres = value.split(',')
++            genreselem = document.createElement('Genres')
++            dvdelement.appendChild(genreselem)
++            for genre in genres:
++                genreelem = document.createElement('Genre')
++                genreselem.appendChild(genreelem)
++                t = document.createTextNode(genre.strip())
++                genreelem.appendChild(t)
++        elif key == 'movies_region':            # SmallInteger
++            regionselem = document.createElement('Regions')
++            dvdelement.appendChild(regionselem)
++            regionelem = document.createElement('Region')
++            regionselem.appendChild(regionelem)
++            t = document.createTextNode(value)
++            regionelem.appendChild(t)
++        elif key == 'movies_image':             # VARCHAR
++            pass
++        elif key == 'movies_studio':            # VARCHAR
++            studios = value.split(',')
++            studioselem = document.createElement('Studios')
++            dvdelement.appendChild(studioselem)
++            for studio in studios:
++                studioelem = document.createElement('Studio')
++                studioselem.appendChild(studioelem)
++                t = document.createTextNode(studio.strip())
++                studioelem.appendChild(t)
++        elif key == 'movies_classification':    # VARCHAR
++            elem = document.createElement('Rating')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_cast':              # VARCHAR
++            actors = value.split('\n')
++            actorselem = document.createElement('Actors')
++            dvdelement.appendChild(actorselem)
++            for actor in actors:
++                actorsplit = actor.split(_(' as '))
++                actornames = actorsplit[0].split(' ')
++                role = ''
++                firstname = ''
++                lastname = ''
++                if len(actorsplit) &gt; 1:
++                    role = actorsplit[1]
++                if len(actornames) &gt; 1:
++                    firstname = actornames[0]
++                    actornames.pop(0)
++                    for actorname in actornames:
++                        lastname = lastname + actorname + ' '
++                actorelem = document.createElement('Actor')
++                actorselem.appendChild(actorelem)
++                fnameelem = document.createElement('FirstName')
++                actorelem.appendChild(fnameelem)
++                t = document.createTextNode(firstname)
++                fnameelem.appendChild(t)
++                lnameelem = document.createElement('LastName')
++                actorelem.appendChild(lnameelem)
++                t = document.createTextNode(lastname)
++                lnameelem.appendChild(t)
++                roleelem = document.createElement('Role')
++                actorelem.appendChild(roleelem)
++                t = document.createTextNode(role)
++                roleelem.appendChild(t)
++        elif key == 'movies_plot':              # VARCHAR
++            elem = document.createElement('Overview')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_notes':             # VARCHAR
++            elem = document.createElement('Notes')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++
++    def process_tags(self, document, dvdelement, tagsquery):
++        tagselem = document.createElement('Tags')
++        dvdelement.appendChild(tagselem)
++        for tag in tagsquery.execute().fetchall():
++            value = self.convert_value(tag['name'])
++            tagelem = document.createElement('Tag')
++            tagselem.appendChild(tagelem)
++            nameelem = document.createElement('Name')
++            tagelem.appendChild(nameelem)
++            t = document.createTextNode(value)
++            nameelem.appendChild(t)
++            fnameelem = document.createElement('FullyQualifiedName')
++            tagelem.appendChild(fnameelem)
++            t = document.createTextNode(value)
++            fnameelem.appendChild(t)
+
+Added: trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py	2009-07-08 16:24:03 UTC (rev 1256)
++++ trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py	2009-07-10 21:14:08 UTC (rev 1257)
+@@ -0,0 +1,224 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import xml.dom.minidom
++import xml.dom.ext
++from plugins.export import XmlExportBase
++
++class ExportPlugin(XmlExportBase):
++    plugin_name         = &quot;DVD Profiler XML Export&quot;
++    plugin_description  = _(&quot;Full DVD Profiler XML Export V3 plugin&quot;)
++    plugin_author       = &quot;Michael Jahn&quot;
++    plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&quot;
++    plugin_version      = &quot;1.0&quot;
++
++    def __init__(self, database, locations, parent_window, search_conditions, config):
++        XmlExportBase.__init__(self, database, locations, parent_window, search_conditions, config)
++        self.config_section = 'export-dvdprofilerxml'
++        self.export_name    = 'DVD Profiler XML Export V3'
++        self.filename       = 'CollectionV3.xml'
++
++    def export_to_document(self, document, mainelement):
++        collelement = document.createElement('Collection')
++        document.appendChild(collelement)
++        comment = document.createComment('Griffith Export in DVD Profiler Collection Export Format V3')
++        document.insertBefore(comment, collelement)
++        XmlExportBase.export_to_document(self, document, collelement)
++
++    def process_movie(self, document, mainelement, movie, keys):
++        # create node
++        dvdelement = document.createElement('DVD')
++        mainelement.appendChild(dvdelement)
++        tmpelem = document.createElement('ProfileTimestamp')
++        dvdelement.appendChild(tmpelem)
++        tmpelem = document.createElement('ID')
++        dvdelement.appendChild(tmpelem)
++        tmpelem = document.createElement('UPC')
++        dvdelement.appendChild(tmpelem)
++        XmlExportBase.process_movie(self, document, dvdelement, movie, keys)
++
++    def process_movie_value(self, document, dvdelement, key, value):
++        if key == 'movies_number':
++            elem = document.createElement('CollectionNumber')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++            tmpelem = document.createElement('CollectionType')
++            dvdelement.appendChild(tmpelem)
++            t = document.createTextNode('Owned')
++            tmpelem.appendChild(t)
++        elif key == 'movies_loaned':
++            loaninfoelem = document.createElement('LoanInfo')
++            dvdelement.appendChild(loaninfoelem)
++            loanedelem = document.createElement('Loaned')
++            loaninfoelem.appendChild(loanedelem)
++            t = document.createTextNode(value)
++            loanedelem.appendChild(t)
++        elif key == 'movies_seen':
++            pass
++        elif key == 'movies_rating':
++            reviewelem = document.createElement('Review')
++            dvdelement.appendChild(reviewelem)
++            reviewelem.setAttribute('Film', value)
++            reviewelem.setAttribute('Video', '0')
++            reviewelem.setAttribute('Audio', '0')
++            reviewelem.setAttribute('Extras', '0')
++        elif key == 'movies_color':             # SmallInteger
++            pass
++        elif key == 'movies_cond':              # SmallInteger
++            pass
++        elif key == 'movies_layers':            # SmallInteger
++            pass
++        elif key == 'movies_media_num':         # SmallInteger
++            pass
++        elif key == 'movies_runtime':           # Integer
++            elem = document.createElement('RunningTime')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_year':              # year
++            elem = document.createElement('ProductionYear')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_o_title':           # VARCHAR
++            elem = document.createElement('OriginalTitle')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_title':             # VARCHAR
++            elem = document.createElement('Title')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_director':          # VARCHAR
++            directors = value.split(',')
++            directorselem = document.createElement('Credits')
++            dvdelement.appendChild(directorselem)
++            for director in directors:
++                directorsplit = director.split(' ')
++                firstname = ''
++                lastname = ''
++                if len(directorsplit) &gt; 1:
++                    firstname = directorsplit[0]
++                    directorsplit.pop(0)
++                    for directorname in directorsplit:
++                        lastname = lastname + directorname + ' '
++                directorelem = document.createElement('Credit')
++                directorselem.appendChild(directorelem)
++                directorelem.setAttribute('FirstName', firstname)
++                directorelem.setAttribute('LastName', lastname)
++                directorelem.setAttribute('BirthYear', '0')
++                directorelem.setAttribute('CreditType', 'Direction')
++                directorelem.setAttribute('CreditSubtype', 'Director')
++                directorelem.setAttribute('CreditedAs', '')
++        elif key == 'movies_o_site':            # VARCHAR
++            pass
++        elif key == 'movies_site':              # VARCHAR
++            pass
++        elif key == 'movies_trailer':           # VARCHAR
++            pass
++        elif key == 'movies_country':           # VARCHAR
++            elem = document.createElement('CountryOfOrigin')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_genre':             # VARCHAR
++            genres = value.split(',')
++            genreselem = document.createElement('Genres')
++            dvdelement.appendChild(genreselem)
++            for genre in genres:
++                genreelem = document.createElement('Genre')
++                genreselem.appendChild(genreelem)
++                t = document.createTextNode(genre.strip())
++                genreelem.appendChild(t)
++        elif key == 'movies_region':            # SmallInteger
++            regionselem = document.createElement('Regions')
++            dvdelement.appendChild(regionselem)
++            regionelem = document.createElement('Region')
++            regionselem.appendChild(regionelem)
++            t = document.createTextNode(value)
++            regionelem.appendChild(t)
++        elif key == 'movies_image':             # VARCHAR
++            pass
++        elif key == 'movies_studio':            # VARCHAR
++            studios = value.split(',')
++            studioselem = document.createElement('Studios')
++            dvdelement.appendChild(studioselem)
++            for studio in studios:
++                studioelem = document.createElement('Studio')
++                studioselem.appendChild(studioelem)
++                t = document.createTextNode(studio.strip())
++                studioelem.appendChild(t)
++        elif key == 'movies_classification':    # VARCHAR
++            elem = document.createElement('Rating')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_cast':              # VARCHAR
++            actors = value.split('\n')
++            actorselem = document.createElement('Actors')
++            dvdelement.appendChild(actorselem)
++            for actor in actors:
++                actorsplit = actor.split(_(' as '))
++                actornames = actorsplit[0].split(' ')
++                role = ''
++                firstname = ''
++                lastname = ''
++                if len(actorsplit) &gt; 1:
++                    role = actorsplit[1]
++                if len(actornames) &gt; 1:
++                    firstname = actornames[0]
++                    actornames.pop(0)
++                    for actorname in actornames:
++                        lastname = lastname + actorname + ' '
++                actorelem = document.createElement('Actor')
++                actorselem.appendChild(actorelem)
++                actorelem.setAttribute('FirstName', firstname)
++                actorelem.setAttribute('LastName', lastname)
++                actorelem.setAttribute('Role', role)
++                actorelem.setAttribute('BirthYear', '0')
++                actorelem.setAttribute('CreditedAs', '')
++                actorelem.setAttribute('Voice', 'False')
++                actorelem.setAttribute('Uncredited', 'False')
++                actorelem.setAttribute('MiddleName', '')
++        elif key == 'movies_plot':              # VARCHAR
++            elem = document.createElement('Overview')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_notes':             # VARCHAR
++            elem = document.createElement('Notes')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++
++    def process_tags(self, document, dvdelement, tagsquery):
++        tagselem = document.createElement('Tags')
++        dvdelement.appendChild(tagselem)
++        for tag in tagsquery.execute().fetchall():
++            value = self.convert_value(tag['name'])
++            tagelem = document.createElement('Tag')
++            tagselem.appendChild(tagelem)
++            tagelem.setAttribute('Name', value)
++            tagelem.setAttribute('FullName', value)
+
+Added: trunk/lib/plugins/export/PluginExportGCstar.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportGCstar.py	2009-07-08 16:24:03 UTC (rev 1256)
++++ trunk/lib/plugins/export/PluginExportGCstar.py	2009-07-10 21:14:08 UTC (rev 1257)
+@@ -0,0 +1,218 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import xml.dom.minidom
++import xml.dom.ext
++import gutils
++from plugins.export import XmlExportBase
++
++class ExportPlugin(XmlExportBase):
++    plugin_name         = &quot;GCstar Database Export&quot;
++    plugin_description  = _(&quot;Full GCstar database export plugin&quot;)
++    plugin_author       = &quot;Michael Jahn&quot;
++    plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&quot;
++    plugin_version      = &quot;1.0&quot;
++
++    def __init__(self, database, locations, parent_window, search_conditions, config):
++        XmlExportBase.__init__(self, database, locations, parent_window, search_conditions, config)
++        self.config_section = 'export-gcstar'
++        self.export_name    = 'GCstar database export'
++        self.filename       = 'gcstar.xml'
++        self.encoding       = 'utf-8'
++        self.true_value     = '1'
++        self.false_value    = '0'
++
++    def export_to_document(self, document, mainelement):
++        collelement = document.createElement('collection')
++        collelement.setAttribute('type', 'GCfilms')
++        document.appendChild(collelement)
++        comment = document.createComment('Griffith Export in GCstar database format')
++        document.insertBefore(comment, collelement)
++        XmlExportBase.export_to_document(self, document, collelement)
++        collelement.setAttribute('items', str(self.exported_movies))
++
++    def process_movie(self, document, mainelement, movie, keys):
++        # create node
++        itemelement = document.createElement('item')
++        itemelement.setAttribute('id', '')
++        itemelement.setAttribute('title', '')
++        itemelement.setAttribute('date', '')
++        itemelement.setAttribute('time', '')
++        itemelement.setAttribute('director', '')
++        itemelement.setAttribute('country', '')
++        itemelement.setAttribute('genre', '')
++        itemelement.setAttribute('image', '')
++        itemelement.setAttribute('actors', '')
++        itemelement.setAttribute('original', '')
++        itemelement.setAttribute('webPage', '')
++        itemelement.setAttribute('seen', '')
++        itemelement.setAttribute('added', '')
++        itemelement.setAttribute('format', '')
++        itemelement.setAttribute('number', '')
++        itemelement.setAttribute('identifier', '')
++        itemelement.setAttribute('place', '')
++        itemelement.setAttribute('rating', '')
++        itemelement.setAttribute('audio', '')
++        itemelement.setAttribute('subt', '')
++        itemelement.setAttribute('age', '')
++        itemelement.setAttribute('video', '')
++        itemelement.setAttribute('serie', '')
++        itemelement.setAttribute('rank', '')
++        itemelement.setAttribute('trailer', '')
++        itemelement.setAttribute('borrower', '')
++        itemelement.setAttribute('lendDate', '')
++        itemelement.setAttribute('borrowings', '')
++        itemelement.setAttribute('favourite', '')
++        itemelement.setAttribute('tags', '')
++        mainelement.appendChild(itemelement)
++        XmlExportBase.process_movie(self, document, itemelement, movie, keys)
++        if not itemelement.getAttribute('title'):
++            itemelement.setAttribute('title', itemelement.getAttribute('original'))
++
++    def process_movie_value(self, document, dvdelement, key, value):
++        if key == 'movies_number':
++            dvdelement.setAttribute('id', value)
++        elif key == 'movies_loaned':
++            pass
++        elif key == 'movies_seen':
++            dvdelement.setAttribute('seen', value)
++        elif key == 'movies_rating':
++            dvdelement.setAttribute('rating', value)
++        elif key == 'movies_color':             # SmallInteger
++            pass
++        elif key == 'movies_cond':              # SmallInteger
++            pass
++        elif key == 'movies_layers':            # SmallInteger
++            pass
++        elif key == 'movies_media_num':         # SmallInteger
++            dvdelement.setAttribute('number', value)
++        elif key == 'movies_runtime':           # Integer
++            dvdelement.setAttribute('time', value)
++        elif key == 'movies_year':              # year
++            dvdelement.setAttribute('date', value)
++        elif key == 'movies_o_title':           # VARCHAR
++            dvdelement.setAttribute('original', value)
++        elif key == 'movies_title':             # VARCHAR
++            dvdelement.setAttribute('title', value)
++        elif key == 'movies_director':          # VARCHAR
++            dvdelement.setAttribute('director', value)
++        elif key == 'movies_o_site':            # VARCHAR
++            pass
++        elif key == 'movies_site':              # VARCHAR
++            dvdelement.setAttribute('webPage', value)
++        elif key == 'movies_trailer':           # VARCHAR
++            if len(value.strip()) &gt; 0:
++                trailersplit = value.split('<A HREF="file://">file://</A>')
++                if len(trailersplit) &gt; 1:
++                    if gutils.is_windows_system():
++                        dvdelement.setAttribute('trailer', trailersplit[1].lstrip('/'))
++                    else:
++                        dvdelement.setAttribute('trailer', trailersplit[1])
++                else:
++                    dvdelement.setAttribute('trailer', trailersplit[0])
++        elif key == 'movies_country':           # VARCHAR
++            dvdelement.setAttribute('country', value)
++        elif key == 'movies_genre':             # VARCHAR
++            dvdelement.setAttribute('genre', value.replace('\n', ''))
++        elif key == 'movies_region':            # SmallInteger
++            pass
++        elif key == 'movies_studio':            # VARCHAR
++            pass
++        elif key == 'movies_classification':    # VARCHAR
++            dvdelement.setAttribute('age', str(gutils.digits_only(value)))
++        elif key == 'movies_cast':              # VARCHAR
++            if len(value.strip()) &gt; 0:
++                actors = value.split('\n')
++                actorsstring = ''
++                delim = ''
++                for actor in actors:
++                    actorsplit = actor.split(_(' as '))
++                    actornames = actorsplit[0]
++                    role = ''
++                    if len(actorsplit) &gt; 1:
++                        role = actorsplit[1]
++                    actorsstring += delim + actornames.strip() + ' (' + role.strip() + ')'
++                    delim = ', '
++                dvdelement.setAttribute('actors', actorsstring)
++        elif key == 'movies_plot':              # VARCHAR
++            elem = document.createElement('synopsis')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'movies_notes':             # VARCHAR
++            elem = document.createElement('comment')
++            dvdelement.appendChild(elem)
++            t = document.createTextNode(value)
++            elem.appendChild(t)
++        elif key == 'volumes_name':             # VARCHAR
++            dvdelement.setAttribute('place', value)
++        elif key == 'collections_name':         # VARCHAR
++            dvdelement.setAttribute('serie', value)
++        elif key == 'vcodecs_name':             # VARCHAR
++            dvdelement.setAttribute('video', value)
++        elif key == 'media_name':               # VARCHAR
++            dvdelement.setAttribute('format', value)
++
++    def process_movie_image(self, document, dvdelement, imagedata, imagemd5sum):
++        if imagemd5sum and imagedata:
++            dvdelement.setAttribute('image', self.filename + '_pictures/' + imagemd5sum + '.jpg')
++            self.save_image_to_file(imagedata, imagemd5sum, self.filename + '_pictures/')
++
++    def process_tags(self, document, dvdelement, tagsquery):
++        tagsstring = ''
++        delim = ''
++        for tag in tagsquery.execute().fetchall():
++            tagsstring += delim + self.convert_value(tag['name'])
++            delim = ','
++        dvdelement.setAttribute('tags', tagsstring)
++
++    def process_languages(self, document, movieelement, languagesquery):
++        audioelement = None
++        for language in languagesquery.execute().fetchall():
++            if audioelement is None:
++                audioelement = document.createElement('audio')
++                movieelement.appendChild(audioelement)
++            lineelement = document.createElement('line')
++            audioelement.appendChild(lineelement)
++            colelement = document.createElement('col')
++            lineelement.appendChild(colelement)
++            t = document.createTextNode(self.convert_value(language['languages_name']))
++            colelement.appendChild(t)
++            colelement = document.createElement('col')
++            lineelement.appendChild(colelement)
++            t = document.createTextNode(self.convert_value(language['acodecs_name']))
++            colelement.appendChild(t)
++
++    def process_subtitles(self, document, movieelement, subtitlesquery):
++        # process movie subtitles by query
++        subtelement = None
++        for subtitle in subtitlesquery.execute().fetchall():
++            if subtelement is None:
++                subtelement = document.createElement('subt')
++                movieelement.appendChild(subtelement)
++            lineelement = document.createElement('line')
++            subtelement.appendChild(lineelement)
++            colelement = document.createElement('col')
++            lineelement.appendChild(colelement)
++            t = document.createTextNode(self.convert_value(subtitle['name']))
++            colelement.appendChild(t)
+
+Modified: trunk/lib/plugins/export/__init__.py
+===================================================================
+--- trunk/lib/plugins/export/__init__.py	2009-07-08 16:24:03 UTC (rev 1256)
++++ trunk/lib/plugins/export/__init__.py	2009-07-10 21:14:08 UTC (rev 1257)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2008 Piotr O&#380;arowski
++# Copyright (c) 2008-2009 Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published byp
+@@ -23,11 +23,16 @@
+ 
+ import glob
+ import os.path
++import gutils
++import gtk
++import xml.dom.minidom
++import xml.dom.ext
++import os
+ 
+ import logging
+ log = logging.getLogger(&quot;Griffith.%s&quot; % __name__)
+ 
+-from sqlalchemy import select, outerjoin
++from sqlalchemy import select, join, outerjoin, and_, or_
+ import db
+ from sql import update_whereclause
+ 
+@@ -105,3 +110,288 @@
+         self.exported_columns = query.columns
+ 
+         return query
++
++class XmlExportBase(Base):
++
++    def __init__(self, database, locations, parent_window, search_conditions, config):
++        self.db              = database
++        self.locations       = locations
++        self.parent          = parent_window
++        self.config_section  = None
++        self.export_name     = ''
++        self.filepath        = ''
++        self.dirpath         = ''
++        self.filename        = 'export.xml'
++        self.encoding        = 'windows-1252'
++        self.exported_movies = 0
++        self.true_value      = 'True'
++        self.false_value     = 'False'
++        self.config          = config
++
++    def run(self):
++        if self.show_dialog() == True:
++            # create xml document
++            impl = xml.dom.minidom.getDOMImplementation()
++            doc  = impl.createDocument(None, None, None)
++            self.export_to_document(doc, doc.documentElement)
++            # write xml document to file
++            self.export_document_to_file(doc, self.filepath)
++            gutils.info(_('%s file has been created.') % self.export_name, self.parent)
++
++    def show_dialog(self):
++        # shows a file dialog and sets self.filepath
++        # derived classes which overwrite this method have also to set self.filepath
++        basedir = None
++        if not self.config is None and not self.config_section is None:
++            basedir = self.config.get('export_dir', None, section=self.config_section)
++        if basedir is None:
++            filenames = gutils.file_chooser(_('Export a %s document') % self.export_name, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name=self.filename)
++        else:
++            filenames = gutils.file_chooser(_('Export a %s document') % self.export_name, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name=self.filename, folder=basedir)
++        if filenames[0]:
++            self.filepath = filenames[0]
++            if len(filenames) &gt; 1:
++                self.dirpath = filenames[1]
++            else:
++                self.dirpath = os.path.dirname(self.filepath)
++            self.filename = os.path.basename(self.filepath)
++            if not self.config is None and self.dirpath and not self.config_section is None:
++                self.config.set('export_dir', self.dirpath, section=self.config_section)
++                self.config.save()
++            overwrite = None
++            if os.path.isfile(self.filepath):
++                response = gutils.question(_('File exists. Do you want to overwrite it?'), 1, self.parent)
++                if response==-8:
++                    overwrite = True
++                else:
++                    overwrite = False
++                    
++            if overwrite == True or overwrite is None:
++                return True
++        return False
++
++    def export_document_to_file(self, document, filename):
++        # write XML to file
++        fp = open(filename, 'w')
++        xml.dom.ext.PrettyPrint(document, fp, encoding=self.encoding)
++        fp.close()
++
++    def export_to_document(self, document, mainelement):
++        table_movies = db.metadata.tables['movies']
++        # create object
++        columns = [table_movies.c.movie_id, table_movies.c.number,
++            table_movies.c.title, table_movies.c.o_title,
++            table_movies.c.country, table_movies.c.year,
++            table_movies.c.runtime, table_movies.c.classification,
++            table_movies.c.genre, table_movies.c.region, table_movies.c.studio,
++            table_movies.c.cast, table_movies.c.director,
++            table_movies.c.plot, table_movies.c.notes,
++            table_movies.c.loaned, table_movies.c.rating,
++            table_movies.c.trailer, table_movies.c.image,
++            table_movies.c.seen, table_movies.c.media_num,
++            table_movies.c.poster_md5, table_movies.c.screenplay,
++            table_movies.c.cameraman, table_movies.c.barcode]
++        # use outer join to media table to get the name of the media
++        columns.append(db.metadata.tables['media'].c.name)
++        media_join = outerjoin(db.metadata.tables['movies'], \
++            db.metadata.tables['media'], \
++            db.metadata.tables['movies'].c.medium_id==db.metadata.tables['media'].c.medium_id)
++        # use outer join to collections table to get the name of the collection
++        columns.append(db.metadata.tables['collections'].c.name)
++        collection_join = media_join.outerjoin( \
++            db.metadata.tables['collections'], \
++            db.metadata.tables['movies'].c.collection_id==db.metadata.tables['collections'].c.collection_id)
++        # use outer join to volumes table to get the name of the volume
++        columns.append(db.metadata.tables['volumes'].c.name)
++        volume_join = collection_join.outerjoin( \
++            db.metadata.tables['volumes'], \
++            db.metadata.tables['movies'].c.volume_id==db.metadata.tables['volumes'].c.volume_id)
++        # use outer join to volumes table to get the name of the video codec
++        columns.append(db.metadata.tables['vcodecs'].c.name)
++        vcodec_join = volume_join.outerjoin( \
++            db.metadata.tables['vcodecs'], \
++            db.metadata.tables['movies'].c.vcodec_id==db.metadata.tables['vcodecs'].c.vcodec_id)
++        # use outer join to posters table to get the poster image
++        columns.append(db.metadata.tables['posters'].c.data)
++        posters_join = vcodec_join.outerjoin( \
++            db.metadata.tables['posters'], \
++            db.metadata.tables['movies'].c.poster_md5==db.metadata.tables['posters'].c.md5sum)
++        # fetch movie data
++        moviesquery = select(columns=columns, from_obj=[media_join, collection_join, volume_join, vcodec_join, posters_join], bind=self.db.session.bind, use_labels = True)
++        self.process_movies(document, mainelement, moviesquery)
++
++    def process_movies(self, document, mainelement, moviesquery):
++        # process all movies by query
++        self.exported_movies = 0
++        keys = moviesquery.c.keys
++        for movie in moviesquery.execute().fetchall():
++            self.process_movie(document, mainelement, movie, keys)
++            self.exported_movies += 1
++
++    def process_movie(self, document, movieelement, movie, keys):
++        # process the movie itself
++        self.process_movie_values(document, movieelement, movie, keys)
++        # process tags
++        self.process_movie_tags(document, movieelement, movie)
++        # process audio codecs
++        self.process_movie_acodecs(document, movieelement, movie)
++        # process languages
++        self.process_movie_languages(document, movieelement, movie)
++        # process subtitles
++        self.process_movie_subtitles(document, movieelement, movie)
++
++    def process_movie_values(self, document, movieelement, movie, keys):
++        # process movie properties by key
++        for key in keys():
++            if not key == 'posters_data':
++                value = self.convert_value(movie[key])
++                self.process_movie_value(document, movieelement, key, value)
++        self.process_movie_image(document, movieelement, movie['posters_data'], movie['movies_poster_md5'])
++
++    def process_movie_value(self, document, movieelement, key, value):
++        pass
++
++    def process_movie_image(self, document, movieelement, imagedata, imagemd5sum):
++        pass
++
++    #
++    # export movie tags
++    #
++    def process_movie_tags(self, document, movieelement, movie):
++        # build query for movie tags processing
++        tagsquerycolumns = [db.metadata.tables['movie_tag'].c.movie_id,
++            db.metadata.tables['movie_tag'].c.tag_id,
++            db.metadata.tables['tags'].c.name]
++        tag_join = join(db.metadata.tables['movie_tag'], \
++            db.metadata.tables['tags'], \
++            db.metadata.tables['movie_tag'].c.tag_id==db.metadata.tables['tags'].c.tag_id)
++        tagsquery = select(\
++            bind=self.db.session.bind, \
++            columns = tagsquerycolumns, \
++            from_obj = [tag_join], \
++            whereclause = db.metadata.tables['movie_tag'].c.movie_id==movie['movies_movie_id'])
++        self.process_tags(document, movieelement, tagsquery)
++        
++    def process_tags(self, document, movieelement, tagsquery):
++        # process movie tags by query
++        pass
++
++    #
++    # export movie audio codecs
++    #
++    def process_movie_acodecs(self, document, movieelement, movie):
++        # build query for audio codec processing
++        acodecscolumns = [db.metadata.tables['movie_lang'].c.movie_id,
++            db.metadata.tables['movie_lang'].c.type,
++            db.metadata.tables['movie_lang'].c.acodec_id,
++            db.metadata.tables['acodecs'].c.name]
++        acodec_join = join(db.metadata.tables['movie_lang'], \
++            db.metadata.tables['acodecs'], \
++            db.metadata.tables['movie_lang'].c.acodec_id==db.metadata.tables['acodecs'].c.acodec_id)
++        acodecsquery = select(\
++            bind=self.db.session.bind, \
++            columns = acodecscolumns, \
++            from_obj = [acodec_join], \
++            whereclause = db.metadata.tables['movie_lang'].c.movie_id==movie['movies_movie_id'])
++        self.process_acodecs(document, movieelement, acodecsquery)
++        
++    def process_acodecs(self, document, movieelement, acodecs):
++        # process audio codecs by query
++        pass
++
++    #
++    # export movie languages
++    #
++    def process_movie_languages(self, document, movieelement, movie):
++        # build query for movie languages processing
++        languagecolumns = [db.metadata.tables['movie_lang'].c.movie_id,
++            db.metadata.tables['movie_lang'].c.type,
++            db.metadata.tables['movie_lang'].c.lang_id,
++            db.metadata.tables['movie_lang'].c.acodec_id,
++            db.metadata.tables['languages'].c.name,
++            db.metadata.tables['acodecs'].c.name]
++        language_join = join(db.metadata.tables['movie_lang'], \
++            db.metadata.tables['languages'], \
++            db.metadata.tables['movie_lang'].c.lang_id==db.metadata.tables['languages'].c.lang_id)
++        acodec_join = language_join.join( \
++            db.metadata.tables['acodecs'], \
++            db.metadata.tables['movie_lang'].c.acodec_id==db.metadata.tables['acodecs'].c.acodec_id)
++        languagesquery = select(\
++            bind=self.db.session.bind, \
++            columns = languagecolumns, \
++            from_obj = [language_join, acodec_join], \
++            whereclause = and_(db.metadata.tables['movie_lang'].c.movie_id==movie['movies_movie_id'], \
++                or_(db.metadata.tables['movie_lang'].c.type==0, or_(db.metadata.tables['movie_lang'].c.type==2, db.metadata.tables['movie_lang'].c.type==None))), \
++            use_labels = True)
++        self.process_languages(document, movieelement, languagesquery)
++        
++    def process_languages(self, document, movieelement, languages):
++        # process movie languages by query
++        pass
++
++    #
++    # export movie subtitles
++    #
++    def process_movie_subtitles(self, document, movieelement, movie):
++        # build query for movie subtitles processing
++        languagescolumns = [db.metadata.tables['movie_lang'].c.movie_id,
++            db.metadata.tables['movie_lang'].c.type,
++            db.metadata.tables['movie_lang'].c.lang_id,
++            db.metadata.tables['languages'].c.name]
++        language_join = join(db.metadata.tables['movie_lang'], \
++            db.metadata.tables['languages'], \
++            db.metadata.tables['movie_lang'].c.lang_id==db.metadata.tables['languages'].c.lang_id)
++        languagesquery = select(\
++            bind=self.db.session.bind, \
++            columns = languagescolumns, \
++            from_obj = [language_join], \
++            whereclause = and_(db.metadata.tables['movie_lang'].c.movie_id==movie['movies_movie_id'], db.metadata.tables['movie_lang'].c.type==3))
++        self.process_subtitles(document, movieelement, languagesquery)
++        
++    def process_subtitles(self, document, movieelement, subtitlesquery):
++        # process movie subtitles by query
++        pass
++
++    #
++    # helper methods
++    #
++
++    def save_image_to_file(self, imagedata, imagebasename, destinationdir):
++        # save image image to destination directory
++        # build absolute path from current export directory if necessary
++        # create picture directory if necessary
++        if not os.path.isabs(destinationdir):
++            dst_directory = os.path.abspath(os.path.join(self.dirpath, destinationdir))
++        else:
++            dst_directory = os.path.abspath(destinationdir)
++        if not os.path.exists(dst_directory):
++            try:
++                os.mkdir(dst_directory)
++            except:
++                log.error(&quot;Can't create %s&quot; % dst_directory)
++        dst_filename = os.path.join(dst_directory, imagebasename + '.jpg')
++        try:
++            f = file(dst_filename, 'wb')
++            try:
++                f.write(imagedata)
++            finally:
++                f.close()
++        except:
++            log.error(&quot;Can't save image data to %s&quot; % dst_filename)
++
++    def convert_value(self, value):
++        if value is None:
++            result = ''
++        elif value is True:
++            result = self.true_value
++        elif value is False:
++            result = self.false_value
++        else:
++            try:
++                result = str(value).encode(self.encoding).decode(self.encoding)
++            except:
++                log.error('Can''t convert value ' + value + ' to codepage ' + self.encoding + '.')
++                result = ''
++        return result
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000726.html">[Griffith-svn] r1256 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000728.html">[Griffith-svn] r1258 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#727">[ date ]</a>
+              <a href="thread.html#727">[ thread ]</a>
+              <a href="subject.html#727">[ subject ]</a>
+              <a href="author.html#727">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

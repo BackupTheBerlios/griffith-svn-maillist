@@ -1,0 +1,475 @@
+From pantano.luigi at gmail.com  Wed May  7 15:51:14 2008
+From: pantano.luigi at gmail.com (Luigi Pantano)
+Date: Wed, 7 May 2008 13:51:14 +0000
+Subject: [Griffith-svn] PluginExportPDF patch
+Message-ID: <8db1e3700805070651y5d9580f1l3e74aa467ed33f39@mail.gmail.com>
+
+I corrected the schedule of PDF's exportation. Now files are organized
+in Letters, and I modifyed the position of film's elements:  title,
+original_title, director, number (See output.jpg).
+
+
+Original text:
+Ho riveduto e corretto il comportamente del modulo di esportazione per
+il formato PDF. Adesso gli oggetti sono raggruppati per Lettera,
+inoltre ? stata modificata la posizione degli elementi del film:
+title, original_title, director, number
+-- 
+Luigi Pantano
+---------------------------------------------------------------------------
+Contatti:
+jabber: bornfreethinker at jabber.linux.it
+wengo: fr33th1nk3r
+ekiga: sip:bornfreethinker at ekiga.net
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: output.jpg
+Type: image/jpeg
+Size: 21060 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/griffith-svn/attachments/20080507/8abc0dcf/attachment.jpg>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: PluginExportPDF.py
+Type: text/x-python
+Size: 7266 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/griffith-svn/attachments/20080507/8abc0dcf/attachment.py>
+
+From pantano.luigi at gmail.com  Wed May  7 16:08:18 2008
+From: pantano.luigi at gmail.com (Luigi Pantano)
+Date: Wed, 7 May 2008 14:08:18 +0000
+Subject: [Griffith-svn] test
+Message-ID: <8db1e3700805070708u3a2ddbb0vd32e769dc31ed745@mail.gmail.com>
+
+send test, can you read me?
+
+-- 
+Luigi Pantano
+---------------------------------------------------------------------------
+Contatti:
+jabber: bornfreethinker at jabber.linux.it
+wengo: fr33th1nk3r
+ekiga: sip:bornfreethinker at ekiga.net
+
+
+From mikej06 at mail.berlios.de  Thu May  8 14:54:29 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 8 May 2008 14:54:29 +0200
+Subject: [Griffith-svn] r948 - branches/0.9.x
+	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+Message-ID: <200805081254.m48CsT4F010319@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-05-08 14:54:12 +0200 (Thu, 08 May 2008)
+New Revision: 948
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+Log:
+updated DVD Empire plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-04-24 22:27:42 UTC (rev 947)
++++ branches/0.9.x/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-05-08  Michael Jahn
++	* updated DVD Empire plugin
++
+ 2008-04-25  Michael Jahn
+ 	* fixed fetching posters from Amazon 
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-04-24 22:27:42 UTC (rev 947)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-05-08 12:54:12 UTC (rev 948)
+@@ -32,7 +32,7 @@
+ plugin_language = _("English")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.0"
++plugin_version = "1.1"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -66,7 +66,7 @@
+ 		self.runtime = gutils.strip_tags(gutils.trim(self.page, '>Length:', '<br />'))
+ 
+ 	def get_genre(self):
+-		self.genre = ""
++		self.genre = gutils.strip_tags(gutils.trim(self.page, '>Genre</b>:', '\n'))
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.page, '>Actors:', '</td><td')
+@@ -96,7 +96,13 @@
+ 		self.country = ""
+ 
+ 	def get_rating(self):
+-		self.rating = "0"
++		self.rating = gutils.clean(gutils.trim(self.page, '>Overall Rating:', ' out of'))
++		try:
++			tmp_float = float(self.rating)
++			tmp_float = round(2 * tmp_float, 0)
++			self.rating = str(tmp_float)
++		except:
++			self.rating = '0'
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+@@ -119,8 +125,8 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search   = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&string="
+-		self.translated_url_search = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&string="
++		self.original_url_search   = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=&search_refined=32&used=0&string="
++		self.translated_url_search = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=&search_refined=32&used=0&string="
+ 		self.encode = 'iso-8859-1'
+ 
+ 	def search(self,parent_window):
+@@ -141,9 +147,9 @@
+ 			if tmp_pagecountint > tmp_pagecountintuse:
+ 				tmp_pagecountintuse = tmp_pagecountint
+ 		tmp_pagecountintcurrent = 1
+-		while (tmp_pagecountintuse > tmp_pagecountintcurrent):
++		while tmp_pagecountintuse > tmp_pagecountintcurrent and tmp_pagecountintuse < 4:
+ 			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&page=" + str(tmp_pagecountintcurrent) + "&string="
++			self.url = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=&search_refined=32&used=0&page=" + str(tmp_pagecountintcurrent) + "&string="
+ 			self.open_search(parent_window)
+ 			tmp_page2 = gutils.trim(self.page,'<select name="sort"', 'Click Here to make a Suggestion</a>')
+ 			tmp_page = tmp_page + tmp_page2
+@@ -152,8 +158,8 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		split_pattern = re.compile('<a href=["\']/Exec/v4_item[.]asp[?]userid=[0-9]+[&]amp;item_id=')
+-		check_pattern = re.compile('[0-9]+[&]amp;searchID=[0-9]+[\']>')
++		split_pattern = re.compile('<a[\t ]+href=["\']/Exec/v4_item[.]asp[?]userid=[-0-9]+[&]amp;item_id=')
++		check_pattern = re.compile('[0-9]+[&]amp;searchID=[0-9]+["\']>')
+ 		elements = split_pattern.split(self.page)
+ 		elements[0] = ''
+ 		for element in elements:
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-04-24 22:27:42 UTC (rev 947)
++++ trunk/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-05-08  Michael Jahn
++	* updated DVD Empire plugin
++
+ 2008-04-25  Michael Jahn
+ 	* fixed fetching posters from Amazon 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-04-24 22:27:42 UTC (rev 947)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-05-08 12:54:12 UTC (rev 948)
+@@ -32,7 +32,7 @@
+ plugin_language = _("English")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.0"
++plugin_version = "1.1"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -66,7 +66,7 @@
+ 		self.runtime = gutils.strip_tags(gutils.trim(self.page, '>Length:', '<br />'))
+ 
+ 	def get_genre(self):
+-		self.genre = ""
++		self.genre = gutils.strip_tags(gutils.trim(self.page, '>Genre</b>:', '\n'))
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.page, '>Actors:', '</td><td')
+@@ -96,7 +96,13 @@
+ 		self.country = ""
+ 
+ 	def get_rating(self):
+-		self.rating = "0"
++		self.rating = gutils.clean(gutils.trim(self.page, '>Overall Rating:', ' out of'))
++		try:
++			tmp_float = float(self.rating)
++			tmp_float = round(2 * tmp_float, 0)
++			self.rating = str(tmp_float)
++		except:
++			self.rating = '0'
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+@@ -119,8 +125,8 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search   = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&string="
+-		self.translated_url_search = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&string="
++		self.original_url_search   = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=&search_refined=32&used=0&string="
++		self.translated_url_search = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=&search_refined=32&used=0&string="
+ 		self.encode = 'iso-8859-1'
+ 
+ 	def search(self,parent_window):
+@@ -141,9 +147,9 @@
+ 			if tmp_pagecountint > tmp_pagecountintuse:
+ 				tmp_pagecountintuse = tmp_pagecountint
+ 		tmp_pagecountintcurrent = 1
+-		while (tmp_pagecountintuse > tmp_pagecountintcurrent):
++		while tmp_pagecountintuse > tmp_pagecountintcurrent and tmp_pagecountintuse < 4:
+ 			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&page=" + str(tmp_pagecountintcurrent) + "&string="
++			self.url = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=&search_refined=32&used=0&page=" + str(tmp_pagecountintcurrent) + "&string="
+ 			self.open_search(parent_window)
+ 			tmp_page2 = gutils.trim(self.page,'<select name="sort"', 'Click Here to make a Suggestion</a>')
+ 			tmp_page = tmp_page + tmp_page2
+@@ -152,8 +158,8 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		split_pattern = re.compile('<a href=["\']/Exec/v4_item[.]asp[?]userid=[0-9]+[&]amp;item_id=')
+-		check_pattern = re.compile('[0-9]+[&]amp;searchID=[0-9]+[\']>')
++		split_pattern = re.compile('<a[\t ]+href=["\']/Exec/v4_item[.]asp[?]userid=[-0-9]+[&]amp;item_id=')
++		check_pattern = re.compile('[0-9]+[&]amp;searchID=[0-9]+["\']>')
+ 		elements = split_pattern.split(self.page)
+ 		elements[0] = ''
+ 		for element in elements:
+
+
+
+From mikej06 at mail.berlios.de  Sat May 10 22:42:05 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat, 10 May 2008 22:42:05 +0200
+Subject: [Griffith-svn] r949 - branches/0.9.x
+	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+Message-ID: <200805102042.m4AKg51G013980@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-05-10 22:41:52 +0200 (Sat, 10 May 2008)
+New Revision: 949
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+added cast, genre and grouping by first letter to pdf export (thanks to Luigi Pantano)
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
++++ branches/0.9.x/ChangeLog	2008-05-10 20:41:52 UTC (rev 949)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-05-09  Michael Jahn
++	* added cast, genre and grouping by first letter to pdf export (thanks to Luigi Pantano)
++
+ 2008-05-08  Michael Jahn
+ 	* updated DVD Empire plugin
+ 
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2008-05-08 12:54:12 UTC (rev 948)
++++ branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2008-05-10 20:41:52 UTC (rev 949)
+@@ -39,7 +39,7 @@
+ import sys
+ import config
+ from locale import getdefaultlocale
+-from sqlalchemy import Select
++from sqlalchemy import Select, desc
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -47,7 +47,7 @@
+ plugin_description = _("PDF export plugin")
+ plugin_author = "Vasco Nunes"
+ plugin_author_email = "<vasco.m.nunes at gmail.com>"
+-plugin_version = "0.3"
++plugin_version = "0.4"
+ 
+ class ExportPlugin:
+     def __init__(self, database, locations, parent_window, debug, **kwargs):
+@@ -120,25 +120,40 @@
+                         else:
+                             movies.order_by_clause.append(self.db.Movie.c[i])
+                 movies = movies.execute().fetchall()
++                first_letter = '0'
+                 for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title).encode(defaultEnc)
+                     title = str(movie.title).encode(defaultEnc)
+-                    if movie.year:
+-                        year = ' - ' + str(movie.year)
+-                    else:
+-                        year = ""
+                     if movie.director:
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = ""
++                    # group by first letter
++                    if title[0] != first_letter:
++                        first_letter = title[0]
++                        paragraph_text = '<font name=' + self.fontName + ' size="15">' + saxutils.escape(first_letter) + '</fonts>'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
++                        Story.append(p)
++                    # add movie title
+                     paragraph_text = '<font name=' + self.fontName + ' size="7">' + \
+-                        saxutils.escape(str(number) + ' | ' + original_title) + \
+-                        '</font><font name=' + self.fontName + ' size="7">' + \
+-                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '<b>'+ saxutils.escape(title) + '</b>' + \
++                        saxutils.escape(' (' + original_title + '), ' + director + ' | ' + str(number)) + \
+                         '</font>'
+                     p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
++                    if not movie.genre is None:
++                        paragraph_text = '<font name=' + self.fontName + ' size="5">' + \
++                        '<b>' + _('Genre') + ': </b>' + saxutils.escape(str(movie.genre).encode(defaultEnc)) + \
++                        '</font>'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
++                    if not movie.cast is None:
++                        paragraph_text = '<i><font name=' + self.fontName + ' size="5">' + \
++                        '<b>' + _('Cast') + ': </b>' + saxutils.escape('; '.join(str(movie.cast).encode(defaultEnc).split("\n")[0:2])) + \
++                            '</font></i>'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+                 gutils.info(self, _('PDF has been created.'), self.parent)
+             
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
++++ trunk/ChangeLog	2008-05-10 20:41:52 UTC (rev 949)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
++2008-05-09  Michael Jahn
++	* added cast, genre and grouping by first letter to pdf export (thanks to Luigi Pantano)
++
+ 2008-05-08  Michael Jahn
+ 	* updated DVD Empire plugin
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2008-05-08 12:54:12 UTC (rev 948)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2008-05-10 20:41:52 UTC (rev 949)
+@@ -39,7 +39,7 @@
+ import sys
+ import config
+ from locale import getdefaultlocale
+-from sqlalchemy import Select
++from sqlalchemy import select
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -47,7 +47,7 @@
+ plugin_description = _("PDF export plugin")
+ plugin_author = "Vasco Nunes"
+ plugin_author_email = "<vasco.m.nunes at gmail.com>"
+-plugin_version = "0.3"
++plugin_version = "0.4"
+ 
+ class ExportPlugin:
+     def __init__(self, database, locations, parent_window, debug, **kwargs):
+@@ -101,44 +101,61 @@
+                     defaultEnc = 'utf-8'
+                 style = self.styles["Normal"]
+                 Story = [Spacer(1,2*inch)]
+-                # define some custom stylesheetfont
+-                total = self.db.Movie.count()
+-                p = Paragraph("<font name='" + self.fontName +"' size=\"18\">" + saxutils.escape((_("List of films")).encode('utf-8')) + '</font>', self.styles["Heading1"] )
+-                Story.append(p)
+-                Story.append(Paragraph(" ",style))
+-                p = Paragraph("<font name='" + self.fontName +"' size=\"10\">" + saxutils.escape((_("Total Movies: %s") % str(total)).encode('utf-8'))  + '</font>', self.styles["Heading3"])
+-                Story.append(p)
+-                Story.append(Paragraph(" ",style))
+-                movies = Select(self.db.Movie.c)
++                # build the query
++                movies = select(self.db.Movie.c)
+                 # select sort column
+                 sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+                 sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
+                 for i in sort_column_name.split(','):
+                     if self.db.Movie.c.has_key(i):
+                         if sort_reverse:
+-                            movies.order_by_clause.append(desc(self.db.Movie.c[i]))
++                            movies = movies.order_by(self.db.Movie.c[i].desc())
+                         else:
+-                            movies.order_by_clause.append(self.db.Movie.c[i])
++                            movies = movies.order_by(self.db.Movie.c[i])
+                 movies = movies.execute().fetchall()
++                # define some custom stylesheetfont
++                total = len(movies)
++                p = Paragraph("<font name='" + self.fontName +"' size=\"18\">" + saxutils.escape((_("List of films")).encode('utf-8')) + '</font>', self.styles["Heading1"] )
++                Story.append(p)
++                Story.append(Paragraph(" ",style))
++                p = Paragraph("<font name='" + self.fontName +"' size=\"10\">" + saxutils.escape((_("Total Movies: %s") % str(total)).encode('utf-8'))  + '</font>', self.styles["Heading3"])
++                Story.append(p)
++                Story.append(Paragraph(" ",style))
++                # output movies
++                first_letter = '0'
+                 for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title).encode(defaultEnc)
+                     title = str(movie.title).encode(defaultEnc)
+-                    if movie.year:
+-                        year = ' - ' + str(movie.year)
+-                    else:
+-                        year = ""
+                     if movie.director:
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = ""
++                    # group by first letter
++                    if title[0] != first_letter:
++                        first_letter = title[0]
++                        paragraph_text = '<font name=' + self.fontName + ' size="15">' + saxutils.escape(first_letter) + '</fonts>'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
++                        Story.append(p)
++                    # add movie title
+                     paragraph_text = '<font name=' + self.fontName + ' size="7">' + \
+-                        saxutils.escape(str(number) + ' | ' + original_title) + \
+-                        '</font><font name=' + self.fontName + ' size="7">' + \
+-                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '<b>'+ saxutils.escape(title) + '</b>' + \
++                        saxutils.escape(' (' + original_title + '), ' + director + ' | ' + str(number)) + \
+                         '</font>'
+                     p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
++                    if not movie.genre is None:
++                        paragraph_text = '<font name=' + self.fontName + ' size="5">' + \
++                        '<b>' + _('Genre') + ': </b>' + saxutils.escape(str(movie.genre).encode(defaultEnc)) + \
++                        '</font>'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
++                    if not movie.cast is None:
++                        paragraph_text = '<i><font name=' + self.fontName + ' size="5">' + \
++                        '<b>' + _('Cast') + ': </b>' + saxutils.escape('; '.join(str(movie.cast).encode(defaultEnc).split("\n")[0:2])) + \
++                            '</font></i>'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+                 gutils.info(self, _('PDF has been created.'), self.parent)
+             
+
+
+

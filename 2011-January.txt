@@ -1,0 +1,1712 @@
+From mikej06 at mail.berlios.de  Mon Jan 10 21:39:05 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 10 Jan 2011 21:39:05 +0100
+Subject: [Griffith-svn] r1485 - in trunk: . lib/plugins/export
+Message-ID: <20110110203905.4FAA8480514@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-10 21:39:04 +0100 (Mon, 10 Jan 2011)
+New Revision: 1485
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportiPod.py
+Log:
+fixed iPod export plugin in case of missing values
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-12-20 21:19:16 UTC (rev 1484)
++++ trunk/ChangeLog	2011-01-10 20:39:04 UTC (rev 1485)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-01-10  Michael Jahn
++	* fixed iPod export plugin in case of missing values
++
+ 2010-12-07  Piotr O?arowski
+ 	* Fix few spelling mistakes (thanks to Olivier BOURSIN)
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2010-12-20 21:19:16 UTC (rev 1484)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2011-01-10 20:39:04 UTC (rev 1485)
+@@ -71,10 +71,18 @@
+         tmp_dir = mkdtemp()
+         griffith_list = open(os.path.join(tmp_dir,"movies"),"w")
+         t = []
+-       
++
++        def checkForNoneAndEncode(val):
++            if val is None:
++                return ''
++            return val.encode('utf-8')
++        
+         movies = self.get_query().execute().fetchall()
+         for movie in movies:
+-            t.append("%s | %s | %s | %s" % (movie['number'], movie['o_title'].encode('utf-8'), movie['title'].encode('utf-8'), movie['director'].encode('utf-8')))
++            t.append("%s | %s | %s | %s" % (movie['number'], \
++                checkForNoneAndEncode(movie['o_title']), 
++                checkForNoneAndEncode(movie['title']), 
++                checkForNoneAndEncode(movie['director'])))
+     
+         griffith_list.write("<title>%s</title><br><br>" % _("My Movies List"))
+         
+
+
+
+From mikej06 at mail.berlios.de  Mon Jan 10 22:15:26 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 10 Jan 2011 22:15:26 +0100
+Subject: [Griffith-svn] r1486 - in trunk: . lib
+Message-ID: <20110110211527.112DF480604@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-10 22:15:26 +0100 (Mon, 10 Jan 2011)
+New Revision: 1486
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+Log:
+fixed deletion of the "created" value while updating a movie
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-10 20:39:04 UTC (rev 1485)
++++ trunk/ChangeLog	2011-01-10 21:15:26 UTC (rev 1486)
+@@ -7,6 +7,7 @@
+ 
+ 2011-01-10  Michael Jahn
+ 	* fixed iPod export plugin in case of missing values
++	* fixed deletion of the "created" value while updating a movie
+ 
+ 2010-12-07  Piotr O?arowski
+ 	* Fix few spelling mistakes (thanks to Olivier BOURSIN)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-01-10 20:39:04 UTC (rev 1485)
++++ trunk/lib/add.py	2011-01-10 21:15:26 UTC (rev 1486)
+@@ -786,7 +786,7 @@
+             t_languages = details.pop('languages')
+         #for i in db.tables.movies.columns.keys():
+         for i in details:
+-            if hasattr(movie, i):
++            if not i == 'created' and not i == 'updated' and hasattr(movie, i):
+                 setattr(movie, i, details[i])
+ 
+         # clear previous data (in case of updates)
+
+
+
+From piotr at griffith.cc  Mon Jan 10 22:59:08 2011
+From: piotr at griffith.cc (Piotr =?utf-8?Q?O=C5=BCarowski?=)
+Date: Mon, 10 Jan 2011 22:59:08 +0100
+Subject: [Griffith-svn] r1486 - in trunk: . lib
+In-Reply-To: <20110110211527.112DF480604@sheep.berlios.de>
+References: <20110110211527.112DF480604@sheep.berlios.de>
+Message-ID: <20110110215908.GB31072@piotro.eu>
+
+[mikej06 at mail.berlios.de, 2011-01-10]
+> +            if not i == 'created' and not i == 'updated' and hasattr(movie, i):
+
+why not simply
+
+> +            if i != 'created' and i != 'updated' and hasattr(movie, i):
+
+or even
+
+> +            if i not in ('created', 'updated') and hasattr(movie, i):
+
+;-P
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 13:08:07 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 13:08:07 +0100
+Subject: [Griffith-svn] r1487 - trunk/lib/plugins/movie
+Message-ID: <20110113120807.629CE480F6B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 13:08:07 +0100 (Thu, 13 Jan 2011)
+New Revision: 1487
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Log:
+Zelluloid plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-01-10 21:15:26 UTC (rev 1486)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-01-13 12:08:07 UTC (rev 1487)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2007-2009 Michael Jahn
++# Copyright (c) 2007-2011 Michael Jahn
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -32,7 +32,7 @@
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = '<mikej06 at hotmail.com>'
+-plugin_version      = '1.2'
++plugin_version      = '1.3'
+ 
+ class Plugin(movie.Movie):
+     index_url = 'http://www.zelluloid.de/filme/index.php3?id='
+@@ -152,7 +152,7 @@
+         self.notes = ""
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.after(gutils.trim(self.detail_page, '>Drehbuch<', '</a>'), '>')
++        self.screenplay = string.replace(gutils.after(gutils.regextrim(self.detail_page, '>Drehbuch<', '(<td align="right">[^&]|</table>)'), '>'), '&nbsp;', ", ")
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+@@ -262,7 +262,7 @@
+ Simon Gosejohann' + _(' as ') + 'junger Mann\n\
+ Piet Klocke' + _(' as ') + 'Junggeselle',
+             'country'           : 'Deutschland',
+-            'genre'             : 'Kinder',
++            'genre'             : 'Familie',
+             'classification'    : 'ohne',
+             'studio'            : 'Bavaria Film, Constantin Film',
+             'o_site'            : False,
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 13:09:07 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 13:09:07 +0100
+Subject: [Griffith-svn] r1488 - trunk/lib/plugins/movie
+Message-ID: <20110113120907.67007480ED9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 13:09:07 +0100 (Thu, 13 Jan 2011)
+New Revision: 1488
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+KinoDe plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-01-13 12:08:07 UTC (rev 1487)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-01-13 12:09:07 UTC (rev 1488)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2009
++# Copyright (c) 2006-2011
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -32,7 +32,7 @@
+ plugin_language     = _("German")
+ plugin_author       = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version      = "1.14"
++plugin_version      = "1.15"
+ 
+ class Plugin(movie.Movie):
+     url_to_use_base = 'http://www.kino.de/'
+@@ -152,7 +152,7 @@
+ 
+     def get_cast(self):
+         self.cast = ''
+-        tmp = gutils.trim(self.page, '<th>Darsteller:', '</table>')
++        tmp = gutils.regextrim(self.page, '<th>Darsteller:', '(<th>[^&]|</table>)')
+         if tmp:
+             tmpparts = string.split(tmp, '<a href="/star/')
+             for tmppart in tmpparts[1:]:
+@@ -255,7 +255,7 @@
+             self.screenplay= gutils.trim(self.creditspage, 'Drehbuch&nbsp;', '</tr>')
+ 
+     def get_cameraman(self):
+-        self.cameraman = gutils.regextrim(self.page, '<th>Kamera:', '<th>')
++        self.cameraman = gutils.regextrim(self.page, '<th>Kamera:', '(<th>|</table>)')
+         if not self.cameraman:
+             self.cameraman= gutils.trim(self.creditspage, 'Kamera&nbsp;', '</tr>')
+ 
+@@ -350,7 +350,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 8, 8 ],
++        'Rocky Balboa'         : [ 9, 9 ],
+         'Arahan'               : [ 6, 6 ],
+         'Ein gl?ckliches Jahr' : [ 4, 4 ]
+     }
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 13:11:22 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 13:11:22 +0100
+Subject: [Griffith-svn] r1489 - trunk/lib/plugins/movie
+Message-ID: <20110113121122.DAB1E480F6B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 13:11:22 +0100 (Thu, 13 Jan 2011)
+New Revision: 1489
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAllMovie.py
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+plugin test data updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllMovie.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllMovie.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieAllMovie.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2009
++# Copyright (c) 2009-2011
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -240,7 +240,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa' : [ 25, 25 ],
++        'Rocky Balboa' : [ 28, 28 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id: PluginMovieIMDB.py 176 2006-02-01 12:07:26Z iznogoud $'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr Ozarowski
++# Copyright (c) 2005-2011 Vasco Nunes, Piotr Ozarowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -271,11 +271,16 @@
+ Norman Friedman' + _(' as ') + 'Cleaning Man at Flophouse\n\
+ Hettie Lynne Hurtes' + _(' as ') + 'TV Anchorwoman\n\
+ Al Kahn' + _(' as ') + 'Customer\n\
+-Bill W. Richmond' + _(' as ') + 'Bartender\n\
++Bill W. Richmond' + _(' as ') + 'Barman\n\
+ Bruce M. Kerner' + _(' as ') + 'Desk Sergeant\n\
+ David Pierce' + _(' as ') + 'Tanker Partner\n\
+ Barbara Powers' + _(' as ') + 'Ticket Taker at Club Technoir\n\
+-Ed Dogans' + _(' as ') + 'Acteur',
++Ed Dogans' + _(' as ') + 'Acteur\n\
++Tony Mirelez' + _(' as ') + 'Acteur\n\
++Webster Williams' + _(' as ') + 'Acteur\n\
++John E. Bristol' + _(' as ') + 'Acteur\n\
++Gregory Robbins' + _(' as ') + 'Acteur\n\
++Chino \'Fats\' Williams' + _(' as ') + 'Acteur',
+             'country'             : u'am??ricain',
+             'genre'               : u'Science fiction',
+             'classification'      : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id: PluginMovieFilmAffinity.py 389 2006-07-29 18:43:35Z piotrek $'
+ 
+-# Copyright (c) 2006-2009 Pedro D. S?nchez
++# Copyright (c) 2006-2011 Pedro D. S?nchez
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -183,7 +183,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 11, 11 ],
++        'Rocky' : [ 13, 13 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2007-2009
++# Copyright (c) 2007-2011
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -26,7 +26,7 @@
+ import string
+ import re
+ 
+-plugin_name        = "Filmtipset.se"
++plugin_name         = "Filmtipset.se"
+ plugin_description  = "Filmtipset.se"
+ plugin_url          = "www.filmtipset.se"
+ plugin_language     = _("Swedish")
+@@ -154,7 +154,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 16, 16 ],
++        'Rocky' : [ 17, 17 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2007-2009 Michael Jahn
++# Copyright (c) 2007-2011 Michael Jahn
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -291,7 +291,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 21, 21 ],
++        'Rocky Balboa'         : [ 23, 23 ],
+         'Ein gl??ckliches Jahr' : [  6,  6 ]
+     }
+ 
+@@ -364,9 +364,9 @@
+ Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (Sprechrolle)\n\
+-Gary Compton' + _(' as ') + 'Sicherheitsbediensteter\n\
+-Tony Devon' + _(' as ') + 'Neighbor ??brige Besetzung in alphabetischer Reihenfolge:\n\
++Gary Compton' + _(' as ') + 'Sicherheitsbediensteter ??brige Besetzung in alphabetischer Reihenfolge:\n\
+ Vale Anoai' + _(' as ') + 'Shopper in Italian Market\n\
++Sikander Malik' + _(' as ') + 'Boxer\n\
+ Michael Ahl' + _(' as ') + 'Restaurant Patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
+ Ben Bachelder' + _(' as ') + 'The Arm (nicht im Abspann)\n\
+@@ -375,9 +375,9 @@
+ D.T. Carney' + _(' as ') + 'High Roller (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Rennie Cowan' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+-Peter Defeo' + _(' as ') + 'Vendor (nicht im Abspann)\n\
+ Deon Derrico' + _(' as ') + 'High Roller at Limo (nicht im Abspann)\n\
+ Jacob \'Stitch\' Duran' + _(' as ') + 'Dixon\'s Trainer (nicht im Abspann)\n\
++Simon P Edwards' + _(' as ') + 'Crowd Member (nicht im Abspann)\n\
+ Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (nicht im Abspann)\n\
+ David Gere' + _(' as ') + 'Patron at Adrian\'s (nicht im Abspann)\n\
+ Noah Jacobs' + _(' as ') + 'Boxing Fan (nicht im Abspann)\n\
+@@ -392,9 +392,9 @@
+ Mr. T' + _(' as ') + 'Clubber Lang (Archivmaterial) (nicht im Abspann)\n\
+ Jacqueline Olivia' + _(' as ') + 'M??dchen (nicht im Abspann)\n\
+ Brian H. Scott' + _(' as ') + 'Ringside Cop #1 (nicht im Abspann)\n\
+-Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
+ Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)\n\
++Ryan Tygh' + _(' as ') + 'Ring Photographer (nicht im Abspann)\n\
+ Kimberly Villanova' + _(' as ') + 'Businesswoman (nicht im Abspann)',
+             'country'           : 'USA',
+             'genre'             : 'Drama | Sport',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id: PluginMovieIMDB-es.py 389 2006-07-29 18:43:35Z piotrek $'
+ 
+-# Copyright (c) 2006 Pedro D. S?nchez
++# Copyright (c) 2006-2011 Pedro D. S?nchez
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -248,7 +248,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 21, 21 ]
++        'Rocky Balboa'         : [ 23, 23 ]
+     }
+ 
+ class PluginTest:
+@@ -320,9 +320,9 @@
+ Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (voz)\n\
+-Gary Compton' + _(' as ') + 'Oficial de Seguridad\n\
+-Tony Devon' + _(' as ') + u'Neighbor listado alfab?tico del resto del reparto:\n\
++Gary Compton' + _(' as ') + u'Oficial de Seguridad listado alfab?tico del resto del reparto:\n\
+ Vale Anoai' + _(' as ') + 'Shopper in Italian Market\n\
++Sikander Malik' + _(' as ') + 'Boxer\n\
+ Michael Ahl' + _(' as ') + 'Restaurant Patron (sin acreditar)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (sin acreditar)\n\
+ Ben Bachelder' + _(' as ') + 'The Arm (sin acreditar)\n\
+@@ -331,9 +331,9 @@
+ D.T. Carney' + _(' as ') + 'High Roller (sin acreditar)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
+ Rennie Cowan' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
+-Peter Defeo' + _(' as ') + 'Vendor (sin acreditar)\n\
+ Deon Derrico' + _(' as ') + 'High Roller at Limo (sin acreditar)\n\
+ Jacob \'Stitch\' Duran' + _(' as ') + 'Dixon\'s Trainer (sin acreditar)\n\
++Simon P Edwards' + _(' as ') + 'Crowd Member (sin acreditar)\n\
+ Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (sin acreditar)\n\
+ David Gere' + _(' as ') + 'Patron at Adrian\'s (sin acreditar)\n\
+ Noah Jacobs' + _(' as ') + 'Boxing Fan (sin acreditar)\n\
+@@ -348,9 +348,9 @@
+ Mr. T' + _(' as ') + 'Clubber Lang (tomas de archivo) (sin acreditar)\n\
+ Jacqueline Olivia' + _(' as ') + 'Chica (sin acreditar)\n\
+ Brian H. Scott' + _(' as ') + 'Ringside Cop #1 (sin acreditar)\n\
+-Jackie Sereni' + _(' as ') + 'Girl on Steps (sin acreditar)\n\
+ Keyon Smith' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
+ Frank Traynor' + _(' as ') + 'Abogado (sin acreditar)\n\
++Ryan Tygh' + _(' as ') + 'Ring Photographer (sin acreditar)\n\
+ Kimberly Villanova' + _(' as ') + 'Businesswoman (sin acreditar)',
+             'country'           : 'Estados Unidos',
+             'genre'             : 'Drama | Deporte',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr O??arowski
++# Copyright (c) 2005-2011 Vasco Nunes, Piotr O??arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -277,7 +277,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 21, 21 ],
++        'Rocky Balboa'         : [ 23, 23 ],
+         'Ein gl??ckliches Jahr' : [ 45, 45 ]
+     }
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2011-01-13 12:09:07 UTC (rev 1488)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2011-01-13 12:11:22 UTC (rev 1489)
+@@ -228,7 +228,7 @@
+ Mike Tyson' + _(' as ') + 'Himself\n\
+ Lou DiBella\n\
+ Joe Cortez\n\
+-Ricky Cavazos',
++Ricky Cavazos' + _(' as ') + 'Boxing Spectator (uncredited)',
+             'country'             : 'USA',
+             'genre'               : 'Action, Drama, Sportfilm',
+             'classification'      : False,
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 13:12:39 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 13:12:39 +0100
+Subject: [Griffith-svn] r1490 - trunk/lib/plugins/movie
+Message-ID: <20110113121239.3AB6D480ED9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 13:12:39 +0100 (Thu, 13 Jan 2011)
+New Revision: 1490
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+Log:
+CineMovies plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-01-13 12:11:22 UTC (rev 1489)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-01-13 12:12:39 UTC (rev 1490)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr O?arowski
++# Copyright (c) 2005-2011 Vasco Nunes, Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -71,13 +71,13 @@
+         self.genre = gutils.trim(self.page, 'Genre :', '</tr>')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page_cast, 'diens</h2> :', '</table>')
++        self.cast = gutils.trim(self.page_cast, 'diens</h2> :', '<div id="cast_film">')
+         self.cast = self.cast.replace('\n', '')
+         self.cast = self.cast.replace('</tr>', '\n')
++        self.cast = re.sub('</a></h5>', _(' as '), self.cast)
+         self.cast = gutils.clean(self.cast)
+-        self.cast = re.sub('\n[ \t]+', '\n', self.cast)
+-        self.cast = re.sub('[.][.]+', _(' as '), self.cast)
+         self.cast = re.sub(_(' as ') + '(\n|$)', '\n', self.cast)
++        self.cast = re.sub('[ \t]*\n[ \t]+', '\n', self.cast)
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -101,7 +101,7 @@
+         self.rating = gutils.clean(gutils.trim(self.page, '<div id=scoree>', '</div>'))
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de</h2> :', '</a>'))
++        self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de</h2> :', '</h5>'))
+ 
+ 
+ class SearchPlugin(movie.SearchMovie):
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 13:14:33 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 13:14:33 +0100
+Subject: [Griffith-svn] r1491 - trunk/lib
+Message-ID: <20110113121434.73405480F6B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 13:14:33 +0100 (Thu, 13 Jan 2011)
+New Revision: 1491
+
+Modified:
+   trunk/lib/add.py
+Log:
+typo
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-01-13 12:12:39 UTC (rev 1490)
++++ trunk/lib/add.py	2011-01-13 12:14:33 UTC (rev 1491)
+@@ -786,7 +786,7 @@
+             t_languages = details.pop('languages')
+         #for i in db.tables.movies.columns.keys():
+         for i in details:
+-            if not i == 'created' and not i == 'updated' and hasattr(movie, i):
++            if i not in ('created', 'updated') and hasattr(movie, i):
+                 setattr(movie, i, details[i])
+ 
+         # clear previous data (in case of updates)
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 16:23:21 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 16:23:21 +0100
+Subject: [Griffith-svn] r1492 - trunk/lib/plugins/movie
+Message-ID: <20110113152321.8D790480ED9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 16:23:20 +0100 (Thu, 13 Jan 2011)
+New Revision: 1492
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Log:
+IMDb-de plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 12:14:33 UTC (rev 1491)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 15:23:20 UTC (rev 1492)
+@@ -30,7 +30,7 @@
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = 'mikej06 at hotmail.com'
+-plugin_version      = '1.7'
++plugin_version      = '1.8'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -97,13 +97,9 @@
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '<h5>Kurzbeschreibung:</h5>', '</div>')
+         self.plot = self.__before_more(self.plot)
+-        elements = string.split(self.plot_page, '<p class="plotpar">')
+-        if len(elements) > 1:
+-            self.plot = self.plot + '\n\n'
+-            elements[0] = ''
+-            for element in elements:
+-                if element != '':
+-                    self.plot = self.plot + gutils.strip_tags(gutils.before(element, '</a>')) + '\n'
++        germanplot = gutils.clean(gutils.trim(self.plot_page, '<div id="swiki.2.1">', '</div>').replace('<br/>', '\n'))
++        if germanplot:
++            self.plot = germanplot
+         if self.plot == '':
+             # nothing in german found, try original
+             self.plot = gutils.regextrim(self.imdb_page, '<h5>Plot:</h5>', '(</div>|<a href.*)')
+@@ -233,9 +229,13 @@
+                 self.screenplay = self.screenplay[0:len(self.screenplay) - 2]
+ 
+     def get_cameraman(self):
+-        self.cameraman = '<' + gutils.trim(self.cast_page, '>Kamera<', '</table>')
++        self.cameraman = gutils.trim(self.cast_page, '>Kamera</a>', '</table>')
+         self.cameraman = string.replace(self.cameraman, '(Kamera)', '')
+         self.cameraman = string.replace(self.cameraman, '(nicht im Abspann)', '')
++        self.cameraman = string.replace(self.cameraman, '</a>', ', ')
++        self.cameraman = gutils.clean(self.cameraman)
++        self.cameraman = re.sub(',[ \t]*$', '', self.cameraman)
++        self.cameraman = re.sub('[ ]+', ' ', self.cameraman)
+ 
+     def __before_more(self, data):
+         for element in ['>Mehr ansehen<', '>mehr<', '>Full summary<', '>Full synopsis<']:
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 13 16:46:07 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 13 Jan 2011 16:46:07 +0100
+Subject: [Griffith-svn] r1493 - trunk/lib/plugins/movie
+Message-ID: <20110113154607.C529D480F6B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-13 16:46:07 +0100 (Thu, 13 Jan 2011)
+New Revision: 1493
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Log:
+IMDb-de plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 15:23:20 UTC (rev 1492)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 15:46:07 UTC (rev 1493)
+@@ -95,7 +95,7 @@
+         self.director = re.sub(',$', '', self.director)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, '<h5>Kurzbeschreibung:</h5>', '</div>')
++        self.plot = gutils.trim(self.page, '<h5>Handlung:</h5>', '</div>')
+         self.plot = self.__before_more(self.plot)
+         germanplot = gutils.clean(gutils.trim(self.plot_page, '<div id="swiki.2.1">', '</div>').replace('<br/>', '\n'))
+         if germanplot:
+
+
+
+From mikej06 at mail.berlios.de  Fri Jan 14 20:33:48 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 14 Jan 2011 20:33:48 +0100
+Subject: [Griffith-svn] r1494 - trunk/lib/plugins/movie
+Message-ID: <20110114193348.16A59480585@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-14 20:33:47 +0100 (Fri, 14 Jan 2011)
+New Revision: 1494
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Log:
+IMDb-de plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-13 15:46:07 UTC (rev 1493)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-01-14 19:33:47 UTC (rev 1494)
+@@ -97,6 +97,8 @@
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, '<h5>Handlung:</h5>', '</div>')
+         self.plot = self.__before_more(self.plot)
++        if self.plot and self.plot.find('Handlungs?bersicht hinzuf?gen') != -1:
++            self.plot = ''
+         germanplot = gutils.clean(gutils.trim(self.plot_page, '<div id="swiki.2.1">', '</div>').replace('<br/>', '\n'))
+         if germanplot:
+             self.plot = germanplot
+
+
+
+From mikej06 at mail.berlios.de  Fri Jan 14 22:37:50 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 14 Jan 2011 22:37:50 +0100
+Subject: [Griffith-svn] r1495 - in trunk: . lib
+Message-ID: <20110114213750.7FD80480BD2@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-14 22:37:50 +0100 (Fri, 14 Jan 2011)
+New Revision: 1495
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+Log:
+[#687621] Remains previous cover
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-14 19:33:47 UTC (rev 1494)
++++ trunk/ChangeLog	2011-01-14 21:37:50 UTC (rev 1495)
+@@ -2,9 +2,15 @@
+ 
+ Griffith ChangeLog
+ ------------------
+-(c) 2005-2010  Vasco Nunes, Piotr O?arowski
++(c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-01-14  Michael Jahn
++	* [#687621] Remains previous cover
++
++2011-01-13  Michael Jahn
++	* KinoDe, IMDB-de, CineMovies and Zelluloid plugin updated
++
+ 2011-01-10  Michael Jahn
+ 	* fixed iPod export plugin in case of missing values
+ 	* fixed deletion of the "created" value while updating a movie
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-01-14 19:33:47 UTC (rev 1494)
++++ trunk/lib/add.py	2011-01-14 21:37:50 UTC (rev 1495)
+@@ -83,32 +83,35 @@
+ 
+     old_poster_md5 = movie.poster_md5
+     new_poster_md5 = None
+-    if details['image'] and old_poster_md5 != details['image']: # details["image"] can contain MD5 or file path
+-        new_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
+-        if not os.path.isfile(new_image_path):
+-            log.warn("cannot read temporary file: %s", new_image_path)
+-        else:
+-            new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+-            if session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
+-                try:
+-                    data = file(new_image_path, 'rb').read()
+-                except Exception, e:
+-                    log.warning("cannot read poster data")
++    if details['image']:
++        if old_poster_md5 != details['image']: # details["image"] can contain MD5 or file path
++            new_image_path = os.path.join(self.locations['temp'], "poster_%s.jpg" % details['image'])
++            if not os.path.isfile(new_image_path):
++                log.warn("cannot read temporary file: %s", new_image_path)
++            else:
++                new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
++                if session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
++                    try:
++                        data = file(new_image_path, 'rb').read()
++                    except Exception, e:
++                        log.warning("cannot read poster data")
++                    else:
++                        poster = db.Poster(md5sum=new_poster_md5, data=data)
++                        del details["image"]
++                        details['poster_md5'] = new_poster_md5
++                        session.add(poster)
++
++                        # delete old image
++                        import delete
++                        old_poster = session.query(db.Poster).filter_by(md5sum=old_poster_md5).first()
++                        if old_poster and len(old_poster.movies) == 1: # other movies are not using the same poster
++                            session.delete(old_poster)
++                            delete.delete_poster_from_cache(old_poster_md5, self.locations['posters'])
+                 else:
+-                    poster = db.Poster(md5sum=new_poster_md5, data=data)
+-                    del details["image"]
+                     details['poster_md5'] = new_poster_md5
+-                    session.add(poster)
++    else:
++        details['poster_md5'] = None
+ 
+-                    # delete old image
+-                    import delete
+-                    old_poster = session.query(db.Poster).filter_by(md5sum=old_poster_md5).first()
+-                    if old_poster and len(old_poster.movies) == 1: # other movies are not using the same poster
+-                        session.delete(old_poster)
+-                        delete.delete_poster_from_cache(old_poster_md5, self.locations['posters'])
+-            else:
+-                details['poster_md5'] = new_poster_md5
+-
+     update_movie_instance(movie, details, session)
+ 
+     session.add(movie)
+@@ -202,6 +205,7 @@
+         fields_to_fetch.pop(fields_to_fetch.index('rating'))
+     # poster
+     if 'image' in fields_to_fetch:
++        w['image'].set_text('')
+         if self.movie.image:
+             image = os.path.join(self.locations['temp'], "poster_%s.jpg" % self.movie.image)
+             try:
+
+
+
+From mikej06 at mail.berlios.de  Fri Jan 14 23:35:17 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 14 Jan 2011 23:35:17 +0100
+Subject: [Griffith-svn] r1496 - in trunk: . lib lib/plugins/imp
+Message-ID: <20110114223517.88371480A84@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-14 23:35:17 +0100 (Fri, 14 Jan 2011)
+New Revision: 1496
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/plugins/imp/__init__.py
+Log:
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-14 21:37:50 UTC (rev 1495)
++++ trunk/ChangeLog	2011-01-14 22:35:17 UTC (rev 1496)
+@@ -7,6 +7,7 @@
+ 
+ 2011-01-14  Michael Jahn
+ 	* [#687621] Remains previous cover
++	* [#697029] Import dlg display error when previously x-ed out 
+ 
+ 2011-01-13  Michael Jahn
+ 	* KinoDe, IMDB-de, CineMovies and Zelluloid plugin updated
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-01-14 21:37:50 UTC (rev 1495)
++++ trunk/lib/initialize.py	2011-01-14 22:35:17 UTC (rev 1496)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright ? 2005-2009 Vasco Nunes, Piotr O?arowski
++# Copyright ? 2005-2011 Vasco Nunes, Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -508,6 +508,7 @@
+         'progressbar': get('progressbar'),
+         'fields': {},
+     }
++    w['window'].connect('delete_event', plugins.imp.on_delete_event, self)
+     get('cancel_button').connect('clicked', plugins.imp.on_abort_button_clicked, self)
+     get('import_button').connect('clicked', plugins.imp.on_import_button_clicked, self)
+     w['plugin'].connect('changed', plugins.imp.on_import_plugin_changed, w)
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2011-01-14 21:37:50 UTC (rev 1495)
++++ trunk/lib/plugins/imp/__init__.py	2011-01-14 22:35:17 UTC (rev 1496)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2007 Piotr O?arowski
++# Copyright (c) 2006-2011 Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published byp
+@@ -414,6 +414,13 @@
+ 
+ 
+ def on_abort_button_clicked(button, self, *args):
++    close_dialog(self)
++
++def on_delete_event(widget, event, self):
++    close_dialog(self)
++    return True
++
++def close_dialog(self):
+     self.widgets['import']['window'].hide()
+     self.widgets['import']['pwindow'].hide()
+     self.widgets['window'].set_sensitive(True)
+
+
+
+From mikej06 at mail.berlios.de  Sun Jan 16 14:09:52 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 16 Jan 2011 14:09:52 +0100
+Subject: [Griffith-svn] r1497 - in trunk: . lib/plugins/imp
+Message-ID: <20110116130953.0503B481288@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-16 14:09:52 +0100 (Sun, 16 Jan 2011)
+New Revision: 1497
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/imp/__init__.py
+Log:
+[#697018] CSV import not working when number field not checked
+support "image" (CSV import use it) besides "poster" for cover import
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-14 22:35:17 UTC (rev 1496)
++++ trunk/ChangeLog	2011-01-16 13:09:52 UTC (rev 1497)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-01-16  Michael Jahn
++	* [#697018] CSV import not working when number field not checked
++
+ 2011-01-14  Michael Jahn
+ 	* [#687621] Remains previous cover
+ 	* [#697029] Import dlg display error when previously x-ed out 
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2011-01-14 22:35:17 UTC (rev 1496)
++++ trunk/lib/plugins/imp/__init__.py	2011-01-16 13:09:52 UTC (rev 1497)
+@@ -173,10 +173,10 @@
+                         if response == 1:
+                             self.imported += 1
+                     else:
++                        # get the number and make it unique. number is needed later
+                         number = details.get('number', 1)
+                         while number in numbers:
+                             number += 1
+-                        details['number'] = number
+                         if 'tags' in details:
+                             tags = details.pop('tags')
+                         else:
+@@ -185,6 +185,10 @@
+                             poster = details.pop('poster')
+                         else:
+                             poster = None
++                        if 'image' in details:
++                            poster = details.pop('image')
++                        else:
++                            poster = None
+                         try:
+                             # optional: do mapping of lookup data
+                             if not self.foreignkeymaps:
+@@ -206,6 +210,8 @@
+                                         details[fkcolumnname] = None
+                             # validation before insertion
+                             validate_details(details, self.fields_to_import)
++                            # set number here again because if it is not selected validate_details will remove it
++                            details['number'] = number
+                             # insert the movie in the database
+                             movie = db.tables.movies.insert(bind=self.db.session.bind).execute(details)
+                             self.imported += 1
+
+
+
+From mikej06 at mail.berlios.de  Sun Jan 16 19:56:39 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 16 Jan 2011 19:56:39 +0100
+Subject: [Griffith-svn] r1498 - in trunk: . lib
+Message-ID: <20110116185639.5B55448128C@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-16 19:56:39 +0100 (Sun, 16 Jan 2011)
+New Revision: 1498
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/main_treeview.py
+Log:
+[#702495] griffith start interrupts with "TypeError: value is of the wrong type for this column"
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-16 13:09:52 UTC (rev 1497)
++++ trunk/ChangeLog	2011-01-16 18:56:39 UTC (rev 1498)
+@@ -7,6 +7,7 @@
+ 
+ 2011-01-16  Michael Jahn
+ 	* [#697018] CSV import not working when number field not checked
++	* [#702495] griffith start interrupts with "TypeError: value is of the wrong type for this column"
+ 
+ 2011-01-14  Michael Jahn
+ 	* [#687621] Remains previous cover
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2011-01-16 13:09:52 UTC (rev 1497)
++++ trunk/lib/main_treeview.py	2011-01-16 18:56:39 UTC (rev 1498)
+@@ -533,7 +533,7 @@
+     treemodel.set_value(iter, 5, movie.genre)
+     treemodel.set_value(iter, 6, movie.seen)
+     if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
+-        treemodel.set_value(iter, 7, movie.year)
++        treemodel.set_value(iter, 7, str(movie.year))
+     if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
+         treemodel.set_value(iter, 8, '%003d' % movie.runtime + _(' min'))
+     if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+
+
+
+From mikej06 at mail.berlios.de  Sun Jan 16 20:08:31 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 16 Jan 2011 20:08:31 +0100
+Subject: [Griffith-svn] r1499 - trunk/lib
+Message-ID: <20110116190831.C905F48128C@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-16 20:08:31 +0100 (Sun, 16 Jan 2011)
+New Revision: 1499
+
+Modified:
+   trunk/lib/gutils.py
+Log:
+* fixed download url of some dependencies
+* version output of the pysqlite package if it is used
+* version output of the sqlite library behind pysqlite or sqlite3
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-01-16 18:56:39 UTC (rev 1498)
++++ trunk/lib/gutils.py	2011-01-16 19:08:31 UTC (rev 1499)
+@@ -495,22 +495,24 @@
+     try:
+         import sqlite3
+         version = sqlite3.version
++        sqliteversion = sqlite3.sqlite_version
+     except ImportError:
+         version = False
+     if version is False:
+         try:
+-            import pysqlite2
+-            version = True
++            import pysqlite2.dbapi2
++            version = pysqlite2.dbapi2.version
++            sqliteversion = pysqlite2.dbapi2.sqlite_version
+         except:
+             version = False
+         depend.append({'module': 'pysqlite2',
+-            'version': version,
+-            'url': 'http://initd.org/tracker/pysqlite',
++            'version': version + ' (sqlite-lib ' + sqliteversion + ')',
++            'url': 'http://pypi.python.org/pypi/pysqlite/',
+             'debian': 'python-pysqlite2',
+             'debian_req': '2.3.0-1'})
+     else:
+         depend.append({'module': 'sqlite3',
+-            'version': version,
++            'version': version + ' (sqlite-lib ' + sqliteversion + ')',
+             'url': 'http://www.python.org',
+             'debian': 'python',
+             'debian_req': '2.5'})
+@@ -543,7 +545,7 @@
+         version = False
+     optional.append({'module': 'psycopg2',
+         'version': version,
+-        'url': 'http://initd.org/tracker/psycopg/wiki/PsycopgTwo',
++        'url': 'http://initd.org/psycopg/',
+         'debian': 'python-psycopg2',
+         'debian_req': '1.1.21-6'})
+     try:
+
+
+
+From mikej06 at mail.berlios.de  Mon Jan 17 22:04:34 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 17 Jan 2011 22:04:34 +0100
+Subject: [Griffith-svn] r1500 - in trunk: . lib/plugins/movie
+Message-ID: <20110117210435.2E9AD48129D@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-17 22:04:34 +0100 (Mon, 17 Jan 2011)
+New Revision: 1500
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+[#703728] FilmAffinity: incomplete list of results
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-16 19:08:31 UTC (rev 1499)
++++ trunk/ChangeLog	2011-01-17 21:04:34 UTC (rev 1500)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2011-01-17  Michael Jahn
++	* [#703728] FilmAffinity: incomplete list of results
++
+ 2011-01-16  Michael Jahn
+ 	* [#697018] CSV import not working when number field not checked
+ 	* [#702495] griffith start interrupts with "TypeError: value is of the wrong type for this column"
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-01-16 19:08:31 UTC (rev 1499)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-01-17 21:04:34 UTC (rev 1500)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Spanish')
+ plugin_author       = 'Pedro D. S?nchez'
+ plugin_author_email = '<pedrodav at gmail.com>'
+-plugin_version      = '0.4'
++plugin_version      = '0.5'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -144,22 +144,35 @@
+         self.translated_url_search = 'http://www.filmaffinity.com/es/search.php?stype=title&stext='
+         self.encode                = 'iso-8859-1'
+ 
+-    def search(self,parent_window):
++    def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+         auxPage = self.page
+-        self.sub_search()
++        self.sub_search(parent_window)
+         if self.page <> '':
+             return self.page
+         auxPage = gutils.trim(auxPage, u'<b>TU CR?TICA</b></div>', '</a>')
+         self.page = gutils.trim(auxPage, 'movie_id=', '">')
+         return self.page
+ 
+-    def sub_search(self):
+-        self.page = gutils.trim(self.page, u'Resultados por t?tulo</span>', '<br>')
+-        #self.page = gutils.after(self.page, '</td></tr><tr><td><b>')
+-        #self.page = self.page.decode('iso-8859-15')
++    def sub_search(self, parent_window):
++        moviepage = gutils.trim(self.page, u'Resultados por t?tulo</span>', '<br>')
++        nextpage = self.get_nextpage_url()
++        while nextpage:
++            self.url = nextpage
++            self.open_search(parent_window)
++            moviepage = moviepage + gutils.trim(self.page, u'Resultados por t?tulo</span>', '<br>')
++            nextpage = self.get_nextpage_url()
++        self.page = moviepage
+ 
++    def get_nextpage_url(self):
++        match = re.search('(siguientes >>|siguientes &gt;&gt;)', self.page)
++        if match:
++            start = string.rfind(self.page, '<a href="', 0, match.start())
++            if start >= 0:
++                return 'http://www.filmaffinity.com/es/' + gutils.before(self.page[start + 9:match.start()], '"')
++        return None
++
+     def get_searches(self):
+         if len(self.page) < 20:    # immidietly redirection to movie page
+             self.number_results = 1
+@@ -184,6 +197,7 @@
+     #
+     test_configuration = {
+         'Rocky' : [ 13, 13 ],
++        'Darkness' : [47, 47 ]
+     }
+ 
+ class PluginTest:
+
+
+
+From mikej06 at mail.berlios.de  Wed Jan 19 14:07:33 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 19 Jan 2011 14:07:33 +0100
+Subject: [Griffith-svn] r1501 - in trunk: . lib/plugins/extensions
+Message-ID: <20110119130733.E066D480A9F@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-19 14:07:33 +0100 (Wed, 19 Jan 2011)
+New Revision: 1501
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/plugins/extensions/ge_movieposterdb.py
+Log:
+[#700704] Incorrect dialog size for posters
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-17 21:04:34 UTC (rev 1500)
++++ trunk/ChangeLog	2011-01-19 13:07:33 UTC (rev 1501)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-01-19  Michael Jahn
++	* [#700704] Incorrect dialog size for posters
++
+ 2011-01-17  Michael Jahn
+ 	* [#703728] FilmAffinity: incomplete list of results
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-01-17 21:04:34 UTC (rev 1500)
++++ trunk/griffith	2011-01-19 13:07:33 UTC (rev 1501)
+@@ -379,8 +379,9 @@
+         poster_md5 = self.db.session.query(db.Movie.poster_md5).filter_by(number=number).first()[0]
+         if poster_md5:
+             filename = gutils.get_image_fname(poster_md5, self.db)
++            # show before set_from_pixbuf because it doesn't resize otherwise
++            self.widgets['poster_window'].show()
+             self.widgets['big_poster'].set_from_file(filename)
+-            self.widgets['poster_window'].show()
+ 
+     def z_poster_hide(self, *args):
+         self.widgets['poster_window'].hide()
+
+Modified: trunk/lib/plugins/extensions/ge_movieposterdb.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_movieposterdb.py	2011-01-17 21:04:34 UTC (rev 1500)
++++ trunk/lib/plugins/extensions/ge_movieposterdb.py	2011-01-19 13:07:33 UTC (rev 1501)
+@@ -118,8 +118,9 @@
+         loader = gtk.gdk.PixbufLoader()
+         loader.write(data, len(data))
+         loader.close()
++        # show before set_from_pixbuf because it doesn't resize otherwise
++        self.widgets['poster_window'].show()
+         handler = self.widgets['big_poster'].set_from_pixbuf(loader.get_pixbuf())
+-        self.widgets['poster_window'].show()
+         result = gutils.question(_("Do you want to use this poster instead?"), self.widgets['window'])
+         self.widgets['poster_window'].hide()
+         return result
+
+
+
+From mikej06 at mail.berlios.de  Wed Jan 19 16:52:19 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 19 Jan 2011 16:52:19 +0100
+Subject: [Griffith-svn] r1502 - in trunk: . lib
+Message-ID: <20110119155219.D6040480BC2@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-19 16:52:19 +0100 (Wed, 19 Jan 2011)
+New Revision: 1502
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/config.py
+Log:
+[#493148] The Save button in the preferences window does not work well
+replace '%' with '%%' if settings are saved and vice versa if loaded. otherwise an exception is thrown in ConfigParser because of the interpolationsyntax.
+we can do that savely I think because we don't use the interpolation feature.
+Older values shouldn't exist because they can't be saved before that patch.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-19 13:07:33 UTC (rev 1501)
++++ trunk/ChangeLog	2011-01-19 15:52:19 UTC (rev 1502)
+@@ -7,6 +7,7 @@
+ 
+ 2011-01-19  Michael Jahn
+ 	* [#700704] Incorrect dialog size for posters
++	* [#493148] The Save button in the preferences window does not work well
+ 
+ 2011-01-17  Michael Jahn
+ 	* [#703728] FilmAffinity: incomplete list of results
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2011-01-19 13:07:33 UTC (rev 1501)
++++ trunk/lib/config.py	2011-01-19 15:52:19 UTC (rev 1502)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright ? 2005-2009 Vasco Nunes, Piotr O?arowski
++# Copyright ? 2005-2011 Vasco Nunes, Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -44,6 +44,7 @@
+             return default
+         else:
+             value = self._cfg.get(section, option, False)
++            value = value.replace('%%', '%')
+             value = Config.subst.get(value, value) # replace 'True' etc.
+             return value
+ 
+@@ -54,6 +55,7 @@
+             value = str(value)
+         if not self._cfg.has_section(section):
+             self._cfg.add_section(section)
++        value = value.replace('%', '%%')
+         self._cfg.set(section, option, value)
+ 
+     def has_key(self, key, section='main'):
+
+
+
+From mikej06 at mail.berlios.de  Wed Jan 19 21:11:21 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 19 Jan 2011 21:11:21 +0100
+Subject: [Griffith-svn] r1503 - in trunk: . lib
+Message-ID: <20110119201121.DD41B480BC2@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-19 21:11:20 +0100 (Wed, 19 Jan 2011)
+New Revision: 1503
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/about.py
+Log:
+open of the homepage from the about dialog fixed
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-19 15:52:19 UTC (rev 1502)
++++ trunk/ChangeLog	2011-01-19 20:11:20 UTC (rev 1503)
+@@ -8,6 +8,7 @@
+ 2011-01-19  Michael Jahn
+ 	* [#700704] Incorrect dialog size for posters
+ 	* [#493148] The Save button in the preferences window does not work well
++    * open of the homepage from the about dialog fixed
+ 
+ 2011-01-17  Michael Jahn
+ 	* [#703728] FilmAffinity: incomplete list of results
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2011-01-19 15:52:19 UTC (rev 1502)
++++ trunk/lib/about.py	2011-01-19 20:11:20 UTC (rev 1503)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr O?arowski
++# Copyright (c) 2005-2011 Vasco Nunes, Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -31,10 +31,16 @@
+     def __init__(self, locations):
+         TRANSLATORS_FILE = os.path.join(locations['share'], 'TRANSLATORS') # remember to encode this file in UTF-8
+         IMAGES_DIR = locations['images']
++
++        def _open_url(dialog, link):
++            import gutils
++            gutils.run_browser(link)
++        gtk.about_dialog_set_url_hook(_open_url)
++
+         dialog = gtk.AboutDialog()
+         dialog.set_name(version.pname)
+         dialog.set_version(version.pversion)
+-        dialog.set_copyright("Copyright ? 2005-2009 Vasco Nunes. Piotr O?arowski")
++        dialog.set_copyright("Copyright ? 2005-2011 Vasco Nunes. Piotr O?arowski")
+         dialog.set_website(version.pwebsite)
+         dialog.set_authors([
+             _("Main Authors") + ':',
+
+
+
+From mikej06 at mail.berlios.de  Wed Jan 19 23:07:10 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Wed, 19 Jan 2011 23:07:10 +0100
+Subject: [Griffith-svn] r1504 - in trunk: . lib/db
+Message-ID: <20110119220710.62BA7480BC2@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-19 23:07:10 +0100 (Wed, 19 Jan 2011)
+New Revision: 1504
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db/_objects.py
+Log:
+enabling persons without email address
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-19 20:11:20 UTC (rev 1503)
++++ trunk/ChangeLog	2011-01-19 22:07:10 UTC (rev 1504)
+@@ -9,6 +9,7 @@
+ 	* [#700704] Incorrect dialog size for posters
+ 	* [#493148] The Save button in the preferences window does not work well
+     * open of the homepage from the about dialog fixed
++    * enabling persons without email address
+ 
+ 2011-01-17  Michael Jahn
+ 	* [#703728] FilmAffinity: incomplete list of results
+
+Modified: trunk/lib/db/_objects.py
+===================================================================
+--- trunk/lib/db/_objects.py	2011-01-19 20:11:20 UTC (rev 1503)
++++ trunk/lib/db/_objects.py	2011-01-19 22:07:10 UTC (rev 1504)
+@@ -2,7 +2,7 @@
+ # vim: fdm=marker
+ __revision__ = '$Id$'
+ 
+-# Copyright ? 2009 Piotr O?arowski
++# Copyright ? 2009-2011 Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -180,7 +180,7 @@
+     @validates('email')
+     def _validate_email(self, key, address):
+         address = address.strip()
+-        if not EMAIL_PATTERN.match(address):
++        if address and not EMAIL_PATTERN.match(address):
+             log.warning("%s: email address is not valid (%s)", self.__class__.__name__, address)
+             raise ValueError(_("E-mail address is not valid"))
+         return address
+
+
+
+From mikej06 at mail.berlios.de  Fri Jan 21 22:57:02 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 21 Jan 2011 22:57:02 +0100
+Subject: [Griffith-svn] r1505 - in trunk: . glade lib lib/db
+Message-ID: <20110121215702.7CDAB480757@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-21 22:57:02 +0100 (Fri, 21 Jan 2011)
+New Revision: 1505
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/add.py
+   trunk/lib/db/_movie.py
+   trunk/lib/initialize.py
+Log:
+drop-down combobox for resolution field
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/ChangeLog	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-01-21  Michael Jahn
++	* drop-down combobox for resolution field
++
+ 2011-01-19  Michael Jahn
+ 	* [#700704] Incorrect dialog size for posters
+ 	* [#493148] The Save button in the preferences window does not work well
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/glade/griffith.glade	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -6834,10 +6834,15 @@
+                   </packing>
+                 </child>
+                 <child>
+-                  <widget class="GtkEntry" id="am_resolution">
++                  <widget class="GtkComboBoxEntry" id="am_resolution">
+                     <property name="visible">True</property>
++                    <property name="items" translatable="no"></property>
++                    <property name="visible">True</property>
+                     <property name="can_focus">True</property>
+-                    <property name="invisible_char">*</property>
++                    <child internal-child="entry">
++                      <widget class="GtkEntry" id="comboboxentry-entry11">
++                      </widget>
++                    </child>
+                   </widget>
+                   <packing>
+                     <property name="left_attach">1</property>
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/lib/add.py	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -341,7 +341,7 @@
+         'o_title': w['o_title'].get_text().decode('utf-8'),
+         'rating': w['rating_slider'].get_value(),
+         'region': w['region'].get_active(),
+-        'resolution': w['resolution'].get_text().strip().decode('utf-8'),
++        'resolution': w['resolution'].get_child().get_text().strip().decode('utf-8'),
+         'runtime': w['runtime'].get_text().decode('utf-8'),
+         'screenplay': w['screenplay'].get_text().decode('utf-8'),
+         'site': w['site'].get_text().decode('utf-8'),
+@@ -447,13 +447,13 @@
+         w['year'].set_value(0)
+     if 'resolution' in item and item['resolution']:
+         if self.config.get('use_resolution_alias', True):
+-            w['resolution'].set_text(item['resolution'])
++            w['resolution'].get_child().set_text(item['resolution'])
+         elif 'height' in item and item['height'] and 'width' in item and item['width']:
+-            w['resolution'].set_text("%dx%d" % (item['width'], item['height']))
++            w['resolution'].get_child().set_text("%dx%d" % (item['width'], item['height']))
+         else: # failback to 'resolution'
+-            w['resolution'].set_text(item['resolution'])
++            w['resolution'].get_child().set_text(item['resolution'])
+     else:
+-        w['resolution'].set_text('')
++        w['resolution'].get_child().set_text('')
+     if 'runtime' in item and item['runtime']:
+         w['runtime'].set_value(gutils.digits_only(item['runtime']))
+     else:
+
+Modified: trunk/lib/db/_movie.py
+===================================================================
+--- trunk/lib/db/_movie.py	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/lib/db/_movie.py	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -1,7 +1,7 @@
+ # -*- coding: UTF-8 -*-
+ __revision__ = '$Id$'
+ 
+-# Copyright ? 2009 Piotr O?arowski
++# Copyright ? 2009-2011 Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -34,7 +34,7 @@
+ res_aliases = {(2560, 1600): ('QSXGA',),
+                 (2048, 1536): ('QXGA',),
+                 (1920, 1200): ('WUXGA',),
+-                (1920, 1080): ('HD 1080', '1080p', '1080'),
++                (1920, 1080): ('1080p', 'HD 1080', '1080'),
+                 (1920, 540): ('1080i',),
+                 (1680, 1050): ('WSXGA+',),
+                 (1600, 1200): ('UXGA',),
+@@ -42,7 +42,7 @@
+                 #(1440, 960): ('',),
+                 #(1280, 960): ('',),
+                 #(1280, 854): ('',),
+-                (1280, 720): ('HD 720', '720p', '720'),
++                (1280, 720): ('720p', 'HD 720', '720'),
+                 (1280, 360): ('720i',),
+                 (1280, 1024): ('SXGA',),
+                 #(1152, 768): ('',),
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-01-19 22:07:10 UTC (rev 1504)
++++ trunk/lib/initialize.py	2011-01-21 21:57:02 UTC (rev 1505)
+@@ -741,6 +741,7 @@
+     fill_collections_combo(self)
+     fill_advfilter_combo(self)
+     fill_preferences_tags_combo(self)
++    fill_resolutions_combo(self)
+     language_combos(self)
+     acodec_combos(self)
+     achannel_combos(self)
+@@ -968,6 +969,21 @@
+     self.initialized = _tmp
+ 
+ 
++def fill_resolutions_combo(self, default=0):
++    _tmp = self.initialized
++    self.initialized = False # don't refresh main treeview
++    self.widgets['add']['resolution'].get_model().clear()
++    #resolutions = [names[0] for names in db._movie.res_aliases.values()]
++    resolutions = [names[0] for (res, names) in db._movie.res_aliases.iteritems()]
++    resolutions.sort()
++    i = 0
++    for name in resolutions:
++        self.widgets['add']['resolution'].insert_text(i, name)
++        i = i + 1
++    self.widgets['add']['resolution'].show_all()
++    self.initialized = _tmp
++
++
+ def language_combos(self):
+     self.widgets['preferences']['lang_name'].get_model().clear()
+     self.languages_ids = {}
+
+
+
+From mikej06 at mail.berlios.de  Fri Jan 21 23:21:07 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri, 21 Jan 2011 23:21:07 +0100
+Subject: [Griffith-svn] r1506 - trunk/lib/plugins/export
+Message-ID: <20110121222107.B5772480757@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-21 23:21:07 +0100 (Fri, 21 Jan 2011)
+New Revision: 1506
+
+Modified:
+   trunk/lib/plugins/export/PluginExportiPod.py
+Log:
+copy&paste error
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2011-01-21 21:57:02 UTC (rev 1505)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2011-01-21 22:21:07 UTC (rev 1506)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes
++# Copyright (c) 2005-2011 Vasco Nunes
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -105,7 +105,7 @@
+                 gutils.info(_("iPod is not connected."), self.parent_window)
+         # this is not a mac, lets save the file
+         else:
+-            filename = gutils.file_chooser(_("Export a %s document")%"CSV", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
++            filename = gutils.file_chooser(_("Export a %s document")%"iPod", action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+                 buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='ipod_griffith_list')
+             if filename and filename[0]:
+                 overwrite = None
+
+
+
+From mikej06 at mail.berlios.de  Tue Jan 25 21:50:13 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 25 Jan 2011 21:50:13 +0100
+Subject: [Griffith-svn] r1507 - in trunk: . lib
+Message-ID: <20110125205013.454FB480BFF@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-01-25 21:50:12 +0100 (Tue, 25 Jan 2011)
+New Revision: 1507
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+Log:
+[#300808] forgets some inputs in languages like codex&tracks
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-01-21 22:21:07 UTC (rev 1506)
++++ trunk/ChangeLog	2011-01-25 20:50:12 UTC (rev 1507)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-01-25  Michael Jahn
++	* [#300808] forgets some inputs in languages like codex&tracks
++
+ 2011-01-21  Michael Jahn
+ 	* drop-down combobox for resolution field
+ 
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-01-21 22:21:07 UTC (rev 1506)
++++ trunk/lib/add.py	2011-01-25 20:50:12 UTC (rev 1507)
+@@ -395,6 +395,8 @@
+         return None
+     # languages
+     t_movies['languages'] = set()
++     # isn't the best but it works. without it the current selection of a language field is lost
++    w['lang_treeview'].child_focus(gtk.DIR_TAB_FORWARD)
+     for row in self.lang['model']:
+         lang_id = get_id(self.lang['lang'], row[0])
+         lang_type = get_id(self.lang['type'], row[1])
+
+
+

@@ -1,0 +1,349 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1028 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1028%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811091145.mA9BjuxJ008980%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000507.html">
+   <LINK REL="Next"  HREF="000509.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1028 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1028%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811091145.mA9BjuxJ008980%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1028 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov  9 12:45:56 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000507.html">[Griffith-svn] r1027 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000509.html">[Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#508">[ date ]</a>
+              <a href="thread.html#508">[ thread ]</a>
+              <a href="subject.html#508">[ subject ]</a>
+              <a href="author.html#508">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-09 12:45:54 +0100 (Sun, 09 Nov 2008)
+New Revision: 1028
+
+Modified:
+   trunk/NEWS
+   trunk/README
+   trunk/TODO
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/gutils.py
+   trunk/lib/initialize.py
+Log:
+* update docs (0.10-beta1; new req.)
+* remove spaces from empty volume/collection name in add window
+
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/NEWS	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -1,3 +1,14 @@
++Griffith 0.10-beta1
++===================
++* Filter movies using complex search criteria functionality
++* Posters stored in database (+local cache)
++* Unicode used internally (less problems with encodings)
++
++Note to package maintainers:
++Please note that Griffith requires Python &gt;=2.5 and SQLAlchemy &gt;= 0.5 now
++(see `./griffith --check-dep` or `./griffith --show-dep`)
++
++
+ Griffith 0.9.7.1
+ ================
+ * Fixed crash when database (rating/year/runtime fields) contains empty data
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/README	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -29,7 +29,7 @@
+ 
+   Name			Minimum version		URL						NOTE
+   ----			---------------		---						----
+-  * Python		2.4 or higher		<A HREF="http://www.python.org/">http://www.python.org/</A>
++  * Python		2.5 or higher		<A HREF="http://www.python.org/">http://www.python.org/</A>
+   * GTK+		tested on 2.6.4		<A HREF="http://www.gtk.org/">http://www.gtk.org/</A>
+   * PyGTK (with glade2)	tested on 2.6.1		<A HREF="http://www.pygtk.org/">http://www.pygtk.org/</A>
+   * SQLAlchemy		0.5			<A HREF="http://www.sqlalchemy.org/">http://www.sqlalchemy.org/</A>
+
+Modified: trunk/TODO
+===================================================================
+--- trunk/TODO	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/TODO	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -1,16 +1,13 @@
+-next version
+-============
+-* Advanced sort/filter criteria
++near future
++===========
+ * Export plugin system rewrite, new templates format (mako? jinja?)
+ * Impor/export plugins for Excel files (.xls) (pyExcelerator?)
+ * Customising main list view
+ * New fields:
+   + location of the DVD (room/box/case/etc) - will replace &quot;Number&quot; field
+-  + screenplay
+-  + aspect ratio
+ 
+-near future
+-===========
++future
++======
+ * More import plugins
+ * Nice PDF tabular report
+ * Detecting audio/video parameters from file (mmpython?)
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/griffith	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -70,7 +70,7 @@
+ import update
+ import version
+ 
+-class Griffith:
++class Griffith(object):
+     &quot;&quot;&quot;The main application class&quot;&quot;&quot;
+ 
+     Image = gtk.Image()
+@@ -79,7 +79,7 @@
+     lang = {}
+ 
+     def __init__(self):
+-        &quot;&quot;&quot;main griffith application constructor&quot;&quot;&quot;    
++        &quot;&quot;&quot;main griffith application constructor&quot;&quot;&quot;
+ 
+         gconsole.check_args(self)
+         initialize.locations(self)
+@@ -264,9 +264,9 @@
+         if active == 0:
+             # change port number if it is something useful at the moment; for clearness
+             if self.widgets['preferences']['db_port'].get_value() == 0 or \
+-                self.widgets['preferences']['db_port'].get_value() == 3306 or \
+-                self.widgets['preferences']['db_port'].get_value() == 5432 or \
+-                self.widgets['preferences']['db_port'].get_value() == 1433:
++               self.widgets['preferences']['db_port'].get_value() == 3306 or \
++               self.widgets['preferences']['db_port'].get_value() == 5432 or \
++               self.widgets['preferences']['db_port'].get_value() == 1433:
+                 self.widgets['preferences']['db_port'].set_value(0)
+             self.widgets['preferences']['db_passwd'].set_sensitive(False)
+             self.widgets['preferences']['db_user'].set_sensitive(False)
+@@ -275,8 +275,8 @@
+         elif active == 1:
+             # change port number IF previous one was MySQL's or MSSQL one
+             if self.widgets['preferences']['db_port'].get_value() == 0 or \
+-                self.widgets['preferences']['db_port'].get_value() == 3306 or \
+-                self.widgets['preferences']['db_port'].get_value() == 1433:
++               self.widgets['preferences']['db_port'].get_value() == 3306 or \
++               self.widgets['preferences']['db_port'].get_value() == 1433:
+                 self.widgets['preferences']['db_port'].set_value(5432)
+             self.widgets['preferences']['db_passwd'].set_sensitive(True)
+             self.widgets['preferences']['db_user'].set_sensitive(True)
+@@ -285,8 +285,8 @@
+         elif active == 2:
+             # change port number IF previous one was PostgreSQL's or MSSQL one
+             if self.widgets['preferences']['db_port'].get_value() == 0 or \
+-                self.widgets['preferences']['db_port'].get_value() == 5432 or \
+-                self.widgets['preferences']['db_port'].get_value() == 1433:
++               self.widgets['preferences']['db_port'].get_value() == 5432 or \
++               self.widgets['preferences']['db_port'].get_value() == 1433:
+                 self.widgets['preferences']['db_port'].set_value(3306)
+             self.widgets['preferences']['db_passwd'].set_sensitive(True)
+             self.widgets['preferences']['db_user'].set_sensitive(True)
+@@ -295,8 +295,8 @@
+         elif active == 3:
+             # change port number IF previous one was PostgreSQL's or MySQL one
+             if self.widgets['preferences']['db_port'].get_value() == 0 or \
+-                self.widgets['preferences']['db_port'].get_value() == 5432 or \
+-                self.widgets['preferences']['db_port'].get_value() == 3306:
++               self.widgets['preferences']['db_port'].get_value() == 5432 or \
++               self.widgets['preferences']['db_port'].get_value() == 3306:
+                 self.widgets['preferences']['db_port'].set_value(1433)
+             self.widgets['preferences']['db_passwd'].set_sensitive(True)
+             self.widgets['preferences']['db_user'].set_sensitive(True)
+@@ -1256,7 +1256,7 @@
+             self.delete_movie()
+ 
+     def on_p_tree_button_press_event(self, widget, event):
+-        &quot;&quot;&quot;add a double click event to people tree&quot;&quot;&quot;                
++        &quot;&quot;&quot;add a double click event to people tree&quot;&quot;&quot;
+         if event.type == gtk.gdk._2BUTTON_PRESS:
+             from people import edit_person
+             edit_person(self)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/lib/add.py	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -82,7 +82,7 @@
+     if details['image'] and old_poster_md5 != details['image']: # details[&quot;image&quot;] can contain MD5 or file path
+         new_image_path = os.path.join(self.locations['temp'], &quot;poster_%s.jpg&quot; % details['image'])
+         if not os.path.isfile(new_image_path):
+-            log.warn(&quot;cannot read temporary file: %s&quot; % new_image_path)
++            log.warn(&quot;cannot read temporary file: %s&quot;, new_image_path)
+         else:
+             new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+             details[&quot;poster_md5&quot;] = new_poster_md5
+@@ -163,7 +163,7 @@
+     w = self.widgets['add']
+     m_id = None
+     if self.founded_results_id:
+-        log.info(&quot;self.founded:results_id: %s&quot; % self.founded_results_id)
++        log.info(&quot;self.founded:results_id: %s&quot;, self.founded_results_id)
+         m_id = self.founded_results_id
+     else:
+         self.founded_results_id = 0
+@@ -396,7 +396,6 @@
+                 return i[0]
+         return None
+     # languages
+-    from sets import Set as set # for python2.3 compatibility
+     t_movies['languages'] = set()
+     for row in self.lang['model']:
+         lang_id   = get_id(self.lang['lang'], row[0])
+@@ -588,7 +587,7 @@
+             else: w['image'].set_text(item['image'])
+         else:
+             image_path = os.path.join(self.locations['posters'], &quot;m_%s.jpg&quot; % item['image'])
+-            log.warn(&quot;TODO: image=%s&quot; % item['image'])
++            log.warn(&quot;TODO: image=%s&quot;, item['image'])
+     else:
+         w['image'].set_text('')
+         image_path = os.path.join(self.locations['images'], 'default.png')
+@@ -663,9 +662,9 @@
+             try:
+                 os.remove(tmp_image_path)
+             except Exception, e:
+-                log.warn(&quot;cannot remove temporary file %s&quot; % tmp_image_path)
++                log.warn(&quot;cannot remove temporary file %s&quot;, tmp_image_path)
+         else:
+-            log.warn(&quot;cannot read temporary file: %s&quot; % tmp_image_path)
++            log.warn(&quot;cannot read temporary file: %s&quot;, tmp_image_path)
+ 
+ 
+     movie = update_movie_instance(None, details, self.db.session)
+@@ -728,7 +727,7 @@
+     movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+ 
+     if movie is None:
+-        log.warn(&quot;cannot clone movie: Movie(%s) not found&quot; % number)
++        log.warn(&quot;cannot clone movie: Movie(%s) not found&quot;, number)
+         return False
+ 
+     next_number = gutils.find_next_available(self.db)
+@@ -834,9 +833,9 @@
+     except IntegrityError, e:
+         session.rollback()
+         gutils.warning(self, str(e.orig))
+-        log.warn(&quot;Cannot commit movie: %s&quot; % e.message)
++        log.warn(&quot;Cannot commit movie: %s&quot;, e.message)
+         return False
+     except Exception, e:
+-        log.error(&quot;Unexpected problem: %s&quot; % e)
++        log.error(&quot;Unexpected problem: %s&quot;, e)
+         return False
+     return True
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/lib/gutils.py	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -367,13 +367,13 @@
+     depend = []
+ 
+     # Python version
+-    if sys.version_info[:2] &lt; (2, 4):
++    if sys.version_info[:2] &lt; (2, 5):
+         depend.append({'module': 'python',
+             'version'    : '-'+'.'.join(map(str,sys.version_info)),
+-            'module_req' : '2.4',
++            'module_req' : '2.5',
+             'url'        : '<A HREF="http://www.python.org/">http://www.python.org/</A>',
+             'debian'     : 'python',
+-            'debian_req' : '2.4'
++            'debian_req' : '2.5'
+             # TODO: 'fedora', 'suse', etc.
+         })
+ 
+@@ -588,10 +588,10 @@
+ def create_image_cache(md5sum, gsql):
+     poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
+     if not poster:
+-        log.warn(&quot;poster not available: %s&quot; % md5sum)
++        log.warn(&quot;poster not available: %s&quot;, md5sum)
+         return False
+     if not poster.data:
+-        log.warn(&quot;poster data not available: %s&quot; % md5sum)
++        log.warn(&quot;poster data not available: %s&quot;, md5sum)
+         return False
+     
+     fn_big    = os.path.join(gsql.data_dir, 'posters', md5sum+'.jpg')
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-11-08 19:13:31 UTC (rev 1027)
++++ trunk/lib/initialize.py	2008-11-09 11:45:54 UTC (rev 1028)
+@@ -728,8 +728,8 @@
+             name = self.db.session.query(db.Volume).filter_by(volume_id=vol_id).first().name
+         else:
+             name = ''
++        self.widgets['add']['volume'].insert_text(int(i), str(name))
+         # add some white spaces to prevent scrollbar hides parts of the names    
+-        self.widgets['add']['volume'].insert_text(int(i), str(name) + '   ')
+         self.widgets['filter']['volume'].insert_text(int(i), str(name) + '   ')
+     self.initialized = _tmp
+     self.widgets['add']['volume'].show_all()
+@@ -751,8 +751,8 @@
+             name = self.db.session.query(db.Collection).filter_by(collection_id=col_id).first().name
+         else:
+             name = ''
++        self.widgets['add']['collection'].insert_text(int(i), str(name))
+         # add some white spaces to prevent scrollbar hides parts of the names    
+-        self.widgets['add']['collection'].insert_text(int(i), str(name) + '   ')
+         self.widgets['filter']['collection'].insert_text(int(i), str(name) + '   ')
+     self.initialized = _tmp
+     self.widgets['add']['collection'].show_all()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000507.html">[Griffith-svn] r1027 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000509.html">[Griffith-svn] r1029 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#508">[ date ]</a>
+              <a href="thread.html#508">[ thread ]</a>
+              <a href="subject.html#508">[ subject ]</a>
+              <a href="author.html#508">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

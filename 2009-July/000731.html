@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1261 - in trunk: . lib/db lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1261%20-%20in%20trunk%3A%20.%20lib/db%20lib/plugins/movie&In-Reply-To=%3C200907122025.n6CKPGZ5021719%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000730.html">
+   <LINK REL="Next"  HREF="000732.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1261 - in trunk: . lib/db lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1261%20-%20in%20trunk%3A%20.%20lib/db%20lib/plugins/movie&In-Reply-To=%3C200907122025.n6CKPGZ5021719%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1261 - in trunk: . lib/db lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jul 12 22:25:16 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000730.html">[Griffith-svn] r1260 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000732.html">[Griffith-svn] r1262 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#731">[ date ]</a>
+              <a href="thread.html#731">[ thread ]</a>
+              <a href="subject.html#731">[ subject ]</a>
+              <a href="author.html#731">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-12 22:25:15 +0200 (Sun, 12 Jul 2009)
+New Revision: 1261
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db/_objects.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+AniDB movie plugin updated (thanks to nickpick)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-12 19:09:31 UTC (rev 1260)
++++ trunk/ChangeLog	2009-07-12 20:25:15 UTC (rev 1261)
+@@ -7,6 +7,7 @@
+ 
+ 2009-07-12  Piotr O&#380;arowski
+ 	* Loaning collections with lots of movies inside will work faster now
++	* AniDB movie plugin updated (thanks to nickpick)
+ 
+ 2009-07-10  Michael Jahn
+ 	* new export plugins: Ant Movie Catalog, GCstar, DVD Profiler XML Export V2 and V3
+
+Modified: trunk/lib/db/_objects.py
+===================================================================
+--- trunk/lib/db/_objects.py	2009-07-12 19:09:31 UTC (rev 1260)
++++ trunk/lib/db/_objects.py	2009-07-12 20:25:15 UTC (rev 1261)
+@@ -135,9 +135,9 @@
+        
+         if self.collection_id:
+             self.collection.loaned = False # will update the loaned flag in all associated movies as well
+-        elif self.volume_id:
++        if self.volume_id:
+             self.volume.loaned = False # will update the loaned flag in all associated movies as well
+-        else:
++        if self.movie_id:
+             self.movie.loaned = False
+         self.return_date = date
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2009-07-12 19:09:31 UTC (rev 1260)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2009-07-12 20:25:15 UTC (rev 1261)
+@@ -30,8 +30,8 @@
+ plugin_url          = 'www.anidb.net'
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O&#380;arowski'
+-plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '2.6'
++plugin_author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at griffith.cc</A>'
++plugin_version      = '2.7'
+ 
+ aid_pattern = re.compile('[?&amp;;]aid=(\d+)')
+ 
+@@ -67,14 +67,15 @@
+             self.image_url = ''
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;span&gt;Info: ', '&lt;/span&gt;')
++        self.o_title = gutils.trim(self.page, '&lt;span class=&quot;i_icon i_audio_ja&quot; title=&quot; language: japanese&quot;&gt;&lt;span&gt;ja&lt;/span&gt;&lt;/span&gt;', '&lt;/td&gt;')
++        self.o_title = gutils.trim(self.o_title, '&lt;label&gt;', '&lt;/label&gt;')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&quot;field&quot;&gt;Official Title', '&lt;/td&gt;')
+-        self.title = gutils.trim(self.title, '&lt;label&gt;', '&lt;/label&gt;')
++        self.title = gutils.trim(self.page, '&lt;h1 class=&quot;anime&quot;&gt;Anime: ', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        self.director = ''
++        self.director = gutils.trim(self.page, '&lt;a title=&quot;Direction (&amp;#x76E3;&amp;#x7763;)&quot; href=', 'a&gt;')
++        self.director = gutils.trim(self.director, '&gt;', '&lt;/')
+ 
+     def get_plot(self):
+         self.plot = gutils.trim(self.page, 'class=&quot;desc&quot;&gt;', '&lt;/div&gt;')
+@@ -99,7 +100,21 @@
+         self.genre = string.replace(self.genre, '\n', '')
+ 
+     def get_cast(self):
+-        self.cast = ''
++        self.cast = 'Characters:\n---------------'
++        castv = gutils.trim(self.page, '&lt;table id=&quot;characterlist&quot; class=&quot;characterlist&quot;&gt;', '&lt;/table&gt;')
++        if castv != '':
++            castparts = string.split(castv, '&lt;tr ')
++            for index in range(2, len(castparts), 1):
++                castpart = castparts[index]
++                castcharacter = gutils.clean(gutils.trim(castpart, '&lt;td rowspan=&quot;1&quot; class=&quot;name&quot;&gt;', '&lt;/td&gt;'))
++                castentity = gutils.clean(gutils.trim(castpart, '&lt;td rowspan=&quot;1&quot; class=&quot;entity&quot;&gt;', '&lt;/td&gt;'))
++                castactor = gutils.clean(gutils.trim(castpart, '&lt;td class=&quot;name&quot;&gt;&lt;a href=&quot;animedb.pl?show=creator&amp;creatorid=', 'd&gt;'))
++                castactor = gutils.clean(gutils.trim(castactor, '&quot;&gt;', '&lt;/t'))
++                if castv == ' ':
++                    castactor = 'unknown'
++                castrelation = gutils.clean(gutils.trim(castpart, '&lt;td rowspan=&quot;1&quot; class=&quot;relation&quot;&gt;', '&lt;/td&gt;'))
++                castappearance = gutils.clean(gutils.trim(castpart, '&lt;td rowspan=&quot;1&quot; class=&quot;eprange&quot;&gt;', '&lt;/td&gt;'))
++                self.cast += '\n\n' + '[' + castcharacter + '] voiced by ' + castactor + '\n' + castentity + '; ' + castrelation + '; appears in episodes: ' + castappearance
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -117,8 +132,8 @@
+         self.studio = string.replace(self.studio, '\n', '')
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page, '&quot;field&quot;&gt;URL', '&lt;/td&gt;')
+-        self.o_site = gutils.trim(self.o_site, 'href=&quot;', '&quot;')
++        self.o_site = gutils.trim(self.page, '&lt;th class=&quot;field&quot;&gt;Resources&lt;/th&gt;', '&lt;/tr&gt;') #class varies, tag used
++        self.o_site = gutils.trim(self.o_site, '&lt;a href=&quot;', '&quot; rel=&quot;anidb::extern&quot;&gt;Official page&lt;/a&gt;')
+ 
+     def get_site(self):
+         self.site = self.url
+@@ -157,13 +172,13 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+-        self.encode                = 'utf-8'
+-        self.original_url_search   = '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=">http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=</A>'
++        self.encode = 'utf-8'
++        self.original_url_search = '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=">http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=</A>'
+         self.translated_url_search = '<A HREF="http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=">http://anidb.net/perl-bin/animedb.pl?show=animelist&amp;do.search=search&amp;adb.search=</A>'
+ 
+     def search(self,parent_window):
+-        if not self.open_search(parent_window):
+-            return None
++        self.open_search(parent_window)
++        self.page = decompress(self.page)
+ 
+         tmp = string.find(self.page, '&gt;Anime List - Search for: ')
+         if tmp == -1:        # already a movie page
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000730.html">[Griffith-svn] r1260 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000732.html">[Griffith-svn] r1262 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#731">[ date ]</a>
+              <a href="thread.html#731">[ thread ]</a>
+              <a href="subject.html#731">[ subject ]</a>
+              <a href="author.html#731">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

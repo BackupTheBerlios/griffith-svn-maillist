@@ -1,0 +1,391 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1012 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1012%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200810232054.m9NKsu0m010750%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000491.html">
+   <LINK REL="Next"  HREF="000493.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1012 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1012%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200810232054.m9NKsu0m010750%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1012 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct 23 22:54:56 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000491.html">[Griffith-svn] r1011 - in trunk: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="000493.html">[Griffith-svn] r1013 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#492">[ date ]</a>
+              <a href="thread.html#492">[ thread ]</a>
+              <a href="subject.html#492">[ subject ]</a>
+              <a href="author.html#492">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-10-23 22:54:56 +0200 (Thu, 23 Oct 2008)
+New Revision: 1012
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/advfilter.py
+   trunk/lib/widgets.py
+Log:
+clean/restore search conditions in advfilter
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-10-19 21:36:17 UTC (rev 1011)
++++ trunk/ChangeLog	2008-10-23 20:54:56 UTC (rev 1012)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-10-23  Piotr O&#380;arowski
++	* clean/restore search conditions in advfilter
++
+ 2008-10-19  Piotr O&#380;arowski
+ 	* Add more filter movie rules to the search window
+ 	* Screenplay and cameraman added to main/add windows
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2008-10-19 21:36:17 UTC (rev 1011)
++++ trunk/glade/griffith.glade	2008-10-23 20:54:56 UTC (rev 1012)
+@@ -8489,6 +8489,7 @@
+                 &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-add&lt;/property&gt;
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                &lt;signal name=&quot;clicked&quot; handler=&quot;on_advfilter_add&quot;/&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+                 &lt;property name=&quot;secondary&quot;&gt;True&lt;/property&gt;
+@@ -8505,6 +8506,7 @@
+                 &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-open&lt;/property&gt;
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                &lt;signal name=&quot;clicked&quot; handler=&quot;on_advfilter_open&quot;/&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+                 &lt;property name=&quot;position&quot;&gt;2&lt;/property&gt;
+@@ -8518,6 +8520,7 @@
+                 &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-save-as&lt;/property&gt;
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                &lt;signal name=&quot;clicked&quot; handler=&quot;on_advfilter_save&quot;/&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+                 &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
+@@ -8531,6 +8534,7 @@
+                 &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-clear&lt;/property&gt;
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                &lt;signal name=&quot;clicked&quot; handler=&quot;on_advfilter_clear&quot;/&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+                 &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2008-10-19 21:36:17 UTC (rev 1011)
++++ trunk/lib/advfilter.py	2008-10-23 20:54:56 UTC (rev 1012)
+@@ -58,7 +58,12 @@
+ 
+ def show_window(self):
+     initialize(self.widgets['advfilter'], self.db, self.field_names)
++
++    if getattr(self, '_search_conditions', None):
++        set_conditions(self.widgets['advfilter'], self._search_conditions, self.field_names)
++
+     self.widgets['advfilter']['window'].show()
++
+     return True
+ 
+ def hide_window(self):
+@@ -122,24 +127,29 @@
+     options = (_('ignore'), _('loaned to '), _('loan history'))
+     _fill_container(widgets[&quot;loans_vbox&quot;], items, options, 'person_id')
+ 
+-    add_query_widget(widgets['dynamic_vbox'], gsql, field_names)
+-
+     return True
+ 
+-def add_query_widget(container, gsql, field_names):
++def add_query_widget(container, field_names, sel_qf='title', sel_comm=0, text='' ):
+     hbox = gtk.HBox()
+ 
+     cb = gtk.combo_box_new_text()
+-    for field in QUERY_FIELDS:
++    select = 0
++    for i, field in enumerate(QUERY_FIELDS):
++        if sel_qf == field:
++            select = i
+         cb.append_text(field_names[field])
+-    cb.set_active(0)
++    cb.set_active(select)
+ 
+     action_cb = gtk.combo_box_new_text()
+-    for command in QUERY_COMMANDS:
++    select = 0
++    for i, command in enumerate(QUERY_COMMANDS):
++        if sel_comm == command:
++            select = i
+         action_cb.append_text(_(command))
+-    action_cb.set_active(0)
++    action_cb.set_active(select)
+ 
+     entry = gtk.Entry()
++    entry.set_text(text)
+     
+     button = gtk.Button(stock=gtk.STOCK_DELETE)
+     button.connect(&quot;clicked&quot;, lambda w: hbox.destroy())
+@@ -151,13 +161,78 @@
+     hbox.show_all()
+ 
+     container.pack_start(hbox)
+-#}}}
+ 
+-# database related --------------------------------------------
++def set_conditions(widgets, cond, field_names): #{{{
++    if cond[&quot;seen&quot;] is None:
++        widgets[&quot;rb_seen&quot;].set_active(True)
++    elif cond[&quot;seen&quot;] is True:
++        widgets[&quot;rb_seen_only&quot;].set_active(True)
++    elif cond[&quot;seen&quot;] is False:
++        widgets[&quot;rb_seen_only_n&quot;].set_active(True)
++    
++    if cond[&quot;loaned&quot;] is None:
++        widgets[&quot;rb_loaned&quot;].set_active(True)
++    elif cond[&quot;loaned&quot;] is True:
++        widgets[&quot;rb_loaned_only&quot;].set_active(True)
++    elif cond[&quot;loaned&quot;] is False:
++        widgets[&quot;rb_loaned_only_n&quot;].set_active(True)
+ 
+-def get_def_conditions():
+-    return deepcopy(__conditions)
++    for hbox in widgets[&quot;tags_vbox&quot;]:
++        hbox_items = hbox.get_children()
++        id_ = int(hbox_items[0].get_text())
++        if id_ in cond['tags']:
++            hbox_items[2].set_active(True)
++        elif id_ in cond['no_tags']:
++            hbox_items[3].set_active(True)
++        elif id_ in cond['required_tags']:
++            hbox_items[4].set_active(True)
++        else:
++            hbox_items[1].set_active(True)
++    
++    for hbox in widgets[&quot;volumes_vbox&quot;]:
++        hbox_items = hbox.get_children()
++        id_ = int(hbox_items[0].get_text())
++        if id_ in cond['volumes']:
++            hbox_items[2].set_active(True)
++        elif id_ in cond['no_volumes']:
++            hbox_items[3].set_active(True)
++        else:
++            hbox_items[1].set_active(True)
++    
++    for hbox in widgets[&quot;collections_vbox&quot;]:
++        hbox_items = hbox.get_children()
++        id_ = int(hbox_items[0].get_text())
++        if id_ in cond['collections']:
++            hbox_items[2].set_active(True)
++        elif id_ in cond['no_collections']:
++            hbox_items[3].set_active(True)
++        else:
++            hbox_items[1].set_active(True)
++    
++    for hbox in widgets[&quot;loans_vbox&quot;]:
++        hbox_items = hbox.get_children()
++        id_ = int(hbox_items[0].get_text())
++        if id_ in cond['loaned_to']:
++            hbox_items[2].set_active(True)
++        elif id_ in cond['loan_history']:
++            hbox_items[3].set_active(True)
++        else:
++            hbox_items[1].set_active(True)
+ 
++    if not cond[&quot;equals&quot;] and not cond[&quot;startswith&quot;] and not cond[&quot;contains&quot;] and not cond[&quot;like&quot;] and not cond[&quot;ilike&quot;]:
++        for i in widgets['dynamic_vbox'].get_children():
++            i.destroy()
++        add_query_widget(widgets['dynamic_vbox'], field_names)
++    else:
++        vbox = widgets['dynamic_vbox']
++        for rule in ('equals', 'startswith', 'contains', 'like', 'ilike'):
++            for field in cond[rule]:
++                for text in cond[rule][field]:
++                    add_query_widget(vbox, field_names, field, rule, text)
++
++    
++    #}}}
++
+ def get_conditions(widgets): #{{{
+     cond = get_def_conditions()
+ 
+@@ -176,49 +251,49 @@
+         cond[&quot;loaned&quot;] = False
+ 
+     for hbox in widgets[&quot;tags_vbox&quot;]:
+-        childs = hbox.get_children()
+-        if childs[2].get_active():
+-            cond[&quot;tags&quot;].add(int(childs[0].get_label()))
+-        elif childs[3].get_active():
+-            cond[&quot;no_tags&quot;].add(int(childs[0].get_label()))
+-        elif childs[4].get_active():
+-            cond[&quot;required_tags&quot;].add(int(childs[0].get_label()))
++        hbox_items = hbox.get_children()
++        if hbox_items[2].get_active():
++            cond[&quot;tags&quot;].add(int(hbox_items[0].get_label()))
++        elif hbox_items[3].get_active():
++            cond[&quot;no_tags&quot;].add(int(hbox_items[0].get_label()))
++        elif hbox_items[4].get_active():
++            cond[&quot;required_tags&quot;].add(int(hbox_items[0].get_label()))
+ 
+     for hbox in widgets[&quot;volumes_vbox&quot;]:
+-        childs = hbox.get_children()
+-        if childs[2].get_active():
+-            cond[&quot;volumes&quot;].add(int(childs[0].get_label()))
+-        elif childs[3].get_active():
+-            cond[&quot;no_volumes&quot;].add(int(childs[0].get_label()))
++        hbox_items = hbox.get_children()
++        if hbox_items[2].get_active():
++            cond[&quot;volumes&quot;].add(int(hbox_items[0].get_label()))
++        elif hbox_items[3].get_active():
++            cond[&quot;no_volumes&quot;].add(int(hbox_items[0].get_label()))
+     
+     for hbox in widgets[&quot;collections_vbox&quot;]:
+-        childs = hbox.get_children()
+-        if childs[2].get_active():
+-            cond[&quot;collections&quot;].add(int(childs[0].get_label()))
+-        elif childs[3].get_active():
+-            cond[&quot;no_collections&quot;].add(int(childs[0].get_label()))
++        hbox_items = hbox.get_children()
++        if hbox_items[2].get_active():
++            cond[&quot;collections&quot;].add(int(hbox_items[0].get_label()))
++        elif hbox_items[3].get_active():
++            cond[&quot;no_collections&quot;].add(int(hbox_items[0].get_label()))
+     
+     for hbox in widgets[&quot;loans_vbox&quot;]:
+-        childs = hbox.get_children()
+-        if childs[2].get_active():
+-            cond[&quot;loaned_to&quot;].add(int(childs[0].get_label()))
+-        elif childs[3].get_active():
+-            cond[&quot;loan_history&quot;].add(int(childs[0].get_label()))
++        hbox_items = hbox.get_children()
++        if hbox_items[2].get_active():
++            cond[&quot;loaned_to&quot;].add(int(hbox_items[0].get_label()))
++        elif hbox_items[3].get_active():
++            cond[&quot;loan_history&quot;].add(int(hbox_items[0].get_label()))
+     
+     for hbox in widgets[&quot;dynamic_vbox&quot;]:
+-        childs = hbox.get_children()
++        hbox_items = hbox.get_children()
+ 
+-        entry = childs[2].get_text().strip().decode('utf-8')
++        entry = hbox_items[2].get_text().strip().decode('utf-8')
+         if not entry: # ignore if it's empty
+             continue
+ 
+-        field = childs[0].get_active()
++        field = hbox_items[0].get_active()
+         if 0 &lt; field &gt; len(QUERY_FIELDS):
+             continue
+         else:
+             field = QUERY_FIELDS[field]
+             
+-            command = childs[1].get_active()
++            command = hbox_items[1].get_active()
+             if 0 &lt; command &gt; len(QUERY_COMMANDS):
+                 continue
+             else:
+@@ -227,7 +302,13 @@
+         cond[command].setdefault(field, set()).add(entry)
+ 
+     return cond # }}}
++#}}}
+ 
++# database related --------------------------------------------{{{
++
++def get_def_conditions():
++    return deepcopy(__conditions)
++
+ def get_select_columns(config): # {{{
+     # TODO: get them from config
+     columns_to_select = [db.Movie.number,
+@@ -246,7 +327,8 @@
+         if not columns:
+             columns = get_select_columns(self.config)
+         query = select(columns, bind=self.db.session.bind)
+-
++    
++    self._search_conditions = conditions # save for later
+     # TODO: remove after debugging:
+     from pprint import pprint
+     pprint(conditions)
+@@ -257,3 +339,4 @@
+     raise NotImplemented
+ def load_conditions(name, qsql):
+     raise NotImplemented
++#}}}
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-10-19 21:36:17 UTC (rev 1011)
++++ trunk/lib/widgets.py	2008-10-23 20:54:56 UTC (rev 1012)
+@@ -170,7 +170,6 @@
+     }
+     self.widgets['advfilter']['window'].connect('delete_event', self.hide_advfilter_window)
+     self.widgets['advfilter']['window'].set_transient_for(self.widgets['window'])
+-    self.widgets['advfilter']['add_button'].connect('clicked', lambda w: advfilter.add_query_widget(self.widgets['advfilter']['dynamic_vbox'], self.db, self.field_names))
+     #}}}
+ 
+     self.widgets['preferences'] = {#{{{
+@@ -497,6 +496,8 @@
+         'on_open_advfilterwindow_clicked'        : self.show_advfilter_window,
+         'on_af_find_clicked'                     : self.on_af_find_clicked,
+         'on_advfilter_close'                     : self.hide_advfilter_window,
++        'on_advfilter_add'                       : lambda w: advfilter.add_query_widget(self.widgets['advfilter']['dynamic_vbox'], self.field_names),
++        'on_advfilter_clear'                     : lambda w: advfilter.set_conditions(self.widgets['advfilter'], advfilter.get_def_conditions(), self.field_names)
+     })#}}}
+ 
+ def reconnect_add_signals(self):#{{{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000491.html">[Griffith-svn] r1011 - in trunk: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="000493.html">[Griffith-svn] r1013 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#492">[ date ]</a>
+              <a href="thread.html#492">[ thread ]</a>
+              <a href="subject.html#492">[ subject ]</a>
+              <a href="author.html#492">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

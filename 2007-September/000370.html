@@ -1,0 +1,925 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r865 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r865%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200709061520.l86FKhqw023921%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000369.html">
+   <LINK REL="Next"  HREF="000371.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r865 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r865%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200709061520.l86FKhqw023921%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r865 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep  6 17:20:43 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000369.html">[Griffith-svn] r864 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000371.html">[Griffith-svn] r866 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#370">[ date ]</a>
+              <a href="thread.html#370">[ thread ]</a>
+              <a href="subject.html#370">[ subject ]</a>
+              <a href="author.html#370">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-09-06 17:20:22 +0200 (Thu, 06 Sep 2007)
+New Revision: 865
+
+Added:
+   trunk/lib/test_movieplugins.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+* added auto-test feature for movie plugins (only used by developers; execute test_movieplugins.py directly)
+* FilmeVonAZ plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-09-06 15:02:04 UTC (rev 864)
++++ trunk/ChangeLog	2007-09-06 15:20:22 UTC (rev 865)
+@@ -9,6 +9,9 @@
+ 	* save selected quick filter criteria
+ 	* fixed backup if path or filename contains special characters (like german umlauts)
+ 	* use deflate for backup if available
++	* added auto-test feature for movie plugins (only used by developers; execute
++	  test_movieplugins.py directly)
++	* FilmeVonAZ plugin updated
+ 
+ 2007-09-03  Vasco Nunes
+ 	* Some documentations updates
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2007-09-06 15:02:04 UTC (rev 864)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2007-09-06 15:20:22 UTC (rev 865)
+@@ -1,146 +1,267 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2006-2007 Michael Jahn
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-from gettext import gettext as _
+-import gutils
+-import movie
+-import string
+-
+-plugin_name = &quot;FilmeVonA-Z.de&quot;
+-plugin_description = &quot;FILMEvonA-Z.de&quot;
+-plugin_url = &quot;www.filmevona-z.de&quot;
+-plugin_language = _(&quot;German&quot;)
+-plugin_author = &quot;Michael Jahn&quot;
+-plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.2&quot;
+-
+-class Plugin(movie.Movie):
+-	def __init__(self, id):
+-		self.encode='utf-8'
+-		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot; + str(self.movie_id)
+-
+-	def get_image(self):
+-		self.image_url = &quot;<A HREF="http://www.filmevona-z.de/">http://www.filmevona-z.de/</A>&quot; + gutils.trim(self.page,&quot;ProductCover=&quot;, &quot;\&quot;&quot;)
+-
+-	def get_o_title(self):
+-		self.o_title = string.capwords(gutils.after(gutils.trim(self.page, &quot;sucheNach=titel&quot;, &quot;(Orginaltitel)&quot;), &quot;\n			&quot;))
+-
+-	def get_title(self):
+-		self.title = gutils.after(gutils.trim(self.page, &quot;sucheNach=titel&quot;, &quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;)
+-
+-	def get_director(self):
+-		self.director = gutils.after(gutils.trim(self.page, &quot;(Regie)&quot;,&quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;)
+-
+-	def get_plot(self):
+-		self.plot = gutils.trim(self.page, &quot;\n						&lt;p&gt;&quot;, &quot;&lt;/p&gt;&quot;)
+-
+-	def get_year(self):
+-		self.year = gutils.after(gutils.trim(self.page, &quot;sucheNach=produktionsjahr&quot;, &quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;)
+-
+-	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page,&quot;L&auml;nge: &quot;,&quot; Minuten&quot;)
+-
+-	def get_genre(self):
+-		elements = string.split(self.page, &quot;sucheNach=genre&quot;)
+-		if (elements[0]&lt;&gt;''):
+-			elements[0] = ''
+-			self.delimiter = ''
+-			self.genre = ''
+-			for element in elements:
+-				if (element &lt;&gt; ''):
+-					self.genre += self.delimiter + gutils.trim(element, &quot;&gt;&quot;, &quot;&lt;/a&gt;&quot;)
+-					self.delimiter = &quot;, &quot;
+-
+-	def get_cast(self):
+-		self.cast = gutils.trim(self.page, &quot;(Darsteller)&quot;, &quot;&lt;/span&gt; \r\n\t\t\r\n&quot;)
+-		self.cast = gutils.clean(self.cast)
+-		self.cast = self.cast.replace(&quot; als &quot;, _(&quot; as &quot;))
+-		self.cast = self.cast.replace(&quot;			&quot;, &quot;&quot;)
+-		self.cast = self.cast.replace(&quot;\r\n&quot;, &quot;&quot;)
+-		self.cast = self.cast.replace(&quot;, &quot;, &quot;\n&quot;)
+-		self.cast = self.cast.replace(&quot;,&quot;, &quot;&quot;)
+-
+-	def get_classification(self):
+-		self.classification = gutils.trim(self.page, &quot;FSK: &quot;, &quot;;&quot;)
+-
+-	def get_studio(self):
+-		self.studio = gutils.after(gutils.trim(self.page, &quot;sucheNach=produktionsfirma&quot;, &quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;)
+-
+-	def get_o_site(self):
+-		self.o_site = &quot;&quot;
+-
+-	def get_site(self):
+-		self.site = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot; + self.movie_id;
+-
+-	def get_trailer(self):
+-		self.trailer = &quot;&quot;
+-
+-	def get_country(self):
+-		self.country = gutils.after(gutils.trim(self.page, &quot;sucheNach=produktionsland&quot;, &quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;)
+-
+-	def get_rating(self):
+-		self.rating = 0
+-
+-class SearchPlugin(movie.SearchMovie):
+-	def __init__(self):
+-		self.original_url_search	= &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot;
+-		self.translated_url_search	= &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot;
+-		self.encode='utf-8'
+-
+-	def search(self,parent_window):
+-		self.open_search(parent_window)
+-		# used for looking for subpages
+-		tmp_page = gutils.trim(self.page, &quot;&lt;!-- Blaettern --&gt;&quot;, &quot;&lt;!-- ErgebnissAusgabe --&gt;&quot;);
+-		elements = string.split(tmp_page, '&quot; class=&quot;text_navi&quot;&gt;')
+-		# first results
+-		self.tmp_page = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;&lt;!-- ENDE ErgebnissAusgabe --&gt;&quot;);
+-		# look for subpages
+-		for element in elements:
+-			element = gutils.before(element, &quot;&lt;/a&gt;&quot;)
+-			try:
+-				tmp_element = int(element)
+-			except:
+-				tmp_element = 1
+-			if (tmp_element &lt;&gt; 1):
+-				self.url = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=</A>&quot; + str(tmp_element) + &quot;&amp;wert=&quot;
+-				self.open_search(parent_window)
+-				tmp_page2 = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;&lt;!-- ENDE ErgebnissAusgabe --&gt;&quot;);
+-				tmp_page = tmp_page + tmp_page2
+-		self.page = tmp_page
+-
+-		return self.page
+-
+-	def get_searches(self):
+-		elements = string.split(self.page,&quot;\n	&lt;a href=\&quot;filmsuche.cfm?wert=&quot;)
+-		if (elements[0]&lt;&gt;''):
+-			elements[0] = ''
+-			for element in elements:
+-				if (element &lt;&gt; ''):
+-					self.ids.append(gutils.before(element,&quot;&amp;&quot;))
+-					self.titles.append(gutils.strip_tags(
+-						gutils.trim(element,&quot;&gt;&quot;,&quot;&lt;/a&gt;&quot;) + &quot; (&quot; +
+-						string.capwords(gutils.trim(element, &quot;\n			&quot;, &quot;(Orginaltitel)&quot;)) + &quot;, &quot; +
+-						gutils.after(gutils.trim(element, &quot;sucheNach=produktionsland&quot;, &quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;) + &quot;, &quot; +
+-						gutils.after(gutils.trim(element, &quot;sucheNach=produktionsjahr&quot;, &quot;&lt;/a&gt;&quot;), &quot;&gt;&quot;) +
+-						&quot;)&quot;))
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2006-2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name = &quot;FilmeVonA-Z.de&quot;
++plugin_description = &quot;FILMEvonA-Z.de&quot;
++plugin_url = &quot;www.filmevona-z.de&quot;
++plugin_language = _(&quot;German&quot;)
++plugin_author = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
++plugin_version = &quot;1.3&quot;
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode='utf-8'
++		self.movie_id = id
++		self.url = '<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>' + str(self.movie_id)
++
++	def get_image(self):
++		self.image_url = gutils.trim(self.page, 'ProductCover=', '&quot;')
++		if not self.image_url == '':
++			self.image_url = &quot;<A HREF="http://www.filmevona-z.de/">http://www.filmevona-z.de/</A>&quot; + self.image_url
++
++	def get_o_title(self):
++		self.o_title = string.capwords(
++			gutils.clean(gutils.after(
++			self.regextrim(self.page, '&quot;[ \t]+class=&quot;text_ergebniss_titel&quot;', '[ \t]+[(]Originaltitel[)]'), '&lt;/a&gt;')))
++		if self.o_title == '':
++			self.o_title = gutils.after(gutils.trim(self.page, 'sucheNach=titel', '&lt;/a&gt;'), '&gt;')
++
++	def get_title(self):
++		self.title = gutils.after(gutils.trim(self.page, 'sucheNach=titel', '&lt;/a&gt;'), '&gt;')
++
++	def get_director(self):
++		self.director = gutils.after(gutils.trim(self.page, '(Regie)', '&lt;/a&gt;'), '&gt;')
++
++	def get_plot(self):
++		self.plot = gutils.after(self.regextrim(self.page, '[(]Darsteller[)]', '&lt;/[pP]&gt;'), '&lt;p&gt;')
++
++	def get_year(self):
++		self.year = gutils.after(gutils.trim(self.page, 'sucheNach=produktionsjahr', '&lt;/a&gt;'), '&gt;')
++
++	def get_runtime(self):
++		self.runtime = gutils.trim(self.page, 'L&auml;nge: ', ' Minuten')
++
++	def get_genre(self):
++		elements = string.split(self.page, 'sucheNach=genre')
++		if (elements[0]&lt;&gt;''):
++			elements[0] = ''
++			self.delimiter = ''
++			self.genre = ''
++			for element in elements:
++				if (element &lt;&gt; ''):
++					self.genre += self.delimiter + gutils.trim(element, '&gt;', '&lt;/a&gt;')
++					self.delimiter = &quot;, &quot;
++
++	def get_cast(self):
++		self.cast = self.regextrim(self.page, '[(]Darsteller[)]', '&lt;[pP]&gt;')
++		self.cast = gutils.clean(self.cast)
++		self.cast = self.cast.replace(' als ', _(' as '))
++		self.cast = self.cast.replace('		', '')
++		self.cast = self.cast.replace('\r\n', '')
++		self.cast = self.cast.replace(', ', '\n')
++		self.cast = self.cast.replace(',', '')
++
++	def get_classification(self):
++		self.classification = self.regextrim(self.page, 'FSK:[ ]+', '[,;]')
++
++	def get_studio(self):
++		self.studio = gutils.after(gutils.trim(self.page, 'sucheNach=produktionsfirma', '&lt;/a&gt;'), '&gt;')
++
++	def get_o_site(self):
++		self.o_site = ''
++
++	def get_site(self):
++		self.site = '<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>' + self.movie_id;
++
++	def get_trailer(self):
++		self.trailer = ''
++
++	def get_country(self):
++		self.country = gutils.after(gutils.trim(self.page, 'sucheNach=produktionsland', '&lt;/a&gt;'), '&gt;')
++
++	def get_rating(self):
++		self.rating = 0
++		
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
++class SearchPlugin(movie.SearchMovie):
++	def __init__(self):
++		self.original_url_search	= &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot;
++		self.translated_url_search	= &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot;
++		self.encode='utf-8'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		# used for looking for subpages
++		tmp_page = gutils.trim(self.page, &quot;Treffer-Seite&quot;, &quot;chste Seite&quot;)
++		elements = string.split(tmp_page, '&quot; class=&quot;text_navi&quot;&gt;')
++		# first results
++		tmp_page = gutils.after(gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;Treffer-Seite&quot;), &quot;Titel:&quot;)
++		# look for subpages
++		for element in elements:
++			element = gutils.before(element, &quot;&lt;/a&gt;&quot;)
++			try:
++				tmp_element = int(element)
++			except:
++				tmp_element = 1
++			if (tmp_element &lt;&gt; 1):
++				self.url = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=</A>&quot; + str(tmp_element) + &quot;&amp;wert=&quot;
++				self.open_search(parent_window)
++				tmp_page2 = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;Treffer-Seite&quot;)
++				tmp_page = tmp_page + tmp_page2
++		self.page = tmp_page
++
++		return self.page
++
++	def get_searches(self):
++		elements = string.split(self.page,'class=&quot;text_ergebniss_titel&quot;')
++		i = 0
++		while i &lt; len(elements) - 1:
++			id_part = elements[i]
++			i = i + 1
++			text_part = elements[i]
++			i = i + 1
++			self.ids.append(gutils.trim(id_part, 'filmsuche.cfm?wert=', '&amp;'))
++			self.titles.append(gutils.strip_tags(
++						gutils.trim(text_part, '&gt;', '&lt;/a&gt;') + ' (' +
++						string.capwords(gutils.trim(text_part, '&lt;/a&gt;', '(Originaltitel)')) + ', ' +
++						gutils.after(gutils.trim(text_part, 'sucheNach=produktionsland', '&lt;/a&gt;'), '&gt;') + ', ' +
++						gutils.after(gutils.trim(text_part, 'sucheNach=produktionsjahr', '&lt;/a&gt;'), '&gt;') +
++						')'))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; expected result count }
++	#
++	test_configuration = {
++		'Rocky Balboa'			: 1,
++		'Arahan'				: 1,
++		'Ein gl&#252;ckliches Jahr'	: 0
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute should only be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'528267' : { 
++			'title' 			: 'Rocky Balboa',
++			'o_title' 			: 'Rocky Balboa',
++			'director'			: 'Sylvester Stallone',
++			'plot' 				: True,
++			'cast'				: 'A.J. Benza' + _(' as ') + 'L.C.\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky jr.\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Tony Burton' + _(' as ') + 'Duke',
++			'country'			: 'USA',
++			'genre'				: 'Boxerfilm',
++			'classification'	: 'ab 12',
++			'studio'			: 'Columbia Pic./ MGM/ Rogue Marble/ Revolution Studios/ Chartoff-Winkler Prod.',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=528267">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=528267</A>',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 102,
++			'image'				: True,
++			'rating'			: False
++		},
++		'26956' : { 
++			'title' 			: 'B&#252;rgschaft f&#252;r ein Jahr',
++			'o_title' 			: 'B&#252;rgschaft f&#252;r ein Jahr',
++			'director'			: 'Herrmann Zschoche',
++			'plot' 				: True,
++			'cast'				: 'Heide Kipp' + _(' as ') + 'Frau Braun\n\
++Jan Spitzer' + _(' as ') + 'Werner Horn\n\
++Monika Lennartz' + _(' as ') + 'Irmgard Behrend\n\
++Katrin Sa&#223;' + _(' as ') + 'Nina\n\
++Ursula Werner' + _(' as ') + 'Frau M&#252;ller\n\
++Christian Steyer' + _(' as ') + 'Heiner Menk\n\
++Jaecki Schwarz' + _(' as ') + 'Peter M&#252;ller\n\
++Barbara Dittus' + _(' as ') + 'Heimleiterin',
++			'country'			: 'DDR',
++			'genre'				: 'Arbeiterfilm, Frauenfilm, Literaturverfilmung',
++			'classification'	: 'ab 6',
++			'studio'			: 'DEFA, Gruppe &quot;Berlin&quot;',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=26956">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=26956</A>',
++			'trailer'			: False,
++			'year'				: 1981,
++			'notes'				: False,
++			'runtime'			: 93,
++			'image'				: False,
++			'rating'			: False
++		},
++		'524017' : { 
++			'title' 			: 'Arahan',
++			'o_title' 			: 'Arahan Jangpung Daejakjeon',
++			'director'			: 'Ryoo Seung-wan',
++			'plot' 				: True,
++			'cast'				: 'Yoon So-yi' + _(' as ') + 'Wi-jin\n\
++Yun Ju-sang' + _(' as ') + 'Mu-woon\n\
++Ahn Sung-kee' + _(' as ') + 'Ja-woon\n\
++Jung Doo-hong' + _(' as ') + 'Heukwoon\n\
++Ryu Seung-beom' + _(' as ') + 'Sang-hwan',
++			'country'			: 'S&#252;dkorea',
++			'genre'				: False,
++			'classification'	: 'ab 16',
++			'studio'			: 'Fun and Happiness/ Good Movie',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=524017">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=524017</A>',
++			'trailer'			: False,
++			'year'				: 2004,
++			'notes'				: False,
++			'runtime'			: 108,
++			'image'				: True,
++			'rating'			: False
++		}
++	}
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-09-06 15:02:04 UTC (rev 864)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-09-06 15:20:22 UTC (rev 865)
+@@ -300,3 +300,135 @@
+ 					),
+ 					'( - (', '('), '))', ')')
+ 				)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; expected result count }
++	#
++	test_configuration = {
++		'Rocky Balboa'			: 6,
++		'Arahan'				: 5,
++		'Ein gl&#252;ckliches Jahr'	: 3
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'K_rocky-balboa/96132.html' : { 
++			'title' 			: 'Rocky Balboa',
++			'o_title' 			: 'Rocky Balboa',
++			'director'			: 'Sylvester Stallone',
++			'plot' 				: True,
++			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Antonio Traver' + _(' as ') + 'Mason &quot;The Line&quot; Dixon\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Jr.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.',
++			'country'			: 'USA',
++			'genre'				: 'Drama',
++			'classification'	: 'Freigegeben ab 12 Jahren',
++			'studio'			: 'Fox',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.kino.de/kinofilm/rocky-balboa/96132.html">http://www.kino.de/kinofilm/rocky-balboa/96132.html</A>',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 102,
++			'image'				: True,
++			'rating'			: False
++		},
++		'K_ein-glueckliches-jahr/28675.html' : { 
++			'title' 			: 'Ein gl&#252;ckliches Jahr',
++			'o_title' 			: 'La bonne ann&#233;e',
++			'director'			: 'Claude Lelouch',
++			'plot' 				: True,
++			'cast'				: 'Lino Ventura\n\
++Fran&#231;oise Fabian\n\
++Charles G&#233;rard\n\
++Andr&#233; Falcon',
++			'country'			: 'Frankreich/Italien',
++			'genre'				: 'Drama',
++			'classification'	: 'Freigegeben ab 12 Jahren',
++			'studio'			: 'Columbia TriStar',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.kino.de/kinofilm/ein-glueckliches-jahr/28675.html">http://www.kino.de/kinofilm/ein-glueckliches-jahr/28675.html</A>',
++			'trailer'			: False,
++			'year'				: 1973,
++			'notes'				: False,
++			'runtime'			: 115,
++			'image'				: False,
++			'rating'			: False
++		},
++		'V_ein-glueckliches-jahr-dvd/85546.html' : { 
++			'title' 			: 'Ein gl&#252;ckliches Jahr',
++			'o_title' 			: 'La bonne ann&#233;e',
++			'director'			: 'Claude Lelouch',
++			'plot' 				: True,
++			'cast'				: 'Lino Ventura\n\
++Fran&#231;oise Fabian\n\
++Charles G&#233;rard\n\
++Andr&#233; Falcon',
++			'country'			: 'Frankreich/Italien',
++			'genre'				: 'Drama',
++			'classification'	: 'Freigegeben ab 12 Jahren',
++			'studio'			: 'Black Hill Pictures',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.kino.de/videofilm/ein-glueckliches-jahr-dvd/85546.html">http://www.kino.de/videofilm/ein-glueckliches-jahr-dvd/85546.html</A>',
++			'trailer'			: False,
++			'year'				: 1973,
++			'notes'				: 'Sprachen:\n\
++Deutsch DD 2.0, Franz&#246;sisch DD 2.0\n\
++\n\
++Mehrkanalton:\n\
++Dolby Digital 2.0\n\
++\n\
++EAN:\n\
++7321921998843',
++			'runtime'			: 110,
++			'image'				: True,
++			'rating'			: False
++		},
++		'V_arahan-vanilla-dvd/90405.html' : { 
++			'title' 			: 'Arahan (Vanilla-DVD)',
++			'o_title' 			: 'Arahan jangpung dae jakjeon',
++			'director'			: 'Ryoo Seung-wan',
++			'plot' 				: True,
++			'cast'				: 'Ryu Seung-beom' + _(' as ') + 'Sang-hwan\n\
++Yoon So-yi' + _(' as ') + 'Wi-jin\n\
++Ahn Sung-kee' + _(' as ') + 'Ja-woon\n\
++Jung Doo-hong' + _(' as ') + 'Heuk-woon\n\
++Yun Ju-sang' + _(' as ') + 'Mu-woon',
++			'country'			: 'S&#252;dkorea',
++			'genre'				: 'Action/Kom&#246;die',
++			'classification'	: 'Freigegeben ab 16 Jahren',
++			'studio'			: 'Splendid',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.kino.de/videofilm/arahan-vanilla-dvd/90405.html">http://www.kino.de/videofilm/arahan-vanilla-dvd/90405.html</A>',
++			'trailer'			: False,
++			'year'				: 2004,
++			'notes'				: 'Sprachen:\n\
++Deutsch DD 5.1\n\
++\n\
++Mehrkanalton:\n\
++Dolby Digital 5.1\n\
++\n\
++EAN:\n\
++4013549871105',
++			'runtime'			: 108,
++			'image'				: True,
++			'rating'			: False
++		}
++	}
+
+Added: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2007-09-06 15:02:04 UTC (rev 864)
++++ trunk/lib/test_movieplugins.py	2007-09-06 15:20:22 UTC (rev 865)
+@@ -0,0 +1,263 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id'
++
++# Copyright (c) 2006-2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++#
++# The code within this file is only used to automatically test movie plugins
++# which support that.
++# The movie plugin which should be tested has to be added to the
++# PluginTester.test_plugins list and has to define to classes
++# SearchPluginTest and PluginTest
++# Both classes provide a member called test_configuration which is a
++# dict in both cases.
++#
++# SearchPluginTest.test_configuration:
++# dict { movie_id -&gt; expected result count }
++#
++# PluginTest.test_configuration:
++# dict { movie_id -&gt; dict { arribute -&gt; value } }
++#
++# value: * True/False if attribute should only be tested for any value
++#        * or the expected value
++#
++
++import sys
++import initialize
++import gdebug
++import gutils
++try:
++	import gtk
++	import gobject
++except:
++	pass
++	
++sys.path.append('plugins/movie')
++
++#
++# test class for movie plugin classes Plugin and SearchPlugin
++# it simulates the resolving of movie data for configured movies and
++# compares the results with the expected once
++#
++class PluginTester:
++	test_plugins = [
++		'PluginMovieKinoDe',
++		'PluginMovieFilmeVonAZ'
++	]
++
++	#
++	# simulates the search for a movie title and compares
++	# the count of results with the expected count
++	#
++	def test_search(self, plugin, title, cnt):
++		plugin.url = plugin.translated_url_search
++		plugin.title = gutils.remove_accents(title, 'utf-8')
++		plugin.search(None)
++		plugin.get_searches()
++		if not len(plugin.ids) - 1 == cnt:	# first entry is always '' (???)
++			print &quot;Title: %s - expected: %d - found: %d&quot; % (title, cnt, len(plugin.ids) - 1)
++			return False
++		return True
++
++	#
++	# check every configured movie title
++	#
++	def do_test_searchplugin(self, plugin_name, domsgbox=True):
++		result = True
++		
++		plugin = __import__(plugin_name)
++		try:
++			pluginTestConfig = plugin.SearchPluginTest()
++		except:
++			print &quot;Warning: SearchPlugin test could not be executed for %s because of missing configuration class SearchPluginTest.&quot; % plugin_name
++			pluginTestConfig = None
++		
++		if not pluginTestConfig == None:
++			for i in pluginTestConfig.test_configuration:
++				searchPlugin = plugin.SearchPlugin()
++				if not self.test_search(searchPlugin, i, pluginTestConfig.test_configuration[i]):
++					result = False
++		
++		if domsgbox:
++			if not result:
++				gutils.error(self, 'SearchPluginTest %s: Test NOT successful !' % plugin_name)
++			else:
++				gutils.info(self, 'SearchPluginTest %s: Test successful !' % plugin_name)
++		
++		return result
++
++	#
++	# simulates the resolving of movie data for configured movies and
++	# compares the results with the expected once
++	#
++	def test_one_movie(self, movieplugin, results_expected):
++		result = True
++		self.movie = movieplugin
++		self.movie.parent_window = None
++		self.movie.locations = self.locations
++
++		fields_to_fetch = ['o_title', 'title', 'director', 'plot', 'cast', 'country', 'genre',
++				'classification', 'studio', 'o_site', 'site', 'trailer', 'year',
++				'notes', 'runtime', 'image', 'rating']
++
++		self.movie.fields_to_fetch = fields_to_fetch
++	
++		self.movie.open_page(None)
++		self.movie.parse_movie()
++
++		results = {}
++		if 'year' in fields_to_fetch:
++			results['year'] = self.movie.year
++			fields_to_fetch.pop(fields_to_fetch.index('year'))
++		if 'runtime' in fields_to_fetch:
++			results['runtime'] = self.movie.runtime
++			fields_to_fetch.pop(fields_to_fetch.index('runtime'))
++		if 'cast' in fields_to_fetch:
++			results['cast'] = gutils.convert_entities(self.movie.cast)
++			fields_to_fetch.pop(fields_to_fetch.index('cast'))
++		if 'plot' in fields_to_fetch:
++			results['plot'] = gutils.convert_entities(self.movie.plot)
++			fields_to_fetch.pop(fields_to_fetch.index('plot'))
++		if 'notes' in fields_to_fetch:
++			results['notes'] = gutils.convert_entities(self.movie.notes)
++			fields_to_fetch.pop(fields_to_fetch.index('notes'))
++		if 'rating' in fields_to_fetch:
++			if self.movie.rating:
++				results['rating'] = float(self.movie.rating)
++			fields_to_fetch.pop(fields_to_fetch.index('rating'))
++		# poster
++		if 'image' in fields_to_fetch:
++			if self.movie.image:
++				results['image'] = self.movie.image
++			fields_to_fetch.pop(fields_to_fetch.index('image'))
++		# other fields
++		for i in fields_to_fetch:
++			results[i] = gutils.convert_entities(self.movie[i])
++			
++		# check the fields
++		for i in results_expected:
++			i_val = results_expected[i]
++			if isinstance(i_val, bool):
++				if i_val:
++					if not results.has_key(i) or len(results[i]) &lt; 1:
++						print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++						result = False
++				else:
++					if results.has_key(i) and len(results[i]) &gt; 0:
++						print &quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s&quot; % (movieplugin.movie_id, i, results[i])
++						result = False
++			else:
++				if not results.has_key(i):
++					print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++					result = False
++				else:
++					if not results[i] == i_val:
++						print &quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s&quot; % (movieplugin.movie_id, i, i_val, results[i])
++						result = False
++		return result
++	
++	#
++	# check every configured movie
++	#
++	def do_test_plugin(self, plugin_name, domsgbox=True):
++		result = True
++		
++		plugin = __import__(plugin_name)
++		try:
++			pluginTestConfig = plugin.PluginTest()
++		except:
++			print &quot;Warning: Plugin test could not be executed for %s because of missing configuration class PluginTest.&quot; % plugin_name
++			pluginTestConfig = None
++		
++		if not pluginTestConfig == None:
++			for i in pluginTestConfig.test_configuration:
++				moviePlugin = plugin.Plugin(i)
++				if not self.test_one_movie(moviePlugin, pluginTestConfig.test_configuration[i]):
++					result = False
++		
++		if domsgbox:
++			if not result:
++				gutils.error(self, 'PluginTest %s: Test NOT successful !' % plugin_name)
++			else:
++				gutils.info(self, 'PluginTest %s: Test successful !' % plugin_name)
++		
++		return result
++
++	#
++	# main method
++	# iterates through all plugins which should be auto-tested
++	# and executes the Plugin and SearchPlugin test methods
++	#
++	def do_test(self, domsgbox=True):
++		global debug
++		debug = self.debug = gdebug.GriffithDebug()
++		self._tmp_home = None
++		initialize.locations(self)
++		search_successful = ''
++		search_unsuccessful = ''
++		get_successful = ''
++		get_unsuccessful = ''
++		# test all plugins ?
++		test_all = True
++		dialog = gtk.MessageDialog(None,
++			gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
++			gtk.MESSAGE_QUESTION, gtk.BUTTONS_NONE, 'Test all plugins ?')
++		dialog.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
++			gtk.STOCK_NO, gtk.RESPONSE_NO)
++		dialog.set_default_response(gtk.RESPONSE_NO)
++		dialog.set_skip_taskbar_hint(False)
++		response = dialog.run()
++		dialog.destroy()
++		if not response == gtk.RESPONSE_YES:
++			test_all = False
++		# iterate through all testable plugins
++		for i in self.test_plugins:
++			if domsgbox and test_all == False:
++				# ask for test of that specific plugin
++				dialog = gtk.MessageDialog(None,
++					gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
++					gtk.MESSAGE_QUESTION, gtk.BUTTONS_NONE, 'Test plugin %s ?' %i)
++				dialog.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
++					gtk.STOCK_NO, gtk.RESPONSE_NO)
++				dialog.set_default_response(gtk.RESPONSE_NO)
++				dialog.set_skip_taskbar_hint(False)
++				response = dialog.run()
++				dialog.destroy()
++				if not response == gtk.RESPONSE_YES:
++					continue
++			plugin = __import__(i)
++			# search test
++			if self.do_test_searchplugin(i, False):
++				search_successful = search_successful + i + ', '
++			else:
++				search_unsuccessful = search_unsuccessful + i + ', '
++			# movie test
++			if self.do_test_plugin(i, False):
++				get_successful = get_successful + i + ', '
++			else:
++				get_unsuccessful = get_unsuccessful + i + ', '
++		if domsgbox:
++			gutils.info(self, 'SearchPluginTests\n  Success: %s\n  Failed: %s\n\nPluginTests\n  Success: %s\n  Failed: %s' % (search_successful, search_unsuccessful, get_successful, get_unsuccessful))
++
++#
++# Start the tests
++#
++PluginTester().do_test()
+
+
+Property changes on: trunk/lib/test_movieplugins.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000369.html">[Griffith-svn] r864 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000371.html">[Griffith-svn] r866 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#370">[ date ]</a>
+              <a href="thread.html#370">[ thread ]</a>
+              <a href="subject.html#370">[ subject ]</a>
+              <a href="author.html#370">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,1653 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r976 - in trunk: . lib lib/plugins/export	lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r976%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export%0A%09lib/plugins/imp&In-Reply-To=%3C200807312244.m6VMivL8009797%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000460.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r976 - in trunk: . lib lib/plugins/export	lib/plugins/imp</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r976%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export%0A%09lib/plugins/imp&In-Reply-To=%3C200807312244.m6VMivL8009797%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r976 - in trunk: . lib lib/plugins/export	lib/plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Fri Aug  1 00:44:57 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000460.html">[Griffith-svn] r977 - in trunk: . lib lib/plugins/export	lib/plugins/imp lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#459">[ date ]</a>
+              <a href="thread.html#459">[ thread ]</a>
+              <a href="subject.html#459">[ subject ]</a>
+              <a href="author.html#459">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-08-01 00:44:52 +0200 (Fri, 01 Aug 2008)
+New Revision: 976
+
+Removed:
+   trunk/lib/gdebug.py
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/backup.py
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/delete.py
+   trunk/lib/edit.py
+   trunk/lib/gconsole.py
+   trunk/lib/gutils.py
+   trunk/lib/initialize.py
+   trunk/lib/loan.py
+   trunk/lib/main_treeview.py
+   trunk/lib/movie.py
+   trunk/lib/people.py
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportXML.py
+   trunk/lib/plugins/export/PluginExportiPod.py
+   trunk/lib/plugins/imp/CSV.py
+   trunk/lib/plugins/imp/__init__.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+* Replace gdebug with Python's logging module
+* Add posters table (to store posters in database)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/ChangeLog	2008-07-31 22:44:52 UTC (rev 976)
+@@ -5,6 +5,10 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-07-31  Piotr O&#380;arowski
++	* Replace gdebug with Python's logging module
++	* Add posters table (to store posters in database)
++
+ 2008-07-30  Michael Jahn
+ 	* [#253272] extra information columns not loaded on startup
+ 	* extended debug support on windows platforms
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/griffith	2008-07-31 22:44:52 UTC (rev 976)
+@@ -29,6 +29,8 @@
+ if os.path.isdir(lib):
+     sys.path.insert(1, lib)
+ del lib
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ # check dependencies
+ from gutils import get_dependencies
+@@ -38,7 +40,7 @@
+     if i['version'] is False or (i['version'] is not True and i['version'][0] == '-'):
+         missing.append(i)
+ if len(missing) &gt; 0:
+-    print 'Error: missing modules:'
++    log.error('Error: missing modules:')
+     for i in missing:
+         print &quot;%(module)s&quot; % i,
+         if i.has_key('module_req'):
+@@ -51,7 +53,7 @@
+ 
+ # other imports
+ import gtk, gtk.glade
+-import add, config, gconsole, gutils, gdebug, initialize, main_treeview, quick_filter, update
++import add, config, gconsole, gutils, initialize, main_treeview, quick_filter, update
+ from gettext import gettext as _
+ import db
+ 
+@@ -66,10 +68,6 @@
+     def __init__(self):
+         &quot;&quot;&quot;main griffith application constructor&quot;&quot;&quot;    
+ 
+-        # debug object
+-        global debug
+-        debug = self.debug = gdebug.GriffithDebug()
+-        
+         gconsole.check_args(self)
+         initialize.locations(self)
+         
+@@ -87,18 +85,18 @@
+         # convert old database
+         filename = os.path.join(self.locations['home'], self.config.get('file', 'griffith.db', section='database'))
+         if self.config.get('file', 'griffith.db', section='database').lower().endswith('.gri'):
+-            debug.show('Old database format detected. Converting...')
++            log.info('Old database format detected. Converting...')
+             from dbupgrade import convert_from_old_db
+             if convert_from_old_db(self, filename, os.path.join(self.locations['home'], 'griffith.db')):
+                 self.config.save()
+                 initialize.location_posters(self.locations, self.config)
+             else:
+-                print 'Cant convert old database, exiting.'
++                log.error('Cant convert old database, exiting.')
+                 sys.exit(4)
+         
+         # create/connect db
+         from sql import GriffithSQL
+-        self.db = GriffithSQL(self.config, self.debug, self.locations['home'])
++        self.db = GriffithSQL(self.config, self.locations['home'])
+ 
+         # let's check any console arguments to parse
+         gconsole.check_args_with_db(self)
+@@ -159,7 +157,7 @@
+ 
+     def on_export_activate(self, menu_iter, plugin_name):
+         export_plugin = __import__('PluginExport%s' % plugin_name)
+-        export_plugin.ExportPlugin(self.db, self.locations, self.widgets['window'], self.debug, config=self.config)
++        export_plugin.ExportPlugin(self.db, self.locations, self.widgets['window'], config=self.config)
+ 
+     def on_import_activate(self, *args):
+         if self.widgets.has_key('import'):
+@@ -550,7 +548,7 @@
+             if lang and lang.remove_from_db():
+                 initialize.language_combos(self)
+         else:
+-            self.debug.show(&quot;You have to select language first&quot;)
++            log.warn(&quot;You have to select language first&quot;)
+ 
+     def on_lang_rename_clicked(self, widget):
+         try:
+@@ -580,7 +578,7 @@
+             self.db.session.commit()
+         except Exception, e:
+             self.db.session.rollback()
+-            self.debug.show(&quot;Cannot add tag: %s&quot; % e.message)
++            log.warn(&quot;Cannot add tag: %s&quot; % e.message)
+         else:
+             initialize.fill_preferences_tags_combo(self)
+             initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+@@ -598,7 +596,7 @@
+                     self.db.session.commit()
+                 except Exception, e:
+                     self.db.session.rollback()
+-                    self.debug.show(&quot;Cannot remove tag: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove tag: %s&quot; % e.message)
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+                 update.update_bytag_combo_ids(self)
+@@ -606,7 +604,7 @@
+             else:
+                 gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+-            self.debug.show(&quot;You have to select tag first&quot;)
++            log.warn(&quot;You have to select tag first&quot;)
+ 
+     def on_tag_rename_clicked(self, widget):
+         try:
+@@ -621,7 +619,7 @@
+                 self.db.session.commit()
+             except Exception, e:
+                 self.db.session.rollback()
+-                self.debug.show(&quot;Cannot rename tag: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename tag: %s&quot; % e.message)
+             else:
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+@@ -649,7 +647,7 @@
+             if acodec and acodec.remove_from_db():
+                 initialize.acodec_combos(self)
+         else:
+-            self.debug.show(&quot;You have to select audio codec first&quot;)
++            log.warn(&quot;You have to select audio codec first&quot;)
+ 
+     def on_acodec_rename_clicked(self, widget):
+         try:
+@@ -684,7 +682,7 @@
+             if achannel and achannel.remove_from_db():
+                 initialize.achannel_combos(self)
+         else:
+-            self.debug.show(&quot;You have to select audio channel first&quot;)
++            log.warn(&quot;You have to select audio channel first&quot;)
+ 
+     def on_achannel_rename_clicked(self, widget):
+         try:
+@@ -719,7 +717,7 @@
+             if subformat and subformat.remove_from_db():
+                 initialize.subformat_combos(self)
+         else:
+-            self.debug.show(&quot;You have to select subtitle format first&quot;)
++            log.warn(&quot;You have to select subtitle format first&quot;)
+ 
+     def on_subformat_rename_clicked(self, widget):
+         try:
+@@ -754,7 +752,7 @@
+             if medium and medium.remove_from_db():
+                 initialize.media_combos(self)
+         else:
+-            self.debug.show(&quot;You have to select medium first&quot;)
++            log.warn(&quot;You have to select medium first&quot;)
+ 
+     def on_medium_rename_clicked(self, widget):
+         try:
+@@ -789,7 +787,7 @@
+             if vcodec and vcodec.remove_from_db():
+                 initialize.vcodec_combos(self)
+         else:
+-            self.debug.show(&quot;You have to select video codec first&quot;)
++            log.warn(&quot;You have to select video codec first&quot;)
+ 
+     def on_vcodec_rename_clicked(self, widget):
+         try:
+@@ -1156,7 +1154,7 @@
+                 # delete images
+                 posters_dir = self.locations['posters']
+                 # NOTE: only used images are removed (posters are shared between various db)
+-                debug.show('NEW DB: Removing old images...')
++                log.info('NEW DB: Removing old images...')
+                 
+                 movies = select([db.movies_table.c.image], bind=self.db.session.bind).execute().fetchall()
+                 for movie in movies:
+@@ -1179,7 +1177,7 @@
+                     if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
+                         self.config.set('file', 'griffith.db', section='database')
+                 # create/connect db
+-                self.db = GriffithSQL(self.config, debug, self.griffith_dir)
++                self.db = GriffithSQL(self.config, self.griffith_dir)
+                 self.clear_details()
+                 self.total = 0
+                 self.count_statusbar()
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/add.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -22,15 +22,17 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-from gettext import gettext as _
++from sqlalchemy.exceptions import IntegrityError
++from gettext               import gettext as _
+ import gutils
+ import os
+ import gtk
+ import string
+ import shutil
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ import quick_filter
+ import db
+-from sqlalchemy.exceptions import IntegrityError
+ 
+ ### widgets ###################################################
+ 
+@@ -137,7 +139,7 @@
+     w = self.widgets['add']
+     m_id = None
+     if self.founded_results_id:
+-        self.debug.show(&quot;self.founded:results_id: %s&quot; % self.founded_results_id)
++        log.info(&quot;self.founded:results_id: %s&quot; % self.founded_results_id)
+         m_id = self.founded_results_id
+     else:
+         self.founded_results_id = 0
+@@ -791,9 +793,9 @@
+     except IntegrityError, e:
+         session.rollback()
+         gutils.warning(self, str(e.orig))
+-        self.debug.show(&quot;Cannot commit movie: %s&quot; % e.message)
++        log.warn(&quot;Cannot commit movie: %s&quot; % e.message)
+         return False
+     except Exception, e:
+-        self.debug.show(&quot;Unexpected problem: %s&quot; % e)
++        log.error(&quot;Unexpected problem: %s&quot; % e)
+         return False
+     return True
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/backup.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -22,10 +22,15 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
+-import config, edit, gutils, sql
+ import gtk
+ import os.path
+ import zipfile
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++import config
++import edit
++import gutils
++import sql
+ 
+ def backup(self):
+     &quot;&quot;&quot;perform a compressed griffith database/posters/preferences backup&quot;&quot;&quot;
+@@ -73,7 +78,7 @@
+                 tmp_config.set('file', section='database') == &quot;griffith.db&quot;
+                 tmp_config.save()
+ 
+-#                tmp_db = sql.GriffithSQL(tmp_config, self.debug, tmp_dir)
++#                tmp_db = sql.GriffithSQL(tmp_config, tmp_dir)
+ #                for i in self.db.metadata.tables
+ #                tmp_db.
+ 
+@@ -100,7 +105,7 @@
+                         try:
+                             mzip.write(filename)
+                         except:
+-                            self.debug.show(&quot;Can't compress %s&quot; % filename)
++                            log.info(&quot;Can't compress %s&quot; % filename)
+             mzip.close()
+             gutils.info(self, _(&quot;Backup has been created&quot;), self.widgets['window'])
+ 
+@@ -138,7 +143,7 @@
+         # restore config file
+         self.config = config.Config(file=os.path.join(self.locations['home'],'griffith.cfg'))
+         if old_config_file:
+-            self.debug.show('Old config file detected. Please note that it will not be used.')
++            log.info('Old config file detected. Please note that it will not be used.')
+             f = open(old_config_file, 'r')
+             old_config_raw_data = f.read()
+             f.close()
+@@ -153,7 +158,7 @@
+ 
+         # check if file needs conversion
+         if self.config.get('file', 'griffith.db', section='database').lower().endswith('.gri'):
+-            self.debug.show('Old database format detected. Converting...')
++            log.info('Old database format detected. Converting...')
+             from dbupgrade import convert_from_old_db
+             from initialize    import location_posters
+             if convert_from_old_db(self, filename, os.path.join(self.locations['home'], 'griffith.db')):
+@@ -164,7 +169,7 @@
+                 import sys
+                 sys.exit(4)
+ 
+-        self.db = sql.GriffithSQL(self.config, self.debug, self.locations['home'])
++        self.db = sql.GriffithSQL(self.config, self.locations['home'])
+         from initialize    import dictionaries, people_treeview
+         dictionaries(self)
+         people_treeview(self)
+@@ -214,14 +219,14 @@
+         # check if file needs conversion
+         if filename.lower().endswith(&quot;.gri&quot;):
+             if os.path.isfile(filename) and  open(filename).readline()[:47] == &quot;** This file contains an SQLite 2.1 database **&quot;:
+-                self.debug.show(&quot;MERGE: SQLite2 database format detected. Converting...&quot;)
++                log.info(&quot;MERGE: SQLite2 database format detected. Converting...&quot;)
+                 if not self.db.convert_from_sqlite2(filename, os.path.join(tmp_dir, self.config.get('file', 'griffith.db', section='database'))):
+-                    self.debug.show(&quot;MERGE: Can't convert database, aborting.&quot;)
++                    log.info(&quot;MERGE: Can't convert database, aborting.&quot;)
+                     return False
+         tmp_dir, tmp_file = os.path.split(filename)
+         self.config.get('file', tmp_file, section='database') 
+ 
+-        tmp_db = sql.GriffithSQL(tmp_config, self.debug, tmp_dir)
++        tmp_db = sql.GriffithSQL(tmp_config, tmp_dir)
+ 
+         merged=0
+         movies = tmp_db.Movie.count()
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/db.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -25,33 +25,100 @@
+ # imports
+ from sqlalchemy     import *
+ from sqlalchemy.orm import mapper, relation, sessionmaker
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ metadata = MetaData()
+ 
++class DBTable(object):#{{{
++    def __repr__(self):
++        return &quot;&lt;%s:%s&gt;&quot; % (self.__class__.__name__, self.name)
++    def add_to_db(self):
++        if self.name is None or len(self.name)==0:
++            log.info(&quot;%s: name can't be empty&quot; % self.__class__.__name__)
++            return False
++        # check if item already exists
++        if self.query.filter_by(name=self.name).first() is not None:
++            log.info(&quot;%s: '%s' already exists&quot; % (self.__class__.__name__, self.name))
++            return False
++        log.info(&quot;%s: adding '%s' to database...&quot; % (self.__class__.__name__, self.name))
++        self.save()
++        try:
++            self.flush()
++        except exceptions.SQLError, e:
++            log.info(&quot;%s: add_to_db: %s&quot; % (self.__class__.__name__, e))
++            return False
++        self.refresh()
++        return True
++    def remove_from_db(self):
++        dbtable_id = self.__dict__[self.__class__.__name__.lower() + '_id']
++        if dbtable_id&lt;1:
++            log.info(&quot;%s: none selected =&gt; none removed&quot; % self.__class__.__name__)
++            return False
++        tmp = None
++        if hasattr(self,'movies'):
++            tmp = getattr(self,'movies')
++        elif hasattr(self,'movielangs'):
++            tmp = getattr(self,'movielangs')
++        if tmp and len(tmp)&gt;0:
++            gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++            return False
++        log.info(&quot;%s: removing '%s' (id=%s) from database...&quot;%(self.__class__.__name__, self.name, dbtable_id))
++        self.delete()
++        try:
++            self.flush()
++        except exceptions.SQLError, e:
++            log.info(&quot;%s: remove_from_db: %s&quot; % (self.__class__.__name__, e))
++            return False
++        #self.refresh()
++        return True
++    def update_in_db(self):
++        dbtable_id = self.__dict__[self.__class__.__name__.lower() + '_id']
++        if dbtable_id&lt;1:
++            log.info(&quot;%s: none selected =&gt; none updated&quot; % self.__class__.__name__)
++            return False
++        if self.name is None or len(self.name)==0:
++            log.info(&quot;%s: name can't be empty&quot; % self.__class__.__name__)
++            return False
++        tmp = self.query.filter_by(name=self.name).first()
++        if tmp is not None and tmp is not self:
++            gutils.warning(self, msg=_(&quot;This name is already in use!&quot;))
++            return False
++        self.update()
++        try:
++            self.flush()
++        except exceptions.SQLError, e:
++            log.info(&quot;%s: update_in_db: %s&quot; % (self.__class__.__name__, e))
++            return False
++        self.refresh()
++        return True#}}}
++
+ ### clases #################################################### {{{
+-class Configuration(object):
+-    def __repr__(self):
+-        return &quot;&lt;Config:%s=%s&gt;&quot; % (self.param, self.value)
+-class AChannel(object):
++class AChannel(DBTable):
+     pass
+-class ACodec(object):
++class ACodec(DBTable):
+     pass
+-class Collection(object):
++class Collection(DBTable):
+     pass
+-class Lang(object):
++class Lang(DBTable):
+     pass
+-class Medium(object):
++class Medium(DBTable):
+     pass
+-class Person(object):
++class Person(DBTable):
+     pass
+-class SubFormat(object):
++class SubFormat(DBTable):
+     pass
+-class Tag(object):
++class Tag(DBTable):
+     pass
+-class VCodec(object):
++class VCodec(DBTable):
+     pass
+-class Volume(object):
++class Volume(DBTable):
+     pass
++class Poster(object):
++    pass
++class Configuration(object):
++    def __repr__(self):
++        return &quot;&lt;Config:%s=%s&gt;&quot; % (self.param, self.value)
+ class Loan(object):
+     def __repr__(self):
+         return &quot;&lt;Loan:%s (movie:%s person:%s)&gt;&quot; % (self.loan_id, self.movie_id, self.person_id)
+@@ -111,7 +178,7 @@
+     Column('trailer', VARCHAR(256)),
+     Column('country', VARCHAR(128)),
+     Column('genre', VARCHAR(128)),
+-    Column('image', VARCHAR(128)),
++    Column('image', VARCHAR(128)), # TODO: VARCHAR(32) is enough for MD5, use after transition
+     Column('studio', VARCHAR(128)),
+     Column('classification', VARCHAR(128)),
+     Column('cast', TEXT),
+@@ -188,6 +255,10 @@
+ configuration_table = Table('configuration', metadata,
+     Column('param', VARCHAR(16), primary_key=True),
+     Column('value', VARCHAR(128), nullable=False))
++
++posters_table = Table('posters', metadata,
++    Column('md5sum', VARCHAR(32), ForeignKey('movies.image'), primary_key=True),
++    Column('data', BLOB, nullable=False))
+ #}}}
+ 
+ ### mappers ################################################### {{{
+@@ -216,6 +287,8 @@
+     'movielangs': relation(MovieLang, lazy=False)})
+ mapper(Lang, languages_table, properties={
+     'movielangs': relation(MovieLang, lazy=False)})
++mapper(Poster, posters_table, properties={
++    'movies': relation(Movie)})
+ mapper(MovieTag, movie_tag_table)
+ mapper(Tag, tags_table, properties={'movietags': relation(MovieTag, backref='tag')})
+ mapper(Loan, loans_table, properties = {
+@@ -236,6 +309,8 @@
+ if __name__ == '__main__':
+     import os.path
+     import sqlalchemy
++    logging.basicConfig()
++    log.setLevel(logging.INFO)
+ 
+     ### ENGINE ###
+     engine = create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>', echo=False)
+@@ -255,7 +330,7 @@
+     #sess.commit()
+     # close when finished
+     #sess.close()
+-    print &quot;SQLAlchemy version: %s&quot; % sqlalchemy.__version__
++    log.info(&quot;SQLAlchemy version: %s&quot; % sqlalchemy.__version__)
+ 
+ 
+     griffith_dir = &quot;/home/pox/.griffith/&quot;
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/dbupgrade.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -26,11 +26,13 @@
+ import os.path
+ import gutils
+ import db
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def upgrade_database(self, version):
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
++    b = self.session.bind
+     if version == 0:
+-        b = self.session.bind
+         db.metadata.create_all(b)
+         db.configuration_table.insert(bind=b).execute(param='version', value=self.version)
+         db.media_table.insert(bind=b).execute(name='DVD')
+@@ -102,15 +104,21 @@
+         db.tags_table.insert(bind=b).execute(name=_('Favourite'))
+         return True # upgrade process finished
+     if version == 1: # fix changes between v1 and v2
+-        version+=1
+-        self.session.bind.execute(&quot;UPDATE loans SET return_date='2007-01-01' WHERE return_date='None';&quot;)
+-        db_version = self.Configuration.query.filter_by(param='version').one()
++        version += 1
++        log.info(&quot;Upgrading database to version %d...&quot; % version)
++        b.execute(&quot;UPDATE loans SET return_date='2007-01-01' WHERE return_date='None';&quot;)
++        db_version = self.session.query(db.Configuration).filter_by(param='version').one()
+         db_version.value = version
+-        db_version.update()
+-        db_version.flush()
+-    #if version == 2:    # fix changes between v2 and v3
+-    #    version+=1
+-    #    self.Configuration.query.filter_by(param='version').one().value = version
++        self.session.add(db_version)
++        self.session.commit()
++    if version == 2:    # fix changes between v2 and v3
++        version += 1
++        log.info(&quot;Upgrading database to version %d...&quot; % version)
++        db.posters_table.create(checkfirst=True, bind=b)
++        db_version = self.session.query(db.Configuration).filter_by(param='version').one()
++        db_version.value = version
++        self.session.add(db_version)
++        self.session.commit()
+ 
+ 
+ # ---------------------------------------------------
+@@ -130,7 +138,6 @@
+     if open(source_file).readline()[:47] == '** This file contains an SQLite 2.1 database **':
+         try:
+             import sqlite
+-            from sqlite import DatabaseError
+         except ImportError:
+             print 'Old DB conversion: please install pysqlite legacy (v1.0)'
+             gutils.warning(self,_(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;))
+@@ -138,10 +145,8 @@
+     else:
+         try:    # Python 2.5
+             from sqlite3 import dbapi2 as sqlite
+-            from sqlite3.dbapi2 import DatabaseError
+         except ImportError: # Python &lt; 2.5 - try to use pysqlite2
+             from pysqlite2 import dbapi2 as sqlite
+-            from pysqlite2.dbapi2 import DatabaseError
+ 
+     if os.path.isfile(destination_file):
+         # rename destination_file if it already exist
+@@ -155,7 +160,7 @@
+ 
+     try:
+         old_db = sqlite.connect(source_file)
+-    except DatabaseError, e:
++    except sqlite.DatabaseError, e:
+         if str(e) == 'file is encrypted or is not a database':
+             print 'Your database is most probably in wrong SQLite format, please convert it to SQLite3:'
+             print '$ sqlite ~/.griffith/griffith.gri .dump | sqlite3 ~/.griffith/griffith.gri3'
+@@ -213,7 +218,7 @@
+     self.config.set('region', 0, section='defaults')
+     self.config.set('vcodec', 0, section='defaults')
+     self.locations['posters'] = os.path.join(self.locations['home'], 'posters')
+-    new_db = GriffithSQL(self.config, self.debug, self.locations['home'])
++    new_db = GriffithSQL(self.config, self.locations['home'])
+ 
+     # collections
+     collection_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
+@@ -223,7 +228,7 @@
+         try:
+             o.save(); o.flush()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+             continue
+         collection_mapper[i[0]] = o.collection_id
+     
+@@ -235,7 +240,7 @@
+         try:
+             o.save(); o.flush()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+             continue
+         volume_mapper[i[0]] = o.volume_id
+ 
+@@ -247,7 +252,7 @@
+         try:
+             o.save(); o.flush()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+             continue
+         person_mapper[i[0]] = o.person_id
+     
+@@ -263,7 +268,7 @@
+             try:
+                 o.save(); o.flush()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+             language_mapper[i[0]] = o.lang_id
+ 
+@@ -279,7 +284,7 @@
+             try:
+                 o.save(); o.flush()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+             medium_mapper[i[0]] = o.medium_id
+     
+@@ -295,7 +300,7 @@
+             try:
+                 o.save(); o.flush()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+             tag_mapper[i[0]] = o.tag_id
+     
+@@ -344,7 +349,7 @@
+         try:
+             o.save(); o.flush()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+             continue
+         movie_mapper[i[0]] = o.movie_id
+ 
+@@ -360,7 +365,7 @@
+             try:
+                 m.save(); m.flush()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+     
+     # movie lang
+@@ -375,7 +380,7 @@
+             try:
+                 m.save(); m.flush()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+ 
+     # loans
+@@ -388,13 +393,13 @@
+             try:
+                 vol = new_db.Volume.query.filter_by(volume_id=volume_mapper[i[2]]).one()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+         if int(i[3]) &gt; 0:
+             try:
+                 col = new_db.Collection.query.filter_by(collection_id=collection_mapper[i[3]]).one()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+         if int(i[1]) == 0:
+             if vol is not None and len(vol.movies)&gt;0:
+@@ -402,13 +407,13 @@
+             elif col is not None and len(col.movies)&gt;0:
+                 m = col.movies[0]
+             else:
+-                self.debug.show(&quot;Cannot find associated movie for this loan (%s)&quot; % i)
++                log.info(&quot;Cannot find associated movie for this loan (%s)&quot; % i)
+                 continue
+         else:
+             try:
+                 m = new_db.Movie.query.filter_by(movie_id=movie_mapper[i[1]]).one()
+             except Exception, e:
+-                self.debug.show(str(e))
++                log.info(str(e))
+                 continue
+         
+         l = new_db.Loan()
+@@ -436,7 +441,7 @@
+         try:
+             m.flush()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+             continue
+     clear_mappers()
+     return True
+
+Modified: trunk/lib/delete.py
+===================================================================
+--- trunk/lib/delete.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/delete.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -48,7 +48,7 @@
+         try:
+             self.db.session.commit()
+         except:
+-            self.debug.show(&quot;Unexpected problem: %s&quot; % e)
++            log.info(&quot;Unexpected problem: %s&quot; % e)
+             return False
+ 
+         # update main treelist
+@@ -65,7 +65,7 @@
+ 
+ def delete_poster(self, poster):
+     if not poster:
+-        self.debug.show('Delete poster: no poster to delete')
++        log.info('Delete poster: no poster to delete')
+         return False
+     posters_dir = os.path.join(self.locations['posters'])
+     image_thumbnail = os.path.join(posters_dir, &quot;t_&quot; + poster + &quot;.jpg&quot;)
+@@ -75,15 +75,15 @@
+         try:
+             os.remove(image_mini)
+         except:
+-            self.debug.show(&quot;Can't remove %s file&quot;%image_mini)
++            log.info(&quot;Can't remove %s file&quot;%image_mini)
+     if os.path.isfile(image_full):
+         try:
+             os.remove(image_full)
+         except:
+-            self.debug.show(&quot;Can't remove %s file&quot;%image_full)
++            log.info(&quot;Can't remove %s file&quot;%image_full)
+     if os.path.isfile(image_thumbnail):
+         try:
+             os.remove(image_thumbnail)
+         except:
+-            self.debug.show(&quot;Can't remove %s file&quot;%image_thumbnail)
++            log.info(&quot;Can't remove %s file&quot;%image_thumbnail)
+ 
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/edit.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -55,7 +55,7 @@
+         self.widgets['movie']['picture'].set_from_pixbuf(\
+                 gtk.gdk.pixbuf_new_from_file(file_path).scale_simple(100, 140, gtk.gdk.INTERP_BILINEAR))
+     except Exception, e:
+-        self.debug.show(str(e))
++        log.error(str(e))
+         gutils.error(self, _(&quot;Image not valid.&quot;), self.widgets['window'])
+         return False
+ 
+@@ -91,7 +91,7 @@
+ def delete_poster(self):
+     movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+     if not movie:
+-        self.debug.show(&quot;Can't delete unknown movie's poster!&quot;)
++        log.error(&quot;Cannot delete unknown movie's poster!&quot;)
+         return False
+     response = gutils.question(self, _(&quot;Are you sure you want to delete this poster?&quot;), 1, self.widgets['window'])
+     if response==-8:
+@@ -123,7 +123,7 @@
+ 
+ def fetch_bigger_poster(self):
+     match = 0
+-    self.debug.show(&quot;fetching poster from amazon&quot;)
++    log.info(&quot;fetching poster from amazon&quot;)
+     movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+     if movie is None:
+         gutils.error(self,_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+@@ -145,7 +145,7 @@
+ 
+     try:
+         result = amazon.searchByKeyword(keyword, type=&quot;Large&quot;, product_line=&quot;DVD&quot;, locale=locale)
+-        self.debug.show(&quot;Posters found on amazon: %s posters&quot; % result.TotalResults)
++        log.info(&quot;Posters found on amazon: %s posters&quot; % result.TotalResults)
+     except:
+         gutils.warning(self, _(&quot;No posters found for this movie.&quot;))
+         return
+@@ -217,12 +217,12 @@
+         try:
+             im = Image.open(file_to_copy)
+         except IOError:
+-            self.debug.show(&quot;failed to identify %s&quot;%file_to_copy)
++            log.warn(&quot;failed to identify %s&quot;%file_to_copy)
+ 
+         if im.size == (1,1):
+             url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % result.Item[f].ASIN).read()
+             if url.find('no-img-sm._V47056216_.gif') &gt; 0:
+-                self.debug.show('No image available')
++                log.warn('No image available')
+                 gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+                 return False
+             url = gutils.after(url, 'id=&quot;imageViewerDiv&quot;&gt;&lt;img src=&quot;')
+@@ -231,7 +231,7 @@
+             try:
+                 im = Image.open(file_to_copy)
+             except IOError:
+-                self.debug.show(&quot;failed to identify %s&quot;%file_to_copy)
++                log.warn(&quot;failed to identify %s&quot;%file_to_copy)
+ 
+         if im.mode != 'RGB': # convert GIFs
+             im = im.convert('RGB')
+@@ -245,14 +245,14 @@
+                 _(&quot;Do you want to use this poster instead?&quot;), \
+                 1, self.widgets['window'])
+         if response == -8:
+-            self.debug.show(&quot;Using fetched poster, updating and removing old one from disk.&quot;)
++            log.info(&quot;Using fetched poster, updating and removing old one from disk.&quot;)
+             update_image(self, self.widgets['movie']['number'].get_text(), file_to_copy)
+         else:
+-            self.debug.show(&quot;Reverting to previous poster and deleting new one from disk.&quot;)
++            log.info(&quot;Reverting to previous poster and deleting new one from disk.&quot;)
+             try:
+                 os.remove(file_to_copy)
+             except:
+-                self.debug.show(&quot;no permission for %s&quot;%file_to_copy)
++                log.error(&quot;no permission for %s&quot;%file_to_copy)
+ 
+         self.widgets['poster_window'].hide()
+     else:
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/gconsole.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -25,6 +25,8 @@
+ import getopt
+ import sys
+ import gutils
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ options = ('hDCo:t:d:c:y:s:', ('help', 'debug', 'sqlecho', 'clean', 'check-dep',
+     'show-dep', 'original_title=', 'title=', 'director=', 'cast=', 'year=',
+@@ -47,7 +49,7 @@
+                 con_usage()
+                 sys.exit()
+             elif o in ('-D', '--debug'):
+-                self.debug.set_debug()
++                log.setLevel(logging.DEBUG)
+             elif o == '--home':
+                 self._tmp_home = a # see initialize.locations()
+             elif o == '--config':
+
+Deleted: trunk/lib/gdebug.py
+===================================================================
+--- trunk/lib/gdebug.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/gdebug.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -1,129 +0,0 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2005-2008 Vasco Nunes, Piotr O&#380;arowski
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-import gtk
+-import pygtk
+-
+-class GriffithDebug:
+-    debug_mode = None
+-    
+-    def __init__(self, mode=False):
+-        self.debugWindow = None
+-        self.set_debug(mode)
+-
+-    def set_debug(self, mode=True):
+-        self.debug_mode = mode
+-        self.check_for_window()
+-        if not (self.debugWindow is None or self.debugWindow == False):
+-            if mode:
+-                self.debugWindow.show()
+-            else:
+-                self.debugWindow.hide()
+-
+-    def check_for_window(self):
+-        # on windows systems all output to stdout goes to a black hole
+-        # if py2exe is used.
+-        # so we use a normal window and redirect output from sys.stderr
+-        # and sys.stdout. it is easier to use for windows users.
+-        try:
+-            if self.debug_mode and self.debugWindow is None:
+-                import gutils, sys
+-                if gutils.is_windows_system():
+-                    self.debugWindow = DebugWindow(None)
+-                    sys.stderr = sys.stdout = DebugWindowRedirector(self.debugWindow)
+-                else:
+-                    self.debugWindow = False
+-        except:
+-            pass
+-
+-    def show(self, txt):
+-        if self.debug_mode:
+-            print txt.encode('utf8')
+-
+-#
+-# used on windows systems
+-# shows a windows with a text view which displays the
+-# debug output provided by DebugWindowRedirector
+-#
+-class DebugWindow:
+-    def __init__(self, window):
+-        self.dialog = gtk.Dialog('Debug Window', window, gtk.DIALOG_MODAL, ())
+-        self.dialog.set_destroy_with_parent(True)
+-        self.dialog.set_transient_for(window)
+-        self.dialog.set_modal(False)
+-        self.textview = gtk.TextView()
+-        self.textview.set_editable(False)
+-        self.textview.set_wrap_mode(gtk.WRAP_WORD_CHAR)
+-        self.textview.set_scroll_adjustments(gtk.Adjustment(1.0, 1.0, 100.0, 1.0, 10.0, 10.0), gtk.Adjustment(1.0, 1.0, 100.0, 1.0, 10.0, 10.0))
+-        self.scrolledwindow = gtk.ScrolledWindow(None, None)
+-        self.scrolledwindow.add(self.textview)
+-        self.dialog.vbox.pack_start(self.scrolledwindow)
+-        self.dialog.set_default_size(640, 480)
+-    def show(self):
+-        self.dialog.show_all()
+-    def hide(self):
+-        self.dialog.hide_all()
+-    def close(self):
+-        self.dialog.destroy()
+-    def add(self, txt):
+-        buffer = self.textview.get_buffer()
+-        buffer.insert(buffer.get_end_iter(), txt, -1)
+-
+-#
+-# used on windows system
+-# redirects sys.stderr and sys.stdout to a debug window and a file
+-# 'griffith_debug.txt' in the home directory (My documents)
+-#
+-class DebugWindowRedirector(object):
+-    softspace = 0
+-    def __init__(self, debugWindow):
+-        self.debugWindow = debugWindow
+-        #
+-        # redirected output to a debug file in the home directory because
+-        # users with restricted system rights can't write to the installation directory
+-        # which is the default if py2exe is used
+-        #
+-        import winshell, os
+-        from win32com.shell import shellcon, shell
+-        from locale import getdefaultlocale
+-        defaultLang, defaultEnc = getdefaultlocale()
+-        if defaultEnc is None:
+-            defaultEnc = 'UTF-8'
+-        self.debugFileName = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, 0, 0), 'griffith_debug.txt').decode(defaultEnc)
+-        try:
+-            f = open(self.debugFileName, 'w')
+-            f.close()
+-        except:
+-            pass
+-    def write(self, text):
+-        self.debugWindow.add(text)
+-        try:
+-            f = open(self.debugFileName, 'a')
+-            try:
+-                f.write(text)
+-            finally:
+-                f.close()
+-        except:
+-            pass
+-    def flush(self):
+-        pass
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/gutils.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -580,3 +580,13 @@
+     if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+         return True
+     return False
++
++def md5sum(fobj):
++    &quot;&quot;&quot;Returns an md5 hash for an object with read() method.&quot;&quot;&quot;
++    m = md5.new()
++    while True:
++        d = fobj.read(8096)
++        if not d:
++            break
++        m.update(d)
++    return m.hexdigest()
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/initialize.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -32,6 +32,8 @@
+ import re
+ from gettext import gettext as _
+ from locale import getdefaultlocale
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ import db
+ 
+ try:
+@@ -102,17 +104,17 @@
+ 
+     try:
+         if not os.path.exists(locations['home']):
+-            self.debug.show('Creating %s' % locations['home'])
++            log.info('Creating %s' % locations['home'])
+             os.makedirs(locations['home'])
+         else:
+-            self.debug.show(&quot;Using Griffith directory: %s&quot; % locations['home'])
++            log.info(&quot;Using Griffith directory: %s&quot; % locations['home'])
+     except OSError:
+-        self.debug.show('Unable to create griffith directory.')
++        log.info('Unable to create griffith directory.')
+         raise
+         sys.exit()
+ 
+     if not os.access(locations['home'], os.W_OK):
+-        self.debug.show('Cannot write to griffith directory, %s' % locations['home'])
++        log.info('Cannot write to griffith directory, %s' % locations['home'])
+         sys.exit()
+ 
+     # includes plugins in system path for easier importing
+@@ -144,7 +146,7 @@
+ 
+ def gui(self):
+     self._ = None
+-    self.debug.show(&quot;running on %s - %s&quot; % (os.name, platform.system()))
++    log.info(&quot;running on %s - %s&quot; % (os.name, platform.system()))
+     if os.name == 'nt' or os.name.startswith('win'):
+         self.windows = True
+     else:
+@@ -681,7 +683,7 @@
+                 except:
+                     spell_error = True
+             if spell_error:
+-                self.debug.show('Dictionary not available. Spellcheck will be disabled.')
++                log.info('Dictionary not available. Spellcheck will be disabled.')
+                 if not self.config.get('notified', False, section='spell'):
+                     gutils.info(self, _(&quot;Dictionary not available. Spellcheck will be disabled. \n&quot; + \
+                         &quot;Please install the aspell-%s package or adjust the spellchekcer preferences.&quot;)%self.config.get('lang', section='spell'), \
+@@ -689,7 +691,7 @@
+                     self.config.set('notified', True, section='spell')
+                     self.config.save()
+     else:
+-        self.debug.show('Spellchecker is not available')
++        log.info('Spellchecker is not available')
+ 
+ def preferences(self):
+     self.widgets['preferences']['db_type'].insert_text(0,'SQLite3 (internal)')
+@@ -927,6 +929,6 @@
+         tab.pop()
+         widget.remove(widget.get_children().pop())
+     except:
+-        self.debug.show('List is empty')
++        log.info('List is empty')
+     widget.show_all()
+ 
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/loan.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -26,6 +26,8 @@
+ import gtk
+ import datetime
+ import db
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def loan_movie(self):
+     people = self.db.session.query(db.Person).order_by(db.people_table.c.name.asc()).all()
+@@ -51,15 +53,15 @@
+ 
+     person = self.db.session.query(db.Person).filter_by(name=person_name).first()
+     if person is None:
+-        self.debug.show(&quot;commit_loan: person doesn't exist&quot;)
++        log.info(&quot;commit_loan: person doesn't exist&quot;)
+         return False
+     if self._movie_id:
+         movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+         if not movie:
+-            self.debug.show(&quot;commit_loan: wrong movie_id&quot;)
++            log.info(&quot;commit_loan: wrong movie_id&quot;)
+             return False
+     else:
+-        self.debug.show(&quot;commit_loan: movie not selected&quot;)
++        log.info(&quot;commit_loan: movie not selected&quot;)
+         return False
+ 
+     # ask if user wants to loan whole collection
+@@ -83,7 +85,7 @@
+     try:
+         self.db.session.commit()
+     except Exception, e:
+-        self.debug.show(str(e))
++        log.info(str(e))
+     else:
+         self.update_statusbar(_(&quot;Movie loaned&quot;))
+         self.treeview_clicked()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/main_treeview.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -36,14 +36,14 @@
+         treeselection = self.widgets['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
+         if tmp_iter is None:
+-            self.debug.show('Treeview: no selection')
++            log.info('Treeview: no selection')
+             return False
+         number = tmp_model.get_value(tmp_iter,0)
+         movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+         # FIXME
+         #movie.refresh() # loan data can be obsolete in cache
+         if movie is None:
+-            self.debug.show(&quot;Treeview: movie doesn't exists (number=%s)&quot;%number)
++            log.info(&quot;Treeview: movie doesn't exists (number=%s)&quot;%number)
+         set_details(self, movie)
+     else:
+         set_details(self, {})
+@@ -103,7 +103,7 @@
+             w['condition'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._conditions[item['cond']])
+         else:
+             w['condition'].set_text('')
+-            self.debug.show(&quot;Wrong value in 'condition' field (movie_id=%s, cond=%s)&quot; % (item['movie_id'], item['cond']))
++            log.info(&quot;Wrong value in 'condition' field (movie_id=%s, cond=%s)&quot; % (item['movie_id'], item['cond']))
+     else:
+         w['condition'].set_text('')
+     if 'region' in item and item['region']:
+@@ -112,7 +112,7 @@
+             if int(item['region']) &lt; 9:
+                 self.widgets['tooltips'].set_tip(w['region'], self._regions[int(item['region'])])
+         else:
+-            self.debug.show(&quot;Wrong value in 'region' field (movie_id=%s, region=%s)&quot; % (item['movie_id'], item['region']))
++            log.info(&quot;Wrong value in 'region' field (movie_id=%s, region=%s)&quot; % (item['movie_id'], item['region']))
+             w['region'].set_text('')
+             self.widgets['tooltips'].set_tip(w['region'], self._regions[0]) # N/A
+     else:
+@@ -122,7 +122,7 @@
+         if str(item['layers']) in [ str(i) for i in range(len(self._layers)) ]:
+             w['layers'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._layers[item['layers']])
+         else:
+-            self.debug.show(&quot;Wrong value in 'layers' field (movie_id=%s, layers=%s)&quot; % (item['movie_id'], item['layers']))
++            log.info(&quot;Wrong value in 'layers' field (movie_id=%s, layers=%s)&quot; % (item['movie_id'], item['layers']))
+             w['layers'].set_text('')
+     else:
+         w['layers'].set_text('')
+@@ -130,7 +130,7 @@
+         if str(item['color']) in [ str(i) for i in range(len(self._colors)) ]:
+             w['color'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._colors[item['color']])
+         else:
+-            self.debug.show(&quot;Wrong value in 'color' field (movie_id=%s, color=%s)&quot; % (item['movie_id'], item['color']))
++            log.info(&quot;Wrong value in 'color' field (movie_id=%s, color=%s)&quot; % (item['movie_id'], item['color']))
+             w['color'].set_markup('')
+     else:
+         w['color'].set_markup('')
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/movie.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -25,13 +25,15 @@
+ from urllib import *
+ import sys
+ import string
+-import gutils
+ import gtk
+ import os
+ import os.path
+ import threading
+ import time
+ import tempfile
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++import gutils
+ 
+ class Movie:
+     cast = None
+@@ -160,7 +162,7 @@
+                 try:
+                     os.remove(&quot;%s.jpg&quot; % tmp_dest )
+                 except:
+-                    print &quot;Can't remove %s file&quot; % tmp_dest # FIXME: use debug.show()
++                    log.info(&quot;Can't remove %s file&quot; % tmp_dest)
+         else:
+             self.image = &quot;&quot;
+ 
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/people.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -24,6 +24,8 @@
+ from gettext import gettext as _
+ import gutils
+ import db
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def show_people_window(self):
+     self.widgets['people']['window'].show()
+@@ -55,7 +57,7 @@
+         try:
+             self.db.session.commit()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+         else:
+             myiter = self.p_treemodel.insert_after(None, None)
+             self.p_treemodel.set_value(myiter,0,str(self.widgets['person']['name'].get_text()))
+@@ -94,7 +96,7 @@
+     try:
+         self.db.session.commit()
+     except Exception, e:
+-        self.debug.show(str(e))
++        log.info(str(e))
+     else:
+         self.update_statusbar(_(&quot;Record updated&quot;))
+         edit_person_cancel(self)
+@@ -135,7 +137,7 @@
+         try:
+             self.db.session.commit()
+         except Exception, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+         else:
+             self.p_treemodel.remove(tmp_iter)
+             self.treeview_clicked()
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -36,7 +36,7 @@
+ 
+ class ExportPlugin:
+ 
+-    def __init__(self, database, locations, parent, debug, **kwargs):
++    def __init__(self, database, locations, parent, **kwargs):
+         self.db = database
+         self.locations = locations
+         self.parent = parent
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -31,6 +31,8 @@
+ import math
+ from xml.dom import minidom
+ from gettext import gettext as _
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ import db
+ 
+ plugin_name         = 'HTML'
+@@ -166,9 +168,8 @@
+     }
+     #}}}
+ 
+-    def __init__(self, database, locations, parent_window, debug, **kwargs):#{{{
++    def __init__(self, database, locations, parent_window, **kwargs):#{{{
+         self.db = database
+-        self.debug = debug
+         self.locations = locations
+         if kwargs.has_key('config'):
+             self.persistent_config = kwargs['config']
+@@ -214,7 +215,7 @@
+                 try:
+                     doc = minidom.parse(os.path.join(fileName, 'config.xml'))
+                 except:
+-                    self.debug.show(&quot;Can't parse configuration file for template: %s&quot;%fileName)
++                    log.info(&quot;Can't parse configuration file for template: %s&quot;%fileName)
+                     continue
+                 for template in doc.getElementsByTagName('template'):
+                     tpl_name    = self.get_node_value_by_language(template, 'name', language)
+@@ -635,7 +636,7 @@
+ 
+         # create directories
+         if not config['exported_dir']:
+-            self.debug.show(&quot;Error: Folder name not set!&quot;)
++            log.info(&quot;Error: Folder name not set!&quot;)
+             return 1
+         
+         if not os.path.isdir(config['exported_dir']):
+@@ -813,14 +814,14 @@
+                                 data = data.replace('\n', linebreak_replacement)
+                             tmp = self.fill_template(tmp, self.names[j], data, j)
+                         except UnicodeDecodeError:
+-                            self.debug.show(&quot;Unicode Decode Error occurred while decoding %s (movie number: %s)&quot; % (self.names[j], row['movies_number']))
++                            log.info(&quot;Unicode Decode Error occurred while decoding %s (movie number: %s)&quot; % (self.names[j], row['movies_number']))
+                             data = str(row[self.names[j]])
+                             if linebreak_replacement is not None:
+                                 data = data.replace('\r\n', linebreak_replacement)
+                                 data = data.replace('\n', linebreak_replacement)
+                             tmp = self.fill_template(tmp, self.names[j], data, j)
+                         except Exception, ex:
+-                            self.debug.show(&quot;Error occurred while decoding %s (movie number: %s)&quot; % (self.names[j], row['movies_number']))
++                            log.info(&quot;Error occurred while decoding %s (movie number: %s)&quot; % (self.names[j], row['movies_number']))
+                 else:
+                     tmp = self.fill_template(tmp, self.names[j], remove=True)
+                 tmp = gutils.convert_entities(tmp)
+@@ -837,14 +838,14 @@
+                         try:
+                             shutil.copy(image_file_src,    image_file_dst)
+                         except:
+-                            self.debug.show(&quot;Can't copy %s&quot; % image_file_src)
++                            log.info(&quot;Can't copy %s&quot; % image_file_src)
+                     else:    # convert posters
+                         try:
+                             im = Image.open(image_file_src, 'r').convert(config['poster_mode'])
+                             im.thumbnail((config['poster_width'], config['poster_height']), Image.ANTIALIAS)
+                             im.save(image_file_dst, config['poster_format'])
+                         except:
+-                            self.debug.show(&quot;Can't convert %s&quot; % image_file_src)
++                            log.info(&quot;Can't convert %s&quot; % image_file_src)
+ 
+             # close file if last item
+             if ((page-1)*self.entries_per_page)+item == number_of_exported_movies:
+@@ -876,7 +877,7 @@
+                 im = Image.open(image_file_src, 'r')
+             im.save(image_file_dst, config['poster_format'])
+         except:
+-            self.debug.show(&quot;Can't convert %s&quot; % image_file_src)
++            log.info(&quot;Can't convert %s&quot; % image_file_src)
+         gutils.info(self, _(&quot;Document has been generated.&quot;), self)
+         self.on_quit()
+     #}}}
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -52,7 +52,7 @@
+ plugin_version = &quot;0.4&quot;
+ 
+ class ExportPlugin:
+-    def __init__(self, database, locations, parent_window, debug, **kwargs):
++    def __init__(self, database, locations, parent_window, **kwargs):
+         self.db = database
+         self.locations = locations
+         self.parent = parent_window
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/export/PluginExportXML.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -37,7 +37,7 @@
+ 
+ class ExportPlugin:
+ 
+-    def __init__(self, database, locations, parent_window, debug, **kwargs):
++    def __init__(self, database, locations, parent_window, **kwargs):
+         self.db = database
+         self.locations = locations
+         self.parent = parent_window
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -66,7 +66,7 @@
+ 
+ class ExportPlugin:
+ 
+-    def __init__(self, database, locations, parent_window, debug, **kwargs):
++    def __init__(self, database, locations, parent_window, **kwargs):
+         self.db = database
+         self.locations = locations
+         self.parent = parent_window
+
+Modified: trunk/lib/plugins/imp/CSV.py
+===================================================================
+--- trunk/lib/plugins/imp/CSV.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/imp/CSV.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -56,7 +56,7 @@
+         try:
+             self.gtk = gtk.glade.XML(gf)
+         except:
+-            self.debug.show(&quot;Glade-file %s can not be loaded.&quot; % gf)
++            log.info(&quot;Glade-file %s can not be loaded.&quot; % gf)
+             return False
+         # open gtk window
+         self.gtk.get_widget('d_import').set_transient_for( self.widgets['window'] )
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/plugins/imp/__init__.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -44,7 +44,6 @@
+ 
+     def __init__(self, parent, fields_to_import):
+         self.db        = parent.db
+-        self.debug    = parent.debug
+         self.locations    = parent.locations
+         self.fields    = parent.field_names
+         self.conditions    = parent._conditions
+@@ -84,7 +83,7 @@
+         import gtk
+         
+         if not self.set_source(name):
+-            self.debug.show(&quot;Can't read data from file %s&quot; % name)
++            log.info(&quot;Can't read data from file %s&quot; % name)
+             return False
+         
+         self.widgets['pwindow'].show()
+@@ -128,13 +127,13 @@
+                         statement.append_whereclause( func.lower(self.db.Movie.c.title)==details['title'].lower() )
+                     tmp = statement.execute().fetchone()
+                     if tmp is not None:
+-                        self.debug.show(&quot;movie already exists (number=%s, o_title=%s)&quot; % (tmp.number, details['o_title']))
++                        log.info(&quot;movie already exists (number=%s, o_title=%s)&quot; % (tmp.number, details['o_title']))
+                         continue
+                 elif details.has_key('title') and details['title']:
+                     statement.whereclause = func.lower(self.db.Movie.c.title)==details['title'].lower()
+                     tmp = statement.execute().fetchone()
+                     if tmp is not None:
+-                        self.debug.show(&quot;movie already exists (number=%s, title=%s)&quot; % (tmp.number, details['title']))
++                        log.info(&quot;movie already exists (number=%s, title=%s)&quot; % (tmp.number, details['title']))
+                         continue
+                 validate_details(details, self.fields_to_import)
+                 if self.edit is True:
+@@ -152,9 +151,9 @@
+                         self.db.Movie.mapper.mapped_table.insert().execute(details)
+                         self.imported += 1
+                     except Exception, e:
+-                        self.debug.show(&quot;movie details are not unique, skipping: %s&quot; % str(e))
++                        log.info(&quot;movie details are not unique, skipping: %s&quot; % str(e))
+             else:
+-                self.debug.show('skipping movie without title or original title')
++                log.info('skipping movie without title or original title')
+         self.widgets['pwindow'].hide()
+         return True
+ 
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/preferences.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -23,9 +23,11 @@
+ 
+ from gettext import gettext as _
+ import os
++import socket
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++import gutils
+ import initialize
+-import gutils
+-import socket
+ 
+ try:
+     import gtkspell
+@@ -422,7 +424,7 @@
+             old['user'] != c.get('user', section='database') or \
+             old['passwd'] != c.get('passwd', section='database'))) or \
+             old['name'] != c.get('name', section='database'):
+-        self.debug.show('DATABASE: connecting to new db server...')
++        log.info('DATABASE: connecting to new db server...')
+         
+         # new database connection
+         import sql
+@@ -432,14 +434,14 @@
+         from sqlalchemy.exceptions import InvalidRequestError
+         clear_mappers()
+         try:
+-            self.db = sql.GriffithSQL(c, self.debug, self.locations['home'])
++            self.db = sql.GriffithSQL(c, self.locations['home'])
+         except InvalidRequestError, e:
+-            self.debug.show(str(e))
++            log.info(str(e))
+             c.set('type', 'sqlite', section='database')
+             w['db_type'].set_active(0)
+-            self.db = sql.GriffithSQL(c, self.debug, self.locations['home'])
++            self.db = sql.GriffithSQL(c, self.locations['home'])
+ 
+-        self.debug.show(&quot;New database Engine: %s&quot; % self.db.metadata.engine.name)
++        log.info(&quot;New database Engine: %s&quot; % self.db.metadata.engine.name)
+         
+         # initialize new database
+         self.total = int(self.db.Movie.query.count())
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-07-30 21:51:26 UTC (rev 975)
++++ trunk/lib/sql.py	2008-07-31 22:44:52 UTC (rev 976)
+@@ -27,18 +27,19 @@
+ from sqlalchemy.orm        import sessionmaker
+ from sqlalchemy.exceptions import SQLError
+ from gettext               import gettext as _
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ import os.path
+ import gutils
+ 
+ from db import * # ORM data (SQLAlchemy stuff)
+ 
+ class GriffithSQL:
+-    version = 2    # database format version, incrase after any changes in data structures
++    version = 3    # database format version, incrase after any changes in data structures
+ 
+-    def __init__(self, config, gdebug, griffith_dir):
++    def __init__(self, config, griffith_dir):
+         #mapper = Session.mapper
+-        global debug
+-        debug = gdebug
++
+         if config.get('type', None, section='database') is None:
+             config.set('type', 'sqlite', section='database')
+ 
+@@ -98,7 +99,7 @@
+             engine = create_engine(url, echo=False)
+             conn = engine.connect()
+         except Exception, e:    # InvalidRequestError, ImportError
+-            debug.show(&quot;MetaData: %s&quot; % e)
++            log.info(&quot;MetaData: %s&quot; % e)
+             config.set('type', 'sqlite', section='database')
+             gutils.warning(self, &quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+@@ -111,7 +112,7 @@
+             self.session = Session()
+             #self.metadata.bind.connect()
+         except Exception, e:
+-            debug.show(&quot;engine connection: %s&quot; % e)
++            log.info(&quot;engine connection: %s&quot; % e)
+             gutils.error(self, _('Database connection failed.'))
+             config.set('type', 'sqlite', section='database')
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+@@ -124,7 +125,7 @@
+         try:
+             v = self.session.query(Configuration).filter_by(param='version').one()    # returns None if table exists &amp;&amp; param ISNULL
+         except SQLError, e:    # table doesn't exist
+-            debug.show(&quot;DB version: %s&quot; % e)
++            log.info(&quot;DB version: %s&quot; % e)
+             v = 0
+ 
+         if v is not None and v&gt;1:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000460.html">[Griffith-svn] r977 - in trunk: . lib lib/plugins/export	lib/plugins/imp lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#459">[ date ]</a>
+              <a href="thread.html#459">[ thread ]</a>
+              <a href="subject.html#459">[ subject ]</a>
+              <a href="author.html#459">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

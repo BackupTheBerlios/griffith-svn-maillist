@@ -1,0 +1,555 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1572 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1572%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C20110823184723.1007A480EA9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001030.html">
+   <LINK REL="Next"  HREF="001032.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1572 - in trunk: . glade lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1572%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C20110823184723.1007A480EA9%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1572 - in trunk: . glade lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 23 20:47:22 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001030.html">[Griffith-svn] r1571 - in trunk: . glade
+</A></li>
+        <LI>Next message: <A HREF="001032.html">[Griffith-svn] r1573 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1031">[ date ]</a>
+              <a href="thread.html#1031">[ thread ]</a>
+              <a href="subject.html#1031">[ subject ]</a>
+              <a href="author.html#1031">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-08-23 20:47:22 +0200 (Tue, 23 Aug 2011)
+New Revision: 1572
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/edit.py
+   trunk/lib/main_treeview.py
+   trunk/lib/widgets.py
+Log:
+* added buttons to remove and add a poster within the movie edit dialog
+* fixed issue which occurs if an edited movie is saved after the selection of the main tree was changed
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/ChangeLog	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-08-23  Michael Jahn
++	* added buttons to remove and add a poster within the movie edit dialog
++
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
+ 	* new icons for loading and removing posters (toolbar and menu are now the same icons)
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/glade/griffith.glade	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -6271,14 +6271,83 @@
+                         &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
+                         &lt;property name=&quot;spacing&quot;&gt;4&lt;/property&gt;
+                         &lt;child&gt;
+-                          &lt;widget class=&quot;GtkImage&quot; id=&quot;am_image&quot;&gt;
+-                            &lt;property name=&quot;width_request&quot;&gt;40&lt;/property&gt;
+-                            &lt;property name=&quot;height_request&quot;&gt;140&lt;/property&gt;
++                          &lt;widget class=&quot;GtkHBox&quot; id=&quot;hbox46&quot;&gt;
+                             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                            &lt;property name=&quot;stock&quot;&gt;gtk-missing-image&lt;/property&gt;
++                            &lt;property name=&quot;spacing&quot;&gt;8&lt;/property&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkImage&quot; id=&quot;am_image&quot;&gt;
++                                &lt;property name=&quot;width_request&quot;&gt;40&lt;/property&gt;
++                                &lt;property name=&quot;height_request&quot;&gt;140&lt;/property&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;stock&quot;&gt;gtk-missing-image&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;expand&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;position&quot;&gt;1&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkVBox&quot; id=&quot;vbox25&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
++                                &lt;property name=&quot;spacing&quot;&gt;4&lt;/property&gt;
++                                &lt;child&gt;
++                                  &lt;widget class=&quot;GtkButton&quot; id=&quot;aadd_poster&quot;&gt;
++                                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                    &lt;property name=&quot;width_request&quot;&gt;30&lt;/property&gt;
++                                    &lt;property name=&quot;height_request&quot;&gt;30&lt;/property&gt;
++                                    &lt;property name=&quot;tooltip&quot; translatable=&quot;yes&quot;&gt;Load poster from disk&lt;/property&gt;
++                                    &lt;property name=&quot;use_stock&quot;&gt;False&lt;/property&gt;
++                                    &lt;signal name=&quot;clicked&quot; handler=&quot;on_a_open_poster_clicked&quot;/&gt;
++                                    &lt;child&gt;
++                                      &lt;widget class=&quot;GtkImage&quot; id=&quot;aadd_poster_image&quot;&gt;
++                                        &lt;property name=&quot;width_request&quot;&gt;16&lt;/property&gt;
++                                        &lt;property name=&quot;height_request&quot;&gt;16&lt;/property&gt;
++                                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                        &lt;property name=&quot;pixbuf&quot;&gt;add_poster.png&lt;/property&gt;
++                                      &lt;/widget&gt;
++                                    &lt;/child&gt;
++                                  &lt;/widget&gt;
++                                  &lt;packing&gt;
++                                    &lt;property name=&quot;position&quot;&gt;1&lt;/property&gt;
++                                    &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
++                                    &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
++                                  &lt;/packing&gt;
++                                &lt;/child&gt;
++                                &lt;child&gt;
++                                  &lt;widget class=&quot;GtkButton&quot; id=&quot;aremove_poster&quot;&gt;
++                                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                    &lt;property name=&quot;width_request&quot;&gt;30&lt;/property&gt;
++                                    &lt;property name=&quot;height_request&quot;&gt;30&lt;/property&gt;
++                                    &lt;property name=&quot;tooltip&quot; translatable=&quot;yes&quot;&gt;Remove poster&lt;/property&gt;
++                                    &lt;property name=&quot;use_stock&quot;&gt;False&lt;/property&gt;
++                                    &lt;signal name=&quot;clicked&quot; handler=&quot;on_a_delete_poster_clicked&quot;/&gt;
++                                    &lt;child&gt;
++                                      &lt;widget class=&quot;GtkImage&quot; id=&quot;aremove_poster_image&quot;&gt;
++                                        &lt;property name=&quot;width_request&quot;&gt;16&lt;/property&gt;
++                                        &lt;property name=&quot;height_request&quot;&gt;16&lt;/property&gt;
++                                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                        &lt;property name=&quot;pixbuf&quot;&gt;delete_poster.png&lt;/property&gt;
++                                      &lt;/widget&gt;
++                                    &lt;/child&gt;
++                                  &lt;/widget&gt;
++                                  &lt;packing&gt;
++                                    &lt;property name=&quot;position&quot;&gt;2&lt;/property&gt;
++                                    &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
++                                    &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
++                                  &lt;/packing&gt;
++                                &lt;/child&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
++                                &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
+                           &lt;/widget&gt;
+                           &lt;packing&gt;
+-                            &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;2&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                         &lt;child&gt;
+@@ -6289,7 +6358,7 @@
+                             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;padding&quot;&gt;4&lt;/property&gt;
+-                            &lt;property name=&quot;position&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                         &lt;child&gt;
+@@ -6301,7 +6370,7 @@
+                           &lt;packing&gt;
+                             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+-                            &lt;property name=&quot;position&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;5&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                         &lt;child&gt;
+@@ -6333,7 +6402,7 @@
+                           &lt;packing&gt;
+                             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+-                            &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;6&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                         &lt;child&gt;
+@@ -6345,7 +6414,7 @@
+                           &lt;packing&gt;
+                             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+-                            &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;7&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                         &lt;child&gt;
+@@ -6393,7 +6462,7 @@
+                           &lt;packing&gt;
+                             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+-                            &lt;property name=&quot;position&quot;&gt;5&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;8&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                         &lt;child&gt;
+@@ -6408,7 +6477,7 @@
+                           &lt;packing&gt;
+                             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+                             &lt;property name=&quot;fill&quot;&gt;False&lt;/property&gt;
+-                            &lt;property name=&quot;position&quot;&gt;6&lt;/property&gt;
++                            &lt;property name=&quot;position&quot;&gt;9&lt;/property&gt;
+                           &lt;/packing&gt;
+                         &lt;/child&gt;
+                       &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/griffith	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -383,6 +383,14 @@
+         from edit import delete_poster
+         delete_poster(self)
+ 
++    def a_change_poster(self, *args):
++        from add import change_poster
++        change_poster(self)
++
++    def a_del_poster(self, *args):
++        from add import delete_poster
++        delete_poster(self)
++
+     def z_poster(self, *args):
+         if self.widgets['poster_window'].flags() &amp; gtk.VISIBLE == gtk.VISIBLE:
+             self.widgets['poster_window'].hide()
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/add.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -60,6 +60,7 @@
+ def edit_movie(self, details={}):
+     if not 'number' in details:
+         details['number'] = gutils.find_next_available(self.db)
++    self.selected_iter_edit = self.selected_iter
+     set_details(self, details)
+     self.widgets['add']['add_button'].hide()
+     self.widgets['add']['add_close_button'].hide()
+@@ -85,8 +86,10 @@
+     new_poster_md5 = None
+     if details['image']:
+         if old_poster_md5 != details['image']: # details[&quot;image&quot;] can contain MD5 or file path
+-            new_image_path = os.path.join(self.locations['temp'], &quot;poster_%s.jpg&quot; % details['image'])
++            new_image_path = details['image']
+             if not os.path.isfile(new_image_path):
++                new_image_path = os.path.join(self.locations['temp'], &quot;poster_%s.jpg&quot; % details['image'])
++            if not os.path.isfile(new_image_path):
+                 log.warn(&quot;cannot read temporary file: %s&quot;, new_image_path)
+             else:
+                 new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+@@ -116,8 +119,7 @@
+ 
+     session.add(movie)
+     if commit(session):
+-        treeselection = self.widgets['treeview'].get_selection()
+-        main_treeview.setmovie(self, movie, self.selected_iter[0], self.treemodel)
++        main_treeview.setmovie(self, movie, self.selected_iter_edit[0], self.treemodel)
+ 
+         # close add window
+         self.widgets['add']['window'].hide()
+@@ -215,15 +217,18 @@
+                 pixbuf = self.Image.get_pixbuf()
+                 w['picture'].set_from_pixbuf(pixbuf.scale_simple(100, 140, 3))
+                 w['image'].set_text(self.movie.image)
++                w['aremove_poster'].set_sensitive(True)
+             except:
+                 image = gutils.get_defaultimage_fname(self)
+                 handler = self.Image.set_from_file(image)
+                 w['picture'].set_from_pixbuf(self.Image.get_pixbuf())
++                w['aremove_poster'].set_sensitive(False)
+         else:
+             image = gutils.get_defaultimage_fname(self)
+             handler = self.Image.set_from_file(image)
+             Pixbuf = self.Image.get_pixbuf()
+             w['picture'].set_from_pixbuf(Pixbuf)
++            w['aremove_poster'].set_sensitive(False)
+         fields_to_fetch.pop(fields_to_fetch.index('image'))
+     # other fields
+     for i in fields_to_fetch:
+@@ -600,16 +605,19 @@
+         for i in item['languages']:
+             self.create_language_row(i)
+     # poster
++    w['aremove_poster'].set_sensitive(True)
+     if 'poster_md5' in item and item['poster_md5']:
+         image_path = gutils.get_image_fname(item[&quot;poster_md5&quot;], self.db, 'm')
+         if not image_path:
+             image_path = '' # isfile doesn't like bool
++            w['aremove_poster'].set_sensitive(False)
+         w['image'].set_text(item['poster_md5'])
+     elif 'image' in item and item['image']:
+         if len(item['image']) == 32: # md5
+             image_path = gutils.get_image_fname(item[&quot;image&quot;], self.db, 'm')
+             if not image_path:
+                 image_path = '' # isfile doesn't like bool
++                w['aremove_poster'].set_sensitive(False)
+             else:
+                 w['image'].set_text(item['image'])
+         else:
+@@ -618,8 +626,10 @@
+     else:
+         w['image'].set_text('')
+         image_path = gutils.get_defaultimage_fname(self)
++        w['aremove_poster'].set_sensitive(False)
+     if not os.path.isfile(image_path):
+         image_path = gutils.get_defaultimage_fname(self)
++        w['aremove_poster'].set_sensitive(False)
+     w['picture'].set_from_file(image_path)
+ 
+     w['notebook'].set_current_page(0)
+@@ -670,7 +680,9 @@
+ 
+     new_poster_md5 = None
+     if details['image']:
+-        tmp_image_path = os.path.join(self.locations['temp'], &quot;poster_%s.jpg&quot; % details['image'])
++        tmp_image_path = details['image']
++        if not os.path.isfile(tmp_image_path):
++            tmp_image_path = os.path.join(self.locations['temp'], &quot;poster_%s.jpg&quot; % details['image'])
+         if os.path.isfile(tmp_image_path):
+             new_poster_md5 = gutils.md5sum(file(tmp_image_path, 'rb'))
+ 
+@@ -687,7 +699,8 @@
+             else:
+                 details[&quot;poster_md5&quot;] = new_poster_md5
+             try:
+-                os.remove(tmp_image_path)
++                if not tmp_image_path == details['image']:
++                    os.remove(tmp_image_path)
+             except Exception, e:
+                 log.warn(&quot;cannot remove temporary file %s&quot;, tmp_image_path)
+         else:
+@@ -897,3 +910,33 @@
+         initialize.update_collection_combo_ids(self)
+         initialize.fill_collections_combo(self, col.collection_id)
+     return col.collection_id
++
++
++def change_poster(self):
++    from edit import change_poster_select_file
++    if change_poster_select_file(self, -1, change_poster_new_movie):
++        self.widgets['add']['aremove_poster'].set_sensitive(True)
++
++
++def change_poster_new_movie(self, number, filename):
++    try:
++        handler = self.Image.set_from_file(filename)
++        pixbuf = self.Image.get_pixbuf()
++        handler = self.widgets['add']['picture'].set_from_pixbuf(pixbuf.scale_simple(100, 140, 3))
++        gutils.garbage(handler)
++        self.widgets['add']['image'].set_text(filename)
++        return True
++    except:
++        image = gutils.get_defaultimage_fname(self)
++        handler = self.Image.set_from_file(image)
++        handler = self.widgets['add']['picture'].set_from_pixbuf(self.Image.get_pixbuf())
++        gutils.garbage(handler)
++        return False
++
++
++def delete_poster(self):
++    w = self.widgets['add']
++    w['image'].set_text('')
++    image_path = gutils.get_defaultimage_fname(self)
++    w['picture'].set_from_file(image_path)
++    w['aremove_poster'].set_sensitive(False)
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/edit.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright &#169; 2005-2010 Vasco Nunes, Piotr O&#380;arowski
++# Copyright &#169; 2005-2011 Vasco Nunes, Piotr O&#380;arowski
+ 
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -42,6 +42,13 @@
+     if number is None:
+         gutils.error(_(&quot;You have no movies in your database&quot;), self.widgets['window'])
+         return False
++    return change_poster_select_file(self, number)
++
++def update_image(self, number, filename):
++    imagedata = file(filename, 'rb').read()
++    return update_image_from_memory(self, number, imagedata)
++
++def change_poster_select_file(self, number, handler = update_image):
+     filename = gutils.file_chooser(_(&quot;Select image&quot;),
+                                    action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                                    buttons=(gtk.STOCK_CANCEL,
+@@ -53,14 +60,10 @@
+                                    picture=True)
+     if filename and filename[0]:
+         filename = filename[0].decode('UTF-8')
+-        update_image(self, number, filename)
++        if handler:
++            return handler(self, number, filename)
++    return False
+ 
+-
+-def update_image(self, number, filename):
+-    imagedata = file(filename, 'rb').read()
+-    update_image_from_memory(self, number, imagedata)
+-
+-
+ def update_image_from_memory(self, number, data):
+     session = self.db.Session()
+     try:
+@@ -109,20 +112,17 @@
+     self.widgets['add']['delete_poster'].set_sensitive(True)
+ 
+     self.update_statusbar(_(&quot;Image has been updated&quot;))
++    return True
+ 
+-
+-def delete_poster(self):
++def delete_poster(self, movie_id = None):
++    if movie_id is None:
++        movie_id = self._movie_id
+     session = self.db.Session()
+-    movie = session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
++    movie = session.query(db.Movie).filter_by(movie_id=movie_id).first()
+     if not movie:
+         log.error(&quot;Cannot delete unknown movie's poster!&quot;)
+         return False
+     if gutils.question(_(&quot;Are you sure you want to delete this poster?&quot;), self.widgets['window']):
+-        image_path = gutils.get_defaultimage_fname(self)
+-        handler = self.widgets['movie']['picture'].set_from_pixbuf(gtk.gdk.pixbuf_new_from_file(image_path))
+-        gutils.garbage(handler)
+-        update_tree_thumbnail(self, gutils.get_defaultthumbnail_fname(self))
+-
+         # update in database
+         delete.delete_poster(self, movie.poster_md5)
+         movie.poster_md5 = None
+@@ -134,14 +134,21 @@
+             log.error(&quot;cannot delete poster: %s&quot; % e)
+             return False
+ 
++        if self._movie_id == movie_id:
++            # only if the current selected movie is the same like that one for removing poster
++            image_path = gutils.get_defaultimage_fname(self)
++            handler = self.widgets['movie']['picture'].set_from_pixbuf(gtk.gdk.pixbuf_new_from_file(image_path))
++            gutils.garbage(handler)
++            self.widgets['add']['delete_poster'].set_sensitive(False)
++            self.widgets['movie']['picture_button'].set_sensitive(False)
++        # always refresh the treeview entry
++        update_tree_thumbnail(self, gutils.get_defaultthumbnail_fname(self))
++
+         self.update_statusbar(_(&quot;Image has been updated&quot;))
+ 
+-        self.widgets['add']['delete_poster'].set_sensitive(False)
+-        self.widgets['movie']['picture_button'].set_sensitive(False)
+-    else:
+-        pass
++        return True
++    return False
+ 
+-
+ def update_tree_thumbnail(self, t_image_path):
+     self.Image.set_from_file(t_image_path)
+     pixbuf = self.Image.get_pixbuf()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/main_treeview.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -266,6 +266,7 @@
+             w['picture_button'].set_sensitive(False)
+     else:
+         image_path = gutils.get_defaultimage_fname(self)
++        self.widgets['add']['delete_poster'].set_sensitive(False)
+         w['picture_button'].set_sensitive(False)
+     w['picture'].set_from_file(image_path)
+     # ratig
+@@ -324,8 +325,9 @@
+                 self.loans_treemodel.set_value(myiter, 1, str(loan.return_date)[:10])
+             else:
+                 self.loans_treemodel.set_value(myiter, 1, &quot;---&quot;)
+-            person = self.db.session.query(db.Person.name).filter_by(person_id=loan.person.person_id).first()
+-            self.loans_treemodel.set_value(myiter, 2, person.name)
++            if loan.person:
++                person = self.db.session.query(db.Person.name).filter_by(person_id=loan.person.person_id).first()
++                self.loans_treemodel.set_value(myiter, 2, person.name)
+ 
+     # volumes/collections
+     if 'volume_id' in item and item['volume_id'] &gt; 0:
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2011-08-20 07:23:30 UTC (rev 1571)
++++ trunk/lib/widgets.py	2011-08-23 18:47:22 UTC (rev 1572)
+@@ -3,7 +3,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#380;arowski
++# Copyright (c) 2005-2011 Vasco Nunes, Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -145,12 +145,16 @@
+         'clear_button': get('am_clear_button'),
+         'save_button': get('am_save_button'),
+         'cb_only_empty': get('am_cb_only_empty'),
++        'aremove_poster': get('aremove_poster'),
++        'aadd_poster': get('aadd_poster'),
+     }
+     self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+     self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
+     self.widgets['add']['o_title'].connect('activate', self.on_enter)
+     self.widgets['add']['title'].connect('activate', self.on_enter)
+     self.widgets['add']['window'].set_transient_for(self.widgets['window'])
++    self.widgets['add']['aadd_poster'].connect('button_press_event', self.a_change_poster)
++    self.widgets['add']['aremove_poster'].connect('button_press_event', self.a_del_poster)
+ 
+     #}}}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001030.html">[Griffith-svn] r1571 - in trunk: . glade
+</A></li>
+	<LI>Next message: <A HREF="001032.html">[Griffith-svn] r1573 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1031">[ date ]</a>
+              <a href="thread.html#1031">[ thread ]</a>
+              <a href="subject.html#1031">[ subject ]</a>
+              <a href="author.html#1031">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

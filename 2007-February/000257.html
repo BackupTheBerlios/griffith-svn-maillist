@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r737 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r737%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702201503.l1KF3OsG030714%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000256.html">
+   <LINK REL="Next"  HREF="000258.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r737 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r737%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702201503.l1KF3OsG030714%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r737 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 20 16:03:24 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000256.html">[Griffith-svn] r736 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000258.html">[Griffith-svn] r738 - in trunk: . images lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#257">[ date ]</a>
+              <a href="thread.html#257">[ thread ]</a>
+              <a href="subject.html#257">[ subject ]</a>
+              <a href="author.html#257">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-02-20 16:03:24 +0100 (Tue, 20 Feb 2007)
+New Revision: 737
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDB movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-19 14:53:38 UTC (rev 736)
++++ trunk/ChangeLog	2007-02-20 15:03:24 UTC (rev 737)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-02-20  Piotr O&#380;arowski
++	* IMDB movie plugin updated
++
+ 2007-02-19  Piotr O&#380;arowski
+ 	* CSFD movie plugin updated (still needs work)
+ 	* DVDEmpire movie plugin added (thanks to Michael Jahn)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-02-19 14:53:38 UTC (rev 736)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-02-20 15:03:24 UTC (rev 737)
+@@ -30,9 +30,9 @@
+ plugin_description	= 'Internet Movie Database'
+ plugin_url		= 'www.imdb.com'
+ plugin_language		= _('English')
+-plugin_author		= 'Vasco Nunes'
+-plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;'
+-plugin_version		= '1.0'
++plugin_author		= 'Vasco Nunes, Piotr O&#380;arowski'
++plugin_author_email	= '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++plugin_version		= '1.1'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -48,44 +48,42 @@
+ 			self.image_url = gutils.trim(self.page[tmp:], 'src=&quot;', '&quot;')
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '&lt;strong class=&quot;title&quot;&gt;', ' &lt;small&gt;')
++		self.o_title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
+ 
+-	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;strong class=&quot;title&quot;&gt;', ' &lt;small&gt;')
++	def get_title(self):	# same as get_o_title()
++		self.title = gutils.trim(self.page, '&lt;h1&gt;', ' &lt;span')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,'Directed by&lt;/b&gt;&lt;br&gt;', '&lt;br&gt;')
++		self.director = gutils.trim(self.page,'&lt;h5&gt;Directed by&lt;/h5&gt;', '&lt;br/&gt;\n&lt;br/&gt;')
++		self.director = self.director.replace('&lt;br/&gt;', ', ')
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page, '&lt;b class=&quot;ch&quot;&gt;Plot', '&lt;a href=&quot;/rg/title-tease/plot')
+-		self.plot = gutils.after(self.plot, ':&lt;/b&gt; ')
++		self.plot = gutils.trim(self.page, '&lt;h5&gt;Plot Outline:&lt;/h5&gt;', '&lt;/div&gt;')
++		self.plot = self.__before_more(self.plot)
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page, '&lt;a href=&quot;/Sections/Years/', '&lt;/a&gt;)&lt;/small&gt;')
++		self.year = gutils.trim(self.page, '&lt;a href=&quot;/Sections/Years/', '&lt;/a&gt;')
+ 		self.year = gutils.after(self.year, '&quot;&gt;')
+ 
+ 	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page, '&lt;b class=&quot;ch&quot;&gt;Runtime:&lt;/b&gt;', ' min')
++		self.runtime = gutils.trim(self.page, '&lt;h5&gt;Runtime:&lt;/h5&gt;', ' min')
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page, '&lt;a href=&quot;/Sections/Genres/', '&lt;br&gt;')
+-		self.genre = gutils.after(self.genre, '/&quot;&gt;')
+-		self.genre = string.replace(self.genre, '(more)', '')
++		self.genre = gutils.trim(self.page, '&lt;h5&gt;Genre:&lt;/h5&gt;', '&lt;/div&gt;')
++		self.genre = self.__before_more(self.genre)
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+-		self.cast = gutils.trim(self.page, 'Cast overview, first billed only:', '&lt;a href=&quot;fullcredits&quot;&gt;')
+-		if (self.cast==''):
+-			self.cast = gutils.trim(self.page, 'cast: ','&lt;a href=&quot;fullcredits&quot;&gt;')
+-		self.cast = string.replace(self.cast, ' .... ', _(' as '))
++		self.cast = gutils.trim(self.page, '&lt;table class=&quot;cast&quot;&gt;', '&lt;/table&gt;')
++		self.cast = string.replace(self.cast, ' ... ', _(' as '))
+ 		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr&gt;', &quot;\n&quot;)
+-		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr bgcolor=&quot;#FFFFFF&quot;&gt;', &quot;\n&quot;)
+-		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr bgcolor=&quot;#F0F0F0&quot;&gt;', &quot;\n&quot;)
+-		self.cast = string.strip(gutils.strip_tags(self.cast))
++		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;even&quot;&gt;', &quot;\n&quot;)
++		self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr class=&quot;odd&quot;&gt;', &quot;\n&quot;)
++		self.cast = self.__before_more(self.cast)
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.page, 'MPAA&lt;/a&gt;:&lt;/b&gt; ', '.&lt;br&gt;')
+-		self.classification = ''
++		self.classification = gutils.trim(self.page, '&lt;h5&gt;&lt;a href=&quot;/mpaa&quot;&gt;MPAA&lt;/a&gt;:&lt;/h5&gt;', '&lt;/div&gt;')
++		self.classification = gutils.trim(self.classification, 'Rated ', ' ')
+ 
+ 	def get_studio(self):
+ 		self.studio = ''
+@@ -100,14 +98,38 @@
+ 		self.trailer = &quot;<A HREF="http://www.imdb.com/title/tt%s/trailers">http://www.imdb.com/title/tt%s/trailers</A>&quot; % self.movie_id
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page, '&lt;b class=&quot;ch&quot;&gt;Country:&lt;/b&gt;', '&lt;/a&gt;')
+-		self.country = gutils.after(self.country, '/&quot;&gt;')
++		self.country = gutils.trim(self.page, '&lt;h5&gt;Country:&lt;/h5&gt;', '&lt;/div&gt;')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '&lt;b class=&quot;ch&quot;&gt;User Rating:&lt;/b&gt;', '/10&lt;/b&gt; (')
++		self.rating = gutils.trim(self.page, '&lt;b&gt;User Rating:&lt;/b&gt;', '/10')
+ 		if self.rating:
+ 			self.rating = str(float(gutils.clean(self.rating)))
+ 
++	def get_notes(self):
++		language = gutils.trim(self.page, '&lt;h5&gt;Language:&lt;/h5&gt;', '&lt;/div&gt;')
++		language = gutils.strip_tags(language)
++		color = gutils.trim(self.page, '&lt;h5&gt;Color:&lt;/h5&gt;', '&lt;/div&gt;')
++		color = gutils.strip_tags(color)
++		sound = gutils.trim(self.page, '&lt;h5&gt;Sound Mix:&lt;/h5&gt;', '&lt;/div&gt;')
++		sound = gutils.strip_tags(sound)
++		tagline = gutils.trim(self.page, '&lt;h5&gt;Tagline:&lt;/h5&gt;', '&lt;/div&gt;')
++		tagline = self.__before_more(tagline)
++		tagline = gutils.strip_tags(tagline)
++		if len(language)&gt;0:
++			self.notes = &quot;%s: %s\n&quot; %(_('Language'), language)
++		if len(sound)&gt;0:
++			self.notes += &quot;%s: %s\n&quot; %(gutils.strip_tags(_('&lt;b&gt;Audio&lt;/b&gt;')), sound)
++		if len(color)&gt;0:
++			self.notes += &quot;%s: %s\n&quot; %(_('Color'), color)
++		if len(tagline)&gt;0:
++			self.notes += &quot;%s: %s\n&quot; %('Tagline', tagline)
++	
++	def __before_more(self, data):
++		tmp = string.find(data, '&gt;more&lt;')
++		if tmp&gt;0:
++			data = data[:tmp] + '&gt;'
++		return data
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+ 	def __init__(self):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000256.html">[Griffith-svn] r736 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000258.html">[Griffith-svn] r738 - in trunk: . images lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#257">[ date ]</a>
+              <a href="thread.html#257">[ thread ]</a>
+              <a href="subject.html#257">[ subject ]</a>
+              <a href="author.html#257">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

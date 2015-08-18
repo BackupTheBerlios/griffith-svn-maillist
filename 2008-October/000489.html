@@ -1,0 +1,469 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1009 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1009%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200810192006.m9JK6lGj011511%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000488.html">
+   <LINK REL="Next"  HREF="000490.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1009 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1009%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200810192006.m9JK6lGj011511%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1009 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 19 22:06:47 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000488.html">[Griffith-svn] r1008 - trunk/glade
+</A></li>
+        <LI>Next message: <A HREF="000490.html">[Griffith-svn] r1010 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#489">[ date ]</a>
+              <a href="thread.html#489">[ thread ]</a>
+              <a href="subject.html#489">[ subject ]</a>
+              <a href="author.html#489">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-10-19 22:06:45 +0200 (Sun, 19 Oct 2008)
+New Revision: 1009
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/advfilter.py
+   trunk/lib/initialize.py
+   trunk/lib/widgets.py
+Log:
+Add more filter movie rules to the search window (dynamic ones this time)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-10-19 18:09:48 UTC (rev 1008)
++++ trunk/ChangeLog	2008-10-19 20:06:45 UTC (rev 1009)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2008-10-19  Piotr O&#380;arowski
+-	* Add tags/volumes/collections/loans to adv. filter window
++	* Add more filter movie rules to the search window
+ 
+ 2008-10-18  Piotr O&#380;arowski
+ 	* Speed up import movies function
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2008-10-19 18:09:48 UTC (rev 1008)
++++ trunk/glade/griffith.glade	2008-10-19 20:06:45 UTC (rev 1009)
+@@ -7900,7 +7900,7 @@
+     &lt;property name=&quot;border_width&quot;&gt;5&lt;/property&gt;
+     &lt;property name=&quot;title&quot; translatable=&quot;yes&quot;&gt;Filter movies&lt;/property&gt;
+     &lt;property name=&quot;window_position&quot;&gt;GTK_WIN_POS_CENTER_ON_PARENT&lt;/property&gt;
+-    &lt;property name=&quot;default_height&quot;&gt;350&lt;/property&gt;
++    &lt;property name=&quot;default_height&quot;&gt;550&lt;/property&gt;
+     &lt;property name=&quot;type_hint&quot;&gt;GDK_WINDOW_TYPE_HINT_DIALOG&lt;/property&gt;
+     &lt;property name=&quot;has_separator&quot;&gt;False&lt;/property&gt;
+     &lt;child internal-child=&quot;vbox&quot;&gt;
+@@ -7923,7 +7923,7 @@
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;spacing&quot;&gt;4&lt;/property&gt;
+                     &lt;child&gt;
+-                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;frame8&quot;&gt;
++                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;af_frame_limits&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                         &lt;property name=&quot;label_xalign&quot;&gt;0&lt;/property&gt;
+                         &lt;child&gt;
+@@ -8052,7 +8052,7 @@
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
+-                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;frame9&quot;&gt;
++                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;af_frame_tags&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                         &lt;property name=&quot;label_xalign&quot;&gt;0&lt;/property&gt;
+                         &lt;child&gt;
+@@ -8063,6 +8063,7 @@
+                               &lt;widget class=&quot;GtkScrolledWindow&quot; id=&quot;scrolledwindow_advfilter_tags&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
+                                 &lt;property name=&quot;hscrollbar_policy&quot;&gt;GTK_POLICY_NEVER&lt;/property&gt;
+                                 &lt;property name=&quot;vscrollbar_policy&quot;&gt;GTK_POLICY_AUTOMATIC&lt;/property&gt;
+                                 &lt;child&gt;
+@@ -8099,7 +8100,7 @@
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
+-                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;frame11&quot;&gt;
++                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;af_frame_volumes&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                         &lt;property name=&quot;label_xalign&quot;&gt;0&lt;/property&gt;
+                         &lt;child&gt;
+@@ -8110,6 +8111,7 @@
+                               &lt;widget class=&quot;GtkScrolledWindow&quot; id=&quot;scrolledwindow_advfilter_volumes&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
+                                 &lt;property name=&quot;hscrollbar_policy&quot;&gt;GTK_POLICY_NEVER&lt;/property&gt;
+                                 &lt;property name=&quot;vscrollbar_policy&quot;&gt;GTK_POLICY_AUTOMATIC&lt;/property&gt;
+                                 &lt;child&gt;
+@@ -8146,7 +8148,7 @@
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
+-                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;frame12&quot;&gt;
++                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;af_frame_collections&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                         &lt;property name=&quot;label_xalign&quot;&gt;0&lt;/property&gt;
+                         &lt;child&gt;
+@@ -8157,6 +8159,7 @@
+                               &lt;widget class=&quot;GtkScrolledWindow&quot; id=&quot;scrolledwindow_advfilter_collections&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
+                                 &lt;property name=&quot;hscrollbar_policy&quot;&gt;GTK_POLICY_NEVER&lt;/property&gt;
+                                 &lt;property name=&quot;vscrollbar_policy&quot;&gt;GTK_POLICY_AUTOMATIC&lt;/property&gt;
+                                 &lt;child&gt;
+@@ -8193,7 +8196,7 @@
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
+-                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;frame28&quot;&gt;
++                      &lt;widget class=&quot;GtkFrame&quot; id=&quot;af_frame_loans&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                         &lt;property name=&quot;label_xalign&quot;&gt;0&lt;/property&gt;
+                         &lt;child&gt;
+@@ -8204,6 +8207,7 @@
+                               &lt;widget class=&quot;GtkScrolledWindow&quot; id=&quot;scrolledwindow_advfilter_loans&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
+                                 &lt;property name=&quot;hscrollbar_policy&quot;&gt;GTK_POLICY_NEVER&lt;/property&gt;
+                                 &lt;property name=&quot;vscrollbar_policy&quot;&gt;GTK_POLICY_AUTOMATIC&lt;/property&gt;
+                                 &lt;child&gt;
+@@ -8240,7 +8244,14 @@
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
+-                      &lt;placeholder/&gt;
++                      &lt;widget class=&quot;GtkVBox&quot; id=&quot;af_dynamic_vbox&quot;&gt;
++                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;spacing&quot;&gt;2&lt;/property&gt;
++                      &lt;/widget&gt;
++                      &lt;packing&gt;
++                        &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
++                        &lt;property name=&quot;position&quot;&gt;5&lt;/property&gt;
++                      &lt;/packing&gt;
+                     &lt;/child&gt;
+                   &lt;/widget&gt;
+                 &lt;/child&gt;
+@@ -8256,6 +8267,22 @@
+             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+             &lt;property name=&quot;layout_style&quot;&gt;GTK_BUTTONBOX_END&lt;/property&gt;
+             &lt;child&gt;
++              &lt;widget class=&quot;GtkButton&quot; id=&quot;af_add_button&quot;&gt;
++                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                &lt;property name=&quot;receives_default&quot;&gt;True&lt;/property&gt;
++                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-add&lt;/property&gt;
++                &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
++                &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++              &lt;/widget&gt;
++              &lt;packing&gt;
++                &lt;property name=&quot;secondary&quot;&gt;True&lt;/property&gt;
++              &lt;/packing&gt;
++            &lt;/child&gt;
++            &lt;child&gt;
++              &lt;placeholder/&gt;
++            &lt;/child&gt;
++            &lt;child&gt;
+               &lt;widget class=&quot;GtkButton&quot; id=&quot;button3&quot;&gt;
+                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+@@ -8264,6 +8291,9 @@
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
+               &lt;/widget&gt;
++              &lt;packing&gt;
++                &lt;property name=&quot;position&quot;&gt;2&lt;/property&gt;
++              &lt;/packing&gt;
+             &lt;/child&gt;
+             &lt;child&gt;
+               &lt;widget class=&quot;GtkButton&quot; id=&quot;button4&quot;&gt;
+@@ -8275,7 +8305,7 @@
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+-                &lt;property name=&quot;position&quot;&gt;1&lt;/property&gt;
++                &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
+               &lt;/packing&gt;
+             &lt;/child&gt;
+             &lt;child&gt;
+@@ -8288,7 +8318,7 @@
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+-                &lt;property name=&quot;position&quot;&gt;2&lt;/property&gt;
++                &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
+               &lt;/packing&gt;
+             &lt;/child&gt;
+             &lt;child&gt;
+@@ -8296,13 +8326,13 @@
+                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;receives_default&quot;&gt;True&lt;/property&gt;
+-                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-cancel&lt;/property&gt;
++                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-close&lt;/property&gt;
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
+                 &lt;signal name=&quot;clicked&quot; handler=&quot;on_advfilter_close&quot;/&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+-                &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
++                &lt;property name=&quot;position&quot;&gt;5&lt;/property&gt;
+               &lt;/packing&gt;
+             &lt;/child&gt;
+             &lt;child&gt;
+@@ -8310,13 +8340,13 @@
+                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;receives_default&quot;&gt;True&lt;/property&gt;
+-                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-ok&lt;/property&gt;
++                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;gtk-find&lt;/property&gt;
+                 &lt;property name=&quot;use_stock&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
+-                &lt;signal name=&quot;clicked&quot; handler=&quot;on_apply_filter_clicked&quot;/&gt;
++                &lt;signal name=&quot;clicked&quot; handler=&quot;on_af_find_clicked&quot;/&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+-                &lt;property name=&quot;position&quot;&gt;4&lt;/property&gt;
++                &lt;property name=&quot;position&quot;&gt;6&lt;/property&gt;
+               &lt;/packing&gt;
+             &lt;/child&gt;
+           &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-10-19 18:09:48 UTC (rev 1008)
++++ trunk/griffith	2008-10-19 20:06:45 UTC (rev 1009)
+@@ -963,10 +963,9 @@
+         from advfilter import hide_window
+         hide_window(self)
+ 
+-    def on_apply_filter_clicked(self, *args):
++    def on_af_find_clicked(self, *args):
+         from advfilter import create_select_query, hide_window
+         movies = create_select_query(self, None, None, None).execute().fetchall()
+-        hide_window(self)
+         main_treeview.populate(self, movies, qf=False)
+ 
+     # quick filter operations ---------------------------------------------
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2008-10-19 18:09:48 UTC (rev 1008)
++++ trunk/lib/advfilter.py	2008-10-19 20:06:45 UTC (rev 1009)
+@@ -42,17 +42,22 @@
+     'loaned_to'       : set(), # list of person_ids	    (search for movies loaned to these people)
+     'loan_history'    : set(), # list of person_ids	    (search for movies which were loaned by these people)
+     'sort_by'         : set((&quot;number&quot;,)), # &quot;number DESC&quot;
+-    'equals'          : {}, # {column1: [value1, value2, ...], column2: []}
++    'equals'          : {}, # {column1: set(value1, value2), column2: set(value3)}
+     'startswith'      : {}, # see above
+     'contains'        : {}, # see above
+     'like'            : {}, # see above
+     'ilike'           : {}, # see above
+     }
++    
++QUERY_FIELDS = ('title', 'o_title', 'director', 'plot', 'cast', 'notes', 'number',
++                'runtime', 'year', 'screenplay', 'cameraman', 'country', 'genre',
++                'studio', 'classification', 'o_site', 'site', 'trailer')
++QUERY_COMMANDS = ('equals', 'startswith', 'contains', 'like', 'ilike')
+ 
+ # widgets -----------------------------------------------------{{{
+ 
+ def show_window(self):
+-    initialize(self.widgets['advfilter'], self.db)
++    initialize(self.widgets['advfilter'], self.db, self.field_names)
+     self.widgets['advfilter']['window'].show()
+     return True
+ 
+@@ -69,6 +74,8 @@
+         i.destroy()
+     for i in widgets['loans_vbox'].get_children():
+         i.destroy()
++    for i in widgets['dynamic_vbox'].get_children():
++        i.destroy()
+ 
+     return True
+ 
+@@ -94,7 +101,7 @@
+         label_id.hide()
+         container.pack_start(hbox)
+ 
+-def initialize(widgets, gsql):
++def initialize(widgets, gsql, field_names):
+     # tags
+     items = gsql.session.query(db.Tag).all()
+     options = (_('ignore'), _('with'), _('without'), _('require'))
+@@ -114,7 +121,39 @@
+     items = gsql.session.query(db.Person).all()
+     options = (_('ignore'), _('loaned to '), _('loan history'))
+     _fill_container(widgets[&quot;loans_vbox&quot;], items, options, 'person_id')
++
++    add_query_widget(widgets['dynamic_vbox'], gsql, field_names)
++
++    # TODO: this has to be done only once, move it outside initialize()
++    widgets[&quot;add_button&quot;].connect('clicked', lambda w: add_query_widget(widgets['dynamic_vbox'], gsql, field_names))
++    
+     return True
++
++def add_query_widget(container, gsql, field_names):
++    hbox = gtk.HBox()
++
++    cb = gtk.combo_box_new_text()
++    for field in QUERY_FIELDS:
++        cb.append_text(field_names[field])
++    cb.set_active(0)
++
++    action_cb = gtk.combo_box_new_text()
++    for command in QUERY_COMMANDS:
++        action_cb.append_text(_(command))
++    action_cb.set_active(0)
++
++    entry = gtk.Entry()
++    
++    button = gtk.Button(stock=gtk.STOCK_DELETE)
++    button.connect(&quot;clicked&quot;, lambda w: hbox.destroy())
++
++    hbox.pack_start(cb, expand=False)
++    hbox.pack_start(action_cb, expand=False)
++    hbox.pack_start(entry, expand=True, padding=8)
++    hbox.pack_start(button, expand=False, fill=False)
++    hbox.show_all()
++
++    container.pack_start(hbox)
+ #}}}
+ 
+ # database related --------------------------------------------
+@@ -168,17 +207,28 @@
+             cond[&quot;loaned_to&quot;].add(int(childs[0].get_label()))
+         elif childs[3].get_active():
+             cond[&quot;loan_history&quot;].add(int(childs[0].get_label()))
++    
++    for hbox in widgets[&quot;dynamic_vbox&quot;]:
++        childs = hbox.get_children()
+ 
+-    # TODO: remove after tests
+-    cond.update({
+-        #'tags'      : [1],
+-        #'no_tags'   : [1],
+-        #'collections'   : set((1,)),
+-        'sort_by'   : set((&quot;title&quot;, &quot;year&quot;, &quot;number DESC&quot;)),
+-        #'equals'    : {&quot;year&quot;: [2003, 2004]},
+-        #'startswith': {&quot;o_title&quot;: [u&quot;Ma&quot;, u&quot;Ani&quot;] }
+-        #'contains'  : {&quot;o_title&quot;: [u&quot;ma&quot;, u&quot;ani&quot;] },
+-        })
++        entry = childs[2].get_text().strip().decode('utf-8')
++        if not entry: # ignore if it's empty
++            continue
++
++        field = childs[0].get_active()
++        if 0 &lt; field &gt; len(QUERY_FIELDS):
++            continue
++        else:
++            field = QUERY_FIELDS[field]
++            
++            command = childs[1].get_active()
++            if 0 &lt; command &gt; len(QUERY_COMMANDS):
++                continue
++            else:
++                command = QUERY_COMMANDS[command]
++            
++        cond[command].setdefault(field, set()).add(entry)
++
+     return cond # }}}
+ 
+ def get_select_columns(config): # {{{
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-10-19 18:09:48 UTC (rev 1008)
++++ trunk/lib/initialize.py	2008-10-19 20:06:45 UTC (rev 1009)
+@@ -608,6 +608,7 @@
+         'runtime', 'country', 'genre', 'studio', 'media_num', 'rating')
+     self.field_names = {
+         'cast'           : _('Cast'),
++        'cameraman'      : _('Cameraman'),
+         'classification' : _('Classification'),
+         'collection_id'  : _('Collection'),
+         'color'          : _('Color'),
+@@ -628,6 +629,7 @@
+         'rating'         : _('Rating'),
+         'region'         : _('Region'),
+         'runtime'        : _('Runtime'),
++        'screenplay'     : _('Screenplay'),
+         'seen'           : _('Seen it'),
+         'site'           : _('Site'),
+         'studio'         : _('Studio'),
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-10-19 18:09:48 UTC (rev 1008)
++++ trunk/lib/widgets.py	2008-10-19 20:06:45 UTC (rev 1009)
+@@ -157,6 +157,8 @@
+         'volumes_vbox'     : get('af_volumes_vbox'),
+         'collections_vbox' : get('af_collections_vbox'),
+         'loans_vbox'       : get('af_loans_vbox'),
++        'dynamic_vbox'     : get('af_dynamic_vbox'),
++        'add_button'       : get('af_add_button'),
+     }
+     self.widgets['advfilter']['window'].connect('delete_event', self.hide_advfilter_window)
+     self.widgets['advfilter']['window'].set_transient_for(self.widgets['window'])
+@@ -484,7 +486,7 @@
+         'on_vcodec_name_combo_changed'           : self.on_vcodec_name_combo_changed,
+         # advfilter
+         'on_open_advfilterwindow_clicked'        : self.show_advfilter_window,
+-        'on_apply_filter_clicked'                : self.on_apply_filter_clicked,
++        'on_af_find_clicked'                     : self.on_af_find_clicked,
+         'on_advfilter_close'                     : self.hide_advfilter_window,
+     })#}}}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000488.html">[Griffith-svn] r1008 - trunk/glade
+</A></li>
+	<LI>Next message: <A HREF="000490.html">[Griffith-svn] r1010 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#489">[ date ]</a>
+              <a href="thread.html#489">[ thread ]</a>
+              <a href="subject.html#489">[ subject ]</a>
+              <a href="author.html#489">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

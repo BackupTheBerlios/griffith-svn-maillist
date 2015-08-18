@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r755 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r755%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200704151633.l3FGX52R031225%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000273.html">
+   <LINK REL="Next"  HREF="000275.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r755 - in trunk: . lib lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r755%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200704151633.l3FGX52R031225%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r755 - in trunk: . lib lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 15 18:33:05 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000273.html">[Griffith-svn] r754 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000275.html">[Griffith-svn] r756 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#274">[ date ]</a>
+              <a href="thread.html#274">[ thread ]</a>
+              <a href="subject.html#274">[ subject ]</a>
+              <a href="author.html#274">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-04-15 18:33:04 +0200 (Sun, 15 Apr 2007)
+New Revision: 755
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/edit.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+* IMDB movie plugin updated to version 1.3
+* Fetch from Amazon function fixed (&quot;No image available&quot; image issue)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-15 16:07:08 UTC (rev 754)
++++ trunk/ChangeLog	2007-04-15 16:33:04 UTC (rev 755)
+@@ -5,7 +5,8 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 2007-04-15  Piotr O&#380;arowski
+-	* IMDB movie plugin updated to version 1.2
++	* IMDB movie plugin updated to version 1.3 (director, rating)
++	* Fetch from Amazon function fixed (&quot;No image available&quot; image issue)
+ 
+ 2007-04-11  Piotr O&#380;arowski
+ 	* Fixed medium_id and vcodec_id column type in movies table
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-04-15 16:07:08 UTC (rev 754)
++++ trunk/lib/edit.py	2007-04-15 16:33:04 UTC (rev 755)
+@@ -219,6 +219,10 @@
+ 		if im.size == (1,1):
+ 			from urllib import FancyURLopener, urlretrieve
+ 			url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % result[f].Asin).read()
++			if url.find('<A HREF="http://ec1.images-amazon.com/images/G/01/x-site/icons/no-img-sm._V47056216_.gif">http://ec1.images-amazon.com/images/G/01/x-site/icons/no-img-sm._V47056216_.gif</A>') &gt; 0:
++				self.debug.show('No image available')
++				gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++				return False
+ 			url = gutils.after(url, 'id=&quot;imageViewerDiv&quot;&gt;&lt;img src=&quot;')
+ 			url = gutils.before(url, '&quot; id=&quot;prodImage&quot;')
+ 			urlretrieve(url, file_to_copy)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-15 16:07:08 UTC (rev 754)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-04-15 16:33:04 UTC (rev 755)
+@@ -31,7 +31,7 @@
+ plugin_language		= _('English')
+ plugin_author		= 'Vasco Nunes, Piotr O&#380;arowski'
+ plugin_author_email	= '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+-plugin_version		= '1.2'
++plugin_version		= '1.3'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -104,8 +104,13 @@
+ 
+ 	def get_rating(self):
+ 		self.rating = gutils.trim(self.page, '&lt;b&gt;User Rating:&lt;/b&gt;', '/10')
+-		if self.rating:
+-			self.rating = str(float(gutils.clean(self.rating)))
++		if self.rating and self.rating.find('awaiting') == -1:
++			try:
++				self.rating = float(self.rating)
++			except Exception, e:
++				self.rating = 0
++		else:
++			self.rating = 0
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000273.html">[Griffith-svn] r754 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000275.html">[Griffith-svn] r756 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#274">[ date ]</a>
+              <a href="thread.html#274">[ thread ]</a>
+              <a href="subject.html#274">[ subject ]</a>
+              <a href="author.html#274">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

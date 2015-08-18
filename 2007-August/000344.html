@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r835 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r835%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200708260944.l7Q9inN9014212%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000343.html">
+   <LINK REL="Next"  HREF="000345.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r835 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r835%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200708260944.l7Q9inN9014212%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r835 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug 26 11:44:49 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000343.html">[Griffith-svn] r834 - in trunk: . debian export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000345.html">[Griffith-svn] r836 - in trunk: . images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#344">[ date ]</a>
+              <a href="thread.html#344">[ thread ]</a>
+              <a href="subject.html#344">[ subject ]</a>
+              <a href="author.html#344">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-08-26 11:44:48 +0200 (Sun, 26 Aug 2007)
+New Revision: 835
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/backup.py
+Log:
+Fix encoding problems in backup function
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-08-23 18:58:51 UTC (rev 834)
++++ trunk/ChangeLog	2007-08-26 09:44:48 UTC (rev 835)
+@@ -4,7 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
+-2007-08-05  Piotr O&#380;arowski
++2007-08-26  Piotr O&#380;arowski
++	* Fix encoding problems in backup function
++
++2007-08-23  Piotr O&#380;arowski
+ 	* Export disc number instead of medium id in HTML export plugin
+ 
+ 2007-08-16  Michael Jahn
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2007-08-23 18:58:51 UTC (rev 834)
++++ trunk/lib/backup.py	2007-08-26 09:44:48 UTC (rev 835)
+@@ -50,9 +50,10 @@
+ 			except:
+ 				gutils.error(self, _(&quot;Error creating backup&quot;), self.widgets['window'])
+ 				return False
+-			mzip.write(os.path.join(self.locations['home'],'griffith.cfg'))
++			mzip.write(os.path.join(self.locations['home'],'griffith.cfg').encode('utf-8'))
+ 			if self.db.metadata.engine.name == 'sqlite':
+-				mzip.write(os.path.join(self.locations['home'], self.config.get('name','griffith', section='database') + '.db'))
++				fileName = os.path.join(self.locations['home'], self.config.get('name','griffith', section='database') + '.db').encode('utf-8')
++				mzip.write(fileName)
+ 			else:
+ 				gutils.error(self, _(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
+ 				return False
+@@ -72,7 +73,7 @@
+ #				for i in self.db.metadata.tables
+ #				tmp_db.
+ 
+-				tmp_file = os.path.join(tmp_dir, tmp_config.get('file', 'griffith.db', section='database'))
++				tmp_file = os.path.join(tmp_dir, tmp_config.get('file', 'griffith.db', section='database')).encode('utf-8')
+ 				tmp_metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
+ 				tmp_metadata.tables = self.db.metadata.tables
+ 				tmp_metadata.create_all()
+@@ -90,7 +91,7 @@
+ 			for movie in self.db.Movie.select():
+ 				if movie.image is not None:
+ 					filename = str(movie.image)+&quot;.jpg&quot;
+-					filename = os.path.join(posters_dir, filename.encode('utf-8'))
++					filename = os.path.join(posters_dir, filename).encode('utf-8')
+ 					if os.path.isfile(filename):
+ 						try:
+ 							mzip.write(filename)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000343.html">[Griffith-svn] r834 - in trunk: . debian export_templates/csv	export_templates/html_table export_templates/html_tables	export_templates/latex export_templates/xml lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000345.html">[Griffith-svn] r836 - in trunk: . images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#344">[ date ]</a>
+              <a href="thread.html#344">[ thread ]</a>
+              <a href="subject.html#344">[ subject ]</a>
+              <a href="author.html#344">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

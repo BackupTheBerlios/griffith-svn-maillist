@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1140 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1140%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200902011514.n11FEAgc006147%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000616.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1140 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1140%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200902011514.n11FEAgc006147%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1140 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Feb  1 16:14:10 CET 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000616.html">[Griffith-svn] r1141 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#615">[ date ]</a>
+              <a href="thread.html#615">[ thread ]</a>
+              <a href="subject.html#615">[ subject ]</a>
+              <a href="author.html#615">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-02-01 16:14:09 +0100 (Sun, 01 Feb 2009)
+New Revision: 1140
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/gconsole.py
+Log:
+* Add interactive shell (--shell commandline option)
+* Add barcode column to the movie table
+* Change default type of runtime and year to SmallInteger
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-31 21:51:20 UTC (rev 1139)
++++ trunk/ChangeLog	2009-02-01 15:14:09 UTC (rev 1140)
+@@ -5,6 +5,11 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-02-01  Piotr O&#380;arowski
++	* Add interactive shell (--shell commandline option)
++	* Add barcode column to the movie table
++	* Change default type of runtime and year to SmallInteger
++
+ 2009-01-31  Michael Jahn
+ 	* Allocine movie plugin updated
+ 	* small unicode fixes for 7arte movie plugin
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-01-31 21:51:20 UTC (rev 1139)
++++ trunk/lib/db.py	2009-02-01 15:14:09 UTC (rev 1140)
+@@ -168,8 +168,9 @@
+     Column('layers', SmallInteger),
+     Column('region', SmallInteger),
+     Column('media_num', SmallInteger),
+-    Column('runtime', Integer),
+-    Column('year', Integer),
++    Column('runtime', SmallInteger),
++    Column('year', SmallInteger),
++    Column('barcode', Integer, unique=True),
+     Column('o_title', Unicode(256), index=True),
+     Column('title', Unicode(256), index=True),
+     Column('director', Unicode(256)),
+@@ -350,44 +351,3 @@
+ mapper(Filter, filters_table)
+ #}}}
+ 
+-
+-
+-# for debugging (run: ipython db.py)
+-if __name__ == '__main__':
+-    import os.path
+-    import sqlalchemy
+-    logging.basicConfig()
+-    log.setLevel(logging.INFO)
+-    log.info(&quot;SQLAlchemy version: %s&quot;, sqlalchemy.__version__)
+-
+-    ### ENGINE ###
+-    mem_engine = create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>', echo=False)
+-
+-    # create tables
+-    metadata.create_all(mem_engine)
+-
+-    ### MEMORY SESSION ###
+-    # create a configured &quot;Session&quot; class
+-    Session = sessionmaker(bind=mem_engine)
+-    # create a Session
+-    mem_sess = Session()
+-
+-
+-    griffith_dir = os.path.expanduser(&quot;~/.griffith/&quot;)
+-    url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+-    my_engine = create_engine(url, echo=False)
+-    Session2 = sessionmaker(bind=my_engine)
+-    my_sess = Session2()
+-
+-    print &quot;\nAvailable variables:&quot;
+-    print &quot;my_sess:  %s&quot; % my_sess
+-    print &quot;mem_sess: %s&quot; % mem_sess
+-
+-    my_movie1 = my_sess.query(Movie).first()
+-    if my_movie1:
+-        mem_movie1 = mem_sess.merge(my_movie1)
+-        mem_movie1.title = u'updated movie title'
+-        mem_sess.add(mem_movie1)
+-        mem_sess.commit()
+-        print &quot;my_movie1:  %s - title: %s&quot; % (my_movie1, my_movie1.title)
+-        print &quot;mem_movie1: %s - title: %s&quot; % (mem_movie1, mem_movie1.title)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-01-31 21:51:20 UTC (rev 1139)
++++ trunk/lib/dbupgrade.py	2009-02-01 15:14:09 UTC (rev 1140)
+@@ -192,7 +192,19 @@
+     if False and version == 3:    # fix changes between v3 and v4
+         version += 1
+         log.info(&quot;Upgrading database to version %d...&quot;, version)
++        
++        log.info('... adding new columns')
++        # common SQL statements
++        queries = {'barcode': 'ALTER TABLE movies ADD barcode INTEGER NULL;',
++                  }
++        for key, query in queries.items():
++            try:
++                self.session.bind.execute(query)
++            except Exception, e:
++                log.error(&quot;Cannot add '%s' column: %s&quot;, key, e)
++                return False
+ 
++        log.info('... creading missing indexes')
+         i = Index('ix_movies_title', db.movies_table.c.title)
+         i.create(bind=b)
+         i = Index('ix_movies_o_title', db.movies_table.c.o_title)
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2009-01-31 21:51:20 UTC (rev 1139)
++++ trunk/lib/gconsole.py	2009-02-01 15:14:09 UTC (rev 1140)
+@@ -32,7 +32,7 @@
+ options = ('hvDCo:t:d:c:y:s:', ('help', 'debug', 'sqlecho', 'clean', 'check-dep',
+     'show-dep', 'original_title=', 'title=', 'director=', 'cast=', 'year=',
+     'sort=', 'seen=', 'loaned=', 'number=', 'runtime=', 'rating=', 'home=',
+-    'config=', 'version' ))
++    'config=', 'shell', 'version' ))
+ 
+ def check_args():
+     default_lang, default_enc = getdefaultlocale()
+@@ -95,6 +95,7 @@
+             sys.exit(3)
+ 
+         sort = None
++        shell = False
+         where = {}
+         for o, a in opts:
+             if o in ('-C', '--clean'):
+@@ -124,8 +125,12 @@
+                 where['runtime'] = a
+             elif o == '--rating':
+                 where['rating'] = a
++            elif o == '--shell':
++                shell = True
+         if where:
+             con_search_movie(self, where, sort)
++        if shell:
++            run_shell(self)
+ 
+ def con_search_movie(self, where, sort=None):
+     # for search function
+@@ -234,3 +239,76 @@
+     print &quot;-y &lt;number&gt;, --year=&lt;number&gt;&quot;
+     print &quot;-s &lt;columns&gt;, --sort=&lt;columns&gt;&quot;
+ 
++def run_shell(self):
++    import sqlalchemy as sa
++    from sqlalchemy.orm import sessionmaker
++    import db
++
++    # settings
++    banner = &quot;&quot;&quot;
++Griffith Interactive Shell
++
++
++Available variables:
++* sess - database session (try f.e. `sess.bind.echo = True`)
++* mem_sess - in memory session (playground)
++* sa - SQLAlchemy module
++* orm - SQLAlchemy's orm module
++* db - ORM stuff (f.e. db.Movie class)
++* gsql - GriffithSQL instance
++
++
++Examples:
++&gt;&gt;&gt; movie = sess.query(db.Movie).first()
++&gt;&gt;&gt; print movie.title
++
++&gt;&gt;&gt; mem_movie = mem_sess.merge(movie)
++&gt;&gt;&gt; mem_movie.seen = False
++&gt;&gt;&gt; mem_sess.add(mem_movie)
++&gt;&gt;&gt; mem_sess.commit()
++
++&gt;&gt;&gt; seen_movies = sess.query(db.Movie).filter_by(seen=True)
++&gt;&gt;&gt; for movie in seen_movies:
++        print movie.title, movie.loaned
++
++&gt;&gt;&gt; person = sess.query(db.Person).first()
++&gt;&gt;&gt; print &quot;%s has %d movies loaned&quot; % (person.name, person.loaned_movies_count)
++&quot;&quot;&quot;
++    
++    ### prepare local env. ###
++    
++    # create a playground in memory
++    mem_engine = sa.create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>')
++    db.metadata.create_all(bind=mem_engine) # create tables
++    MemSession = sessionmaker(bind=mem_engine)
++    mem_session = MemSession()
++
++    locs = {'mem_sess': mem_session,
++            'meta': db.metadata,
++            'db': db,
++            'sa': sa,
++            'orm': sa.orm,
++            'gsql': self.db,
++            'sess': self.db.session,
++            #'griffith': self,
++           }
++ 
++    ### prepare the shell ###
++    try:
++        ipython_args = [] # TODO: do we want to pass some args here?
++        # try to use IPython if possible
++        from IPython.Shell import IPShellEmbed
++
++        shell = IPShellEmbed(argv=ipython_args)
++        shell.set_banner(shell.IP.BANNER + banner)
++        shell(local_ns=locs, global_ns={})
++    except ImportError:
++        log.debug('IPython is not available')
++        import code
++        shell = code.InteractiveConsole(locals=locs)
++        try:
++            import readline
++        except ImportError:
++            log.debug('readline is not available')
++        shell.interact(banner)
++    sys.exit(0)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000616.html">[Griffith-svn] r1141 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#615">[ date ]</a>
+              <a href="thread.html#615">[ thread ]</a>
+              <a href="subject.html#615">[ subject ]</a>
+              <a href="author.html#615">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

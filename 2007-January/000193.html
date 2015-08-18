@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r667 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r667%20-%20trunk&In-Reply-To=%3C200701042308.l04N88Rh012200%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000192.html">
+   <LINK REL="Next"  HREF="000194.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r667 - trunk</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r667%20-%20trunk&In-Reply-To=%3C200701042308.l04N88Rh012200%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r667 - trunk">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  5 00:08:08 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000192.html">[Griffith-svn] r666 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000194.html">[Griffith-svn] r668 - in trunk: . po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#193">[ date ]</a>
+              <a href="thread.html#193">[ thread ]</a>
+              <a href="subject.html#193">[ subject ]</a>
+              <a href="author.html#193">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-01-05 00:08:04 +0100 (Fri, 05 Jan 2007)
+New Revision: 667
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/winsetup.bat
+Log:
+Fixed win32 default system font directory detection (for use in preferences)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-04 22:48:21 UTC (rev 666)
++++ trunk/ChangeLog	2007-01-04 23:08:04 UTC (rev 667)
+@@ -9,6 +9,7 @@
+ 	* Updated Czech translation and CSFD movie pluging (thanks to Blondak)
+ 	* Updated Portuguese Brazilian translation (thanks to F&#225;bio Nogueira)
+ 	* Fixed win32 gtk locale issue
++	* Fixed win32 default system font directory detection (for use in preferences)
+ 
+ 2007-01-03 Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
+ 	* Using cPickle over pickle for serialization. Config files are now fully cross-platform.
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-01-04 22:48:21 UTC (rev 666)
++++ trunk/griffith	2007-01-04 23:08:04 UTC (rev 667)
+@@ -115,8 +115,8 @@
+ 
+ 		# add default folders to some select widgets
+ 		if self.windows:
+-			#self.widgets['preferences']['font'].set_current_folder(&quot;c:\\windows\\fonts\\&quot;) # FIXME: use env var.
+-			pass
++			fonts_dir = os.path.join(os.environ['SYSTEMROOT'],'fonts')
++			self.widgets['preferences']['font'].set_current_folder(fonts_dir)
+ 		elif self.mac:
+ 			self.widgets['preferences']['font'].set_current_folder(&quot;/System/Library/Fonts/&quot;)
+ 		else:
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2007-01-04 22:48:21 UTC (rev 666)
++++ trunk/winsetup.bat	2007-01-04 23:08:04 UTC (rev 667)
+@@ -3,13 +3,16 @@
+ @rem ***** get rid of all the old files in the build folder 
+ @rd /S /Q build 
+ @rd /S /Q dist 
+- 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rem</A> ***** create the exe 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at python.exe</A> -OO winsetup.py py2exe
++
+ @mkdir dist\etc
+ @mkdir dist\share
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at mkdir</A> dist\lib
+ @mkdir dist\share\locale
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> ***** create the exe 
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at python.exe</A> -OO winsetup.py py2exe
++
+ @xcopy c:\gtk\etc c:\griffith\dist\etc /s /e
+ @xcopy c:\gtk\lib c:\griffith\dist\lib /s /e
+ @xcopy c:\gtk\share\locale c:\griffith\dist\share\locale /s /e
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000192.html">[Griffith-svn] r666 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000194.html">[Griffith-svn] r668 - in trunk: . po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#193">[ date ]</a>
+              <a href="thread.html#193">[ thread ]</a>
+              <a href="subject.html#193">[ subject ]</a>
+              <a href="author.html#193">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

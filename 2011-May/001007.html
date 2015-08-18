@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1547 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1547%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110518113425.B606E480E9F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001006.html">
+   <LINK REL="Next"  HREF="001008.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1547 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1547%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110518113425.B606E480E9F%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1547 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed May 18 13:34:25 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001006.html">[Griffith-svn] r1546 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001008.html">[Griffith-svn] r1548 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1007">[ date ]</a>
+              <a href="thread.html#1007">[ thread ]</a>
+              <a href="subject.html#1007">[ subject ]</a>
+              <a href="author.html#1007">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-05-18 13:34:25 +0200 (Wed, 18 May 2011)
+New Revision: 1547
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllRovi.py
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+small fixes for Allocine and AllRovi plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-05-18 11:31:56 UTC (rev 1546)
++++ trunk/ChangeLog	2011-05-18 11:34:25 UTC (rev 1547)
+@@ -7,6 +7,7 @@
+ 
+ 2011-05-18  Michael Jahn
+ 	* updated CineMovies plugin (thanks to Olivier BOURSIN)
++	* small fixes for Allocine and AllRovi plugin
+ 
+ 2011-05-12  Michael Jahn
+ 	* added &quot;virtual&quot; resolutions (4:3 Fullscreen, Widescreen, Anamorphic Widescreen)
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllRovi.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-05-18 11:31:56 UTC (rev 1546)
++++ trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-05-18 11:34:25 UTC (rev 1547)
+@@ -58,7 +58,7 @@
+         self.plot = gutils.trim(self.page, '&gt;synopsis', '&lt;/p&gt;')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '&lt;dt&gt;released&lt;/dt&gt;', '&lt;/div&gt;')
++        self.year = gutils.after(gutils.trim(self.page, '&lt;dt&gt;release date&lt;/dt&gt;', '&lt;/div&gt;'), ',')
+ 
+     def get_runtime(self):
+         self.runtime = ''
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-05-18 11:31:56 UTC (rev 1546)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2011-05-18 11:34:25 UTC (rev 1547)
+@@ -72,7 +72,7 @@
+         self.plot = gutils.trim(self.page, 'Synopsis : ', '&lt;/div&gt;')
+ 
+     def get_year(self):
+-        self.year = gutils.clean(gutils.trim(self.page, u'Ann&#233;e de production : ', '&lt;/a&gt;'))
++        self.year = gutils.clean(gutils.trim(self.page, u'Ann&#233;e de production :', '&lt;/a&gt;'))
+ 
+     def get_runtime(self):
+         self.runtime = gutils.clean(gutils.trim(self.page, u'Dur&#233;e :', 'min'))
+@@ -80,7 +80,7 @@
+             self.runtime = str(int(gutils.before(self.runtime, &quot;h&quot;)) * 60 + int(gutils.after(self.runtime, &quot;h&quot;)))
+ 
+     def get_genre(self):
+-        self.genre = gutils.regextrim(self.page, 'Genre : ', '&lt;/a&gt;[^,]')
++        self.genre = gutils.regextrim(self.page, 'Genre :', '&lt;/a&gt;[^,]')
+         self.genre = string.replace(self.replace_tabs.sub('', gutils.clean(self.genre)), ',', ', ')
+ 
+     def get_cast(self):
+@@ -275,12 +275,12 @@
+ Bruce M. Kerner' + _(' as ') + 'Desk Sergeant\n\
+ David Pierce' + _(' as ') + 'Tanker Partner\n\
+ Barbara Powers' + _(' as ') + 'Ticket Taker at Club Technoir\n\
+-Ed Dogans' + _(' as ') + 'Acteur\n\
+-Tony Mirelez' + _(' as ') + 'Acteur\n\
+-Webster Williams' + _(' as ') + 'Acteur\n\
+-John E. Bristol' + _(' as ') + 'Acteur\n\
+-Gregory Robbins' + _(' as ') + 'Acteur\n\
+-Chino \'Fats\' Williams' + _(' as ') + 'Acteur',
++Ed Dogans' + _(' as ') + 'Cop in Alley\n\
++Tony Mirelez' + _(' as ') + 'Gas Station Attendant\n\
++Webster Williams' + _(' as ') + 'Reporter\n\
++John E. Bristol' + _(' as ') + 'Biker at Phone Booth\n\
++Gregory Robbins' + _(' as ') + 'Tiki Motel Customer\n\
++Chino \'Fats\' Williams' + _(' as ') + 'Truck Driver',
+             'country'             : u'am&#233;ricain',
+             'genre'               : u'Science fiction',
+             'classification'      : False,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001006.html">[Griffith-svn] r1546 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001008.html">[Griffith-svn] r1548 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1007">[ date ]</a>
+              <a href="thread.html#1007">[ thread ]</a>
+              <a href="subject.html#1007">[ subject ]</a>
+              <a href="author.html#1007">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

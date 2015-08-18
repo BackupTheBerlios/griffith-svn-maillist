@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1122 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1122%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/export%20trunk%20trunk/lib/plugins/export&In-Reply-To=%3C200901162059.n0GKxSDV031419%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000596.html">
+   <LINK REL="Next"  HREF="000598.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1122 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1122%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/export%20trunk%20trunk/lib/plugins/export&In-Reply-To=%3C200901162059.n0GKxSDV031419%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1122 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 16 21:59:28 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000596.html">[Griffith-svn] Bug #317837: &quot;007 James Bond&quot;
+</A></li>
+        <LI>Next message: <A HREF="000598.html">[Griffith-svn] r1123 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#597">[ date ]</a>
+              <a href="thread.html#597">[ thread ]</a>
+              <a href="subject.html#597">[ subject ]</a>
+              <a href="author.html#597">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-01-16 21:58:58 +0100 (Fri, 16 Jan 2009)
+New Revision: 1122
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+[#317837] 007 james bond (PDF export grouping error)
+error fixed dereferencing none in PDF export plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-01-15 22:17:43 UTC (rev 1121)
++++ branches/0.9.x/ChangeLog	2009-01-16 20:58:58 UTC (rev 1122)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-16  Michael Jahn
++	* [#317837] 007 james bond (PDF export grouping error)
++
+ 2009-01-15  Michael Jahn
+ 	* Amazon movie plugin updated
+ 	* better results for amazon poster search
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2009-01-15 22:17:43 UTC (rev 1121)
++++ branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2009-01-16 20:58:58 UTC (rev 1122)
+@@ -122,7 +122,7 @@
+                         else:
+                             movies.order_by_clause.append(self.db.Movie.c[i])
+                 movies = movies.execute().fetchall()
+-                first_letter = '0'
++                first_letter = ''
+                 for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title).encode(defaultEnc)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-15 22:17:43 UTC (rev 1121)
++++ trunk/ChangeLog	2009-01-16 20:58:58 UTC (rev 1122)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-01-16  Michael Jahn
++	* [#317837] 007 james bond (PDF export grouping error)
++
+ 2009-01-15  Michael Jahn
+ 	* Amazon movie plugin updated
+ 	* better results for amazon poster search
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2009-01-15 22:17:43 UTC (rev 1121)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2009-01-16 20:58:58 UTC (rev 1122)
+@@ -120,11 +120,17 @@
+                 Story.append(p)
+                 Story.append(Paragraph(&quot; &quot;,style))
+                 # output movies
+-                first_letter = '0'
++                first_letter = ''
+                 for movie in movies:
+                     number = movie.number
+-                    original_title = movie.o_title.encode(defaultEnc)
+-                    title = movie.title.encode(defaultEnc)
++                    if movie.o_title:
++                        original_title = movie.o_title.encode(defaultEnc)
++                    else:
++                        original_title = ''
++                    if movie.title:
++                        title = movie.title.encode(defaultEnc)
++                    else:
++                        title = ''
+                     grouping_title = movie.title
+                     if grouping_title is None:
+                         grouping_title = u'None'
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000596.html">[Griffith-svn] Bug #317837: &quot;007 James Bond&quot;
+</A></li>
+	<LI>Next message: <A HREF="000598.html">[Griffith-svn] r1123 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#597">[ date ]</a>
+              <a href="thread.html#597">[ thread ]</a>
+              <a href="subject.html#597">[ subject ]</a>
+              <a href="author.html#597">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1330 - in trunk: . lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1330%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C200912122126.nBCLQOdn017304%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000797.html">
+   <LINK REL="Next"  HREF="000799.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1330 - in trunk: . lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1330%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C200912122126.nBCLQOdn017304%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1330 - in trunk: . lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 12 22:26:24 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000797.html">[Griffith-svn] r1329 - in trunk: . lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000799.html">[Griffith-svn] r1331 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#798">[ date ]</a>
+              <a href="thread.html#798">[ thread ]</a>
+              <a href="subject.html#798">[ subject ]</a>
+              <a href="author.html#798">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-12 22:26:04 +0100 (Sat, 12 Dec 2009)
+New Revision: 1330
+
+Added:
+   trunk/lib/plugins/imp/AllMyMovies.py
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+Log:
+new import plugin All My Movies (MS Access / Jet DB based)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-12 13:51:22 UTC (rev 1329)
++++ trunk/ChangeLog	2009-12-12 21:26:04 UTC (rev 1330)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-12-12  Michael Jahn
+-	* new import plugins: BES The Movie Library, Fox Movie Manager, MyDVDs, The Movie Library
++	* new import plugins: All My Movies, BES The Movie Library, Fox Movie Manager, MyDVDs, The Movie Library
+ 	  (all MS Access / Jet DB based)
+ 	* cleanup import sections of other import plugins
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-12-12 13:51:22 UTC (rev 1329)
++++ trunk/NEWS	2009-12-12 21:26:04 UTC (rev 1330)
+@@ -3,6 +3,7 @@
+ * Griffith extensions feature added. You can add your own extensions in
+   ~/.griffith/lib/extensions
+ * New import plugins:
++   - All My Movies
+    - Barret Enterprise Software The Movie Library
+    - DVD Profiler
+    - eXtreme Movie Manager
+
+Added: trunk/lib/plugins/imp/AllMyMovies.py
+===================================================================
+--- trunk/lib/plugins/imp/AllMyMovies.py	2009-12-12 13:51:22 UTC (rev 1329)
++++ trunk/lib/plugins/imp/AllMyMovies.py	2009-12-12 21:26:04 UTC (rev 1330)
+@@ -0,0 +1,223 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import gutils
++import string
++
++try:
++    import pyodbc
++except ImportError:
++    pass
++
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++class ImportPlugin(IP):
++    description  = _('All My Movies 5.7')
++    author       = 'Michael Jahn'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++    version      = '1.0'
++    file_filters = '*.[aA][mM][mM]'
++    mime_types   = None
++
++    fileversion  = None
++    connection   = None
++    cursor       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.connection:
++            try:
++                curs = self.connection.cursor()
++                curs.execute('SELECT COUNT(*) FROM movies')
++                count = curs.fetchone()[0]
++            except:
++                log.exception('')
++        else:
++            log.error('AllMyMovies Import: No connection object.')
++        log.info('AllMyMovies Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.cursor:
++            self.cursor = self.connection.cursor()
++            self.cursor.execute( \
++                'SELECT MovieID, barcode, comments, description, length, mediacount, MediaTypeName, \
++                        mpaa, Name, originaltitle, rating, seen, studio, url, year, Trailer \
++                 FROM movies LEFT OUTER JOIN MediaType ON movies.MediaTypeID=MediaType.MediaTypeID;')
++        
++        currentrow = self.cursor.fetchone()
++        if not currentrow:
++            return None
++        
++        details = {}
++        try:
++            movieID = currentrow[0]
++            if currentrow[1]:
++                details['barcode'] = currentrow[1]
++            if currentrow[2]:
++                details['notes'] = currentrow[2]
++            if currentrow[3]:
++                details['plot'] = currentrow[3]
++            if currentrow[4]:
++                details['runtime'] = gutils.digits_only(currentrow[4])
++            if currentrow[5]:
++                details['media_num'] = currentrow[5]
++            if currentrow[6]:
++                details['medium_id'] = currentrow[6]
++            if currentrow[7]:
++                details['classification'] = currentrow[7]
++            if currentrow[8]:
++                details['title'] = currentrow[8]
++            if currentrow[9]:
++                details['o_title'] = currentrow[9]
++            if currentrow[10]:
++                details['rating'] = round(currentrow[10] / 10.0, 0)
++            if currentrow[11]:
++                details['seen'] = currentrow[11]
++            if currentrow[12]:
++                details['studio'] = currentrow[12]
++            if currentrow[13]:
++                details['url'] = currentrow[13]
++            if currentrow[14]:
++                details['year'] = currentrow[14]
++            if currentrow[15]:
++                details['trailer'] = currentrow[15]
++            # loading other details
++            curs = self.connection.cursor()
++            curs.execute('SELECT Actors.Name, ActorsLink.Role \
++                          FROM Actors INNER JOIN ActorsLink ON Actors.ActorID=ActorsLink.ActorID \
++                          WHERE ActorsLink.MovieID=' + str(movieID))
++            currentrow = curs.fetchone()
++            if currentrow:
++                if currentrow[1]:
++                    cast = currentrow[0] + _(' as ') + currentrow[1]
++                else:
++                    cast = currentrow[0]
++                currentrow = curs.fetchone()
++                while currentrow:
++                    if currentrow[1]:
++                        cast = cast + '\n' + currentrow[0] + _(' as ') + currentrow[1]
++                    else:
++                        cast = cast + '\n' + currentrow[0]
++                    currentrow = curs.fetchone()
++                details['cast'] = cast
++            
++            curs.execute('SELECT Countries.Name \
++                          FROM Countries INNER JOIN CountryLink ON Countries.CountryID=CountryLink.CountryID \
++                          WHERE CountryLink.MovieID=' + str(movieID))
++            currentrow = curs.fetchone()
++            if currentrow:
++                country = currentrow[0]
++                currentrow = curs.fetchone()
++                while currentrow:
++                    country = country + ', ' + currentrow[0]
++                    currentrow = curs.fetchone()
++                details['country'] = country
++            
++            curs.execute('SELECT Actors.Name \
++                          FROM Actors INNER JOIN DirectorLink ON Actors.ActorID=DirectorLink.ActorID \
++                          WHERE DirectorLink.MovieID=' + str(movieID))
++            currentrow = curs.fetchone()
++            if currentrow:
++                director = currentrow[0]
++                currentrow = curs.fetchone()
++                while currentrow:
++                    director = director + ', ' + currentrow[0]
++                    currentrow = curs.fetchone()
++                details['director'] = director
++            
++            curs.execute('SELECT Genres.Name \
++                          FROM Genres INNER JOIN GenresLink ON Genres.GenreID=GenresLink.GenreID \
++                          WHERE GenresLink.MovieID=' + str(movieID))
++            currentrow = curs.fetchone()
++            if currentrow:
++                genre = currentrow[0]
++                currentrow = curs.fetchone()
++                while currentrow:
++                    genre = genre + ', ' + currentrow[0]
++                    currentrow = curs.fetchone()
++                details['genre'] = genre
++            
++            curs.execute('SELECT images.image \
++                          FROM images \
++                          WHERE cover=-1 AND images.MovieID=' + str(movieID))
++            currentrow = curs.fetchone()
++            if currentrow:
++                details['poster'] = currentrow[0]
++            
++            curs.close()
++        except Exception, e:
++            log.exception('')
++            details = None
++        #print details
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.cursor:
++            self.cursor.close()
++            self.cursor = None
++        if self.connection:
++            self.connection.close()
++            self.connection = None
++        self.fileversion = None
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            log.debug('Connecting with: DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            self.connection = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            curs = self.connection.cursor()
++            tablerow = curs.tables(table='movies').fetchone()
++            if tablerow:
++                version = 1.0
++            curs.close()
++        except Exception, e:
++            log.error(str(e))
++        log.info('AllMyMovies Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/AllMyMovies.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000797.html">[Griffith-svn] r1329 - in trunk: . lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000799.html">[Griffith-svn] r1331 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#798">[ date ]</a>
+              <a href="thread.html#798">[ thread ]</a>
+              <a href="subject.html#798">[ subject ]</a>
+              <a href="author.html#798">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

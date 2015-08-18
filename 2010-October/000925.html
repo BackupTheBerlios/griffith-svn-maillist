@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1465 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1465%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20101009193531.498DC48103D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000924.html">
+   <LINK REL="Next"  HREF="000926.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1465 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1465%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20101009193531.498DC48103D%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1465 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Oct  9 21:35:30 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000924.html">[Griffith-svn] r1464 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000926.html">[Griffith-svn] r1466 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#925">[ date ]</a>
+              <a href="thread.html#925">[ thread ]</a>
+              <a href="subject.html#925">[ subject ]</a>
+              <a href="author.html#925">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-10-09 21:35:30 +0200 (Sat, 09 Oct 2010)
+New Revision: 1465
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb and IMDb plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-08 20:56:18 UTC (rev 1464)
++++ trunk/ChangeLog	2010-10-09 19:35:30 UTC (rev 1465)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-10-09  Michael Jahn
++	* OFDb and IMDb plugin updated
++
+ 2010-10-08  Piotr O&#380;arowski
+ 	* Filmweb movie plugin updated (thanks to Mariusz Szczepanek)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-10-08 20:56:18 UTC (rev 1464)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-10-09 19:35:30 UTC (rev 1465)
+@@ -197,6 +197,14 @@
+ 
+     def get_cameraman(self):
+         self.cameraman = ''
++        tmp = gutils.regextrim(self.cast_page, 'Cinematography by&lt;[^&gt;]+', '&lt;/table&gt;')
++        tmp = string.split(tmp, 'href=&quot;')
++        for entry in tmp:
++            entry = gutils.trim(entry, '&gt;', '&lt;')
++            if entry:
++                self.cameraman = self.cameraman + entry + ', '
++        if self.cameraman:
++            self.cameraman = self.cameraman[:-2]
+ 
+     def __before_more(self, data):
+         for element in ['&gt;See more&lt;', '&gt;more&lt;', '&gt;Full summary&lt;', '&gt;Full synopsis&lt;']:
+@@ -359,7 +367,7 @@
+             'image'             : True,
+             'rating'            : 7,
+             'screenplay'        : 'Marc Norman, Tom Stoppard',
+-            'cameraman'         : False,
++            'cameraman'         : 'Richard Greatrex',
+             'barcode'           : False
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2010-10-08 20:56:18 UTC (rev 1464)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2010-10-09 19:35:30 UTC (rev 1465)
+@@ -29,11 +29,11 @@
+         # lets use the imdb page, why not
+         imdb_nr = gutils.trim(self.page, '<A HREF="http://german.imdb.com/Title?">http://german.imdb.com/Title?</A>', '&quot;')
+         if imdb_nr != '':
+-            self.imdb_page = self.open_page(url='<A HREF="http://german.imdb.com/Title?">http://german.imdb.com/Title?</A>' + imdb_nr)
++            self.imdb_page = self.open_page(url='<A HREF="http://www.imdb.de/Title?">http://www.imdb.de/Title?</A>' + imdb_nr)
+         else:
+             imdb_nr = gutils.trim(self.page, '<A HREF="http://www.imdb.com/Title?">http://www.imdb.com/Title?</A>', '&quot;')
+             if imdb_nr != '':
+-                self.imdb_page = self.open_page(url='<A HREF="http://www.imdb.com/Title?">http://www.imdb.com/Title?</A>' + imdb_nr)
++                self.imdb_page = self.open_page(url='<A HREF="http://www.imdb.de/Title?">http://www.imdb.de/Title?</A>' + imdb_nr)
+             else:
+                 self.imdb_page = ''
+ 
+@@ -65,7 +65,7 @@
+ 
+     def get_runtime(self):
+         # from imdb
+-        self.runtime = gutils.regextrim(self.imdb_page, '&lt;h5&gt;(L&auml;nge|Runtime):&lt;/h5&gt;', ' (min|Min)')
++        self.runtime = gutils.regextrim(self.imdb_page, '&lt;h5&gt;(L&auml;nge|L&amp;#xE4;nge|Runtime):&lt;/h5&gt;', ' (min|Min)')
+ 
+     def get_genre(self):
+         self.genre = gutils.trim(self.page,&quot;Genre(s):&quot;,&quot;&lt;/table&gt;&quot;)
+@@ -90,7 +90,7 @@
+ 
+     def get_classification(self):
+         # from imdb
+-        self.classification = gutils.regextrim(gutils.regextrim(self.imdb_page, '(Altersfreigabe|Certification):', '&lt;/div&gt;'), 'Germany:', '(&amp;|[|])')
++        self.classification = gutils.regextrim(gutils.regextrim(self.imdb_page, '(Altersfreigabe|Certification):', '&lt;/div&gt;'), '(Deutschland|Germany):', '(&amp;|[|])')
+ 
+     def get_studio(self):
+         # from imdb
+@@ -283,10 +283,10 @@
+             'rating'              : 6
+         },
+         'film/54088,Arahan' : {
+-            'title'             : 'Arahan',
++            'title'               : 'Arahan',
+             'o_title'             : 'Arahan jangpung daejakjeon',
+             'director'            : 'Ryoo Seung-wan',
+-            'plot'                 : True,
++            'plot'                : True,
+             'cast'                : 'Ryoo Seung-beom\n\
+ Yoon Soy' + _(' as ') + 'Wi-jin\n\
+ Ahn Seong-gi' + _(' as ') + 'Ja-woon\n\
+@@ -317,17 +317,17 @@
+ Min Hye-ryeong\n\
+ Oh Soon-tae\n\
+ Lee Oi-soo',
+-            'country'            : 'S&#252;dkorea',
+-            'genre'                : 'Action, Fantasy, Kom&#246;die',
+-            'classification'    : '16',
+-            'studio'            : 'Fun and Happiness',
+-            'o_site'            : False,
++            'country'             : 'S&#252;dkorea',
++            'genre'               : 'Action, Fantasy, Kom&#246;die',
++            'classification'      : '16',
++            'studio'              : 'Fun and Happiness',
++            'o_site'              : False,
+             'site'                : '<A HREF="http://www.ofdb.de/film/54088,Arahan">http://www.ofdb.de/film/54088,Arahan</A>',
+-            'trailer'            : False,
++            'trailer'             : False,
+             'year'                : 2004,
+-            'notes'                : False,
+-            'runtime'            : 114,
+-            'image'                : True,
+-            'rating'            : 7
++            'notes'               : False,
++            'runtime'             : 114,
++            'image'               : True,
++            'rating'              : 7
+         }
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000924.html">[Griffith-svn] r1464 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000926.html">[Griffith-svn] r1466 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#925">[ date ]</a>
+              <a href="thread.html#925">[ thread ]</a>
+              <a href="subject.html#925">[ subject ]</a>
+              <a href="author.html#925">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

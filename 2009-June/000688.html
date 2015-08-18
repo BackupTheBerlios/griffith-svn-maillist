@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1217 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1217%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200906111502.n5BF2AUi000822%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000687.html">
+   <LINK REL="Next"  HREF="000689.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1217 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1217%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200906111502.n5BF2AUi000822%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1217 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 11 17:02:10 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000687.html">[Griffith-svn] r1216 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000689.html">[Griffith-svn] r1218 - in trunk: . glade
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#688">[ date ]</a>
+              <a href="thread.html#688">[ thread ]</a>
+              <a href="subject.html#688">[ subject ]</a>
+              <a href="author.html#688">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-11 17:02:09 +0200 (Thu, 11 Jun 2009)
+New Revision: 1217
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/advfilter.py
+   trunk/lib/widgets.py
+Log:
+Add 'fullscreen' switch in menu
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-06-11 14:12:49 UTC (rev 1216)
++++ trunk/ChangeLog	2009-06-11 15:02:09 UTC (rev 1217)
+@@ -7,6 +7,7 @@
+ 
+ 2009-06-11  Piotr O&#380;arowski
+ 	* Don't try to open advfilter window if it's already opened
++	* Add 'fullscreen' switch in menu
+ 
+ 2009-06-10  Piotr O&#380;arowski
+ 	* Restoring from backup finally works with external databases
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-06-11 14:12:49 UTC (rev 1216)
++++ trunk/glade/griffith.glade	2009-06-11 15:02:09 UTC (rev 1217)
+@@ -237,6 +237,15 @@
+                 &lt;child&gt;
+                   &lt;widget class=&quot;GtkMenu&quot; id=&quot;view1_menu&quot;&gt;
+                     &lt;child&gt;
++                      &lt;widget class=&quot;GtkCheckMenuItem&quot; id=&quot;menu_fullscreen&quot;&gt;
++                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Fullscreen&lt;/property&gt;
++                        &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;active&quot;&gt;False&lt;/property&gt;
++                        &lt;signal name=&quot;activate&quot; handler=&quot;on_fullscreen_activate&quot;/&gt;
++                      &lt;/widget&gt;
++                    &lt;/child&gt;
++                    &lt;child&gt;
+                       &lt;widget class=&quot;GtkCheckMenuItem&quot; id=&quot;menu_toolbar&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                         &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Toolbar&lt;/property&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-06-11 14:12:49 UTC (rev 1216)
++++ trunk/griffith	2009-06-11 15:02:09 UTC (rev 1217)
+@@ -203,6 +203,12 @@
+             if not hasattr(self, 'mainwindow_state') or self.mainwindow_state is None:
+                 self.mainwindow_state = {}
+             self.mainwindow_state['state'] = int(windowstate.new_window_state &amp; gtk.gdk.WINDOW_STATE_MAXIMIZED)
++    
++    def toggle_fullscreen(self, widget):
++        if widget is True or widget.get_active():
++            self.widgets['window'].fullscreen()
++        else:
++            self.widgets['window'].unfullscreen()
+ 
+     # about dialog    -------------------------------------------------------
+ 
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2009-06-11 14:12:49 UTC (rev 1216)
++++ trunk/lib/advfilter.py	2009-06-11 15:02:09 UTC (rev 1217)
+@@ -76,8 +76,8 @@
+ 
+ def show_window(self):
+     if getattr(self, '_advfilter_window_is_open', False):
+-        log.debug('advfilter window already opened')
+-        return False
++        self.widgets['advfilter']['window'].present()
++        return True
+     initialize(self.widgets['advfilter'], self.db, self.field_names)
+ 
+     if getattr(self, '_search_conditions', None):
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2009-06-11 14:12:49 UTC (rev 1216)
++++ trunk/lib/widgets.py	2009-06-11 15:02:09 UTC (rev 1217)
+@@ -322,6 +322,7 @@
+     }#}}}
+     
+     self.widgets['menu'] = {#{{{
++        'fullscreen'      : get('menu_fullscreen'),
+         'toolbar'         : get('menu_toolbar'),
+         'export'          : get('export_menu'),
+         'import'          : get('import_menu'),
+@@ -379,6 +380,7 @@
+         'on_update_button_clicked'               : self.update_movie,
+         'on_import_activate'                     : self.on_import_activate,
+         'on_seen_activate'                       : self.toggle_seen,
++        'on_fullscreen_activate'                 : self.toggle_fullscreen,
+         # preferences
+         'on_preferences1_activate'               : self.show_preferences,
+         'on_cancel_preferences_clicked'          : self.hide_preferences,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000687.html">[Griffith-svn] r1216 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000689.html">[Griffith-svn] r1218 - in trunk: . glade
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#688">[ date ]</a>
+              <a href="thread.html#688">[ thread ]</a>
+              <a href="subject.html#688">[ subject ]</a>
+              <a href="author.html#688">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r810 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r810%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200707110750.l6B7oB3h026108%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000321.html">
+   <LINK REL="Next"  HREF="000323.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r810 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r810%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200707110750.l6B7oB3h026108%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r810 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 11 09:50:11 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000321.html">[Griffith-svn] r809 - in trunk: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="000323.html">[Griffith-svn] r811 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#322">[ date ]</a>
+              <a href="thread.html#322">[ thread ]</a>
+              <a href="subject.html#322">[ subject ]</a>
+              <a href="author.html#322">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-07-11 09:49:48 +0200 (Wed, 11 Jul 2007)
+New Revision: 810
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/backup.py
+   trunk/lib/initialize.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+support for different database names with sqlite
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/ChangeLog	2007-07-11 07:49:48 UTC (rev 810)
+@@ -6,6 +6,7 @@
+ 
+ 2007-07-09  Michael Jahn
+ 	* toggle seen/unseen by double-clicking the icon
++	* support for different database names with sqlite
+ 
+ 2007-07-01  Piotr O&#380;arowski
+ 	* posters directory problem fixed (thanks to Michael)
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/griffith	2007-07-11 07:49:48 UTC (rev 810)
+@@ -222,22 +222,46 @@
+ 	def on_p_db_type_changed(self, widget):
+ 		active = widget.get_active()
+ 		if active == 0:
+-			self.widgets['preferences']['db_details'].set_sensitive(False)
++			# change port number if it is something useful at the moment; for clearness
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 3306 or \
++				self.widgets['preferences']['db_port'].get_value() == 5432 or \
++				self.widgets['preferences']['db_port'].get_value() == 1433:
++				self.widgets['preferences']['db_port'].set_value(0)
++			self.widgets['preferences']['db_passwd'].set_sensitive(False)
++			self.widgets['preferences']['db_user'].set_sensitive(False)
++			self.widgets['preferences']['db_port'].set_sensitive(False)
++			self.widgets['preferences']['db_host'].set_sensitive(False)
+ 		elif active == 1:
+ 			# change port number IF previous one was MySQL's or MSSQL one
+-			if self.widgets['preferences']['db_port'].get_value() == 3306 or self.widgets['preferences']['db_port'].get_value() == 1433:
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 3306 or \
++				self.widgets['preferences']['db_port'].get_value() == 1433:
+ 				self.widgets['preferences']['db_port'].set_value(5432)
+-			self.widgets['preferences']['db_details'].set_sensitive(True)
++			self.widgets['preferences']['db_passwd'].set_sensitive(True)
++			self.widgets['preferences']['db_user'].set_sensitive(True)
++			self.widgets['preferences']['db_port'].set_sensitive(True)
++			self.widgets['preferences']['db_host'].set_sensitive(True)
+ 		elif active == 2:
+ 			# change port number IF previous one was PostgreSQL's or MSSQL one
+-			if self.widgets['preferences']['db_port'].get_value() == 5432 or self.widgets['preferences']['db_port'].get_value() == 1433:
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 5432 or \
++				self.widgets['preferences']['db_port'].get_value() == 1433:
+ 				self.widgets['preferences']['db_port'].set_value(3306)
+-			self.widgets['preferences']['db_details'].set_sensitive(True)
++			self.widgets['preferences']['db_passwd'].set_sensitive(True)
++			self.widgets['preferences']['db_user'].set_sensitive(True)
++			self.widgets['preferences']['db_port'].set_sensitive(True)
++			self.widgets['preferences']['db_host'].set_sensitive(True)
+ 		elif active == 3:
+ 			# change port number IF previous one was PostgreSQL's or MySQL one
+-			if self.widgets['preferences']['db_port'].get_value() == 5432 or self.widgets['preferences']['db_port'].get_value() == 3306:
++			if self.widgets['preferences']['db_port'].get_value() == 0 or \
++				self.widgets['preferences']['db_port'].get_value() == 5432 or \
++				self.widgets['preferences']['db_port'].get_value() == 3306:
+ 				self.widgets['preferences']['db_port'].set_value(1433)
+-			self.widgets['preferences']['db_details'].set_sensitive(True)
++			self.widgets['preferences']['db_passwd'].set_sensitive(True)
++			self.widgets['preferences']['db_user'].set_sensitive(True)
++			self.widgets['preferences']['db_port'].set_sensitive(True)
++			self.widgets['preferences']['db_host'].set_sensitive(True)
+ 
+ 	# movie related operations --------------------------------------------
+ 
+@@ -1017,7 +1041,7 @@
+ 				from sqlalchemy.orm import clear_mappers
+ 				clear_mappers()
+ 				if self.config.get('type', 'sqlite', section='database') == 'sqlite':
+-					os.unlink(os.path.join(self.locations['home'],self.config.get('file', 'griffith.db', section='database')))
++					os.unlink(os.path.join(self.locations['home'],self.config.get('name', 'griffith', section='database') + '.db'))
+ 					if self.config.get('file', 'griffith.db', section='database') == 'griffith.gri':
+ 						self.config.set('file', 'griffith.db', section='database')
+ 				# create/connect db
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/backup.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -32,7 +32,7 @@
+ 	filename = gutils.file_chooser(_(&quot;Save Griffith backup&quot;), \
+ 		action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons= \
+ 		(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK), \
+-		name='griffith_backup.zip')
++		name=self.config.get('name','griffith', section='database') + '_backup.zip')
+ 	if filename and filename[0]:
+ 		overwrite = None
+ 		if os.path.isfile(filename[0]):
+@@ -52,7 +52,7 @@
+ 				return False
+ 			mzip.write(os.path.join(self.locations['home'],'griffith.cfg'))
+ 			if self.db.metadata.engine.name == 'sqlite':
+-				mzip.write(os.path.join(self.locations['home'], self.config.get('file','griffith.db', section='database')))
++				mzip.write(os.path.join(self.locations['home'], self.config.get('name','griffith', section='database') + '.db'))
+ 			else:
+ 				gutils.error(self, _(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
+ 				return False
+@@ -140,7 +140,7 @@
+ 			if old_config_raw_data.find('griffith.gri') &gt;= -1:
+ 				self.config.set('file', 'griffith.gri', section='database')
+ 
+-		filename = os.path.join(self.locations['home'], self.config.get('file', 'griffith.db', section='database'))
++		filename = os.path.join(self.locations['home'], self.config.get('name', 'griffith', section='database') + '.db')
+ 
+ 		self.db.metadata.engine.dispose() # close DB
+ 		from sqlalchemy.orm import clear_mappers
+@@ -204,7 +204,7 @@
+ 					outfile.close()
+ 			# load stored database filename
+ 			tmp_config = config.Config(file=os.path.join(tmp_dir,'griffith.conf'))
+-			filename = os.path.join(tmp_dir, tmp_config('file', 'griffith.db', section='database'))
++			filename = os.path.join(tmp_dir, tmp_config('name', 'griffith', section='database') + '.db')
+ 			zip.close()
+ 
+ 		# check if file needs conversion
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/initialize.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -114,14 +114,18 @@
+ 
+ def location_posters(locations, config):
+ 	if config.get('posters', None) is not None:
+-		locations['posters']  = os.path.join(locations['home'], config['posters'])
++		locations['posters']  = os.path.join(locations['home'], config.get('posters'))
+ 	elif config.get('type', 'sqlite', section='database') == 'sqlite':
+-		config['posters'] = 'posters'
+-		locations['posters'] = os.path.join(locations['home'], 'posters')
++		dbname = config.get('name', 'griffith', section='database')
++		if dbname &lt;&gt; 'griffith':
++			config['posters'] = 'posters_sqlite_' + dbname
++		else:
++			config['posters'] = 'posters'
++		locations['posters'] = os.path.join(locations['home'], config.get('posters'))
+ 		config.save()
+ 	else:
+ 		config['posters'] = &quot;posters_%(type)s_%(host)s_%(port)s_%(name)s_%(user)s&quot; % config.toDict('database')
+-		locations['posters'] = os.path.join(locations['home'], config['posters'])
++		locations['posters'] = os.path.join(locations['home'], config.get('posters'))
+ 		config.save()
+ 	# check if posters dir exists
+ 	if not os.path.isdir(locations['posters']):
+@@ -596,17 +600,14 @@
+ 	self.widgets['preferences']['db_passwd'].set_text(self.config.get('passwd', '', section='database'))
+ 	self.widgets['preferences']['db_name'].set_text(self.config.get('name', '', section='database'))
+ 	db_type = self.config.get('type', 'sqlite', section='database')
+-	if db_type != 'sqlite':
+-		self.widgets['preferences']['db_details'].set_sensitive(True)
+-		if db_type == 'postgres':
+-			self.widgets['preferences']['db_type'].set_active(1)
+-		elif db_type == 'mysql':
+-			self.widgets['preferences']['db_type'].set_active(2)
+-		elif db_type == 'mssql':
+-			self.widgets['preferences']['db_type'].set_active(3)
++	if db_type == 'postgres':
++		self.widgets['preferences']['db_type'].set_active(1)
++	elif db_type == 'mysql':
++		self.widgets['preferences']['db_type'].set_active(2)
++	elif db_type == 'mssql':
++		self.widgets['preferences']['db_type'].set_active(3)
+ 	else:
+ 		self.widgets['preferences']['db_type'].set_active(0)
+-		self.widgets['preferences']['db_details'].set_sensitive(False)
+ 
+ def fill_volumes_combo(self, default=0):
+ 	self.widgets['add']['volume'].get_model().clear()
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/preferences.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -348,9 +348,9 @@
+ 	if old['type'] != c.get('type', section='database') or (old['type']!='sqlite' and (\
+ 			old['host'] != c.get('host', section='database') or \
+ 			old['port'] != c.get('port', section='database') or \
+-			old['name'] != c.get('name', section='database') or \
+ 			old['user'] != c.get('user', section='database') or \
+-			old['passwd'] != c.get('passwd', section='database'))):
++			old['passwd'] != c.get('passwd', section='database'))) or \
++			old['name'] != c.get('name', section='database'):
+ 		self.debug.show('DATABASE: connecting to new db server...')
+ 		
+ 		# new database connection
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-07-09 20:47:46 UTC (rev 809)
++++ trunk/lib/sql.py	2007-07-11 07:49:48 UTC (rev 810)
+@@ -301,7 +301,7 @@
+ 
+ 		# connect to database --------------------------------------{{{
+ 		if config.get('type', section='database') == 'sqlite':
+-			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database'))
++			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+ 		elif config.get('type', section='database') == 'postgres':
+ 			if config.get('port', 0, section='database')==0:
+ 				config.set('port', 5432, section='database')
+@@ -339,13 +339,13 @@
+ 				config.get('name', section='database'))
+ 		else:
+ 			config.set('type', 'sqlite', section='database')
+-			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database'))
++			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+ 		try:
+ 			self.metadata = BoundMetaData(url)
+ 		except InvalidRequestError, e:
+ 			debug.show(&quot;BoundMetaData: %s&quot; % e)
+ 			config.set('type', 'sqlite', section='database')
+-			self.metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('file', 'griffith.db', section='database')))
++			self.metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db'))
+ 		# try to establish a db connection
+ 		try:
+ 			self.metadata.engine.connect()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000321.html">[Griffith-svn] r809 - in trunk: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="000323.html">[Griffith-svn] r811 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#322">[ date ]</a>
+              <a href="thread.html#322">[ thread ]</a>
+              <a href="subject.html#322">[ subject ]</a>
+              <a href="author.html#322">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

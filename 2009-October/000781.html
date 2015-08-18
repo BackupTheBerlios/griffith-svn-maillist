@@ -1,0 +1,302 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1313 - in trunk: . lib lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1313%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp&In-Reply-To=%3C200910131931.n9DJV8LN026063%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000780.html">
+   <LINK REL="Next"  HREF="000782.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1313 - in trunk: . lib lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1313%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp&In-Reply-To=%3C200910131931.n9DJV8LN026063%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1313 - in trunk: . lib lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Oct 13 21:31:08 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000780.html">[Griffith-svn] r1312 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000782.html">[Griffith-svn] r1314 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#781">[ date ]</a>
+              <a href="thread.html#781">[ thread ]</a>
+              <a href="subject.html#781">[ subject ]</a>
+              <a href="author.html#781">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-10-13 21:29:56 +0200 (Tue, 13 Oct 2009)
+New Revision: 1313
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/edit.py
+   trunk/lib/initialize.py
+   trunk/lib/plugins/imp/AMC.py
+   trunk/lib/plugins/imp/DVDProfiler.py
+   trunk/lib/plugins/imp/GCstar.py
+   trunk/lib/plugins/imp/__init__.py
+Log:
+* support for posters for import plugins GCstar and AMC
+* [#410362] AMC importer doesn't import cover pictures
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/ChangeLog	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-10-13  Michael Jahn
++	* support for posters for import plugins GCstar and AMC
++	* [#410362] AMC importer doesn't import cover pictures
++
+ 2009-10-07  Michael Jahn
+ 	* DVD Profiler import plugin added
+ 	* very small update for AMC import plugin (medium typ)
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/lib/edit.py	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -124,5 +124,7 @@
+     (tmp_model, tmp_iter) = treeselection.get_selected()
+     self.Image.set_from_file(t_image_path)
+     pixbuf = self.Image.get_pixbuf()
+-    self.treemodel.set_value(tmp_iter, 1, pixbuf)
++    # tmp_iter can be None while importing data
++    if tmp_iter:
++        self.treemodel.set_value(tmp_iter, 1, pixbuf)
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/lib/initialize.py	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -429,7 +429,7 @@
+         'seen', 'rating', 'genre', 'studio', 'plot', 'cast', 'notes', 'classification',
+         'site', 'o_site', 'trailer', 'medium_id', 'media_num', 'vcodec_id', 'color', 'cond',
+         'layers', 'region', 'collection_id', 'volume_id', 'image', 'ratio_id', 'screenplay',
+-        'cameraman', 'barcode', 'tags')
++        'cameraman', 'barcode', 'tags', 'poster')
+ 
+     # glade
+     glade_file = gtk.glade.XML(os.path.join(self.locations['glade'], 'import.glade'))
+@@ -695,6 +695,7 @@
+         'o_site'         : _('Official site'),
+         'o_title'        : _('Original Title'),
+         'plot'           : _('Plot'),
++        'poster'         : _('Poster'),
+         'ratio_id'       : _('Aspect ratio'),
+         'rating'         : _('Rating'),
+         'region'         : _('Region'),
+
+Modified: trunk/lib/plugins/imp/AMC.py
+===================================================================
+--- trunk/lib/plugins/imp/AMC.py	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/lib/plugins/imp/AMC.py	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -94,7 +94,7 @@
+     description  = _('Ant Movie Catalog (version 3.5)')
+     author       = 'Michael Jahn'
+     email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+-    version      = '1.0'
++    version      = '1.1'
+     file_filters = '*.[aA][mM][cC]'
+     mime_types   = None
+ 
+@@ -185,8 +185,12 @@
+             self.seekfield(self.openfile)                               # Languages         LFFNR
+             self.seekfield(self.openfile)                               # Subtitles         LFFNR
+             self.seekfield(self.openfile)                               # Size              LFFNR
+-            self.seekfield(self.openfile)                               # Picture           LFFNR
+-            self.seekfield(self.openfile)                               # PictureData       LFFNR
++            posterfilename = self.readstringfield(self.openfile)        # Picture           LFFNR
++            posterdata = self.readbinaryfield(self.openfile)            # PictureData       LFFNR
++            if posterdata:
++                details['poster'] = posterdata
++            elif posterfilename and len(posterfilename) &gt; 4:
++                details['poster'] = posterfilename
+             
+             if details['title'] == None:
+                 details['title'] = details['o_title']
+@@ -265,4 +269,14 @@
+         intValue = ord(byteStr[0])
+         if intValue == -1:
+             return None
+-        return intValue != 0
+\ No newline at end of file
++        return intValue != 0
++
++    def readbinaryfield(self, ifile):
++        field = None
++        lenStr = ifile.read(4)
++        if len(lenStr) &lt; 4:
++            raise EOFError
++        lenTuple = struct.unpack('i', lenStr)
++        if lenTuple[0]:
++            field = ifile.read(lenTuple[0])
++        return field
+\ No newline at end of file
+
+Modified: trunk/lib/plugins/imp/DVDProfiler.py
+===================================================================
+--- trunk/lib/plugins/imp/DVDProfiler.py	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/lib/plugins/imp/DVDProfiler.py	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -94,6 +94,8 @@
+             item = self.items[self.itemindex]
+         if len(self.items) &lt;= self.itemindex:
+             return None
++        if not len(item.childNodes):
++            return None
+ 
+         details = {}
+         try:
+
+Modified: trunk/lib/plugins/imp/GCstar.py
+===================================================================
+--- trunk/lib/plugins/imp/GCstar.py	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/lib/plugins/imp/GCstar.py	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -96,6 +96,18 @@
+             details['site']           = item.getAttribute('webPage')
+             details['seen']           = item.getAttribute('seen') == '1'
+             details['director']       = item.getAttribute('director')
++            # image filenames are mostly a absolute path at the original system
++            # which should be now a relative path to the xml database file
++            imagefilename             = item.getAttribute('image')
++            previoustail = ''
++            previoushead = imagefilename
++            while not os.path.exists(imagefilename) and previoushead:
++                (head, tail) = os.path.split(previoushead)
++                imagefilename = os.path.join(os.path.join(os.path.dirname(self.filename), tail), previoustail)
++                previoustail = tail
++                previoushead = head
++            if os.path.exists(imagefilename):
++                details['poster'] = imagefilename
+             try:
+                 details['number']     = int(item.getAttribute('id'))
+             except:
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2009-10-08 19:21:25 UTC (rev 1312)
++++ trunk/lib/plugins/imp/__init__.py	2009-10-13 19:29:56 UTC (rev 1313)
+@@ -22,13 +22,16 @@
+ # GNU General Public License, version 2 or later
+ 
+ import glob
++import os
+ import os.path
+ import time
+ import gc
++from tempfile import mkstemp
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ import db
++import edit
+ 
+ # detect all plugins:
+ __all__ = [os.path.basename(x)[:-3] for x in glob.glob(&quot;%s/*.py&quot; % os.path.dirname(__file__))]
+@@ -53,6 +56,7 @@
+     tagmap       = None
+ 
+     def __init__(self, parent, fields_to_import):
++        self.parent = parent
+         self.db = parent.db
+         self.locations = parent.locations
+         self.fields = parent.field_names
+@@ -96,6 +100,8 @@
+ 
+     def set_source(self, name):
+         &quot;&quot;&quot;Prepare source (open file, etc.)&quot;&quot;&quot;
++        # change current dir because there are posters with relative paths (perhaps)
++        os.chdir(os.path.dirname(name))
+ 
+     def count_movies(self):
+         &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
+@@ -153,7 +159,7 @@
+                 details = self.get_movie_details()
+                 if details is None:
+                     break
+-                
++
+                 processed += 1
+                 if processed in update_on:
+                     set_fraction(float(processed)/count)
+@@ -189,6 +195,10 @@
+                             tags = details.pop('tags')
+                         else:
+                             tags = None
++                        if 'poster' in details:
++                            poster = details.pop('poster')
++                        else:
++                            poster = None
+                         try:
+                             # optional: do mapping of lookup data
+                             # (TODO: perhaps adding new lookup values?)
+@@ -221,8 +231,27 @@
+                                         db.tables.movie_tag.insert(bind=self.db.session.bind).execute({ 'movie_id':movie.lastrowid, 'tag_id':tag_id })
+                                     except:
+                                         pass
++                            # adding poster
++                            if poster:
++                                # check for JPEG/PNG header otherwise it should be a filename 
++                                if len(poster) &gt; 4 and \
++                                    ((ord(poster[0]) == 0xFF and ord(poster[1]) == 0xD8 and ord(poster[2]) == 0xFF and ord(poster[3]) == 0xE0) or
++                                     (ord(poster[0]) == 0x89 and ord(poster[1]) == 0x50 and ord(poster[2]) == 0x4E and ord(poster[3]) == 0x47)):
++                                    # make a temporary file
++                                    try:
++                                        posterfilefd, posterfilename = mkstemp('.img')
++                                        try:
++                                            os.write(posterfilefd, poster)
++                                        finally:
++                                            os.close(posterfilefd)
++                                        edit.update_image(self.parent, number, posterfilename)
++                                    finally:
++                                        if os.path.isfile(posterfilename):
++                                            os.remove(posterfilename)
++                                else:
++                                    edit.update_image(self.parent, number, poster)
+                         except Exception, e:
+-                            log.info(&quot;movie details are not unique, skipping: %s&quot;, e)
++                            log.exception(&quot;movie details are not unique, skipping&quot;)
+                         numbers.add(number)
+                 else:
+                     log.info('skipping movie without title and original title')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000780.html">[Griffith-svn] r1312 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000782.html">[Griffith-svn] r1314 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#781">[ date ]</a>
+              <a href="thread.html#781">[ thread ]</a>
+              <a href="subject.html#781">[ subject ]</a>
+              <a href="author.html#781">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

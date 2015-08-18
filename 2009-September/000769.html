@@ -1,0 +1,259 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1301 - in trunk: . debian lib lib/db
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1301%20-%20in%20trunk%3A%20.%20debian%20lib%20lib/db&In-Reply-To=%3C200909262049.n8QKnItM011628%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000768.html">
+   <LINK REL="Next"  HREF="000770.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1301 - in trunk: . debian lib lib/db</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1301%20-%20in%20trunk%3A%20.%20debian%20lib%20lib/db&In-Reply-To=%3C200909262049.n8QKnItM011628%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1301 - in trunk: . debian lib lib/db">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep 26 22:49:18 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000768.html">[Griffith-svn] r1300 - in trunk/lib: . plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000770.html">[Griffith-svn] r1302 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#769">[ date ]</a>
+              <a href="thread.html#769">[ thread ]</a>
+              <a href="subject.html#769">[ subject ]</a>
+              <a href="author.html#769">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-09-26 22:49:17 +0200 (Sat, 26 Sep 2009)
+New Revision: 1301
+
+Modified:
+   trunk/ChangeLog
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/lib/db/__init__.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/gutils.py
+Log:
+* Display a message during database upgrades
+* update Debian files
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-09-25 10:17:53 UTC (rev 1300)
++++ trunk/ChangeLog	2009-09-26 20:49:17 UTC (rev 1301)
+@@ -5,6 +5,13 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-09-26  Piotr O&#380;arowski
++	* Display a message during database upgrades
++
++2009-09-25  Michael Jahn
++	* FilmScoop movie plugin added (thanks to Squeri Andrea)
++	* Amazon movie plugin updated
++
+ 2009-09-14  Piotr O&#380;arowski
+ 	* Add &quot;Remover&quot; extension (removes selected movies)
+ 
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2009-09-25 10:17:53 UTC (rev 1300)
++++ trunk/debian/changelog	2009-09-26 20:49:17 UTC (rev 1301)
+@@ -1,3 +1,11 @@
++griffith (0.10.1-1) unstable; urgency=low
++
++  * New upstream release
++  * Recommend python-gtkspell instead on python-gnome2-extras (closes: #541600)
++  * Bump Standards-Version to 3.8.3 (no changes needed)
++
++ -- Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;  Sat, 26 Sep 2009 18:11:51 +0200
++
+ griffith (0.10-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2009-09-25 10:17:53 UTC (rev 1300)
++++ trunk/debian/control	2009-09-26 20:49:17 UTC (rev 1301)
+@@ -4,7 +4,7 @@
+ Maintainer: Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;
+ Build-Depends: debhelper (&gt;= 5)
+ Build-Depends-Indep: python (&gt;= 2.3.5-11), python-support (&gt;= 0.6.4), docbook2x
+-Standards-Version: 3.8.2
++Standards-Version: 3.8.3
+ XS-Python-Version: &gt;=2.5
+ Vcs-Svn: <A HREF="svn://svn.berlios.de/griffith/trunk/debian">svn://svn.berlios.de/griffith/trunk/debian</A>
+ Vcs-Browser: <A HREF="http://svn.berlios.de/wsvn/griffith/debian/?sc=1">http://svn.berlios.de/wsvn/griffith/debian/?sc=1</A>
+@@ -19,7 +19,7 @@
+  python-glade2 (&gt;= 2.8.6-1),
+  python-reportlab (&gt;= 1.20debian-6),
+  python-imaging (&gt;= 1.1.5-6)
+-Recommends: python-gnome2-extras (&gt;= 2.14.0-1),
++Recommends: python-gtkspell,
+  python-chardet,
+  python-psycopg2 (&gt;= 1.1.21-6),
+  python-mysqldb (&gt;= 1.2.1-p2-2)
+
+Modified: trunk/lib/db/__init__.py
+===================================================================
+--- trunk/lib/db/__init__.py	2009-09-25 10:17:53 UTC (rev 1300)
++++ trunk/lib/db/__init__.py	2009-09-26 20:49:17 UTC (rev 1301)
+@@ -77,7 +77,7 @@
+     'collection': relation(Collection)})
+ mapper(Movie, tables.movies, order_by=tables.movies.c.number , properties = {
+     'loans'     : relation(Loan, backref='movie', cascade='all, delete-orphan'),
+-    #'tags'       : relation(Tag, cascade='all, delete-orphan', secondary=movie_tag,
++    #'tags'      : relation(Tag, cascade='all, delete-orphan', secondary=movie_tag,
+     'tags'      : relation(Tag, secondary=tables.movie_tag,
+                            primaryjoin=tables.movies.c.movie_id==tables.movie_tag.c.movie_id,
+                            secondaryjoin=tables.movie_tag.c.tag_id==tables.tags.c.tag_id),
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-09-25 10:17:53 UTC (rev 1300)
++++ trunk/lib/dbupgrade.py	2009-09-26 20:49:17 UTC (rev 1301)
+@@ -32,6 +32,7 @@
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at gutils.window_message</A>(_('Upgrading database...'))
+ def upgrade_database(self, version, config):
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
+     b = self.engine
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2009-09-25 10:17:53 UTC (rev 1300)
++++ trunk/lib/gutils.py	2009-09-26 20:49:17 UTC (rev 1301)
+@@ -28,6 +28,7 @@
+     import gtk
+     import db
+ except:
++    gtk = None
+     pass
+ import htmlentitydefs
+ import re
+@@ -35,21 +36,19 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+-url_re = re.compile('^\w+://')
+-entity = re.compile(r'\&amp;.\w*?\;')
+-html_tags = re.compile(r'\&lt;.*?\&gt;')
++ENTITY = re.compile(r'\&amp;.\w*?\;')
+ 
+ def remove_accents(txt, encoding='iso-8859-1'):
+     d = {192: u'A', 193: u'A', 194: u'A', 195: u'A', 196: u'A', 197: u'A',
+-            199: u'C', 200: u'E', 201: u'E', 202: u'E', 203: u'E', 204: u'I',
+-            205: u'I', 206: u'I', 207: u'I', 209: u'N', 210: u'O', 211: u'O',
+-            212: u'O', 213: u'O', 214: u'O', 216: u'O', 217: u'U', 218: u'U',
+-            219: u'U', 220: u'U', 221: u'Y', 224: u'a', 225: u'a', 226: u'a',
+-            227: u'a', 228: u'a', 229: u'a', 231: u'c', 232: u'e', 233: u'e',
+-            234: u'e', 235: u'e', 236: u'i', 237: u'i', 238: u'i', 239: u'i',
+-            241: u'n', 242: u'o', 243: u'o', 244: u'o', 245: u'o', 246: u'o',
+-            248: u'o', 249: u'u', 250: u'u', 251: u'u', 252: u'u', 253: u'y',
+-            255: u'y'}
++         199: u'C', 200: u'E', 201: u'E', 202: u'E', 203: u'E', 204: u'I',
++         205: u'I', 206: u'I', 207: u'I', 209: u'N', 210: u'O', 211: u'O',
++         212: u'O', 213: u'O', 214: u'O', 216: u'O', 217: u'U', 218: u'U',
++         219: u'U', 220: u'U', 221: u'Y', 224: u'a', 225: u'a', 226: u'a',
++         227: u'a', 228: u'a', 229: u'a', 231: u'c', 232: u'e', 233: u'e',
++         234: u'e', 235: u'e', 236: u'i', 237: u'i', 238: u'i', 239: u'i',
++         241: u'n', 242: u'o', 243: u'o', 244: u'o', 245: u'o', 246: u'o',
++         248: u'o', 249: u'u', 250: u'u', 251: u'u', 252: u'u', 253: u'y',
++         255: u'y'}
+     return unicode(txt, encoding).translate(d)
+ 
+ def is_number(x):
+@@ -168,7 +167,7 @@
+                 print(&quot;error occurred while converting entity %s: %s&quot; % (ents, ex))
+ 
+             # check if it still needs conversion
+-            if not entity.search(ents):
++            if not ENTITY.search(ents):
+                 return ents
+ 
+         if ents[1] == '#':
+@@ -181,7 +180,7 @@
+         else:
+             return
+ 
+-    in_entity = entity.search(text)
++    in_entity = ENTITY.search(text)
+     if not in_entity:
+         return text
+     else:
+@@ -268,6 +267,32 @@
+     dialog.destroy()
+     return response in (gtk.RESPONSE_OK, gtk.RESPONSE_YES)
+ 
++def window_message(message):
++    &quot;&quot;&quot;shows window with a given message while executing decorated function&quot;&quot;&quot;
++
++    def wrap(f):
++        def wrapped_f(*args):
++            if gtk:
++                window = gtk.Window(gtk.WINDOW_POPUP)
++                label = gtk.Label()
++                text = &quot;&quot;&quot;&lt;b&gt;Griffith:&lt;/b&gt;
++%s&quot;&quot;&quot; % message
++                label.set_markup(text)
++                window.add(label)
++                window.show_all()
++                while gtk.events_pending():    # give GTK some time for updates
++                    gtk.main_iteration()
++            else:
++                print message,
++            res = f(*args)
++            if gtk:
++                window.destroy()
++            else:
++                print ' [done]'
++            return res
++        return wrapped_f
++    return wrap
++
+ def file_chooser(title, action=None, buttons=None, name='', folder=os.path.expanduser('~'), picture=False, backup=False):
+     dialog = gtk.FileChooserDialog(title=title, action=action, buttons=buttons)
+     dialog.set_default_response(gtk.RESPONSE_OK)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000768.html">[Griffith-svn] r1300 - in trunk/lib: . plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000770.html">[Griffith-svn] r1302 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#769">[ date ]</a>
+              <a href="thread.html#769">[ thread ]</a>
+              <a href="subject.html#769">[ subject ]</a>
+              <a href="author.html#769">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

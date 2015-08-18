@@ -1,0 +1,425 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1200 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1200%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200905241934.n4OJYOr9000169%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000670.html">
+   <LINK REL="Next"  HREF="000672.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1200 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1200%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200905241934.n4OJYOr9000169%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1200 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun May 24 21:34:24 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000670.html">[Griffith-svn] r1199 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000672.html">[Griffith-svn] r1201 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#671">[ date ]</a>
+              <a href="thread.html#671">[ thread ]</a>
+              <a href="subject.html#671">[ subject ]</a>
+              <a href="author.html#671">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-05-24 21:33:48 +0200 (Sun, 24 May 2009)
+New Revision: 1200
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+updated FilmAffinity plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-17 20:52:13 UTC (rev 1199)
++++ branches/0.9.x/ChangeLog	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -5,6 +5,12 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-05-24  Michael Jahn
++	* updated FilmAffinity plugin
++
++2009-05-18  Michael Jahn
++	* [#377417] URL contains non-ASCII characters
++
+ ---- 0.9.10 ----
+ 
+ 2009-05-10  Michael Jahn
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-17 20:52:13 UTC (rev 1199)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Spanish')
+ plugin_author       = 'Pedro D. S&#225;nchez'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version      = '0.3'
++plugin_version      = '0.4'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -39,6 +39,10 @@
+ 		self.movie_id = id
+ 		self.url      = &quot;<A HREF="http://www.filmaffinity.com/es/film%s.html">http://www.filmaffinity.com/es/film%s.html</A>&quot; % str(self.movie_id)
+ 
++	def initialize(self):
++		self.page = self.page.replace('\x91', '\'')
++		self.page = self.page.replace('\x92', '\'')
++
+ 	def get_image(self):
+ 		tmp = string.find(self.page, 'www.filmaffinity.com/imgs/movies/')
+ 		if tmp == -1:
+@@ -59,15 +63,11 @@
+ 		self.director = gutils.trim(self.page,'&lt;b&gt;DIRECTOR&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page, '&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
++		self.plot = gutils.trim(self.page, '&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;/tr&gt;')
+ 		if self.plot == '':
+-			self.plot = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;br /&gt;')
++			self.plot = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;/tr&gt;')
+ 		self.plot = gutils.after(self.plot, '&lt;td valign=&quot;top&quot;&gt;')
+-		self.plot = gutils.after(self.plot, '/')
+-		self.plot = string.replace(self.plot, ' SINOPSIS: ', '')
+-		self.plot = string.replace(self.plot, ' SINOPSIS:', '')
+-		self.plot = string.replace(self.plot, 'SINOPSIS: ', '')
+-		self.plot = string.replace(self.plot, 'SINOPSIS:', '')
++		self.plot = gutils.after(self.plot, 'SINOPSIS:')
+ 		self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+ 		self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+@@ -82,11 +82,14 @@
+ 		self.runtime = gutils.after(self.runtime[-10:], '&lt;td&gt;')
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page, '&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
+-		if self.genre == '':
+-			self.genre = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;br /&gt;')
+-		self.genre = gutils.trim(self.genre, '&lt;td valign=&quot;top&quot;&gt;', '/')
+-		self.genre = string.replace(self.genre, '.', &quot; /&quot;)
++		self.genre = ''
++		tmp = gutils.trim(self.page, '&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', ' / SINOPSIS')
++		if tmp == '':
++			tmp = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', ' / SINOPSIS')
++		tmp = gutils.after(tmp, '&lt;td valign=&quot;top&quot;&gt;')
++		if tmp:
++			tmp = tmp.split(' / ')
++			self.genre = tmp[len(tmp) - 1]
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+@@ -199,7 +202,7 @@
+ Geraldine Hughes\n\
+ Mike Tyson',
+ 			'country'             : 'Estados Unidos',
+-			'genre'               : u'Acci&#243;n / Drama / Deporte (Boxeo)',
++			'genre'               : u'Acci&#243;n. Drama. Deporte (Boxeo)',
+ 			'classification'      : False,
+ 			'studio'              : 'MGM / UA / Columbia Pictures / Revolution Studios',
+ 			'o_site'              : '<A HREF="http://www.rockythemovie.com">http://www.rockythemovie.com</A>',
+@@ -211,4 +214,75 @@
+ 			'image'               : True,
+ 			'rating'              : 6
+ 		},
++		'373499' : { 
++			'title'               : 'Camino',
++			'o_title'             : 'Camino',
++			'director'            : 'Javier Fesser',
++			'plot'                : True,
++			'cast'                : u'Nerea Camacho\n\
++Carmen El&#237;as\n\
++Mariano Venancio\n\
++Manuela Vell&#233;s\n\
++Ana Gracia\n\
++Lola Casamayor\n\
++Lucas Manzano\n\
++Pepe Ocio\n\
++Claudia Otero\n\
++Jordi Dauder\n\
++Emilio Gavira\n\
++Miriam Raya',
++			'country'             : u'Espa&#241;a',
++			'genre'               : u'Drama. Enfermedad. Religi&#243;n. Basado en hechos reales',
++			'classification'      : False,
++			'studio'              : u'Pel&#237;culas Pendelton / Mediapro',
++			'o_site'              : '<A HREF="http://www.caminolapelicula.com/">http://www.caminolapelicula.com/</A>',
++			'site'                : '<A HREF="http://www.filmaffinity.com/es/film373499.html">http://www.filmaffinity.com/es/film373499.html</A>',
++			'trailer'             : False,
++			'year'                : 2008,
++			'notes'               : False,
++			'runtime'             : 143,
++			'image'               : True,
++			'rating'              : 7
++		},
++		'580875' : { 
++			'title'               : 'El gato negro (Masters of Horror Series)',
++			'o_title'             : 'Black Cat (Masters of Horror Series), The',
++			'director'            : 'Stuart Gordon',
++			'plot'                : True,
++			'cast'                : 'Jeffrey Combs\n\
++Patrick Gallagher\n\
++Eric Keenleyside\n\
++Christopher Heyerdahl',
++			'country'             : 'Estados Unidos',
++			'genre'               : 'Terror',
++			'classification'      : False,
++			'studio'              : 'Emitida por la cadena Showtime',
++			'o_site'              : False,
++			'site'                : '<A HREF="http://www.filmaffinity.com/es/film580875.html">http://www.filmaffinity.com/es/film580875.html</A>',
++			'trailer'             : False,
++			'year'                : 2007,
++			'notes'               : False,
++			'runtime'             : 59,
++			'image'               : True,
++			'rating'              : 6
++		},
++		'826399' : { 
++			'title'               : 'Surcadores del cielo (The Sky Crawlers)',
++			'o_title'             : 'Sukai kurora (The Sky Crawlers)',
++			'director'            : 'Mamoru Oshii',
++			'plot'                : True,
++			'cast'                : 'Animation',
++			'country'             : u'Jap&#243;n',
++			'genre'               : u'Animaci&#243;n. Aventuras',
++			'classification'      : False,
++			'studio'              : 'Production I.G. / Nippon Television Network Corporation (NTV)',
++			'o_site'              : '<A HREF="http://sky.crawlers.jp/">http://sky.crawlers.jp/</A>',
++			'site'                : '<A HREF="http://www.filmaffinity.com/es/film826399.html">http://www.filmaffinity.com/es/film826399.html</A>',
++			'trailer'             : False,
++			'year'                : 2008,
++			'notes'               : False,
++			'runtime'             : 0,
++			'image'               : True,
++			'rating'              : 6
++		},
+ 	}
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-17 20:52:13 UTC (rev 1199)
++++ trunk/ChangeLog	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -5,6 +5,12 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-05-24  Michael Jahn
++	* updated FilmAffinity plugin
++
++2009-05-18  Michael Jahn
++	* [#377417] URL contains non-ASCII characters
++
+ 2009-05-05  Michael Jahn
+ 	* added MovieMeter plugin
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-17 20:52:13 UTC (rev 1199)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Spanish')
+ plugin_author       = 'Pedro D. S&#225;nchez'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version      = '0.3'
++plugin_version      = '0.4'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -39,6 +39,10 @@
+         self.movie_id = id
+         self.url      = &quot;<A HREF="http://www.filmaffinity.com/es/film%s.html">http://www.filmaffinity.com/es/film%s.html</A>&quot; % str(self.movie_id)
+ 
++    def initialize(self):
++        self.page = self.page.replace(u'\x91', '\'')
++        self.page = self.page.replace(u'\x92', '\'')
++
+     def get_image(self):
+         tmp = string.find(self.page, 'www.filmaffinity.com/imgs/movies/')
+         if tmp == -1:
+@@ -59,15 +63,11 @@
+         self.director = gutils.trim(self.page,'&lt;b&gt;DIRECTOR&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
++        self.plot = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;/tr&gt;')
+         if self.plot == '':
+-            self.plot = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;br /&gt;')
++            self.plot = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;/tr&gt;')
+         self.plot = gutils.after(self.plot, '&lt;td valign=&quot;top&quot;&gt;')
+-        self.plot = gutils.after(self.plot, '/')
+-        self.plot = string.replace(self.plot, ' SINOPSIS: ', '')
+-        self.plot = string.replace(self.plot, ' SINOPSIS:', '')
+-        self.plot = string.replace(self.plot, 'SINOPSIS: ', '')
+-        self.plot = string.replace(self.plot, 'SINOPSIS:', '')
++        self.plot = gutils.after(self.plot, 'SINOPSIS:')
+         self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+         self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+@@ -82,11 +82,14 @@
+         self.runtime = gutils.after(self.runtime[-10:], '&lt;td&gt;')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
+-        if self.genre == '':
+-            self.genre = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;br /&gt;')
+-        self.genre = gutils.trim(self.genre, '&lt;td valign=&quot;top&quot;&gt;', '/')
+-        self.genre = string.replace(self.genre, '.', &quot; /&quot;)
++        self.genre = ''
++        tmp = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', ' / SINOPSIS')
++        if tmp == '':
++            tmp = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', ' / SINOPSIS')
++        tmp = gutils.after(tmp, '&lt;td valign=&quot;top&quot;&gt;')
++        if tmp:
++            tmp = tmp.split(' / ')
++            self.genre = tmp[len(tmp) - 1]
+ 
+     def get_cast(self):
+         self.cast = ''
+@@ -194,7 +197,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '706925' : { 
++        '706925' : {
+             'title'               : 'Rocky Balboa (Rocky VI)',
+             'o_title'             : 'Rocky Balboa (Rocky VI)',
+             'director'            : 'Sylvester Stallone',
+@@ -210,7 +213,7 @@
+ Geraldine Hughes\n\
+ Mike Tyson',
+             'country'             : 'Estados Unidos',
+-            'genre'               : u'Acci&#243;n / Drama / Deporte (Boxeo)',
++            'genre'               : u'Acci&#243;n. Drama. Deporte (Boxeo)',
+             'classification'      : False,
+             'studio'              : 'MGM / UA / Columbia Pictures / Revolution Studios',
+             'o_site'              : '<A HREF="http://www.rockythemovie.com">http://www.rockythemovie.com</A>',
+@@ -225,4 +228,84 @@
+             'screenplay'          : 'Sylvester Stallone (Personajes: Sylvester Stallone)',
+             'barcode'             : False
+         },
++        '373499' : { 
++            'title'               : 'Camino',
++            'o_title'             : 'Camino',
++            'director'            : 'Javier Fesser',
++            'plot'                : True,
++            'cast'                : u'Nerea Camacho\n\
++Carmen El&#237;as\n\
++Mariano Venancio\n\
++Manuela Vell&#233;s\n\
++Ana Gracia\n\
++Lola Casamayor\n\
++Lucas Manzano\n\
++Pepe Ocio\n\
++Claudia Otero\n\
++Jordi Dauder\n\
++Emilio Gavira\n\
++Miriam Raya',
++            'country'             : u'Espa&#241;a',
++            'genre'               : u'Drama. Enfermedad. Religi&#243;n. Basado en hechos reales',
++            'classification'      : False,
++            'studio'              : u'Pel&#237;culas Pendelton / Mediapro',
++            'o_site'              : '<A HREF="http://www.caminolapelicula.com/">http://www.caminolapelicula.com/</A>',
++            'site'                : '<A HREF="http://www.filmaffinity.com/es/film373499.html">http://www.filmaffinity.com/es/film373499.html</A>',
++            'trailer'             : False,
++            'year'                : 2008,
++            'notes'               : False,
++            'runtime'             : 143,
++            'image'               : True,
++            'rating'              : 7,
++            'cameraman'           : u'Alex Catal&#225;n',
++            'screenplay'          : 'Javier Fesser',
++            'barcode'             : False
++        },
++        '580875' : { 
++            'title'               : 'El gato negro (Masters of Horror Series)',
++            'o_title'             : 'Black Cat (Masters of Horror Series), The',
++            'director'            : 'Stuart Gordon',
++            'plot'                : True,
++            'cast'                : 'Jeffrey Combs\n\
++Patrick Gallagher\n\
++Eric Keenleyside\n\
++Christopher Heyerdahl',
++            'country'             : 'Estados Unidos',
++            'genre'               : 'Terror',
++            'classification'      : False,
++            'studio'              : 'Emitida por la cadena Showtime',
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.filmaffinity.com/es/film580875.html">http://www.filmaffinity.com/es/film580875.html</A>',
++            'trailer'             : False,
++            'year'                : 2007,
++            'notes'               : False,
++            'runtime'             : 59,
++            'image'               : True,
++            'rating'              : 6,
++            'cameraman'           : 'David Pelletier',
++            'screenplay'          : 'Dennis Paoli, Stuart Gordon (Historia corta: Edgar Allan Poe)',
++            'barcode'             : False
++        },
++        '826399' : { 
++            'title'               : 'Surcadores del cielo (The Sky Crawlers)',
++            'o_title'             : 'Sukai kurora (The Sky Crawlers)',
++            'director'            : 'Mamoru Oshii',
++            'plot'                : True,
++            'cast'                : 'Animation',
++            'country'             : u'Jap&#243;n',
++            'genre'               : u'Animaci&#243;n. Aventuras',
++            'classification'      : False,
++            'studio'              : 'Production I.G. / Nippon Television Network Corporation (NTV)',
++            'o_site'              : '<A HREF="http://sky.crawlers.jp/">http://sky.crawlers.jp/</A>',
++            'site'                : '<A HREF="http://www.filmaffinity.com/es/film826399.html">http://www.filmaffinity.com/es/film826399.html</A>',
++            'trailer'             : False,
++            'year'                : 2008,
++            'notes'               : False,
++            'runtime'             : 0,
++            'image'               : True,
++            'rating'              : 6,
++            'cameraman'           : 'Animation',
++            'screenplay'          : 'Chihiro Itou (Novela: Hiroshi Mori)',
++            'barcode'             : False
++        },
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000670.html">[Griffith-svn] r1199 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000672.html">[Griffith-svn] r1201 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#671">[ date ]</a>
+              <a href="thread.html#671">[ thread ]</a>
+              <a href="subject.html#671">[ subject ]</a>
+              <a href="author.html#671">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

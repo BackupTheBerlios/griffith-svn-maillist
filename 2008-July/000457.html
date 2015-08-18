@@ -1,0 +1,488 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r974 - in trunk: . lib lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r974%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export&In-Reply-To=%3C200807302122.m6ULMsMW026687%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000456.html">
+   <LINK REL="Next"  HREF="000458.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r974 - in trunk: . lib lib/plugins/export</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r974%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export&In-Reply-To=%3C200807302122.m6ULMsMW026687%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r974 - in trunk: . lib lib/plugins/export">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 30 23:22:54 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000456.html">[Griffith-svn] r973 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000458.html">[Griffith-svn] r975 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#457">[ date ]</a>
+              <a href="thread.html#457">[ thread ]</a>
+              <a href="subject.html#457">[ subject ]</a>
+              <a href="author.html#457">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-07-30 23:22:52 +0200 (Wed, 30 Jul 2008)
+New Revision: 974
+
+Modified:
+   trunk/griffith
+   trunk/lib/main_treeview.py
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportXML.py
+   trunk/lib/plugins/export/PluginExportiPod.py
+Log:
+sa-session: export plugins, tags
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/griffith	2008-07-30 21:22:52 UTC (rev 974)
+@@ -402,7 +402,8 @@
+     def add_volume(self, widget):
+         from update import update_volume_combo_ids
+         name = self.widgets['add']['volume'].get_active_text()
+-        vol = self.db.Volume(name=name)
++        vol = db.Volume()
++        vol.name = nae
+         if vol and vol.add_to_db():
+             update_volume_combo_ids(self)
+             initialize.fill_volumes_combo(self, id)
+@@ -410,7 +411,8 @@
+     def add_collection(self, widget):
+         from update import update_collection_combo_ids
+         name = self.widgets['add']['collection'].get_active_text()
+-        col = self.db.Collection(name=name)
++        col = db.Collection()
++        col.name = name
+         if col and col.add_to_db():
+             update_collection_combo_ids(self)
+             initialize.fill_collections_combo(self, id)
+@@ -535,7 +537,8 @@
+ 
+     # preferences
+     def on_lang_add_clicked(self, widget):
+-        lang = self.db.Lang(name=self.widgets['preferences']['lang_name'].get_active_text())
++        lang = db.Lang()
++        lang.name = self.widgets['preferences']['lang_name'].get_active_text()
+         if lang and lang.add_to_db():
+             initialize.language_combos(self)
+ 
+@@ -570,8 +573,15 @@
+ 
+     # tags -------------------------------------------------------------{{{
+     def on_tag_add_clicked(self, widget):
+-        tag = self.db.Tag(name=self.widgets['preferences']['tag_name'].get_active_text())
+-        if tag and tag.add_to_db():
++        tag = db.Tag()
++        tag.name = self.widgets['preferences']['tag_name'].get_active_text()
++        self.db.session.add(tag)
++        try:
++            self.db.session.commit()
++        except Exception, e:
++            self.db.session.rollback()
++            self.debug.show(&quot;Cannot add tag: %s&quot; % e.message)
++        else:
+             initialize.fill_preferences_tags_combo(self)
+             initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+             update.update_bytag_combo_ids(self)
+@@ -582,11 +592,19 @@
+         if active&gt;-1:
+             tag_id = self.tags_ids[active]
+             tag = self.db.session.query(db.Tag).filter_by(tag_id=tag_id).first()
+-            if tag and tag.remove_from_db():
++            if tag and len(tag.movietags)==0:
++                self.db.session.delete(tag)
++                try:
++                    self.db.session.commit()
++                except Exception, e:
++                    self.db.session.rollback()
++                    self.debug.show(&quot;Cannot remove tag: %s&quot; % e.message)
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+                 update.update_bytag_combo_ids(self)
+                 initialize.fill_bytag_combo(self)
++            else:
++                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             self.debug.show(&quot;You have to select tag first&quot;)
+ 
+@@ -597,9 +615,14 @@
+             return False
+         tag_id = self.tags_ids[active]
+         tag = self.db.session.query(db.Tag).filter_by(tag_id=tag_id).first()
+-        if tag is not None:
++        if tag:
+             tag.name = self.widgets['preferences']['tag_name'].get_active_text()
+-            if tag.update_in_db():
++            try:
++                self.db.session.commit()
++            except Exception, e:
++                self.db.session.rollback()
++                self.debug.show(&quot;Cannot rename tag: %s&quot; % e.message)
++            else:
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+                 update.update_bytag_combo_ids(self)
+@@ -613,7 +636,8 @@
+ 
+     # audio codecs ------------------------------------------------------{{{
+     def on_acodec_add_clicked(self, widget):
+-        acodec = self.db.ACodec(name=self.widgets['preferences']['acodec_name'].get_active_text())
++        acodec = self.db.ACodec()
++        acodec.name = self.widgets['preferences']['acodec_name'].get_active_text()
+         if acodec and acodec.add_to_db():
+             initialize.acodec_combos(self)
+ 
+@@ -647,7 +671,8 @@
+ 
+     # audio channels ----------------------------------------------------{{{
+     def on_achannel_add_clicked(self, widget):
+-        achannel = self.db.AChannel(name=self.widgets['preferences']['achannel_name'].get_active_text())
++        achannel = self.db.AChannel()
++        achannel.name = self.widgets['preferences']['achannel_name'].get_active_text()
+         if achannel and achannel.add_to_db():
+             initialize.achannel_combos(self)
+ 
+@@ -681,7 +706,8 @@
+ 
+     # subformats -------------------------------------------------------------{{{
+     def on_subformat_add_clicked(self, widget):
+-        subformat = self.db.SubFormat(name=self.widgets['preferences']['subformat_name'].get_active_text())
++        subformat = self.db.SubFormat()
++        subformat.name = self.widgets['preferences']['subformat_name'].get_active_text()
+         if subformat and subformat.add_to_db():
+             initialize.subformat_combos(self)
+ 
+@@ -715,7 +741,8 @@
+ 
+     # media ------------------------------------------------------------{{{
+     def on_medium_add_clicked(self, widget):
+-        medium = self.db.Medium(name=self.widgets['preferences']['medium_name'].get_active_text())
++        medium = self.db.Medium()
++        medium.name = self.widgets['preferences']['medium_name'].get_active_text()
+         if medium and medium.add_to_db():
+             initialize.media_combos(self)
+ 
+@@ -749,7 +776,8 @@
+ 
+     # vcodecs -------------------------------------------------------------{{{
+     def on_vcodec_add_clicked(self, widget):
+-        vcodec = self.db.VCodec(name=self.widgets['preferences']['vcodec_name'].get_active_text())
++        vcodec = self.db.VCodec()
++        vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text()
+         if vcodec and vcodec.add_to_db():
+             initialize.vcodec_combos(self)
+ 
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/lib/main_treeview.py	2008-07-30 21:22:52 UTC (rev 974)
+@@ -397,9 +397,7 @@
+         sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+         sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
+         
+-        from sqlalchemy.orm.util import class_mapper, object_mapper
+         for i in sort_column_name.split(','):
+-            #if db.Movie.has_key(i):
+             if db.movies_table.columns.has_key(i):
+                 if sort_reverse:
+                     movies.append_order_by(desc(db.movies_table.columns[i]))
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2008-07-30 21:22:52 UTC (rev 974)
+@@ -23,9 +23,10 @@
+ 
+ import csv
+ import gtk
+-import gutils
+ import os
+ from gettext import gettext as _
++import gutils
++import db
+ 
+ plugin_name = &quot;CSV&quot;
+ plugin_description = _(&quot;Full CSV list export plugin&quot;)
+@@ -69,7 +70,7 @@
+                     
+             if overwrite == True or overwrite is None:
+                 writer = csv.writer(file(filename[0], 'w'), dialect=csv.excel)
+-                for movie in self.db.Movie.all():
++                for movie in self.db.session.query(db.Movie).all():
+                     t = []
+                     for s in ('number', 'o_title', 'title', 'director', 'year', 'classification', 'country',
+                             'genre', 'rating', 'runtime', 'studio', 'seen', 'loaned', 'o_site', 'site', 'trailer',
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2008-07-30 21:22:52 UTC (rev 974)
+@@ -31,6 +31,7 @@
+ import math
+ from xml.dom import minidom
+ from gettext import gettext as _
++import db
+ 
+ plugin_name         = 'HTML'
+ plugin_description  = _('Plugin exports data using templates')
+@@ -542,71 +543,67 @@
+     #}}}
+ 
+     def select(self):    #{{{
+-        from sqlalchemy import select
++        from sqlalchemy import select, outerjoin
+         config = self.config
+         
+         # columns to select
+         columns = []
+         for i in self.fields_as_columns:
+             try:
+-                columns.append(self.db.Movie.c[self.fields_as_columns[i]])
++                columns.append(db.movies_table.c[self.fields_as_columns[i]])
+             except:
+                 pass
+         # use outer join to media table to get the name of the media
+-        from sqlalchemy import outerjoin
+-        columns.append(self.db.Medium.c['name'])
+-        media_join = outerjoin(self.db.metadata.tables['movies'], \
+-            self.db.metadata.tables['media'], \
+-            self.db.metadata.tables['movies'].c.medium_id==self.db.metadata.tables['media'].c.medium_id)
++        columns.append(db.media_table.c['name'])
++        media_join = outerjoin(db.movies_table, db.media_table, \
++                db.movies_table.c.medium_id==db.media_table.c.medium_id)
+         # use outer join to collections table to get the name of the collection
+-        columns.append(self.db.Collection.c['name'])
+-        collection_join = media_join.outerjoin( \
+-            self.db.metadata.tables['collections'], \
+-            self.db.metadata.tables['movies'].c.collection_id==self.db.metadata.tables['collections'].c.collection_id)
++        columns.append(db.collections_table.c['name'])
++        collection_join = media_join.outerjoin(db.collections_table, \
++            db.movies_table.c.collection_id==db.collections_table.c.collection_id)
+         # use outer join to volumes table to get the name of the volume
+-        columns.append(self.db.Volume.c['name'])
+-        volume_join = collection_join.outerjoin( \
+-            self.db.metadata.tables['volumes'], \
+-            self.db.metadata.tables['movies'].c.volume_id==self.db.metadata.tables['volumes'].c.volume_id)
++        columns.append(db.volumes_table.c['name'])
++        volume_join = collection_join.outerjoin(db.volumes_table, \
++            db.movies_table.c.volume_id==db.volumes_table.c.volume_id)
+         # use outer join to volumes table to get the name of the volume
+-        columns.append(self.db.VCodec.c['name'])
+-        vcodec_join = volume_join.outerjoin( \
+-            self.db.metadata.tables['vcodecs'], \
+-            self.db.metadata.tables['movies'].c.vcodec_id==self.db.metadata.tables['vcodecs'].c.vcodec_id)
++        columns.append(db.vcodecs_table.c['name'])
++        vcodec_join = volume_join.outerjoin(db.vcodecs_table, \
++            db.movies_table.c.vcodec_id==db.vcodecs_table.c.vcodec_id)
+         #
+         # selecting the audio codec doesn't work with joins because if more than one codec per movie is
+         # added it would duplicate the movie in the result set as many as audio codecs are added to the movie
+         #
+         # use outer join to language and acodec table to get the name of the audio codec
+         #movie_lang_join = vcodec_join.outerjoin( \
+-        #    self.db.metadata.tables['movie_lang'], \
+-        #    self.db.metadata.tables['movies'].c.movie_id==self.db.metadata.tables['movie_lang'].c.movie_id)
+-        #columns.append(self.db.ACodec.c['name'])
++        #    db.movie_lang_table, \
++        #    db.movies_table.c.movie_id==db.movie_lang_table.c.movie_id)
++        #columns.append(db.acodec_table.c['name'])
+         #acodec_join = movie_lang_join.outerjoin( \
+-        #    self.db.metadata.tables['acodec'], \
+-        #    self.db.metadata.tables['movie_lang'].c.acodec_id==self.db.metadata.tables['acodec'].c.acodec_id)
++        #    db.acodec_table, \
++        #    db.movie_lang_table.c.acodec_id==db.acodec_table.c.acodec_id)
+         
+         # sort order    TODO: more than one sort column
+         sort_columns = []
+         sorting_parts = config['sorting'].split('_')
+         if config['sorting2'] == 'ASC':
+             from sqlalchemy import asc
+-            sort_columns.append(asc(self.db.metadata.tables[sorting_parts[0]].c['_'.join(sorting_parts[1:])]))
++            sort_columns.append(asc(db.metadata.tables[sorting_parts[0]].c['_'.join(sorting_parts[1:])]))
+         elif config['sorting2'] == 'DESC':
+             from sqlalchemy import desc
+-            sort_columns.append(desc(self.db.metadata.tables[sorting_parts[0]].c['_'.join(sorting_parts[1:])]))
++            sort_columns.append(desc(db.metadata.tables[sorting_parts[0]].c['_'.join(sorting_parts[1:])]))
+ 
+-        statement = select(columns=columns, order_by=sort_columns, from_obj=[media_join, collection_join, volume_join, vcodec_join], use_labels = True)
++        statement = select(columns=columns, order_by=sort_columns, bind=self.db.session.bind,
++                    from_obj=[media_join, collection_join, volume_join, vcodec_join], use_labels=True)
+ 
+         # where clause
+         if config['seen_only'] == 1:
+-            statement.append_whereclause(self.db.Movie.c.seen==True)
++            statement.append_whereclause(db.movies_table.c.seen==True)
+         elif config['seen_only'] == 2:
+-            statement.append_whereclause(self.db.Movie.c.seen!=True)
++            statement.append_whereclause(db.movies_table.c.seen!=True)
+         if config['loaned_only'] == 1:
+-            statement.append_whereclause(self.db.Movie.c.loaned==True)
++            statement.append_whereclause(db.movies_table.c.loaned==True)
+         elif config['loaned_only'] == 2:
+-            statement.append_whereclause(self.db.Movie.c.loaned!=True)
++            statement.append_whereclause(db.movies_table.c.loaned!=True)
+         
+         return statement.execute()
+     #}}}
+@@ -665,12 +662,11 @@
+             # modules are needed at least to convert griffith.png to nopic.(gif|jpeg|png)
+             from PIL import Image
+             # py2exe problem workaround:
+-            # if self.windows:
+-            from PIL import PngImagePlugin
+-            from PIL import GifImagePlugin
+-            from PIL import JpegImagePlugin
+-            Image._initialized=2
+-            # end if
++            if os.name == 'nt' or os.name.startswith('win'): # win32, win64
++                from PIL import PngImagePlugin
++                from PIL import GifImagePlugin
++                from PIL import JpegImagePlugin
++                Image._initialized=2
+             if not config['poster_convert']:
+                 config['poster_format'] = 'jpeg' # replace 'jpeg'
+             
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2008-07-30 21:22:52 UTC (rev 974)
+@@ -32,14 +32,16 @@
+ from reportlab.platypus import Image, SimpleDocTemplate, Paragraph, Spacer
+ from reportlab.lib.styles import getSampleStyleSheet
+ from xml.sax import saxutils
+-import os, gtk
+-import version
+-import gutils
++import config
++import gtk
++import os
+ import string
+ import sys
+-import config
+ from locale import getdefaultlocale
+ from sqlalchemy import select
++import db
++import gutils
++import version
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -102,16 +104,16 @@
+                 style = self.styles[&quot;Normal&quot;]
+                 Story = [Spacer(1,2*inch)]
+                 # build the query
+-                movies = select(self.db.Movie.c)
++                movies = select(db.movies_table.c, bind=self.db.session.bind)
+                 # select sort column
+                 sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+                 sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
+                 for i in sort_column_name.split(','):
+-                    if self.db.Movie.c.has_key(i):
++                    if db.movies_table.c.has_key(i):
+                         if sort_reverse:
+-                            movies = movies.order_by(self.db.Movie.c[i].desc())
++                            movies = movies.order_by(db.movies_table.c[i].desc())
+                         else:
+-                            movies = movies.order_by(self.db.Movie.c[i])
++                            movies = movies.order_by(db.movies_table.c[i])
+                 movies = movies.execute().fetchall()
+                 # define some custom stylesheetfont
+                 total = len(movies)
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/lib/plugins/export/PluginExportXML.py	2008-07-30 21:22:52 UTC (rev 974)
+@@ -24,9 +24,10 @@
+ import xml.dom.minidom
+ import xml.dom.ext
+ import gtk
+-import gutils
+ import os
+ from gettext import gettext as _
++import db
++import gutils
+ 
+ plugin_name = &quot;XML&quot;
+ plugin_description = _(&quot;Full XML list export plugin&quot;)
+@@ -75,10 +76,10 @@
+                 root = doc.documentElement
+                 
+                 # create object
+-                for movie in self.db.Movie.all():
++                for movie in self.db.session.query(db.Movie).all():
+                     e = doc.createElement('movie')
+                     root.appendChild(e)
+-                    for key in movie.c.keys():
++                    for key in db.movies_table.c.keys():
+                         e2 = doc.createElement(key)
+                         if movie[key] is None:
+                             value = ''
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2008-07-30 19:48:33 UTC (rev 973)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2008-07-30 21:22:52 UTC (rev 974)
+@@ -31,6 +31,7 @@
+ import shutil
+ from tempfile import mkdtemp
+ from gettext import gettext as _
++import db
+ 
+ plugin_name = &quot;iPod&quot;
+ plugin_description = _(&quot;iPod Notes export plugin&quot;)
+@@ -79,7 +80,7 @@
+         griffith_list = open(os.path.join(tmp_dir,&quot;movies&quot;),&quot;w&quot;)
+         t = []
+         
+-        for movie in self.db.Movie.all():
++        for movie in self.db.session.query(db.Movie).all():
+             t.append(&quot;%s | %s | %s | %s&quot;%(movie['number'],movie['o_title'],movie['title'],movie['director']))
+     
+         griffith_list.write(&quot;&lt;title&gt;%s&lt;/title&gt;&lt;br&gt;&lt;br&gt;&quot;%_(&quot;My Movies List&quot;))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000456.html">[Griffith-svn] r973 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000458.html">[Griffith-svn] r975 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#457">[ date ]</a>
+              <a href="thread.html#457">[ thread ]</a>
+              <a href="subject.html#457">[ subject ]</a>
+              <a href="author.html#457">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

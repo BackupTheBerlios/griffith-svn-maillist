@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1043 - in trunk/lib: . plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1043%20-%20in%20trunk/lib%3A%20.%20plugins/export&In-Reply-To=%3C200811152201.mAFM1BrM000580%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000520.html">
+   <LINK REL="Next"  HREF="000522.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1043 - in trunk/lib: . plugins/export</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1043%20-%20in%20trunk/lib%3A%20.%20plugins/export&In-Reply-To=%3C200811152201.mAFM1BrM000580%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1043 - in trunk/lib: . plugins/export">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 15 23:01:11 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000520.html">[Griffith-svn] r1042 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000522.html">[Griffith-svn] r1044 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#521">[ date ]</a>
+              <a href="thread.html#521">[ thread ]</a>
+              <a href="subject.html#521">[ subject ]</a>
+              <a href="author.html#521">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-15 23:01:10 +0100 (Sat, 15 Nov 2008)
+New Revision: 1043
+
+Modified:
+   trunk/lib/advfilter.py
+   trunk/lib/plugins/export/PluginExportCSV.py
+   trunk/lib/plugins/export/__init__.py
+Log:
+cosmetics
+
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2008-11-15 21:59:58 UTC (rev 1042)
++++ trunk/lib/advfilter.py	2008-11-15 22:01:10 UTC (rev 1043)
+@@ -42,7 +42,7 @@
+     'required_tags'   : set(), # like in tags, but movie must contain all listed tags
+     'loaned_to'       : set(), # list of person_ids     (search for movies loaned to these people)
+     'loan_history'    : set(), # list of person_ids     (search for movies which were loaned by these people)
+-    'sort_by'         : (&quot;number&quot;,), # &quot;number DESC&quot;
++    'sort_by'         : set((&quot;number&quot;,)), # &quot;number DESC&quot;
+     'equals'          : {}, # {column1: set(value1, value2), column2: set(value3)}
+     'equals_n'        : {}, # see above
+     'startswith'      : {}, # see above
+
+Modified: trunk/lib/plugins/export/PluginExportCSV.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportCSV.py	2008-11-15 21:59:58 UTC (rev 1042)
++++ trunk/lib/plugins/export/PluginExportCSV.py	2008-11-15 22:01:10 UTC (rev 1043)
+@@ -41,16 +41,16 @@
+ 
+     def run(self):
+         basedir = None
+-        if not self.config is None:
++        if self.config is not None:
+             basedir = self.config.get('export_dir', None, section='export-csv')
+         if not basedir:
+             filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv')
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK), name='griffith_list.csv')
+         else:
+             filename = gutils.file_chooser(_(&quot;Export a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_SAVE, \
+-                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name='griffith_list.csv',folder=basedir)
++                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,gtk.RESPONSE_OK), name='griffith_list.csv', folder=basedir)
+         if filename and filename[0]:
+-            if not self.config is None and filename[1]:
++            if self.config is not None and filename[1]:
+                 self.config.set('export_dir', filename[1], section='export-csv')
+                 self.config.save()
+             overwrite = None
+@@ -61,7 +61,7 @@
+                 else:
+                     overwrite = False
+             
+-            if overwrite == True or overwrite is None:
++            if overwrite: or overwrite is None:
+                 movies = self.get_query().execute()
+ 
+                 writer = csv.writer(file(filename[0], 'w'), dialect=csv.excel)
+
+Modified: trunk/lib/plugins/export/__init__.py
+===================================================================
+--- trunk/lib/plugins/export/__init__.py	2008-11-15 21:59:58 UTC (rev 1042)
++++ trunk/lib/plugins/export/__init__.py	2008-11-15 22:01:10 UTC (rev 1043)
+@@ -41,15 +41,12 @@
+     version = None
+     fields_to_export = ('number', 'o_title', 'title', 'director', 'year')
+ 
+-    def __init__(self, database, locations, parent_window, search_conditions, config, **kwargs): #{{{
++    def __init__(self, database, locations, parent_window, search_conditions, config):
+         self.db = database
++        self.config = config
+         self.locations = locations
+         self.parent_window = parent_window
+         self.search_conditions = search_conditions
+-
+-        self.config = config
+-        self.search_conditions = search_conditions
+-    #}}}
+     
+     def initialize(self):
+         &quot;&quot;&quot;Initializes plugin (get all parameters from user, etc.)&quot;&quot;&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000520.html">[Griffith-svn] r1042 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000522.html">[Griffith-svn] r1044 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#521">[ date ]</a>
+              <a href="thread.html#521">[ thread ]</a>
+              <a href="subject.html#521">[ subject ]</a>
+              <a href="author.html#521">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

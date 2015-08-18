@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1162 - branches/0.9.x trunk trunk/glade
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1162%20-%20branches/0.9.x%20trunk%20trunk/glade&In-Reply-To=%3C200902112057.n1BKvBgQ026365%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000633.html">
+   <LINK REL="Next"  HREF="000635.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1162 - branches/0.9.x trunk trunk/glade</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1162%20-%20branches/0.9.x%20trunk%20trunk/glade&In-Reply-To=%3C200902112057.n1BKvBgQ026365%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1162 - branches/0.9.x trunk trunk/glade">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 11 21:57:11 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000633.html">[Griffith-svn] r1160 - trunk/debian
+</A></li>
+        <LI>Next message: <A HREF="000635.html">[Griffith-svn] r1163 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#634">[ date ]</a>
+              <a href="thread.html#634">[ thread ]</a>
+              <a href="subject.html#634">[ subject ]</a>
+              <a href="author.html#634">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-02-11 21:56:20 +0100 (Wed, 11 Feb 2009)
+New Revision: 1162
+
+Modified:
+   branches/0.9.x/griffith
+   trunk/glade/griffith.glade
+   trunk/griffith
+Log:
+some small fixes:
+ * refresh statusbar after toggling the seen flag
+ * added missing translation support for statusbar text (trunk only)
+ * changed &quot;print&quot; to &quot;log.error&quot; for output of missing modules (trunk only)
+ * made label for saved filter translateable, renamed from &quot;saved&quot; to &quot;Saved filters&quot; for the moment (trunk only)
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2009-02-10 21:07:08 UTC (rev 1161)
++++ branches/0.9.x/griffith	2009-02-11 20:56:20 UTC (rev 1162)
+@@ -377,6 +377,7 @@
+ 			movie.refresh()
+ 			self.treemodel.set_value(m_iter,6,movie.seen)
+ 			self.treeview_clicked()
++			self.count_statusbar()
+ 
+ 	def sugest_movie(self, *args):
+ 		if not self.widgets['menu']['not_seen_movies'].get_active():
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-02-10 21:07:08 UTC (rev 1161)
++++ trunk/glade/griffith.glade	2009-02-11 20:56:20 UTC (rev 1162)
+@@ -763,7 +763,7 @@
+                   &lt;widget class=&quot;GtkLabel&quot; id=&quot;label291&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;xpad&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot;&gt;saved&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Saved filters&lt;/property&gt;
+                   &lt;/widget&gt;
+                 &lt;/child&gt;
+               &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-02-10 21:07:08 UTC (rev 1161)
++++ trunk/griffith	2009-02-11 20:56:20 UTC (rev 1162)
+@@ -48,12 +48,12 @@
+ if len(missing) &gt; 0:
+     log.error('Error: missing modules:')
+     for i in missing:
+-        print &quot;%(module)s&quot; % i,
++        log.error(&quot;%(module)s&quot; % i)
+         if i.has_key('module_req'):
+-            print &quot;\t:: required version: %(module_req)s&quot; % i,
++            log.error(&quot;\t:: required version: %(module_req)s&quot; % i)
+             if i['version'] is not False and i['version'][0] == '-':
+-                print &quot;\t:: detected: %s&quot; % i['version'][1:]
+-        print &quot;\n&quot;,
++                log.error(&quot;\t:: detected: %s&quot; % i['version'][1:])
++        log.error(&quot;\n&quot;)
+     sys.exit(1)
+ del missing
+ 
+@@ -385,6 +385,7 @@
+             self.db.session.commit()
+             self.treemodel.set_value(m_iter,6,movie.seen)
+             self.treeview_clicked()
++            self.count_statusbar()
+ 
+     def sugest_movie(self, *args):
+         if not self.widgets['menu']['not_seen_movies'].get_active():
+@@ -1123,7 +1124,7 @@
+         if allmovies &gt; 0:
+             loaned = self.db.session.query(db.Movie).filter_by(loaned=True).count()
+             not_seen = self.db.session.query(db.Movie).filter_by(seen=False).count()
+-        self.update_statusbar(&quot;%s (%s) movie(s) in collection. %s movie(s) loaned. You haven't seen %s movie(s)&quot; % (allmovies, self.total, loaned, not_seen))
++        self.update_statusbar(_(&quot;%s movie(s) in collection. %s movie(s) are shown by the filter. %s movie(s) loaned. You haven't seen %s movie(s)&quot;) % (allmovies, self.total, loaned, not_seen))
+ 
+     def update_statusbar(self, text):
+         context_id = self.widgets['statusbar'].get_context_id(text)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000633.html">[Griffith-svn] r1160 - trunk/debian
+</A></li>
+	<LI>Next message: <A HREF="000635.html">[Griffith-svn] r1163 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#634">[ date ]</a>
+              <a href="thread.html#634">[ thread ]</a>
+              <a href="subject.html#634">[ subject ]</a>
+              <a href="author.html#634">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

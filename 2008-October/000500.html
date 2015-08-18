@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1020 - in branches/0.9.x: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1020%20-%20in%20branches/0.9.x%3A%20.%20lib&In-Reply-To=%3C200810261027.m9QARI3h020725%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000499.html">
+   <LINK REL="Next"  HREF="000501.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1020 - in branches/0.9.x: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1020%20-%20in%20branches/0.9.x%3A%20.%20lib&In-Reply-To=%3C200810261027.m9QARI3h020725%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1020 - in branches/0.9.x: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 26 11:27:18 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000499.html">[Griffith-svn] r1019 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000501.html">[Griffith-svn] r1021 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#500">[ date ]</a>
+              <a href="thread.html#500">[ thread ]</a>
+              <a href="subject.html#500">[ subject ]</a>
+              <a href="author.html#500">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-10-26 11:27:18 +0100 (Sun, 26 Oct 2008)
+New Revision: 1020
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/initialize.py
+Log:
+Don't refresh movie list while updating quick filter combos (backported from trunk)
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-10-25 20:56:55 UTC (rev 1019)
++++ branches/0.9.x/ChangeLog	2008-10-26 10:27:18 UTC (rev 1020)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-10-26  Piotr O&#380;arowski
++	* Don't refresh movie list while updating quick filter combos (backported from trunk)
++
+ 2008-10-23  Michael Jahn
+ 	* PDF export: disabled movie grouping if movie list is not sorted by title or original title
+ 	* [#258817] The application doesn't save volume
+
+Modified: branches/0.9.x/lib/initialize.py
+===================================================================
+--- branches/0.9.x/lib/initialize.py	2008-10-25 20:56:55 UTC (rev 1019)
++++ branches/0.9.x/lib/initialize.py	2008-10-26 10:27:18 UTC (rev 1020)
+@@ -711,6 +711,8 @@
+ 		self.widgets['preferences']['db_type'].set_active(0)
+ 
+ def fill_volumes_combo(self, default=0):
++	_tmp = self.initialized
++	self.initialized = False # don't refresh main treeview
+ 	self.widgets['add']['volume'].get_model().clear()
+ 	self.widgets['filter']['volume'].get_model().clear()
+ 	for i in self.volume_combo_ids:
+@@ -722,6 +724,7 @@
+ 		# add some white spaces to prevent scrollbar hides parts of the names	
+ 		self.widgets['add']['volume'].insert_text(int(i), str(name) + '   ')
+ 		self.widgets['filter']['volume'].insert_text(int(i), str(name) + '   ')
++	self.initialized = _tmp
+ 	self.widgets['add']['volume'].show_all()
+ 	self.widgets['filter']['volume'].show_all()
+ 	self.widgets['filter']['volume'].set_active(0)
+@@ -731,6 +734,8 @@
+ 	self.widgets['add']['volume'].set_wrap_width(3)
+ 
+ def fill_collections_combo(self, default=0):
++	_tmp = self.initialized
++	self.initialized = False # don't refresh main treeview
+ 	self.widgets['add']['collection'].get_model().clear()
+ 	self.widgets['filter']['collection'].get_model().clear()
+ 	for i in self.collection_combo_ids:
+@@ -742,6 +747,8 @@
+ 		# add some white spaces to prevent scrollbar hides parts of the names	
+ 		self.widgets['add']['collection'].insert_text(int(i), str(name) + '   ')
+ 		self.widgets['filter']['collection'].insert_text(int(i), str(name) + '   ')
++	self.initialized = _tmp
++	self.initialized = False
+ 	self.widgets['add']['collection'].show_all()
+ 	self.widgets['filter']['collection'].show_all()
+ 	self.widgets['filter']['collection'].set_active(0)
+@@ -751,6 +758,8 @@
+ 	self.widgets['add']['collection'].set_wrap_width(2)
+ 
+ def fill_loanedto_combo(self):
++	_tmp = self.initialized
++	self.initialized = False # don't refresh main treeview
+ 	self.widgets['filter']['loanedto'].get_model().clear()
+ 	for i in self.loanedto_combo_ids:
+ 		per_id = self.loanedto_combo_ids[i]
+@@ -760,10 +769,13 @@
+ 			name = ''
+ 		# add some white spaces to prevent scrollbar hides parts of the names	
+ 		self.widgets['filter']['loanedto'].insert_text(int(i), str(name) + '   ')
++	self.initialized = _tmp
+ 	self.widgets['filter']['loanedto'].show_all()
+ 	self.widgets['filter']['loanedto'].set_active(0)
+ 
+ def fill_bytag_combo(self):
++	_tmp = self.initialized
++	self.initialized = False # don't refresh main treeview
+ 	self.widgets['filter']['tag'].get_model().clear()
+ 	for i in self.bytag_combo_ids:
+ 		id = self.bytag_combo_ids[i]
+@@ -773,10 +785,13 @@
+ 			name = ''
+ 		# add some white spaces to prevent scrollbar hides parts of the names	
+ 		self.widgets['filter']['tag'].insert_text(int(i), str(name) + '   ')
++	self.initialized = _tmp
+ 	self.widgets['filter']['tag'].show_all()
+ 	self.widgets['filter']['tag'].set_active(0)
+ 
+ def fill_preferences_tags_combo(self):
++	_tmp = self.initialized
++	self.initialized = False # don't refresh main treeview
+ 	self.widgets['preferences']['tag_name'].get_model().clear()
+ 	self.tags_ids = {}
+ 	i = 0
+@@ -784,6 +799,7 @@
+ 		self.tags_ids[i] = tag.tag_id
+ 		self.widgets['preferences']['tag_name'].insert_text(int(i), str(tag.name))
+ 		i += 1
++	self.initialized = _tmp
+ 	self.widgets['preferences']['tag_name'].show_all()
+ 
+ def language_combos(self):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000499.html">[Griffith-svn] r1019 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000501.html">[Griffith-svn] r1021 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#500">[ date ]</a>
+              <a href="thread.html#500">[ thread ]</a>
+              <a href="subject.html#500">[ subject ]</a>
+              <a href="author.html#500">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r757 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r757%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200705011330.l41DUN5j013434%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000277.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r757 - in trunk: . lib/plugins/movie</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r757%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200705011330.l41DUN5j013434%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r757 - in trunk: . lib/plugins/movie">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Tue May  1 15:30:23 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000277.html">[Griffith-svn] r758 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#276">[ date ]</a>
+              <a href="thread.html#276">[ thread ]</a>
+              <a href="subject.html#276">[ subject ]</a>
+              <a href="author.html#276">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-05-01 15:30:22 +0200 (Tue, 01 May 2007)
+New Revision: 757
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+Log:
+e-pipoca movie plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-04-15 16:36:14 UTC (rev 756)
++++ trunk/ChangeLog	2007-05-01 13:30:22 UTC (rev 757)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-05-01  Vasco Nunes
++	* E-Pipoca movie plugin updated
++
+ 2007-04-15  Piotr O&#380;arowski
+ 	* IMDB movie plugin updated to version 1.3 (director, rating)
+ 	* Fetch from Amazon function fixed (&quot;No image available&quot; image issue)
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-04-15 16:36:14 UTC (rev 756)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2007-05-01 13:30:22 UTC (rev 757)
+@@ -21,12 +21,16 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++# Updated on 04/29/2007 by Djohnson &quot;Joe&quot; Lima
++# <A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">joe1310 at terra.com.br</A> - S&#227;o Paulo/Brasil
++
++
+ from gettext import gettext as _
+ import gutils, movie, string
+ 
+ plugin_name = &quot;E-Pipoca&quot;
+ plugin_description = &quot;E-Pipoca Brasil&quot;
+-plugin_url = &quot;epipoca.cidadeinternet.com.br&quot;
++plugin_url = &quot;epipoca.uol.com.br&quot;
+ plugin_language = _(&quot;Brazilian Portuguese&quot;)
+ plugin_author = &quot;Vasco Nunes&quot;
+ plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+@@ -37,49 +41,48 @@
+ 	def __init__(self, id):
+ 		self.encode='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://epipoca.uol.com.br/filmes_zoom.cfm?id=">http://epipoca.uol.com.br/filmes_zoom.cfm?id=</A>&quot; + str(self.movie_id)
++		self.url = &quot;<A HREF="http://epipoca.uol.com.br/filmes_detalhes.php?idf=">http://epipoca.uol.com.br/filmes_detalhes.php?idf=</A>&quot; + str(self.movie_id)
+ 
+ 	def get_image(self):
+ 		&quot;Find the film's poster image&quot;
+-		tmp_pic = gutils.trim(self.page, &quot;/images/filmes/capa_&quot;, &quot;\&quot;&quot;)
++		tmp_pic = gutils.trim(self.page, &quot;images/filmes/poster/poster_&quot;, &quot;\&quot;&quot;)
+ 		self.image_url = \
+-			&quot;<A HREF="http://epipoca.uol.com.br/images/filmes/capa_">http://epipoca.uol.com.br/images/filmes/capa_</A>&quot; + tmp_pic
++			&quot;<A HREF="http://epipoca.uol.com.br/images/filmes/poster/poster_">http://epipoca.uol.com.br/images/filmes/poster/poster_</A>&quot; + tmp_pic
+ 
+ 	def get_o_title(self):
+ 		&quot;Find the film's original title&quot;
+-		self.o_title = string.capwords(gutils.trim(self.page, &quot;&lt;/font&gt;&lt;br&gt;(&lt;i&gt;&quot;, &quot;&lt;/i&gt;, &quot;))
++		self.o_title = string.capwords(gutils.trim(self.page, &quot;&lt;/font&gt;&lt;br&gt;(&quot;, &quot;, &quot;))
+ 
+ 	def get_title(self):
+ 		&quot;&quot;&quot;Find the film's local title.
+ 		Probably the original title translation&quot;&quot;&quot;
+-		self.title = gutils.trim(self.page, &quot;'votar');\&quot;&gt;&quot;, &quot;&lt;/b&gt;&lt;/font&gt;&lt;br&gt;(&quot;)
++		self.title = gutils.trim(self.page, &quot;&lt;TITLE&gt;&quot;, &quot; (&quot;)
+ 
+ 	def get_director(self):
+ 		&quot;Find the film's director&quot;
+-		self.director = gutils.trim(self.page, &quot;&lt;b&gt;Diretor(es)&lt;/b&gt;:&quot;, &quot;&lt;/a&gt;  &lt;br&gt;&quot;)
++		self.director = gutils.trim(self.page, &quot;&lt;b&gt;Diretor(es): &lt;/b&gt;&quot;, &quot;&lt;/a&gt;&lt;/td&gt;&quot;)
+ 
+ 	def get_plot(self):
+ 		&quot;Find the film's plot&quot;
+-		self.plot = gutils.trim(self.page, &quot;&lt;b&gt;Sinopse&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;)
++		self.plot = gutils.trim(self.page, &quot;&lt;b&gt;SINOPSE&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&quot;)
+ 
+ 	def get_year(self):
+ 		&quot;Find the film's year&quot;
+-		self.year = gutils.trim(self.page, &quot;&lt;/i&gt;, &quot;, &quot;)&lt;br&gt;&lt;img&quot;)
+-		self.year = gutils.after(self.year,&quot;, &quot;)
++		self.year = gutils.trim(self.page, &quot;&lt;a href=\&quot;busca_mais.php?opc=ano&amp;busca=&quot;, &quot;\&quot;&gt;&quot;)
+ 
+ 	def get_runtime(self):
+ 		&quot;Find the film's running time&quot;
+-		self.runtime = gutils.trim(self.page, &quot;&lt;br&gt; &lt;b&gt;Dura&quot;, &quot; min&lt;br&gt;&quot;)
++		self.runtime = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Dura&quot;, &quot; min.&lt;/td&gt;&quot;)
+ 		self.runtime = self.runtime[9:]
+ 
+ 	def get_genre(self):
+ 		&quot;Find the film's genre&quot;
+-		self.genre = gutils.trim(self.page, &quot;nero&lt;/b&gt;: &quot;, &quot;&lt;br&gt;&quot;)
++		self.genre = gutils.trim(self.page, &quot;&lt;a href=\&quot;busca_mais.php?opc=genero&amp;busca=&quot;, &quot;\&quot;&gt;&quot;)
+ 
+ 	def get_cast(self):
+ 		&quot;Find the actors. Try to make it line separated.&quot;
+ 		self.cast = &quot;&quot;
+-		self.cast = gutils.trim(self.page, &quot;&lt;b&gt;Elenco:&lt;/b&gt;&quot;, &quot;&lt;b&gt;mais...&lt;/b&gt;&quot;)
++		self.cast = gutils.trim(self.page, &quot;&lt;b&gt;Elenco: &lt;/b&gt;&quot;, &quot;&lt;b&gt;mais...&lt;/b&gt;&quot;)
+ 		self.cast = gutils.strip_tags(self.cast)
+ 		self.cast = self.cast[:-2]
+ 
+@@ -89,35 +92,29 @@
+ 
+ 	def get_studio(self):
+ 		&quot;Find the studio&quot;
+-		self.studio = gutils.trim(self.page, &quot;&lt;b&gt;Distribuidora&lt;/b&gt;: &quot;, &quot;&lt;br&gt; &lt;b&gt;&quot;)
++		self.studio = gutils.trim(self.page, &quot;&lt;b&gt;Distribuidora(s): &lt;/b&gt;&quot;, &quot;&lt;/a&gt;&lt;/td&gt;&quot;)
+ 
+ 	def get_o_site(self):
+ 		&quot;Find the film's oficial site&quot;
+-		self.o_site = gutils.trim(self.page, &quot;&lt;A HREF='&quot;, \
+-			&quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_siteoficial.gif'&quot;)
++		self.o_site = &quot;<A HREF="http://epipoca.uol.com.br/filmes_web.php?idf=">http://epipoca.uol.com.br/filmes_web.php?idf=</A>&quot; + str(self.movie_id)
+ 
+ 	def get_site(self):
+ 		&quot;Find the film's imdb details page&quot;
+-		self.site = gutils.trim(self.page, \
+-			&quot;/imagens/bf_siteoficial.gif' WIDTH=89 HEIGHT=18 BORDER=0 ALT=''&gt;&quot;, \
+-			&quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_imdb.gif'&quot;)
+-		self.site = gutils.after(self.site, &quot;&lt;A HREF='&quot;)
+-		self.site = string.replace(self.site, &quot;'&quot;, &quot;&quot;)
++		self.site = &quot;<A HREF="http://epipoca.uol.com.br/filmes_ficha.php?idf=">http://epipoca.uol.com.br/filmes_ficha.php?idf=</A>&quot; + str(self.movie_id)
+ 
+ 	def get_trailer(self):
+ 		&quot;Find the film's trailer page or location&quot;
+-		self.trailer = gutils.trim(self.page, &quot;onclick=\&quot;popup('/&quot;, &quot;', 600, 400,&quot;)
+-		if self.trailer:
+-			self.trailer = &quot;<A HREF="http://epipoca.cidadeinternet.com.br/">http://epipoca.cidadeinternet.com.br/</A>&quot; + self.trailer
+-
++		self.trailer = &quot;<A HREF="http://epipoca.uol.com.br/filmes_trailer.php?idf=">http://epipoca.uol.com.br/filmes_trailer.php?idf=</A>&quot; + str(self.movie_id)
++			
+ 	def get_country(self):
+ 		&quot;Find the film's country&quot;
+-		self.country = gutils.trim(self.page, &quot;&lt;/i&gt;, &quot;, &quot;, &quot;)
++		self.country = gutils.trim(self.page, &quot;&lt;a href=\&quot;busca_mais.php?opc=pais&amp;busca=&quot;, &quot;\&quot;&gt;&quot;)
+ 
+ 	def get_rating(self):
+ 		&quot;&quot;&quot;Find the film's rating. From 0 to 10.
+ 		Convert if needed when assigning.&quot;&quot;&quot;
+-		tmp_rating = gutils.trim(self.page, &quot;&lt;font size=\&quot;3\&quot;&gt;&lt;b&gt; &quot;, &quot;&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&quot;)
++		tmp_rating = gutils.trim(self.page, &quot;&lt;br&gt;&lt;b&gt;Cota&quot;, &quot; (&quot;)
++		tmp_rating = gutils.after(tmp_rating, &quot;&lt;/b&gt;&quot;)
+ 		if tmp_rating &lt;&gt; &quot;&quot;:
+ 			tmp_rating = string.replace(tmp_rating,',','.')
+ 			self.rating = str( float(string.strip(tmp_rating)) )
+@@ -128,9 +125,9 @@
+ 	&quot;A movie search object&quot;
+ 	def __init__(self):
+ 		self.original_url_search = \
+-			&quot;<A HREF="http://epipoca.uol.com.br/search/?Ordenado=Popular&amp;busca=">http://epipoca.uol.com.br/search/?Ordenado=Popular&amp;busca=</A>&quot;
++			&quot;<A HREF="http://epipoca.uol.com.br/busca.php?opc=todos&amp;busca=">http://epipoca.uol.com.br/busca.php?opc=todos&amp;busca=</A>&quot;
+ 		self.translated_url_search = \
+-			&quot;<A HREF="http://epipoca.uol.com.br/search/?Ordenado=Popular&amp;busca=">http://epipoca.uol.com.br/search/?Ordenado=Popular&amp;busca=</A>&quot;
++			&quot;<A HREF="http://epipoca.uol.com.br/busca.php?opc=todos&amp;busca=">http://epipoca.uol.com.br/busca.php?opc=todos&amp;busca=</A>&quot;
+ 		self.encode='iso-8859-1'
+ 
+ 	def search(self, parent_window):
+@@ -142,17 +139,17 @@
+ 	def sub_search(self):
+ 		&quot;Isolating just a portion (with the data we want) of the results&quot;
+ 		self.page = gutils.trim(self.page, \
+-			&quot;&lt;tr&gt;&lt;td valign=\&quot;top\&quot; width=\&quot;100%\&quot;&gt;&quot;, &quot;&nbsp;&nbsp;&lt;b&gt;Resu&quot;)
++			&quot;&nbsp;Resul&quot;,&quot;&gt;&lt;b&gt;Not&quot;) 
+ 
+ 	def get_searches(self):
+ 		&quot;Try to find both id and film title for each search result&quot;
+-		elements = string.split(self.page, &quot;&lt;td valign=\&quot;bottom\&quot;&gt;&nbsp;&lt;/td&gt;&quot;)
++		elements = string.split(self.page, &quot;&lt;td width=\&quot;55\&quot; align=\&quot;center\&quot; bgcolor=&quot;)
+ 		self.number_results = elements[-1]
+ 
+ 		if (elements[0] != ''):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element, &quot;&lt;b&gt;&lt;a href=\&quot;/filmes_zoom.cfm?id=&quot;, &quot;\&quot;&gt;&lt;font size=\&quot;2\&quot;&quot;))
++				self.ids.append(gutils.trim(element, &quot;&lt;a href=\&quot;filmes_detalhes.php?idf=&quot;, &quot;\&quot;&gt;&lt;img src=\&quot;images/&quot;))
+ 				self.titles.append(gutils.convert_entities \
+-					(gutils.trim(element, &quot;color=\&quot;FF8000\&quot;&gt;&quot;, &quot;&lt;/font&gt;&lt;/a&gt;&lt;/b&gt;&lt;/a&gt;&lt;br&gt;&quot;) ))
++					(gutils.trim(element, &quot;&lt;/a&gt;&lt;/font&gt; &lt;br&gt;(&lt;i&gt;&quot;, &quot;&lt;/i&gt;, &lt;a href=&quot;) ))
+ 		else:
+ 			self.number_results = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000277.html">[Griffith-svn] r758 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#276">[ date ]</a>
+              <a href="thread.html#276">[ thread ]</a>
+              <a href="subject.html#276">[ subject ]</a>
+              <a href="author.html#276">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

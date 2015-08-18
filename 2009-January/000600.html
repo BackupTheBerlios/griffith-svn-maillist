@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1125 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1125%20-%20trunk/lib&In-Reply-To=%3C200901162252.n0GMqhcX011296%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000599.html">
+   <LINK REL="Next"  HREF="000601.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1125 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1125%20-%20trunk/lib&In-Reply-To=%3C200901162252.n0GMqhcX011296%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1125 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 16 23:52:43 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000599.html">[Griffith-svn] r1124 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000601.html">[Griffith-svn] r1126 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#600">[ date ]</a>
+              <a href="thread.html#600">[ thread ]</a>
+              <a href="subject.html#600">[ subject ]</a>
+              <a href="author.html#600">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-01-16 23:52:43 +0100 (Fri, 16 Jan 2009)
+New Revision: 1125
+
+Modified:
+   trunk/lib/gconsole.py
+   trunk/lib/initialize.py
+Log:
+show platform in debug mode as well (can be useful)
+
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2009-01-16 22:33:25 UTC (rev 1124)
++++ trunk/lib/gconsole.py	2009-01-16 22:52:43 UTC (rev 1125)
+@@ -63,9 +63,11 @@
+                 print version.pversion
+                 sys.exit()
+             elif o in ('-D', '--debug'):
++                from platform import platform
+                 log.setLevel(logging.DEBUG)
+                 log.debug('Dependencies:')
+                 show_dependencies()
++                log.debug(&quot;Platform: %s (%s)&quot;, platform(), os.name)
+             elif o == '--sqlecho':
+                 sa_log = logging.getLogger(&quot;sqlalchemy&quot;)
+                 sa_log.setLevel(logging.INFO)
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2009-01-16 22:33:25 UTC (rev 1124)
++++ trunk/lib/initialize.py	2009-01-16 22:52:43 UTC (rev 1125)
+@@ -125,7 +125,6 @@
+ 
+ def gui(self):
+     self._ = None
+-    log.info(&quot;running on %s - %s&quot;, os.name, platform.system())
+ 
+     if platform.system() == 'Darwin':
+         self.mac = True
+@@ -137,7 +136,6 @@
+     if self.windows:
+         gtk.rc_parse('%s\\gtkrc' % self.locations['exec'])
+ 
+-
+     gf = os.path.join(self.locations['glade'], 'griffith.glade')
+     from widgets import define_widgets
+     define_widgets(self, gtk.glade.XML(gf))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000599.html">[Griffith-svn] r1124 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000601.html">[Griffith-svn] r1126 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#600">[ date ]</a>
+              <a href="thread.html#600">[ thread ]</a>
+              <a href="subject.html#600">[ subject ]</a>
+              <a href="author.html#600">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

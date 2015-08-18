@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1249 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1249%20-%20trunk/lib&In-Reply-To=%3C200907061719.n66HJrjP032147%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000718.html">
+   <LINK REL="Next"  HREF="000720.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1249 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1249%20-%20trunk/lib&In-Reply-To=%3C200907061719.n66HJrjP032147%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1249 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  6 19:19:53 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000718.html">[Griffith-svn] r1248 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000720.html">[Griffith-svn] r1250 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#719">[ date ]</a>
+              <a href="thread.html#719">[ thread ]</a>
+              <a href="subject.html#719">[ subject ]</a>
+              <a href="author.html#719">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-06 19:19:52 +0200 (Mon, 06 Jul 2009)
+New Revision: 1249
+
+Modified:
+   trunk/lib/db.py
+   trunk/lib/main_treeview.py
+Log:
+small fixes
+
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-07-05 22:59:02 UTC (rev 1248)
++++ trunk/lib/db.py	2009-07-06 17:19:52 UTC (rev 1249)
+@@ -90,6 +90,7 @@
+     def _check_md5sum_length(self, key, value):
+         if len(value) != 32:
+             raise ValueError('md5sum has wrong size')
++        return value
+ 
+     def __init__(self, md5sum=None, data=None):
+         if md5sum and data:
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2009-07-05 22:59:02 UTC (rev 1248)
++++ trunk/lib/main_treeview.py	2009-07-06 17:19:52 UTC (rev 1249)
+@@ -371,9 +371,11 @@
+             # saved in advfilter
+             name = self.widgets['filter']['advfilter'].get_active_text()[:-3].decode('utf-8') # :-3 due to additional '   ' in the name
+             if name:
+-                cond = self.db.session.query(db.Filter).filter_by(name=name).first().data
++                cond = self.db.session.query(db.Filter).filter_by(name=name).first()
+                 if not cond:
+                     cond = advfilter.get_def_conditions()
++                else:
++                    cond = cond.data
+             else:
+                 cond = advfilter.get_def_conditions()
+             # add sorting from config
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000718.html">[Griffith-svn] r1248 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000720.html">[Griffith-svn] r1250 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#719">[ date ]</a>
+              <a href="thread.html#719">[ thread ]</a>
+              <a href="subject.html#719">[ subject ]</a>
+              <a href="author.html#719">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

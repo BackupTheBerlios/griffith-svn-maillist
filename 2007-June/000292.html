@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r774 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r774%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200706172035.l5HKZOCu031451%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000291.html">
+   <LINK REL="Next"  HREF="000293.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r774 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r774%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200706172035.l5HKZOCu031451%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r774 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jun 17 22:35:24 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000291.html">[Griffith-svn] r773 - in trunk: . lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000293.html">[Griffith-svn] r776 - in trunk: . lib po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#292">[ date ]</a>
+              <a href="thread.html#292">[ thread ]</a>
+              <a href="subject.html#292">[ subject ]</a>
+              <a href="author.html#292">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-06-17 22:35:24 +0200 (Sun, 17 Jun 2007)
+New Revision: 774
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/main_treeview.py
+Log:
+* Change &quot;report bug&quot; link in about menu
+* handle wrong values in color/condition/layers/region
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-17 19:41:19 UTC (rev 773)
++++ trunk/ChangeLog	2007-06-17 20:35:24 UTC (rev 774)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-06-17  Piotr O&#380;arowski
++	* Change &quot;report bug&quot; link in about menu
++	* Minor bug fixes
++
+ 2007-06-13  Piotr O&#380;arowski
+ 	* Add sections to config file
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-06-17 19:41:19 UTC (rev 773)
++++ trunk/griffith	2007-06-17 20:35:24 UTC (rev 774)
+@@ -946,7 +946,7 @@
+ 	def on_goto_forum_activate(site, *args):
+ 		gutils.run_browser(&quot;<A HREF="http://griffith.berlios.de/forum/">http://griffith.berlios.de/forum/</A>&quot;)
+ 	def on_goto_report_bug_activate(site, *args):
+-		gutils.run_browser(&quot;<A HREF="http://developer.berlios.de/bugs/?group_id=4891">http://developer.berlios.de/bugs/?group_id=4891</A>&quot;)
++		gutils.run_browser(&quot;<A HREF="https://bugs.launchpad.net/griffith/">https://bugs.launchpad.net/griffith/</A>&quot;)
+ 
+ 	# toolbar -------------------------------------------------------------
+ 	def toggle_toolbar(self, *args):
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-06-17 19:41:19 UTC (rev 773)
++++ trunk/lib/main_treeview.py	2007-06-17 20:35:24 UTC (rev 774)
+@@ -95,22 +95,39 @@
+ 	else:
+ 		w['genre'].set_text('')
+ 	if item.has_key('cond') and item['cond']:
+-		w['condition'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._conditions[item['cond']])
++		if str(item['cond']) in [ str(i) for i in range(len(self._conditions)) ]:
++			w['condition'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._conditions[item['cond']])
++		else:
++			w['condition'].set_text('')
++			self.debug.show(&quot;Wrong value in 'condition' field (movie_id=%s, cond=%s)&quot; % (item['movie_id'], item['cond']))
+ 	else:
+ 		w['condition'].set_text('')
+ 	if item.has_key('region') and item['region']:
+-		w['region'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item['region']))
+-		if int(item['region']) &lt; 9:
+-			self.widgets['tooltips'].set_tip(w['region'], self._regions[int(item['region'])])
++		if str(item['region']) in [ str(i) for i in range(len(self._regions)) ]:
++			w['region'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item['region']))
++			if int(item['region']) &lt; 9:
++				self.widgets['tooltips'].set_tip(w['region'], self._regions[int(item['region'])])
++		else:
++			self.debug.show(&quot;Wrong value in 'region' field (movie_id=%s, region=%s)&quot; % (item['movie_id'], item['region']))
++			w['region'].set_text('')
++			self.widgets['tooltips'].set_tip(w['region'], self._regions[0]) # N/A
+ 	else:
+ 		w['region'].set_text('')
+ 		self.widgets['tooltips'].set_tip(w['region'], self._regions[0]) # N/A
+ 	if item.has_key('layers') and item['layers']:
+-		w['layers'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._layers[item['layers']])
++		if str(item['layers']) in [ str(i) for i in range(len(self._layers)) ]:
++			w['layers'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._layers[item['layers']])
++		else:
++			self.debug.show(&quot;Wrong value in 'layers' field (movie_id=%s, layers=%s)&quot; % (item['movie_id'], item['layers']))
++			w['layers'].set_text('')
+ 	else:
+ 		w['layers'].set_text('')
+ 	if item.has_key('color') and item['color']:
+-		w['color'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._colors[item['color']])
++		if str(item['color']) in [ str(i) for i in range(len(self._colors)) ]:
++			w['color'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._colors[item['color']])
++		else:
++			self.debug.show(&quot;Wrong value in 'color' field (movie_id=%s, color=%s)&quot; % (item['movie_id'], item['color']))
++			w['color'].set_markup('')
+ 	else:
+ 		w['color'].set_markup('')
+ 	if item.has_key('classification') and item['classification']:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000291.html">[Griffith-svn] r773 - in trunk: . lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000293.html">[Griffith-svn] r776 - in trunk: . lib po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#292">[ date ]</a>
+              <a href="thread.html#292">[ thread ]</a>
+              <a href="subject.html#292">[ subject ]</a>
+              <a href="author.html#292">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r820 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r820%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200708012017.l71KHdam031534%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000330.html">
+   <LINK REL="Next"  HREF="000332.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r820 - trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r820%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C200708012017.l71KHdam031534%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r820 - trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug  1 22:17:39 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000330.html">[Griffith-svn] r819 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000332.html">[Griffith-svn] r821 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#331">[ date ]</a>
+              <a href="thread.html#331">[ thread ]</a>
+              <a href="subject.html#331">[ subject ]</a>
+              <a href="author.html#331">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-08-01 22:17:16 +0200 (Wed, 01 Aug 2007)
+New Revision: 820
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+Log:
+minor changes to Filmtipset plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2007-08-01 19:03:21 UTC (rev 819)
++++ trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2007-08-01 20:17:16 UTC (rev 820)
+@@ -27,8 +27,8 @@
+ import string
+ import re
+ 
+-plugin_name = &quot;FilmTipset.se&quot;
+-plugin_description = &quot;FilmTipset.se&quot;
++plugin_name = &quot;Filmtipset.se&quot;
++plugin_description = &quot;Filmtipset.se&quot;
+ plugin_url = &quot;www.filmtipset.se&quot;
+ plugin_language = _(&quot;Swedish&quot;)
+ plugin_author = &quot;Michael Jahn&quot;
+@@ -82,7 +82,10 @@
+ 		self.studio = ''
+ 
+ 	def get_o_site(self):
+-		self.o_site = &quot;&quot;
++		self.o_site = ''
++		tmp = gutils.trim(self.page, '<A HREF="http://akas.imdb.com">http://akas.imdb.com</A>', '&quot;')
++		if tmp != '':
++			self.o_site = '<A HREF="http://akas.imdb.com">http://akas.imdb.com</A>' + tmp
+ 
+ 	def get_site(self):
+ 		self.site = self.url
+@@ -112,7 +115,10 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.page = gutils.trim(self.page, 'Matchning', 'Hittade')
++		tmp_page = gutils.trim(self.page, 'Matchning', 'Hittade')
++		if tmp_page == '':
++			tmp_page = gutils.trim(self.page, 'Matchning', 'Visa fler')
++		self.page = tmp_page
+ 		return self.page
+ 
+ 	def get_searches(self):
+@@ -120,8 +126,9 @@
+ 		elements1[0] = None
+ 		for element in elements1:
+ 			if element &lt;&gt; None:
+-				self.ids.append(gutils.before(element,'&quot;'))
++				self.ids.append(gutils.trim(element, '/', '&quot;'))
+ 				self.titles.append(
++					gutils.strip_tags(gutils.trim(element, '&gt;', '&lt;/a&gt;')) + ' / ' +
+ 					string.replace(gutils.trim(element, 'title=&quot;', '&quot;'), '&nbsp;', ' ')
+ 				)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000330.html">[Griffith-svn] r819 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000332.html">[Griffith-svn] r821 - extra_artwork/images
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#331">[ date ]</a>
+              <a href="thread.html#331">[ thread ]</a>
+              <a href="subject.html#331">[ subject ]</a>
+              <a href="author.html#331">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

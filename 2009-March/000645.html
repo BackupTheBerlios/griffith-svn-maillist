@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1173 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1173%20-%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk/lib%20trunk/lib/plugins/movie&In-Reply-To=%3C200903062108.n26L8F04012999%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000644.html">
+   <LINK REL="Next"  HREF="000646.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1173 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1173%20-%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk/lib%20trunk/lib/plugins/movie&In-Reply-To=%3C200903062108.n26L8F04012999%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1173 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar  6 22:08:15 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000644.html">[Griffith-svn] r1172 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000646.html">[Griffith-svn] r1174 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#645">[ date ]</a>
+              <a href="thread.html#645">[ thread ]</a>
+              <a href="subject.html#645">[ subject ]</a>
+              <a href="author.html#645">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-03-06 22:07:50 +0100 (Fri, 06 Mar 2009)
+New Revision: 1173
+
+Modified:
+   branches/0.9.x/lib/amazon.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/amazon.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+Log:
+fixed Amazon plugin search with non-ascii characters
+
+Modified: branches/0.9.x/lib/amazon.py
+===================================================================
+--- branches/0.9.x/lib/amazon.py	2009-03-06 21:01:18 UTC (rev 1172)
++++ branches/0.9.x/lib/amazon.py	2009-03-06 21:07:50 UTC (rev 1173)
+@@ -225,7 +225,7 @@
+ def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate):
+     _checkLocaleSupported(locale)
+     if isinstance(searchvalue, unicode):
+-        searchvalue = searchvalue.encode('iso8859-1')
++        searchvalue = searchvalue.encode('utf8')
+     url = &quot;<A HREF="http://">http://</A>&quot; + _supportedLocales[locale][1]
+     if search_type == 'ItemLookup':
+         url += &quot;&amp;AssociateTag=%s&quot; % associate
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-03-06 21:01:18 UTC (rev 1172)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-03-06 21:07:50 UTC (rev 1173)
+@@ -43,9 +43,9 @@
+ class Plugin(movie.Movie):
+ 
+ 	def __init__(self, id):
+-		self.encode='utf8'
++		self.encode   = 'utf8'
+ 		self.movie_id = id
+-		self.url = '<A HREF="http://www.amazon.de/dp/">http://www.amazon.de/dp/</A>' + str(self.movie_id)
++		self.url      = '<A HREF="http://www.amazon.de/dp/">http://www.amazon.de/dp/</A>' + str(self.movie_id)
+ 
+ 	def open_page(self, parent_window=None, url=None):
+ 		# dont use base functionality
+@@ -223,8 +223,8 @@
+ 	def __init__(self):
+ 		self.original_url_search   = '<A HREF="http://www.amazon.de">http://www.amazon.de</A>'
+ 		self.translated_url_search = '<A HREF="http://www.amazon.de">http://www.amazon.de</A>'
+-		self.encode='utf8'
+-		self.remove_accents = False
++		self.encode                = 'utf8'
++		self.remove_accents        = False
+ 
+ 	def search(self,parent_window):
+ 		# dont use base functionality
+@@ -245,7 +245,7 @@
+ 				locale = 'jp'
+ 			else:
+ 				locale = None
+-			retriever = AmazonRetriever(self.title.encode('iso8859-1'), locale, parent_window, self.progress, self.debug)
++			retriever = AmazonRetriever(self.title, locale, parent_window, self.progress, self.debug)
+ 			retriever.start()
+ 			while retriever.isAlive():
+ 				self.progress.pulse()
+@@ -371,9 +371,9 @@
+ 	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+ 	#
+ 	test_configuration = {
+-		'Rocky Balboa'			: [ 10, 10 ],
+-		'Arahan'				: [ 6, 6 ],
+-		'Ein gl&#252;ckliches Jahr'	: [ 2, 2 ]
++		'Rocky Balboa'         : [ 16, 16 ],
++		'Arahan'               : [  7,  7 ],
++		'Ein gl&#252;ckliches Jahr' : [  2,  2 ]
+ 	}
+ 
+ class PluginTest:
+
+Modified: trunk/lib/amazon.py
+===================================================================
+--- trunk/lib/amazon.py	2009-03-06 21:01:18 UTC (rev 1172)
++++ trunk/lib/amazon.py	2009-03-06 21:07:50 UTC (rev 1173)
+@@ -227,7 +227,7 @@
+ def buildURL(search_type, searchfield, searchvalue, product_line, type, page, license_key, locale, associate):
+     _checkLocaleSupported(locale)
+     if isinstance(searchvalue, unicode):
+-        searchvalue = searchvalue.encode('iso8859-1')
++        searchvalue = searchvalue.encode('utf-8') # needed for urllib.quote
+     url = &quot;<A HREF="http://">http://</A>&quot; + _supportedLocales[locale][1]
+     if search_type == 'ItemLookup':
+         url += &quot;&amp;AssociateTag=%s&quot; % associate
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-03-06 21:01:18 UTC (rev 1172)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-03-06 21:07:50 UTC (rev 1173)
+@@ -44,9 +44,9 @@
+ class Plugin(movie.Movie):
+ 
+     def __init__(self, id):
+-        self.encode='utf8'
++        self.encode   = 'utf8'
+         self.movie_id = id
+-        self.url = '<A HREF="http://www.amazon.de/dp/">http://www.amazon.de/dp/</A>' + str(self.movie_id)
++        self.url      = '<A HREF="http://www.amazon.de/dp/">http://www.amazon.de/dp/</A>' + str(self.movie_id)
+ 
+     def open_page(self, parent_window=None, url=None):
+         # dont use base functionality
+@@ -227,8 +227,8 @@
+     def __init__(self):
+         self.original_url_search   = '<A HREF="http://www.amazon.de">http://www.amazon.de</A>'
+         self.translated_url_search = '<A HREF="http://www.amazon.de">http://www.amazon.de</A>'
+-        self.encode='utf8'
+-        self.remove_accents = False
++        self.encode                = 'utf8'
++        self.remove_accents        = False
+ 
+     def search(self,parent_window):
+         # dont use base functionality
+@@ -249,7 +249,7 @@
+                 locale = 'jp'
+             else:
+                 locale = None
+-            retriever = AmazonRetriever(self.title.encode('iso8859-1'), locale, parent_window, self.progress)
++            retriever = AmazonRetriever(self.title, locale, parent_window, self.progress)
+             retriever.start()
+             while retriever.isAlive():
+                 self.progress.pulse()
+@@ -374,9 +374,9 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'          : [ 10, 10 ],
+-        'Arahan'                : [ 6, 6 ],
+-        'Ein gl&#252;ckliches Jahr'  : [ 2, 2 ]
++        'Rocky Balboa'         : [ 16, 16 ],
++        'Arahan'               : [  7,  7 ],
++        'Ein gl&#252;ckliches Jahr' : [  2,  2 ]
+     }
+ 
+ class PluginTest:
+@@ -407,7 +407,8 @@
+             'notes'               : 'EAN: 4045167004504',
+             'runtime'             : 97,
+             'image'               : True,
+-            'rating'              : 9
++            'rating'              : 9,
++            'barcode'             : '4045167004504'
+         },
+         'B0009NSASM' : { 
+             'title'               : 'Ein gl&#252;ckliches Jahr',
+@@ -428,7 +429,8 @@
+             'notes'               : 'EAN: 7321921998843',
+             'runtime'             : 110,
+             'image'               : True,
+-            'rating'              : 10
++            'rating'              : 10,
++            'barcode'             : '7321921998843'
+         },
+         'B000BSNOD6' : { 
+             'title'               : 'Arahan (Vanilla-DVD)',
+@@ -448,6 +450,7 @@
+             'notes'               : 'EAN: 4013549871105',
+             'runtime'             : 108,
+             'image'               : True,
+-            'rating'              : 8
++            'rating'              : 8,
++            'barcode'             : '4013549871105'
+         }
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000644.html">[Griffith-svn] r1172 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000646.html">[Griffith-svn] r1174 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#645">[ date ]</a>
+              <a href="thread.html#645">[ thread ]</a>
+              <a href="subject.html#645">[ subject ]</a>
+              <a href="author.html#645">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

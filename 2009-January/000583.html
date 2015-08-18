@@ -1,0 +1,491 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1109 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1109%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901022152.n02LqBTw015772%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000584.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1109 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1109%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901022152.n02LqBTw015772%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1109 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  2 22:52:11 CET 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000584.html">[Griffith-svn] r1110 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#583">[ date ]</a>
+              <a href="thread.html#583">[ thread ]</a>
+              <a href="subject.html#583">[ subject ]</a>
+              <a href="author.html#583">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-01-02 22:51:49 +0100 (Fri, 02 Jan 2009)
+New Revision: 1109
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMoviePTGate.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMoviePTGate.py
+Log:
+PTGate movie plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-12-27 22:32:44 UTC (rev 1108)
++++ branches/0.9.x/ChangeLog	2009-01-02 21:51:49 UTC (rev 1109)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-01-02  Michael Jahn
++	* PTGate movie plugin updated
++
+ ---- 0.9.9 ----
+ 
+ 2008-12-26  Piotr O&#197;&#188;arowski
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMoviePTGate.py	2008-12-27 22:32:44 UTC (rev 1108)
++++ branches/0.9.x/lib/plugins/movie/PluginMoviePTGate.py	2009-01-02 21:51:49 UTC (rev 1109)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr Ozarowski
++# Copyright (c) 2005-2008 Vasco Nunes, Piotr Ozarowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -24,109 +24,129 @@
+ import gutils
+ import movie
+ import string
++import re
+ 
+-plugin_name = &quot;PTGate&quot;
+-plugin_description = &quot;Cinema PTGate&quot;
+-plugin_url = &quot;www.cinema.ptgate.pt&quot;
+-plugin_language = _(&quot;Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.4.1&quot;
++plugin_name         = &quot;PTGate&quot;
++plugin_description  = &quot;Cinema PTGate&quot;
++plugin_url          = &quot;cinema.ptgate.pt&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.5&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode   ='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://cinema.ptgate.pt/filme.php?code=">http://cinema.ptgate.pt/filme.php?code=</A>&quot; + str(self.movie_id)
++		self.url      = &quot;<A HREF="http://cinema.ptgate.pt/filmes/">http://cinema.ptgate.pt/filmes/</A>&quot; + str(self.movie_id)
+ 
++	def initialize(self):
++		self.page = gutils.convert_entities(self.page.decode(self.encode))
++		self.page = self.page.replace(u'\x93', u'&quot;')
++		self.page = self.page.replace(u'\x94', u'&quot;')
++		self.page = self.page.replace(u'\x96', u'-')
++
+ 	def get_image(self):
+-		self.image_url = &quot;<A HREF="http://cinema.ptgate.pt/Movies/">http://cinema.ptgate.pt/Movies/</A>&quot; + str(self.movie_id)+&quot;.jpg&quot;
++		self.image_url = '<A HREF="http://cinema.ptgate.pt/Movies/">http://cinema.ptgate.pt/Movies/</A>' + str(self.movie_id) + '.jpg'
+ 
+ 	def get_o_title(self):
+-		self.o_title = string.capwords(gutils.trim(self.page,&quot;&lt;b class=title&gt;&quot;,&quot;&lt;/b&gt;&lt;br&gt;&quot;) )
++		self.o_title = gutils.trim(gutils.after(self.page, u'&lt;h2&gt;'), u'&#226;&#128;&#186;', u'&lt;br /&gt;') # &lt;--  &#8250;
++		self.o_title = self.o_title.encode(self.encode)
+ 
+ 	def get_title(self):
+-		self.title = string.capwords(gutils.trim(self.page,&quot;class=subtitle&gt;&quot;,&quot;&lt;/b&gt;&lt;br&gt;&quot;) )
++		self.title = gutils.trim(self.page, u'&lt;h2&gt;', u'&lt;/h2&gt;')
++		self.title = self.title.encode(self.encode)
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&lt;b&gt;realiza&#195;&#167;&#195;&#163;o&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;&quot;)
++		self.director = gutils.trim(self.page, u'&lt;b&gt;realiza&#195;&#167;&#195;&#163;o&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
++		self.director = self.director.encode(self.encode)
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page,&quot;&lt;b&gt;sinopse&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&quot;)
+-		self.plot = string.replace(self.plot,&quot;'&quot;,&quot;\&quot;&quot;)
+-		self.plot = string.replace(self.plot,&quot;'&quot;,&quot;\&quot;&quot;)
++		self.plot = gutils.trim(self.page, u'&lt;b&gt;sinopse&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
++		self.plot = self.plot.encode(self.encode)
++		self.plot = string.replace(self.plot, &quot;'&quot;, &quot;\&quot;&quot;)
++		self.plot = string.replace(self.plot, &quot;'&quot;, &quot;\&quot;&quot;)
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,&quot;&lt;br&gt;&lt;b&gt;ano&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;pa&quot;)
++		self.year = gutils.trim(self.page, u'&lt;b&gt;ano&lt;/b&gt;: ', u'&lt;br /&gt;')
+ 
+ 	def get_runtime(self):
+-		self.runtime = &quot;&quot;
++		self.runtime = ''
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page,&quot;nero&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;realiza&quot;)
+-		self.genre = string.replace(self.genre,&quot; | &quot;,&quot;, &quot;)
++		self.genre = gutils.trim(self.page, u'&lt;b&gt;g&#195;&#169;nero&lt;/b&gt;: ', u'&lt;br /&gt;')
++		self.genre = self.genre.encode(self.encode)
+ 
+ 	def get_cast(self):
+-		self.cast = &quot;&quot;
+-		self.cast = gutils.trim(self.page,&quot;pretes&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;data de estreia&lt;/b&gt;&lt;br&gt;&quot;)
+-		self.cast = string.replace(self.cast,&quot;&lt;br&gt; &quot;,&quot;\n&quot;)
+-		self.cast = string.replace(self.cast,&quot;&lt;br&gt;&quot;, &quot;\n&quot;)
++		self.cast = gutils.trim(self.page, u'pretes&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
+ 		self.cast = gutils.strip_tags(self.cast)
++		self.cast = string.replace(self.cast, ', ', '\n')
+ 
+ 	def get_classification(self):
+-		self.classification = &quot;&quot;
++		self.classification = ''
+ 
+ 	def get_studio(self):
+-		self.studio = &quot;&quot;
++		self.studio = ''
+ 
+ 	def get_o_site(self):
+-		self.o_site = gutils.trim(self.page,&quot;tio oficial&lt;/b&gt;&lt;br&gt;&lt;a class=external href='&quot;, &quot;'&gt;&quot;)
++		self.o_site = ''
++		tmp = string.find(self.page, u'(site oficial)')
++		if tmp &gt;= 0:
++			index = string.rfind(self.page[:tmp], u'&lt;a href=&quot;')
++			if index &gt;= 0:
++				self.o_site = gutils.before(self.page[index + 9:], '&quot;')
+ 
+ 	def get_site(self):
+-		self.site = gutils.trim(self.page,&quot;&lt;br&gt;&lt;b&gt;imdb&lt;/b&gt;&lt;br&gt;&lt;a class=external href='&quot;, &quot;'&gt;www.imdb.com&quot;)
++		self.site = ''
++		tmp = string.find(self.page, u'www.imdb.com/title/')
++		if tmp &gt;= 0:
++			self.site = u'<A HREF="http://www.imdb.com/title/">http://www.imdb.com/title/</A>' + gutils.before(self.page[tmp:], '&quot;')
+ 
+ 	def get_trailer(self):
+-		self.trailer = gutils.trim(self.page,&quot;trailer&lt;/b&gt;&lt;br&gt;&lt;a class=external href='&quot;, &quot;'&gt;visionar&quot;)
++		self.trailer = ''
++		tmp = string.find(self.page, u'(trailers)')
++		if tmp &gt;= 0:
++			index = string.rfind(self.page[:tmp], u'&lt;a href=&quot;')
++			if index &gt;= 0:
++				self.trailer = gutils.before(self.page[index + 9:], '&quot;')
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,&quot;s&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;g&quot;)
++		self.country = gutils.trim(self.page, u'&lt;b&gt;pa&#195;&#173;s&lt;/b&gt;: ', '&lt;br /&gt;')
++		self.country = self.country.encode(self.encode)
+ 		
+ 	def get_notes(self):
+-		self.notes = gutils.trim(self.page,&quot;pr&#195;&#169;mios e nomea&#195;&#167;&#195;&#181;es&lt;/b&gt;&lt;br&gt;&lt;b&gt;&quot;, &quot;&lt;td width=6 background='Images/group_r.gif'&quot;)
++		self.notes = gutils.trim(self.page,&quot;pr&#195;&#169;mios e nomea&#195;&#167;&#195;&#181;es&lt;/b&gt;&lt;br /&gt;&lt;b&gt;&quot;, &quot;&lt;td width=6 background='Images/group_r.gif'&quot;)
+ 		self.notes = gutils.strip_tags(self.notes)
+ 
+ 	def get_rating(self):
+-		tmp=gutils.trim(self.page,&quot;'Images/mstar&quot;,&quot;.gif&quot;)
+-		if(tmp):
+-			self.rating = float(tmp)
+-			if (self.rating&gt;10):
+-				self.rating = int(self.rating/10)
+-				self.rating = self.rating*2
++		tmp = re.findall('[0-9.]+', string.replace(gutils.clean('&lt;' + gutils.trim(self.page, u'imgs/blank.gif&quot;', u'&lt;/small&gt;')), u'&nbsp;', ''))
++		if tmp and len(tmp) &gt; 0:
++			self.rating = float(tmp[0])
++			if self.rating:
++				self.rating = round(self.rating * 2)
+ 		else:
+-			self.rating=&quot;&quot;
++			self.rating = ''
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search	= &quot;<A HREF="http://cinema.ptgate.pt/pesquisa-filme.php?titulo=">http://cinema.ptgate.pt/pesquisa-filme.php?titulo=</A>&quot;
+-		self.translated_url_search	= &quot;<A HREF="http://cinema.ptgate.pt/pesquisa-filme.php?titulo=">http://cinema.ptgate.pt/pesquisa-filme.php?titulo=</A>&quot;
+-		self.encode='iso-8859-1'
++		self.original_url_search   = '<A HREF="http://cinema.ptgate.pt/pesquisa/?q=">http://cinema.ptgate.pt/pesquisa/?q=</A>'
++		self.translated_url_search = '<A HREF="http://cinema.ptgate.pt/pesquisa/?q=">http://cinema.ptgate.pt/pesquisa/?q=</A>'
++		self.encode                = 'iso-8859-1'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.sub_search()
+ 		return self.page
+ 
+-	def sub_search(self):
+-		self.page = gutils.trim(self.page,&quot;&lt;!-- DISPLAY RESULTS --&gt;&quot;, &quot;&lt;!-- /DISPLAY RESULTS --&gt;&quot;)
+-
+ 	def get_searches(self):
+-		elements = string.split(self.page,&quot;&lt;/td&gt;&lt;td&gt;&quot;)
++		elements = string.split(self.page, '&lt;a href=&quot;/filmes/')
+ 		self.number_results = elements[-1]
+ 
+-		if (len(elements[0])):
++		if len(elements[0]):
+ 			for element in elements:
+-				element = string.replace(element,&quot;&lt;/a&gt;&quot;,&quot;&quot;)
+-				self.ids.append(gutils.trim(element,&quot;?code=&quot;,&quot;'&gt;&quot;))
+-				self.titles.append(gutils.convert_entities(gutils.trim(element,&quot;'&gt;&quot;,&quot;&lt;/td&gt;&lt;td width=6&quot;)))
++				id = gutils.digits_only(gutils.before(element, '&quot;'))
++				title = gutils.clean(re.sub('&lt;/div&gt;.*', '', string.replace(gutils.before(gutils.after(element, '&gt;'), '&lt;/small&gt;'), '&lt;small&gt;', ' / ')))
++				if id and title and title[0] != '&lt;':
++					self.ids.append(id)
++					self.titles.append(gutils.convert_entities(title))
+ 		else:
+ 			self.number_results = 0
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-12-27 22:32:44 UTC (rev 1108)
++++ trunk/ChangeLog	2009-01-02 21:51:49 UTC (rev 1109)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-01-02  Michael Jahn
++	* PTGate movie plugin updated
++
+ 2008-12-25  Michael Jahn
+ 	* [#309373] export to pdf
+ 	* Cinematografo movie plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMoviePTGate.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMoviePTGate.py	2008-12-27 22:32:44 UTC (rev 1108)
++++ trunk/lib/plugins/movie/PluginMoviePTGate.py	2009-01-02 21:51:49 UTC (rev 1109)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr Ozarowski
++# Copyright (c) 2005-2008 Vasco Nunes, Piotr Ozarowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -24,110 +24,129 @@
+ import gutils
+ import movie
+ import string
++import re
+ 
+-plugin_name = &quot;PTGate&quot;
+-plugin_description = &quot;Cinema PTGate&quot;
+-plugin_url = &quot;www.cinema.ptgate.pt&quot;
+-plugin_language = _(&quot;Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.4.1&quot;
++plugin_name         = &quot;PTGate&quot;
++plugin_description  = &quot;Cinema PTGate&quot;
++plugin_url          = &quot;cinema.ptgate.pt&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.5&quot;
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+-        self.encode='iso-8859-1'
++        self.encode   ='iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://cinema.ptgate.pt/filme.php?code=">http://cinema.ptgate.pt/filme.php?code=</A>&quot; + str(self.movie_id)
++        self.url      = &quot;<A HREF="http://cinema.ptgate.pt/filmes/">http://cinema.ptgate.pt/filmes/</A>&quot; + str(self.movie_id)
+ 
++    def initialize(self):
++        self.page = gutils.convert_entities(self.page)
++        self.page = self.page.replace(u'\x93', u'&quot;')
++        self.page = self.page.replace(u'\x94', u'&quot;')
++        self.page = self.page.replace(u'\x96', u'-')
++
+     def get_image(self):
+-        self.image_url = &quot;<A HREF="http://cinema.ptgate.pt/Movies/">http://cinema.ptgate.pt/Movies/</A>&quot; + str(self.movie_id)+&quot;.jpg&quot;
++        self.image_url = '<A HREF="http://cinema.ptgate.pt/Movies/">http://cinema.ptgate.pt/Movies/</A>' + str(self.movie_id) + '.jpg'
+ 
+     def get_o_title(self):
+-        self.o_title = string.capwords(gutils.trim(self.page,&quot;&lt;b class=title&gt;&quot;,&quot;&lt;/b&gt;&lt;br&gt;&quot;) )
++        self.o_title = gutils.trim(gutils.after(self.page, u'&lt;h2&gt;'), u'&#226;&#128;&#186;', u'&lt;br /&gt;') # &lt;--  &#8250;
++        self.o_title = self.o_title.encode(self.encode)
+ 
+     def get_title(self):
+-        self.title = string.capwords(gutils.trim(self.page,&quot;class=subtitle&gt;&quot;,&quot;&lt;/b&gt;&lt;br&gt;&quot;) )
++        self.title = gutils.trim(self.page, u'&lt;h2&gt;', u'&lt;/h2&gt;')
++        self.title = self.title.encode(self.encode)
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page,&quot;&lt;b&gt;realiza&#231;&#227;o&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;&quot;)
++        self.director = gutils.trim(self.page, u'&lt;b&gt;realiza&#195;&#167;&#195;&#163;o&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
++        self.director = self.director.encode(self.encode)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page,&quot;&lt;b&gt;sinopse&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&quot;)
+-        self.plot = string.replace(self.plot,&quot;'&quot;,&quot;\&quot;&quot;)
+-        self.plot = string.replace(self.plot,&quot;'&quot;,&quot;\&quot;&quot;)
++        self.plot = gutils.trim(self.page, u'&lt;b&gt;sinopse&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
++        self.plot = self.plot.encode(self.encode)
++        self.plot = string.replace(self.plot, &quot;'&quot;, &quot;\&quot;&quot;)
++        self.plot = string.replace(self.plot, &quot;'&quot;, &quot;\&quot;&quot;)
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page,&quot;&lt;br&gt;&lt;b&gt;ano&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;pa&quot;)
++        self.year = gutils.trim(self.page, u'&lt;b&gt;ano&lt;/b&gt;: ', u'&lt;br /&gt;')
+ 
+     def get_runtime(self):
+-        self.runtime = &quot;&quot;
++        self.runtime = ''
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page,&quot;nero&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;realiza&quot;)
+-        self.genre = string.replace(self.genre,&quot; | &quot;,&quot;, &quot;)
++        self.genre = gutils.trim(self.page, u'&lt;b&gt;g&#195;&#169;nero&lt;/b&gt;: ', u'&lt;br /&gt;')
++        self.genre = self.genre.encode(self.encode)
+ 
+     def get_cast(self):
+-        self.cast = &quot;&quot;
+-        self.cast = gutils.trim(self.page,&quot;pretes&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;data de estreia&lt;/b&gt;&lt;br&gt;&quot;)
+-        self.cast = string.replace(self.cast,&quot;&lt;br&gt; &quot;,&quot;\n&quot;)
+-        self.cast = string.replace(self.cast,&quot;&lt;br&gt;&quot;, &quot;\n&quot;)
++        self.cast = gutils.trim(self.page, u'pretes&lt;/b&gt;&lt;br /&gt;', u'&lt;br /&gt;')
+         self.cast = gutils.strip_tags(self.cast)
++        self.cast = string.replace(self.cast, ', ', '\n')
+ 
+     def get_classification(self):
+-        self.classification = &quot;&quot;
++        self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = &quot;&quot;
++        self.studio = ''
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page,&quot;tio oficial&lt;/b&gt;&lt;br&gt;&lt;a class=external href='&quot;, &quot;'&gt;&quot;)
++        self.o_site = ''
++        tmp = string.find(self.page, u'(site oficial)')
++        if tmp &gt;= 0:
++            index = string.rfind(self.page[:tmp], u'&lt;a href=&quot;')
++            if index &gt;= 0:
++                self.o_site = gutils.before(self.page[index + 9:], '&quot;')
+ 
+     def get_site(self):
+-        self.site = gutils.trim(self.page,&quot;&lt;br&gt;&lt;b&gt;imdb&lt;/b&gt;&lt;br&gt;&lt;a class=external href='&quot;, &quot;'&gt;www.imdb.com&quot;)
++        self.site = ''
++        tmp = string.find(self.page, u'www.imdb.com/title/')
++        if tmp &gt;= 0:
++            self.site = u'<A HREF="http://www.imdb.com/title/">http://www.imdb.com/title/</A>' + gutils.before(self.page[tmp:], '&quot;')
+ 
+     def get_trailer(self):
+-        self.trailer = gutils.trim(self.page,&quot;trailer&lt;/b&gt;&lt;br&gt;&lt;a class=external href='&quot;, &quot;'&gt;visionar&quot;)
++        self.trailer = ''
++        tmp = string.find(self.page, u'(trailers)')
++        if tmp &gt;= 0:
++            index = string.rfind(self.page[:tmp], u'&lt;a href=&quot;')
++            if index &gt;= 0:
++                self.trailer = gutils.before(self.page[index + 9:], '&quot;')
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page,&quot;s&lt;/b&gt;&lt;br&gt;&quot;,&quot;&lt;br&gt;&lt;br&gt;&lt;b&gt;g&quot;)
++        self.country = gutils.trim(self.page, u'&lt;b&gt;pa&#195;&#173;s&lt;/b&gt;: ', '&lt;br /&gt;')
++        self.country = self.country.encode(self.encode)
+         
+     def get_notes(self):
+-        self.notes = gutils.trim(self.page,&quot;pr&#233;mios e nomea&#231;&#245;es&lt;/b&gt;&lt;br&gt;&lt;b&gt;&quot;, &quot;&lt;td width=6 background='Images/group_r.gif'&quot;)
++        self.notes = gutils.trim(self.page,&quot;pr&#195;&#169;mios e nomea&#195;&#167;&#195;&#181;es&lt;/b&gt;&lt;br /&gt;&lt;b&gt;&quot;, &quot;&lt;td width=6 background='Images/group_r.gif'&quot;)
+         self.notes = gutils.strip_tags(self.notes)
+ 
+     def get_rating(self):
+-        tmp=gutils.trim(self.page,&quot;'Images/mstar&quot;,&quot;.gif&quot;)
+-        if(tmp):
+-            self.rating = float(tmp)
+-            if (self.rating&gt;10):
+-                self.rating = int(self.rating/10)
+-                self.rating = self.rating*2
++        tmp = re.findall('[0-9.]+', string.replace(gutils.clean('&lt;' + gutils.trim(self.page, u'imgs/blank.gif&quot;', u'&lt;/small&gt;')), u'&nbsp;', ''))
++        if tmp and len(tmp) &gt; 0:
++            self.rating = float(tmp[0])
++            if self.rating:
++                self.rating = round(self.rating * 2)
+         else:
+-            self.rating=&quot;&quot;
++            self.rating = ''
+ 
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+-        self.original_url_search    = &quot;<A HREF="http://cinema.ptgate.pt/pesquisa-filme.php?titulo=">http://cinema.ptgate.pt/pesquisa-filme.php?titulo=</A>&quot;
+-        self.translated_url_search    = &quot;<A HREF="http://cinema.ptgate.pt/pesquisa-filme.php?titulo=">http://cinema.ptgate.pt/pesquisa-filme.php?titulo=</A>&quot;
+-        self.encode='iso-8859-1'
++        self.original_url_search   = '<A HREF="http://cinema.ptgate.pt/pesquisa/?q=">http://cinema.ptgate.pt/pesquisa/?q=</A>'
++        self.translated_url_search = '<A HREF="http://cinema.ptgate.pt/pesquisa/?q=">http://cinema.ptgate.pt/pesquisa/?q=</A>'
++        self.encode                = 'iso-8859-1'
+ 
+     def search(self,parent_window):
+-        if not self.open_search(parent_window):
+-            return None
+-        self.sub_search()
++        self.open_search(parent_window)
+         return self.page
+ 
+-    def sub_search(self):
+-        self.page = gutils.trim(self.page,&quot;&lt;!-- DISPLAY RESULTS --&gt;&quot;, &quot;&lt;!-- /DISPLAY RESULTS --&gt;&quot;)
+-
+     def get_searches(self):
+-        elements = string.split(self.page,&quot;&lt;/td&gt;&lt;td&gt;&quot;)
++        elements = string.split(self.page, '&lt;a href=&quot;/filmes/')
+         self.number_results = elements[-1]
+ 
+-        if (len(elements[0])):
++        if len(elements[0]):
+             for element in elements:
+-                element = string.replace(element,&quot;&lt;/a&gt;&quot;,&quot;&quot;)
+-                self.ids.append(gutils.trim(element,&quot;?code=&quot;,&quot;'&gt;&quot;))
+-                self.titles.append(gutils.convert_entities(gutils.trim(element,&quot;'&gt;&quot;,&quot;&lt;/td&gt;&lt;td width=6&quot;)))
++                id = gutils.digits_only(gutils.before(element, '&quot;'))
++                title = gutils.clean(re.sub('&lt;/div&gt;.*', '', string.replace(gutils.before(gutils.after(element, '&gt;'), '&lt;/small&gt;'), '&lt;small&gt;', ' / ')))
++                if id and title and title[0] != '&lt;':
++                    self.ids.append(id)
++                    self.titles.append(gutils.convert_entities(title))
+         else:
+             self.number_results = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000584.html">[Griffith-svn] r1110 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#583">[ date ]</a>
+              <a href="thread.html#583">[ thread ]</a>
+              <a href="subject.html#583">[ subject ]</a>
+              <a href="author.html#583">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

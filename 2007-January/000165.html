@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r641 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r641%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701011734.l01HYxsH020894%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000164.html">
+   <LINK REL="Next"  HREF="000166.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r641 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r641%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701011734.l01HYxsH020894%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r641 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  1 18:34:59 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000164.html">[Griffith-svn] r639 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000166.html">[Griffith-svn] r642 - in trunk: lib po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#165">[ date ]</a>
+              <a href="thread.html#165">[ thread ]</a>
+              <a href="subject.html#165">[ subject ]</a>
+              <a href="author.html#165">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-01 18:34:55 +0100 (Mon, 01 Jan 2007)
+New Revision: 641
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+Log:
+* Scroll movie list when selecting first/prev/next/last movie button
+* Copy video codec data when cloning movie
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-01 16:31:40 UTC (rev 640)
++++ trunk/ChangeLog	2007-01-01 17:34:55 UTC (rev 641)
+@@ -7,6 +7,8 @@
+ 2007-01-01 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Filmweb movie plugin updated
+ 	* Added &quot;limit search results to x movies&quot; in preferences
++	* Scroll movie list when selecting first/prev/next/last movie button
++	* Copy video codec data when cloning movie
+ 
+ 2006-12-30 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Compare lower() values while importing movies
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-01-01 16:31:40 UTC (rev 640)
++++ trunk/griffith	2007-01-01 17:34:55 UTC (rev 641)
+@@ -1007,38 +1007,33 @@
+ 	def click_on(self, treeview, direction):
+ 		treeselection = treeview.get_selection()
+ 		if not treeselection:
+-			return False
++			treeview.set_cursor_on_cell(0)
++			return 2 # no selection =&gt; selecting first movie
+ 		(treemodel, treeiter) = treeselection.get_selected()
+-		if not treemodel:
++		if treemodel is None:
+ 			return False
+-		nextiter = None
+-		if direction == 'next':
+-			if treeiter is None:
+-				nextiter = treemodel.get_iter_first()
++		if treeiter is None or direction=='first':
++			treeview.set_cursor_on_cell(0)
++		elif direction == 'next':
++			nextiter = treemodel.iter_next(treeiter)
++			if nextiter is None:
++				direction = 'last'
+ 			else:
+-				nextiter = treemodel.iter_next(treeiter)
++				iterpath = treemodel.get_path(nextiter)
++				treeview.set_cursor_on_cell(iterpath[0])
+ 		elif direction == 'prev':
+-			if treeiter is None:
+-				nextiter = treemodel.get_iter_first()
++			iterpath = treemodel.get_path(treeiter)
++			row = iterpath[0]
++			if row&gt;0:
++				treeview.set_cursor_on_cell(row-1)
+ 			else:
+-				iterpath = treemodel.get_path(treeiter)
+-				row = iterpath[0]
+-				if row&gt;0:
+-					nextiter = treemodel.get_iter(row-1)
+-				else:
+-					nextiter = treemodel.get_iter(0)
+-		elif direction == 'first':
+-			nextiter = treemodel.get_iter_first()
+-		elif direction == 'last':
++				treeview.set_cursor_on_cell(0)
++		if direction == 'last':
+ 			rows = len(treemodel)
+ 			if rows&gt;0:
+-				nextiter = treemodel.get_iter(rows-1)	# last
+-		else:
+-			logger.warning(&quot;Bad direction: %s&quot;%direction)
+-		# select new iter
+-		if nextiter:
+-			treeselection.select_iter(nextiter)
+-			self.treeview_clicked()
++				treeview.set_cursor_on_cell(rows-1)
++			else:
++				treeview.set_cursor_on_cell(0)
+ 
+ if __name__ == &quot;__main__&quot;:
+ 	griffith = Griffith()
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2007-01-01 16:31:40 UTC (rev 640)
++++ trunk/lib/add.py	2007-01-01 17:34:55 UTC (rev 641)
+@@ -619,6 +619,7 @@
+ 	
+ 	new_movie.cast = movie.cast
+ 	new_movie.classification = movie.classification
++	new_movie.vcodec_id = movie.vcodec_id
+ 	new_movie.color = movie.color
+ 	new_movie.cond = movie.cond
+ 	new_movie.country = movie.country
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000164.html">[Griffith-svn] r639 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000166.html">[Griffith-svn] r642 - in trunk: lib po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#165">[ date ]</a>
+              <a href="thread.html#165">[ thread ]</a>
+              <a href="subject.html#165">[ subject ]</a>
+              <a href="author.html#165">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

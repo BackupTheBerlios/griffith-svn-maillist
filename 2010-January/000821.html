@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1354 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1354%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201001012133.o01LXn11015460%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000820.html">
+   <LINK REL="Next"  HREF="000822.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1354 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1354%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C201001012133.o01LXn11015460%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1354 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  1 22:33:49 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000820.html">[Griffith-svn] r1353 - in trunk: . lib/plugins/export	lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000822.html">[Griffith-svn] r1355 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#821">[ date ]</a>
+              <a href="thread.html#821">[ thread ]</a>
+              <a href="subject.html#821">[ subject ]</a>
+              <a href="author.html#821">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-01 22:33:39 +0100 (Fri, 01 Jan 2010)
+New Revision: 1354
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+updated movie plugin Allocine
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-01 19:37:30 UTC (rev 1353)
++++ trunk/ChangeLog	2010-01-01 21:33:39 UTC (rev 1354)
+@@ -7,6 +7,7 @@
+ 
+ 2010-01-01  Michael Jahn
+ 	* [#501526] Error in export GCStar/DVDProfilerXMLExportV2/3
++	* updated movie plugin Allocine
+ 
+ 2009-12-28  Michael Jahn
+ 	* updated movie plugin Allocine, Amazon, FilmDb
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-01-01 19:37:30 UTC (rev 1353)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-01-01 21:33:39 UTC (rev 1354)
+@@ -25,6 +25,8 @@
+ import movie
+ import string
+ import re
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ plugin_name         = &quot;Allocine&quot;
+ plugin_description  = &quot;Internet Movie Database&quot;
+@@ -133,18 +135,41 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search   = &quot;<A HREF="http://www.allocine.fr/recherche/?q=">http://www.allocine.fr/recherche/?q=</A>&quot;
+-        self.translated_url_search = &quot;<A HREF="http://www.allocine.fr/recherche/?q=">http://www.allocine.fr/recherche/?q=</A>&quot;
++        self.original_url_search   = &quot;<A HREF="http://www.allocine.fr/recherche/1/?q=">http://www.allocine.fr/recherche/1/?q=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.allocine.fr/recherche/1/?q=">http://www.allocine.fr/recherche/1/?q=</A>&quot;
+         self.encode                = 'utf-8'
++        self.remove_accents        = True
+ 
+     def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
++        # try to find next pages if more than 20 results
++        match = re.search('&lt;span class=&quot;navcurrpage&quot;&gt;1&lt;/span&gt; / ([0-9])+&lt;/li&gt;', self.page)
+         self.sub_search()
++        if match:
++            saved_url = self.url
++            saved_title = self.title
++            self.title = ''
++            try:
++                maxpages = int(match.group(1))
++                if maxpages &gt; 1:
++                    currpage = 2
++                    while currpage &lt;= maxpages and currpage &lt; 5:
++                        oldpage = self.page
++                        self.url = string.replace(saved_url, '/?q=', '/?p=%s&amp;q=' % currpage)
++                        if not self.open_search(parent_window):
++                            return None
++                        self.sub_search()
++                        self.page = oldpage + self.page
++                        currpage = currpage + 1
++            except:
++                log.exception('')
++            self.url = saved_url
++            self.title = saved_title
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.trim(self.page, 'r&#233;sultats trouv&#233;s', '&lt;div class=&quot;spacer&quot;')
++        self.page = gutils.regextrim(self.page, u'r&#233;sultat[s]* trouv&#233;[s]*', '&lt;form method=')
+ 
+     def get_searches(self):
+         elements = string.split(self.page, '&lt;a href=\'/film/fichefilm_gen_cfilm=')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000820.html">[Griffith-svn] r1353 - in trunk: . lib/plugins/export	lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000822.html">[Griffith-svn] r1355 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#821">[ date ]</a>
+              <a href="thread.html#821">[ thread ]</a>
+              <a href="subject.html#821">[ subject ]</a>
+              <a href="author.html#821">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

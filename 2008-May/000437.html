@@ -1,0 +1,275 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r949 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r949%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/export%20trunk%20trunk/lib/plugins/export&In-Reply-To=%3C200805102042.m4AKg51G013980%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000436.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r949 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r949%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/export%20trunk%20trunk/lib/plugins/export&In-Reply-To=%3C200805102042.m4AKg51G013980%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r949 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat May 10 22:42:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000436.html">[Griffith-svn] r948 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#437">[ date ]</a>
+              <a href="thread.html#437">[ thread ]</a>
+              <a href="subject.html#437">[ subject ]</a>
+              <a href="author.html#437">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-05-10 22:41:52 +0200 (Sat, 10 May 2008)
+New Revision: 949
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+added cast, genre and grouping by first letter to pdf export (thanks to Luigi Pantano)
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
++++ branches/0.9.x/ChangeLog	2008-05-10 20:41:52 UTC (rev 949)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-05-09  Michael Jahn
++	* added cast, genre and grouping by first letter to pdf export (thanks to Luigi Pantano)
++
+ 2008-05-08  Michael Jahn
+ 	* updated DVD Empire plugin
+ 
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2008-05-08 12:54:12 UTC (rev 948)
++++ branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2008-05-10 20:41:52 UTC (rev 949)
+@@ -39,7 +39,7 @@
+ import sys
+ import config
+ from locale import getdefaultlocale
+-from sqlalchemy import Select
++from sqlalchemy import Select, desc
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -47,7 +47,7 @@
+ plugin_description = _(&quot;PDF export plugin&quot;)
+ plugin_author = &quot;Vasco Nunes&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_version = &quot;0.4&quot;
+ 
+ class ExportPlugin:
+     def __init__(self, database, locations, parent_window, debug, **kwargs):
+@@ -120,25 +120,40 @@
+                         else:
+                             movies.order_by_clause.append(self.db.Movie.c[i])
+                 movies = movies.execute().fetchall()
++                first_letter = '0'
+                 for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title).encode(defaultEnc)
+                     title = str(movie.title).encode(defaultEnc)
+-                    if movie.year:
+-                        year = ' - ' + str(movie.year)
+-                    else:
+-                        year = &quot;&quot;
+                     if movie.director:
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = &quot;&quot;
++                    # group by first letter
++                    if title[0] != first_letter:
++                        first_letter = title[0]
++                        paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;15&quot;&gt;' + saxutils.escape(first_letter) + '&lt;/fonts&gt;'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
++                        Story.append(p)
++                    # add movie title
+                     paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
+-                        saxutils.escape(str(number) + ' | ' + original_title) + \
+-                        '&lt;/font&gt;&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
+-                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '&lt;b&gt;'+ saxutils.escape(title) + '&lt;/b&gt;' + \
++                        saxutils.escape(' (' + original_title + '), ' + director + ' | ' + str(number)) + \
+                         '&lt;/font&gt;'
+                     p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
++                    if not movie.genre is None:
++                        paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;5&quot;&gt;' + \
++                        '&lt;b&gt;' + _('Genre') + ': &lt;/b&gt;' + saxutils.escape(str(movie.genre).encode(defaultEnc)) + \
++                        '&lt;/font&gt;'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
++                    if not movie.cast is None:
++                        paragraph_text = '&lt;i&gt;&lt;font name=' + self.fontName + ' size=&quot;5&quot;&gt;' + \
++                        '&lt;b&gt;' + _('Cast') + ': &lt;/b&gt;' + saxutils.escape('; '.join(str(movie.cast).encode(defaultEnc).split(&quot;\n&quot;)[0:2])) + \
++                            '&lt;/font&gt;&lt;/i&gt;'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+                 gutils.info(self, _('PDF has been created.'), self.parent)
+             
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
++++ trunk/ChangeLog	2008-05-10 20:41:52 UTC (rev 949)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-05-09  Michael Jahn
++	* added cast, genre and grouping by first letter to pdf export (thanks to Luigi Pantano)
++
+ 2008-05-08  Michael Jahn
+ 	* updated DVD Empire plugin
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2008-05-08 12:54:12 UTC (rev 948)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2008-05-10 20:41:52 UTC (rev 949)
+@@ -39,7 +39,7 @@
+ import sys
+ import config
+ from locale import getdefaultlocale
+-from sqlalchemy import Select
++from sqlalchemy import select
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -47,7 +47,7 @@
+ plugin_description = _(&quot;PDF export plugin&quot;)
+ plugin_author = &quot;Vasco Nunes&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_version = &quot;0.4&quot;
+ 
+ class ExportPlugin:
+     def __init__(self, database, locations, parent_window, debug, **kwargs):
+@@ -101,44 +101,61 @@
+                     defaultEnc = 'utf-8'
+                 style = self.styles[&quot;Normal&quot;]
+                 Story = [Spacer(1,2*inch)]
+-                # define some custom stylesheetfont
+-                total = self.db.Movie.count()
+-                p = Paragraph(&quot;&lt;font name='&quot; + self.fontName +&quot;' size=\&quot;18\&quot;&gt;&quot; + saxutils.escape((_(&quot;List of films&quot;)).encode('utf-8')) + '&lt;/font&gt;', self.styles[&quot;Heading1&quot;] )
+-                Story.append(p)
+-                Story.append(Paragraph(&quot; &quot;,style))
+-                p = Paragraph(&quot;&lt;font name='&quot; + self.fontName +&quot;' size=\&quot;10\&quot;&gt;&quot; + saxutils.escape((_(&quot;Total Movies: %s&quot;) % str(total)).encode('utf-8'))  + '&lt;/font&gt;', self.styles[&quot;Heading3&quot;])
+-                Story.append(p)
+-                Story.append(Paragraph(&quot; &quot;,style))
+-                movies = Select(self.db.Movie.c)
++                # build the query
++                movies = select(self.db.Movie.c)
+                 # select sort column
+                 sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+                 sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
+                 for i in sort_column_name.split(','):
+                     if self.db.Movie.c.has_key(i):
+                         if sort_reverse:
+-                            movies.order_by_clause.append(desc(self.db.Movie.c[i]))
++                            movies = movies.order_by(self.db.Movie.c[i].desc())
+                         else:
+-                            movies.order_by_clause.append(self.db.Movie.c[i])
++                            movies = movies.order_by(self.db.Movie.c[i])
+                 movies = movies.execute().fetchall()
++                # define some custom stylesheetfont
++                total = len(movies)
++                p = Paragraph(&quot;&lt;font name='&quot; + self.fontName +&quot;' size=\&quot;18\&quot;&gt;&quot; + saxutils.escape((_(&quot;List of films&quot;)).encode('utf-8')) + '&lt;/font&gt;', self.styles[&quot;Heading1&quot;] )
++                Story.append(p)
++                Story.append(Paragraph(&quot; &quot;,style))
++                p = Paragraph(&quot;&lt;font name='&quot; + self.fontName +&quot;' size=\&quot;10\&quot;&gt;&quot; + saxutils.escape((_(&quot;Total Movies: %s&quot;) % str(total)).encode('utf-8'))  + '&lt;/font&gt;', self.styles[&quot;Heading3&quot;])
++                Story.append(p)
++                Story.append(Paragraph(&quot; &quot;,style))
++                # output movies
++                first_letter = '0'
+                 for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title).encode(defaultEnc)
+                     title = str(movie.title).encode(defaultEnc)
+-                    if movie.year:
+-                        year = ' - ' + str(movie.year)
+-                    else:
+-                        year = &quot;&quot;
+                     if movie.director:
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = &quot;&quot;
++                    # group by first letter
++                    if title[0] != first_letter:
++                        first_letter = title[0]
++                        paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;15&quot;&gt;' + saxutils.escape(first_letter) + '&lt;/fonts&gt;'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
++                        Story.append(p)
++                    # add movie title
+                     paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
+-                        saxutils.escape(str(number) + ' | ' + original_title) + \
+-                        '&lt;/font&gt;&lt;font name=' + self.fontName + ' size=&quot;7&quot;&gt;' + \
+-                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '&lt;b&gt;'+ saxutils.escape(title) + '&lt;/b&gt;' + \
++                        saxutils.escape(' (' + original_title + '), ' + director + ' | ' + str(number)) + \
+                         '&lt;/font&gt;'
+                     p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
++                    if not movie.genre is None:
++                        paragraph_text = '&lt;font name=' + self.fontName + ' size=&quot;5&quot;&gt;' + \
++                        '&lt;b&gt;' + _('Genre') + ': &lt;/b&gt;' + saxutils.escape(str(movie.genre).encode(defaultEnc)) + \
++                        '&lt;/font&gt;'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
++                    if not movie.cast is None:
++                        paragraph_text = '&lt;i&gt;&lt;font name=' + self.fontName + ' size=&quot;5&quot;&gt;' + \
++                        '&lt;b&gt;' + _('Cast') + ': &lt;/b&gt;' + saxutils.escape('; '.join(str(movie.cast).encode(defaultEnc).split(&quot;\n&quot;)[0:2])) + \
++                            '&lt;/font&gt;&lt;/i&gt;'
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                        Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+                 gutils.info(self, _('PDF has been created.'), self.parent)
+             
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000436.html">[Griffith-svn] r948 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#437">[ date ]</a>
+              <a href="thread.html#437">[ thread ]</a>
+              <a href="subject.html#437">[ subject ]</a>
+              <a href="author.html#437">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

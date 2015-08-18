@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r728 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r728%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200702112123.l1BLNiNO022656%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000247.html">
+   <LINK REL="Next"  HREF="000249.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r728 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r728%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200702112123.l1BLNiNO022656%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r728 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Feb 11 22:23:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000247.html">[Griffith-svn] r727 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000249.html">[Griffith-svn] r729 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#248">[ date ]</a>
+              <a href="thread.html#248">[ thread ]</a>
+              <a href="subject.html#248">[ subject ]</a>
+              <a href="author.html#248">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-02-11 22:23:43 +0100 (Sun, 11 Feb 2007)
+New Revision: 728
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+   trunk/lib/sql.py
+Log:
+* Fix one more bad case in upgrade function
+* Fix set_loan function
+* raise ValueError instead of Exception when wrong value is set
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-03 20:45:44 UTC (rev 727)
++++ trunk/ChangeLog	2007-02-11 21:23:43 UTC (rev 728)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-02-11  Piotr O&#380;arowski
++	* Fix one more bad case in upgrade function
++
+ 2007-02-03 Jessica K. Parth
+ 	* OFDb movie plugin updated (website changed)
+ 
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-02-03 20:45:44 UTC (rev 727)
++++ trunk/lib/dbupgrade.py	2007-02-11 21:23:43 UTC (rev 728)
+@@ -185,6 +185,7 @@
+ 	old_cursor.execute(&quot;UPDATE movies SET rating = 0 WHERE rating NOT IN (0,1,2,3,4,5,6,7,8,9,10);&quot;) # rating&gt;10 doesn't work with some DB
+ 	old_cursor.execute(&quot;UPDATE movies SET runtime = NULL WHERE runtime &gt; 10000;&quot;) # remove strings
+ 	old_cursor.execute(&quot;UPDATE loans SET return_date=NULL WHERE return_date=''&quot;)
++	old_cursor.execute(&quot;UPDATE loans SET return_date=NULL WHERE return_date='None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE date='' OR date ISNULL&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = ''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM volumes WHERE name = 'None'&quot;)
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-02-03 20:45:44 UTC (rev 727)
++++ trunk/lib/sql.py	2007-02-11 21:23:43 UTC (rev 728)
+@@ -133,32 +133,32 @@
+ 		def __setitem__(self, key, value):
+ 			if key == 'movie_id' and value:
+ 				if GriffithSQL.Movie.get_by(movie_id=value) is None:
+-					raise Exception('wrong movie_id')
++					raise ValueError('wrong movie_id')
+ 			elif key == 'person_id' and value:
+ 				if GriffithSQL.Person.get_by(person_id=value) is None:
+-					raise Exception('wrong movie_id')
++					raise ValueError('wrong movie_id')
+ 			self[key] = value
+ 		def _validate(self):
+ 			if self.movie_id is None:
+-				raise Exception('movie_id is not set')
++				raise ValueError('movie_id is not set')
+ 			if self.person_id is None:
+-				raise Exception('person_id is not set')
++				raise ValueError('person_id is not set')
+ 			if self.movie is None:
+ 				self.movie = GriffithSQL.Movie.get_by(movie_id=self.movie_id)
+ 				if self.movie is None:
+-					raise Exception('wrong movie_id')
++					raise ValueError('wrong movie_id')
+ 			if self.person is None:
+ 				self.person = GriffithSQL.Person.get_by(person_id=self.person_id)
+ 				if self.person is None:
+-					raise Exception('wrong person_id')
++					raise ValueError('wrong person_id')
+ 			if self.collection_id&gt;0 and self.collection is None:
+ 				self.collection = GriffithSQL.Collection.get_by(collection_id=self.collection_id)
+ 				if self.collection is None:
+-					raise Exception('wrong collection_id')
++					raise ValueError('wrong collection_id')
+ 			if self.volume_id&gt;0 and self.volume is None:
+ 				self.volume = GriffithSQL.Volume.get_by(volume_id=self.volume_id)
+ 				if self.volume is None:
+-					raise Exception('wrong volume_id')
++					raise ValueError('wrong volume_id')
+ 			return True
+ 		def set_loaned(self):
+ 			&quot;&quot;&quot;
+@@ -181,7 +181,7 @@
+ 			self.movie.update()
+ 			if self.date is None:
+ 				self.date = func.current_date()	# update loan date
+-			self.return_date is None
++			self.return_date = None
+ 			self.save_or_update()
+ 			try:
+ 				self.mapper.get_session().flush()
+@@ -242,7 +242,7 @@
+ 			return True
+ 		def update_in_db(self, t_movies=None):
+ 			if self.movie_id &lt; 1:
+-				raise Exception('movie_id is not set')
++				raise ValueError('movie_id is not set')
+ 			if t_movies is not None:
+ 				self.languages.clear()
+ 				self.tags.clear()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000247.html">[Griffith-svn] r727 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000249.html">[Griffith-svn] r729 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#248">[ date ]</a>
+              <a href="thread.html#248">[ thread ]</a>
+              <a href="subject.html#248">[ subject ]</a>
+              <a href="author.html#248">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

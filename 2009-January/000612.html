@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1137 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1137%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901282131.n0SLVL8W016409%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000611.html">
+   <LINK REL="Next"  HREF="000613.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1137 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1137%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200901282131.n0SLVL8W016409%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1137 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan 28 22:31:21 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000611.html">[Griffith-svn] r1136 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000613.html">[Griffith-svn] r1138 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#612">[ date ]</a>
+              <a href="thread.html#612">[ thread ]</a>
+              <a href="subject.html#612">[ subject ]</a>
+              <a href="author.html#612">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-01-28 22:31:03 +0100 (Wed, 28 Jan 2009)
+New Revision: 1137
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+FilmAffinity movie plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-01-24 16:58:07 UTC (rev 1136)
++++ branches/0.9.x/ChangeLog	2009-01-28 21:31:03 UTC (rev 1137)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-01-28  Michael Jahn
++	* FilmAffinity movie plugin updated
++
+ 2009-01-24  Michael Jahn
+ 	* DVD-Palace movie plugin updated
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-01-24 16:58:07 UTC (rev 1136)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-01-28 21:31:03 UTC (rev 1137)
+@@ -23,7 +23,7 @@
+ 
+ import gutils
+ import movie
+-import string
++import string, re
+ 
+ plugin_name		= 'FilmAffinity'
+ plugin_description	= 'Base de Datos de Peliculas'
+@@ -31,27 +31,29 @@
+ plugin_language		= _('Spanish')
+ plugin_author		= 'Pedro D. S&#225;nchez'
+ plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version		= '0.2'
++plugin_version		= '0.3'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-15'
++		self.encode   = 'iso-8859-15'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.filmaffinity.com/es/film%s.html">http://www.filmaffinity.com/es/film%s.html</A>&quot; % str(self.movie_id)
++		self.url      = &quot;<A HREF="http://www.filmaffinity.com/es/film%s.html">http://www.filmaffinity.com/es/film%s.html</A>&quot; % str(self.movie_id)
+ 
+ 	def get_image(self):
+-		tmp = string.find(self.page, '&lt;img src=&quot;<A HREF="http://www.filmaffinity.com/imgs/movies/">http://www.filmaffinity.com/imgs/movies/</A>')
++		tmp = string.find(self.page, 'www.filmaffinity.com/imgs/movies/')
+ 		if tmp == -1:
+ 			self.image_url = ''
+ 		else:
+-			self.image_url = gutils.trim(self.page[tmp-1:], 'src=&quot;', '&quot;')
++			self.image_url = '<A HREF="http://">http://</A>' + gutils.before(self.page[tmp:], '&quot;')
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, '&lt;b&gt;TITULO ORIGINAL&lt;/b&gt;&lt;/td&gt;', '&lt;/b&gt;&lt;/td&gt;')
+ 		self.o_title = gutils.after(self.o_title, '&lt;b&gt;')
++		self.o_title = re.sub('[ ]+', ' ', self.o_title)
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;img src=&quot;<A HREF="http://www.filmaffinity.com/images/movie.gif">http://www.filmaffinity.com/images/movie.gif</A>&quot; border=&quot;0&quot;&gt; ', '&lt;/span&gt;')
++		self.title = gutils.trim(self.page, 'www.filmaffinity.com/images/movie.gif&quot; border=&quot;0&quot;&gt; ', '&lt;/span&gt;')
++		self.title = re.sub('[ ]+', ' ', self.title)
+ 
+ 	def get_director(self):
+ 		self.director = gutils.trim(self.page,'&lt;b&gt;DIRECTOR&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+@@ -71,7 +73,7 @@
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page, '&lt;b&gt;A&#209;O&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-		self.year = gutils.after(self.year, '&lt;td &gt;')
++		self.year = gutils.clean(self.year)
+ 
+ 	def get_runtime(self):
+ 		self.runtime = gutils.trim(self.page, '&lt;b&gt;DURACI&#211;N&lt;/b&gt;&lt;/td&gt;', ' min.&lt;/td&gt;')
+@@ -89,9 +91,9 @@
+ 	def get_cast(self):
+ 		self.cast = ''
+ 		self.cast = gutils.trim(self.page, '&lt;b&gt;REPARTO&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-		self.cast = string.replace(self.cast, '&lt;/a&gt;,', '\n')
++		self.cast = re.sub('&lt;/a&gt;,[ ]*', '\n', self.cast)
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
+-		self.cast = string.replace(self.cast, '  ', '')
++		self.cast = re.sub('[ ]+', ' ', self.cast)
+ 
+ 	def get_classification(self):
+ 		self.classification = ''
+@@ -112,12 +114,16 @@
+ 
+ 	def get_country(self):
+ 		self.country = gutils.trim(self.page, '&lt;b&gt;PA&#205;S&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-		self.country = gutils.trim(self.country, 'alt=&quot;', '&quot;')
++		tmp = gutils.trim(self.country, 'alt=&quot;', '&quot;')
++		if tmp == '':
++			self.country = gutils.trim(self.country, 'title=&quot;', '&quot;')
++		else:
++			self.country = tmp
+ 
+ 	def get_rating(self):
+ 		self.rating = gutils.trim(self.page, '&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;color:#990000; font-size:22px; font-weight: bold;&quot;&gt;', '&lt;/td&gt;&lt;/tr&gt;')
+ 		if self.rating:
+-			self.rating = str(float(gutils.clean(string.replace(self.rating, ',', '.'))))
++			self.rating = str(round(float(gutils.clean(string.replace(self.rating, ',', '.')))))
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+@@ -151,6 +157,6 @@
+ 
+ 			if (elements[0]&lt;&gt;''):
+ 				for element in elements[:-1]:
+-					self.ids.append(gutils.trim(element, '&lt;b&gt;&lt;a href=&quot;/es/film','.html'))
++					self.ids.append(gutils.trim(element, '&lt;b&gt;&lt;a href=&quot;/es/film', '.html'))
+ 					title = gutils.after(element, '&lt;b&gt;&lt;a href=&quot;/es/film')
+ 					self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.after(title, '&gt;'))))
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-24 16:58:07 UTC (rev 1136)
++++ trunk/ChangeLog	2009-01-28 21:31:03 UTC (rev 1137)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-01-28  Michael Jahn
++	* FilmAffinity movie plugin updated
++
+ 2009-01-24  Michael Jahn
+ 	* DVD-Palace movie plugin updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-01-24 16:58:07 UTC (rev 1136)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-01-28 21:31:03 UTC (rev 1137)
+@@ -23,41 +23,43 @@
+ 
+ import gutils
+ import movie
+-import string
++import string, re
+ 
+-plugin_name        = 'FilmAffinity'
+-plugin_description    = 'Base de Datos de Peliculas'
+-plugin_url        = 'www.filmaffinity.com'
+-plugin_language        = _('Spanish')
+-plugin_author        = 'Pedro D. S&#225;nchez'
+-plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
+-plugin_version        = '0.2'
++plugin_name         = 'FilmAffinity'
++plugin_description  = 'Base de Datos de Peliculas'
++plugin_url          = 'www.filmaffinity.com'
++plugin_language     = _('Spanish')
++plugin_author       = 'Pedro D. S&#225;nchez'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">pedrodav at gmail.com</A>&gt;'
++plugin_version      = '0.3'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+-        self.encode='iso-8859-15'
++        self.encode   = 'iso-8859-15'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.filmaffinity.com/es/film%s.html">http://www.filmaffinity.com/es/film%s.html</A>&quot; % str(self.movie_id)
++        self.url      = &quot;<A HREF="http://www.filmaffinity.com/es/film%s.html">http://www.filmaffinity.com/es/film%s.html</A>&quot; % str(self.movie_id)
+ 
+     def get_image(self):
+-        tmp = string.find(self.page, '&lt;img src=&quot;<A HREF="http://www.filmaffinity.com/imgs/movies/">http://www.filmaffinity.com/imgs/movies/</A>')
++        tmp = string.find(self.page, 'www.filmaffinity.com/imgs/movies/')
+         if tmp == -1:
+             self.image_url = ''
+         else:
+-            self.image_url = gutils.trim(self.page[tmp-1:], 'src=&quot;', '&quot;')
++            self.image_url = '<A HREF="http://">http://</A>' + gutils.before(self.page[tmp:], '&quot;')
+ 
+     def get_o_title(self):
+         self.o_title = gutils.trim(self.page, '&lt;b&gt;TITULO ORIGINAL&lt;/b&gt;&lt;/td&gt;', '&lt;/b&gt;&lt;/td&gt;')
+         self.o_title = gutils.after(self.o_title, '&lt;b&gt;')
++        self.o_title = re.sub('[ ]+', ' ', self.o_title)
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;img src=&quot;<A HREF="http://www.filmaffinity.com/images/movie.gif">http://www.filmaffinity.com/images/movie.gif</A>&quot; border=&quot;0&quot;&gt; ', '&lt;/span&gt;')
++        self.title = gutils.trim(self.page, 'www.filmaffinity.com/images/movie.gif&quot; border=&quot;0&quot;&gt; ', '&lt;/span&gt;')
++        self.title = re.sub('[ ]+', ' ', self.title)
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page,'&lt;b&gt;DIRECTOR&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, '&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
++        self.plot = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
+         if self.plot == '':
+             self.plot = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;br /&gt;')
+         self.plot = gutils.after(self.plot, '&lt;td valign=&quot;top&quot;&gt;')
+@@ -70,17 +72,17 @@
+         self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '&lt;b&gt;A&#209;O&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-        self.year = gutils.after(self.year, '&lt;td &gt;')
++        self.year = gutils.trim(self.page, u'&lt;b&gt;A&#209;O&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        self.year = gutils.clean(self.year)
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, '&lt;b&gt;DURACI&#211;N&lt;/b&gt;&lt;/td&gt;', ' min.&lt;/td&gt;')
++        self.runtime = gutils.trim(self.page, u'&lt;b&gt;DURACI&#211;N&lt;/b&gt;&lt;/td&gt;', ' min.&lt;/td&gt;')
+         if self.runtime == '':
+             self.runtime = gutils.trim(self.page, '&lt;b&gt;DURACI&Oacute;N&lt;/b&gt;&lt;/td&gt;', ' min.&lt;/td&gt;')
+         self.runtime = gutils.after(self.runtime[-10:], '&lt;td&gt;')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, '&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
++        self.genre = gutils.trim(self.page, u'&lt;b&gt;G&#201;NERO Y CR&#205;TICA&lt;/b&gt;', '&lt;br /&gt;')
+         if self.genre == '':
+             self.genre = gutils.trim(self.page, '&lt;b&gt;G&Eacute;NERO Y CR&Iacute;TICA&lt;/b&gt;', '&lt;br /&gt;')
+         self.genre = gutils.trim(self.genre, '&lt;td valign=&quot;top&quot;&gt;', '/')
+@@ -89,9 +91,9 @@
+     def get_cast(self):
+         self.cast = ''
+         self.cast = gutils.trim(self.page, '&lt;b&gt;REPARTO&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-        self.cast = string.replace(self.cast, '&lt;/a&gt;,', '\n')
++        self.cast = re.sub('&lt;/a&gt;,[ ]*', '\n', self.cast)
+         self.cast = string.strip(gutils.strip_tags(self.cast))
+-        self.cast = string.replace(self.cast, '  ', '')
++        self.cast = re.sub('[ ]+', ' ', self.cast)
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -111,20 +113,29 @@
+         self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '&lt;b&gt;PA&#205;S&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
+-        self.country = gutils.trim(self.country, 'alt=&quot;', '&quot;')
++        self.country = gutils.trim(self.page, u'&lt;b&gt;PA&#205;S&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        tmp = gutils.trim(self.country, 'alt=&quot;', '&quot;')
++        if tmp == '':
++            self.country = gutils.trim(self.country, 'title=&quot;', '&quot;')
++        else:
++            self.country = tmp
+ 
+     def get_rating(self):
+         self.rating = gutils.trim(self.page, '&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;color:#990000; font-size:22px; font-weight: bold;&quot;&gt;', '&lt;/td&gt;&lt;/tr&gt;')
+         if self.rating:
+-            self.rating = str(float(gutils.clean(string.replace(self.rating, ',', '.'))))
++            self.rating = str(round(float(gutils.clean(string.replace(self.rating, ',', '.')))))
+ 
++    def get_cameraman(self):
++        self.cameraman = gutils.trim(self.page, u'&lt;b&gt;FOTOGRAF&#205;A&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++        if self.cameraman == '':
++            self.cameraman = gutils.trim(self.page, '&lt;b&gt;FOTOGRAF&Iacute;A&lt;/b&gt;&lt;/td&gt;', '&lt;/td&gt;')
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search    = '<A HREF="http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=">http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=</A>'
+-        self.translated_url_search    = '<A HREF="http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=">http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=</A>'
+-        self.encode = 'iso-8859-15'
++        self.original_url_search   = '<A HREF="http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=">http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=</A>'
++        self.translated_url_search = '<A HREF="http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=">http://www.filmaffinity.com/es/search.php?stype=title&amp;stext=</A>'
++        self.encode                = 'iso-8859-15'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -133,12 +144,12 @@
+         self.sub_search()
+         if self.page &lt;&gt; '':
+             return self.page
+-        auxPage = gutils.trim(auxPage, '&lt;b&gt;TU CR&#205;TICA&lt;/b&gt;&lt;/div&gt;', '&lt;/a&gt;')
++        auxPage = gutils.trim(auxPage, u'&lt;b&gt;TU CR&#205;TICA&lt;/b&gt;&lt;/div&gt;', '&lt;/a&gt;')
+         self.page = gutils.trim(auxPage, 'movie_id=', '&quot;&gt;')
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.trim(self.page, 'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
++        self.page = gutils.trim(self.page, u'Resultados por t&#237;tulo&lt;/span&gt;', '&lt;br&gt;')
+         #self.page = gutils.after(self.page, '&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;')
+         #self.page = self.page.decode('iso-8859-15')
+ 
+@@ -152,6 +163,6 @@
+ 
+             if (elements[0]&lt;&gt;''):
+                 for element in elements[:-1]:
+-                    self.ids.append(gutils.trim(element, '&lt;b&gt;&lt;a href=&quot;/es/film','.html'))
++                    self.ids.append(gutils.trim(element, '&lt;b&gt;&lt;a href=&quot;/es/film', '.html'))
+                     title = gutils.after(element, '&lt;b&gt;&lt;a href=&quot;/es/film')
+                     self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.after(title, '&gt;'))))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000611.html">[Griffith-svn] r1136 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000613.html">[Griffith-svn] r1138 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#612">[ date ]</a>
+              <a href="thread.html#612">[ thread ]</a>
+              <a href="subject.html#612">[ subject ]</a>
+              <a href="author.html#612">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

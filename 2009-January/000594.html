@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1120 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1120%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200901152040.n0FKeLv3014263%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000593.html">
+   <LINK REL="Next"  HREF="000595.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1120 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1120%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200901152040.n0FKeLv3014263%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1120 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 15 21:40:21 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000593.html">[Griffith-svn] r1119 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000595.html">[Griffith-svn] r1121 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#594">[ date ]</a>
+              <a href="thread.html#594">[ thread ]</a>
+              <a href="subject.html#594">[ subject ]</a>
+              <a href="author.html#594">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-01-15 21:39:18 +0100 (Thu, 15 Jan 2009)
+New Revision: 1120
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/movie.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+movie plugin base class prepared for fetching screenplay and cameraman,
+added fetching of screenplay to IMDB plugin 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-01-15 13:30:56 UTC (rev 1119)
++++ trunk/ChangeLog	2009-01-15 20:39:18 UTC (rev 1120)
+@@ -8,6 +8,8 @@
+ 2009-01-15  Michael Jahn
+ 	* Amazon movie plugin updated
+ 	* better results for amazon poster search
++	* movie plugin base class prepared for fetching screenplay and cameraman,
++	  added fetching of screenplay to IMDB plugin 
+ 
+ 2009-01-06  Michael Jahn
+ 	* MovieFone movie plugin updated
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2009-01-15 13:30:56 UTC (rev 1119)
++++ trunk/lib/add.py	2009-01-15 20:39:18 UTC (rev 1120)
+@@ -182,7 +182,7 @@
+     
+     fields_to_fetch = ['o_title', 'title', 'director', 'plot', 'cast', 'country', 'genre',
+                 'classification', 'studio', 'o_site', 'site', 'trailer', 'year',
+-                'notes', 'runtime', 'image', 'rating']
++                'notes', 'runtime', 'image', 'rating', 'screenplay', 'cameraman']
+     # remove fields that user doesn't want to fetch: (see preferences window)
+     fields_to_fetch = [ i for i in fields_to_fetch if self.config.get(&quot;s_%s&quot; % i, True, section='add') ]
+ 
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2009-01-15 13:30:56 UTC (rev 1119)
++++ trunk/lib/movie.py	2009-01-15 20:39:18 UTC (rev 1120)
+@@ -53,6 +53,8 @@
+     title = None
+     trailer = None
+     year = None
++    screenplay = None
++    cameraman = None
+     
+     movie_id = None
+     debug = False
+@@ -106,6 +108,10 @@
+         pass
+     def get_year(self):
+         pass
++    def get_screenplay(self):
++        pass
++    def get_cameraman(self):
++        pass
+     #}}}
+ 
+     def __getitem__(self, key):
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-01-15 13:30:56 UTC (rev 1119)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-01-15 20:39:18 UTC (rev 1120)
+@@ -24,13 +24,13 @@
+ import gutils, movie
+ import string, re
+ 
+-plugin_name = 'IMDb'
+-plugin_description = 'Internet Movie Database'
+-plugin_url = 'www.imdb.com'
+-plugin_language = _('English')
+-plugin_author = 'Vasco Nunes, Piotr O&#380;arowski'
++plugin_name         = 'IMDb'
++plugin_description  = 'Internet Movie Database'
++plugin_url          = 'www.imdb.com'
++plugin_language     = _('English')
++plugin_author       = 'Vasco Nunes, Piotr O&#380;arowski'
+ plugin_author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
+-plugin_version = '1.7'
++plugin_version      = '1.8'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -163,7 +163,18 @@
+             self.notes += &quot;%s: %s\n&quot; %(_('Color'), color)
+         if len(tagline)&gt;0:
+             self.notes += &quot;%s: %s\n&quot; %('Tagline', tagline)
+-    
++
++    def get_screenplay(self):
++        self.screenplay = ''
++        pattern = re.compile('&lt;h5&gt;Writer[s]*?(?:[ \t]+&lt;a href=&quot;/wga&quot;&gt;[(]WGA[)]&lt;/a&gt;)*?:&lt;/h5&gt;[\n\s\r]*(.*?)(?:&lt;br/&gt;)?(?:&lt;a[^&gt;]+&gt;more&lt;/a&gt;)?[\n]*&lt;/div')
++        result = pattern.search(self.page)
++        if result:
++            self.screenplay = result.groups()[0]
++            self.screenplay = self.screenplay.replace('&lt;br/&gt;', ', ')
++
++    def get_camerman(self):
++        self.camerman = ''
++
+     def __before_more(self, data):
+         tmp = string.find(data, '&gt;more&lt;')
+         if tmp &gt; 0:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000593.html">[Griffith-svn] r1119 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000595.html">[Griffith-svn] r1121 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#594">[ date ]</a>
+              <a href="thread.html#594">[ thread ]</a>
+              <a href="subject.html#594">[ subject ]</a>
+              <a href="author.html#594">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

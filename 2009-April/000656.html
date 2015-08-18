@@ -1,0 +1,463 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1184 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1184%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200904061444.n36EiU2S030401%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000655.html">
+   <LINK REL="Next"  HREF="000657.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1184 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1184%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200904061444.n36EiU2S030401%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1184 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr  6 16:44:30 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000655.html">[Griffith-svn] r1183 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000657.html">[Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#656">[ date ]</a>
+              <a href="thread.html#656">[ thread ]</a>
+              <a href="subject.html#656">[ subject ]</a>
+              <a href="author.html#656">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-06 16:44:05 +0200 (Mon, 06 Apr 2009)
+New Revision: 1184
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+Log:
+[#348226] DVD Empire lookup problem
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-04-05 18:55:46 UTC (rev 1183)
++++ branches/0.9.x/ChangeLog	2009-04-06 14:44:05 UTC (rev 1184)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-04-06  Michael Jahn
++	* [#348226] DVD Empire lookup problem
++
+ 2009-04-05  Michael Jahn
+ 	* [#269907] PluginMovieFilmDb.py: list index out of range
+ 	  and complete update of the plugin with test data
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2009-04-05 18:55:46 UTC (rev 1183)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2009-04-06 14:44:05 UTC (rev 1184)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2007
++# Copyright (c) 2007-2009
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -25,19 +25,19 @@
+ import movie
+ import re
+ 
+-plugin_name = &quot;DVD Empire&quot;
+-plugin_description = &quot;International Retailer of DVD Movies&quot;
+-plugin_url = &quot;www.dvdempire.com&quot;
+-plugin_language = _(&quot;English&quot;)
+-plugin_author = &quot;Michael Jahn&quot;
++plugin_name         = &quot;DVD Empire&quot;
++plugin_description  = &quot;International Retailer of DVD Movies&quot;
++plugin_url          = &quot;www.dvdempire.com&quot;
++plugin_language     = _(&quot;English&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.1&quot;
++plugin_version      = &quot;1.1&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode   = 'iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=">http://www.dvdempire.com/Exec/v4_item.asp?item_id=</A>&quot; + str(self.movie_id)
++		self.url      = &quot;<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=">http://www.dvdempire.com/Exec/v4_item.asp?item_id=</A>&quot; + str(self.movie_id)
+ 	
+ 	def get_image(self):
+ 		tmp_page = gutils.trim(self.page, '&lt;td align=&quot;center&quot; valign=&quot;top&quot; class=&quot;fontsmall&quot;&gt;', '&lt;/td&gt;')
+@@ -57,6 +57,7 @@
+ 	def get_plot(self):
+ 		self.plot = gutils.strip_tags(gutils.trim(self.page, '&lt;td width=&quot;100%&quot; valign=&quot;top&quot; class=&quot;fontsmall3&quot;&gt;', '&lt;/td&gt;'))
+ 		self.plot = self.plot.replace('\x93', '&quot;')
++		self.plot = self.plot.replace('\x84', '&quot;')
+ 
+ 	def get_year(self):
+ 		self.year = gutils.strip_tags(gutils.trim(self.page, '&gt;Production Year:', '&lt;br /&gt;'))
+@@ -110,22 +111,26 @@
+ 		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
++			tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+ 			self.notes = self.notes + '\nFeatures:' + tmp_page + '\n'
+ 		tmp_page = gutils.trim(self.page, 'Video:', '&lt;b&gt;')
+ 		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
+ 		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
++			tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+ 			self.notes = self.notes + '\nVideo:' + tmp_page + '\n'
+ 		tmp_page = gutils.trim(self.page, 'Audio:', '&lt;b&gt;')
+ 		tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
+ 		tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
++			tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+ 			self.notes = self.notes + '\nAudio:' + tmp_page
+ 		tmp_page = gutils.trim(self.page, 'Subtitles:', '&lt;b&gt;')
+ 		tmp_page = gutils.strip_tags(tmp_page)
+ 		if tmp_page &lt;&gt; '':
++			tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+ 			self.notes = self.notes + '\nSubtitles:\n' + tmp_page + '\n'
+ 
+ class SearchPlugin(movie.SearchMovie):
+@@ -163,16 +168,79 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		split_pattern = re.compile('&lt;a[\t ]+href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[-0-9]+[&amp;]amp;item_id=')
+-		check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[&quot;\']&gt;')
++		split_pattern = re.compile('&lt;a[\t ]+href=[&quot;\']/Exec/v4_item[.]asp[?](?:userid=[-0-9]+[&amp;]amp;)*item_id=([0-9]+)\'')
+ 		elements = split_pattern.split(self.page)
+-		elements[0] = ''
+-		for element in elements:
+-			if element &lt;&gt; '':
+-				is_an_item = check_pattern.search(element)
+-				if is_an_item:
+-					tmp_title = gutils.strip_tags(gutils.trim(element, &quot;&gt;&quot;, &quot;&lt;/a&gt;&quot;))
+-					if tmp_title &lt;&gt; '':
+-						tmp_id = gutils.before(element,'&amp;')
+-						self.ids.append(tmp_id)
+-						self.titles.append(tmp_title)
++		for index in range(1, len(elements), 2):
++			title_element = elements[index + 1]
++			tmp_title = gutils.strip_tags(gutils.trim(title_element, '&gt;', '&lt;/a&gt;'))
++			if tmp_title &lt;&gt; '':
++				self.ids.append(elements[index])
++				type = re.search('&lt;b&gt;Blu-ray&lt;/b&gt;', title_element)
++				if type:
++					tmp_title = tmp_title + ' (Blu-ray)'
++				type = re.search('&lt;b&gt;DVD-Video&lt;/b&gt;', title_element)
++				if type:
++					tmp_title = tmp_title + ' (DVD)'
++				self.titles.append(tmp_title)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa' : [ 2, 2 ],
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'1300280' : { 
++			'title'               : 'Rocky Balboa',
++			'o_title'             : 'Rocky Balboa',
++			'director'            : 'Sylvester Stallone',
++			'plot'                : True,
++			'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Geraldine Hughes\n\
++Milo Ventimiglia\n\
++Antonio Tarver',
++			'country'             : False,
++			'genre'               : 'Sports, Boxing, Drama',
++			'classification'      : 'PG',
++			'studio'              : 'Sony Pictures Home Entertainment',
++			'o_site'              : False,
++			'site'                : '<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=1300280">http://www.dvdempire.com/Exec/v4_item.asp?item_id=1300280</A>',
++			'trailer'             : False,
++			'year'                : 2006,
++			'notes'               : 'Features:\n\
++Deleted Scenes &amp; Alternate Ending\n\
++Boxing\'s Bloopers\n\
++Skill Vs. Will: The Making of Rocky Balboa\n\
++Reality in the Ring: Filming Rocky\'s Final Fight\n\
++Virtual Champion: Creating the Computer Fight\n\
++Audio Commentary with Sylvester Stallone\n\
++\n\
++Video:\n\
++Widescreen 1.85:1 Color (Anamorphic) \n\
++\n\
++Audio:\n\
++ENGLISH: Dolby Digital 5.1 [CC]\n\
++FRENCH: Dolby Digital 5.1\n\
++\n\
++Subtitles:\n\
++English, Spanish, French',
++			'runtime'             : 102,
++			'image'               : True,
++			'rating'              : 9,
++		},
++	}
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-04-05 18:55:46 UTC (rev 1183)
++++ trunk/ChangeLog	2009-04-06 14:44:05 UTC (rev 1184)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-04-06  Michael Jahn
++	* [#348226] DVD Empire lookup problem
++
+ 2009-04-05  Michael Jahn
+ 	* [#269907] PluginMovieFilmDb.py: list index out of range
+ 	  and complete update of the plugin with test data
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2009-04-05 18:55:46 UTC (rev 1183)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2009-04-06 14:44:05 UTC (rev 1184)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2007
++# Copyright (c) 2007-2009
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -25,20 +25,20 @@
+ import movie
+ import re
+ 
+-plugin_name = &quot;DVD Empire&quot;
+-plugin_description = &quot;International Retailer of DVD Movies&quot;
+-plugin_url = &quot;www.dvdempire.com&quot;
+-plugin_language = _(&quot;English&quot;)
+-plugin_author = &quot;Michael Jahn&quot;
++plugin_name         = &quot;DVD Empire&quot;
++plugin_description  = &quot;International Retailer of DVD Movies&quot;
++plugin_url          = &quot;www.dvdempire.com&quot;
++plugin_language     = _(&quot;English&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.1&quot;
++plugin_version      = &quot;1.1&quot;
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+-        self.encode='iso-8859-1'
++        self.encode   = 'iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=">http://www.dvdempire.com/Exec/v4_item.asp?item_id=</A>&quot; + str(self.movie_id)
+-    
++        self.url      = &quot;<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=">http://www.dvdempire.com/Exec/v4_item.asp?item_id=</A>&quot; + str(self.movie_id)
++
+     def get_image(self):
+         tmp_page = gutils.trim(self.page, '&lt;td align=&quot;center&quot; valign=&quot;top&quot; class=&quot;fontsmall&quot;&gt;', '&lt;/td&gt;')
+         self.image_url = gutils.trim(tmp_page, '&lt;img src=\'', '\' ')
+@@ -56,7 +56,8 @@
+ 
+     def get_plot(self):
+         self.plot = gutils.strip_tags(gutils.trim(self.page, '&lt;td width=&quot;100%&quot; valign=&quot;top&quot; class=&quot;fontsmall3&quot;&gt;', '&lt;/td&gt;'))
+-        self.plot = self.plot.replace('\x93', '&quot;')
++        self.plot = self.plot.replace(u'\x93', '&quot;')
++        self.plot = self.plot.replace(u'\x84', '&quot;')
+ 
+     def get_year(self):
+         self.year = gutils.strip_tags(gutils.trim(self.page, '&gt;Production Year:', '&lt;br /&gt;'))
+@@ -110,29 +111,41 @@
+         tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+         tmp_page = gutils.strip_tags(tmp_page)
+         if tmp_page &lt;&gt; '':
++            tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+             self.notes = self.notes + '\nFeatures:' + tmp_page + '\n'
+         tmp_page = gutils.trim(self.page, 'Video:', '&lt;b&gt;')
+         tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
+         tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+         tmp_page = gutils.strip_tags(tmp_page)
+         if tmp_page &lt;&gt; '':
++            tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+             self.notes = self.notes + '\nVideo:' + tmp_page + '\n'
+         tmp_page = gutils.trim(self.page, 'Audio:', '&lt;b&gt;')
+         tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
+         tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
+         tmp_page = gutils.strip_tags(tmp_page)
+         if tmp_page &lt;&gt; '':
++            tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+             self.notes = self.notes + '\nAudio:' + tmp_page
+         tmp_page = gutils.trim(self.page, 'Subtitles:', '&lt;b&gt;')
+         tmp_page = gutils.strip_tags(tmp_page)
+         if tmp_page &lt;&gt; '':
++            tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+             self.notes = self.notes + '\nSubtitles:\n' + tmp_page + '\n'
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.strip_tags(gutils.trim(self.page, '&gt;Writers:', '&lt;/a&gt;'))
++        self.screenplay = self.screenplay.replace('&nbsp;', '')
++        self.screenplay = self.screenplay.replace('&#149;', '')
++
++    def get_barcode(self):
++        self.barcode = gutils.trim(self.page, '&lt;b&gt;UPC Code:&lt;/b&gt;', '&lt;')
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.original_url_search   = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=</A>&quot;
+         self.translated_url_search = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=</A>&quot;
+-        self.encode = 'iso-8859-1'
++        self.encode                = 'iso-8859-1'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -165,16 +178,81 @@
+         return self.page
+ 
+     def get_searches(self):
+-        split_pattern = re.compile('&lt;a[\t ]+href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[-0-9]+[&amp;]amp;item_id=')
+-        check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[&quot;\']&gt;')
++        split_pattern = re.compile('&lt;a[\t ]+href=[&quot;\']/Exec/v4_item[.]asp[?](?:userid=[-0-9]+[&amp;]amp;)*item_id=([0-9]+)\'')
+         elements = split_pattern.split(self.page)
+-        elements[0] = ''
+-        for element in elements:
+-            if element &lt;&gt; '':
+-                is_an_item = check_pattern.search(element)
+-                if is_an_item:
+-                    tmp_title = gutils.strip_tags(gutils.trim(element, &quot;&gt;&quot;, &quot;&lt;/a&gt;&quot;))
+-                    if tmp_title &lt;&gt; '':
+-                        tmp_id = gutils.before(element,'&amp;')
+-                        self.ids.append(tmp_id)
+-                        self.titles.append(tmp_title)
++        for index in range(1, len(elements), 2):
++            title_element = elements[index + 1]
++            tmp_title = gutils.strip_tags(gutils.trim(title_element, '&gt;', '&lt;/a&gt;'))
++            if tmp_title &lt;&gt; '':
++                self.ids.append(elements[index])
++                type = re.search('&lt;b&gt;Blu-ray&lt;/b&gt;', title_element)
++                if type:
++                    tmp_title = tmp_title + ' (Blu-ray)'
++                type = re.search('&lt;b&gt;DVD-Video&lt;/b&gt;', title_element)
++                if type:
++                    tmp_title = tmp_title + ' (DVD)'
++                self.titles.append(tmp_title)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 2, 2 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '1300280' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Geraldine Hughes\n\
++Milo Ventimiglia\n\
++Antonio Tarver',
++            'country'             : False,
++            'genre'               : 'Sports, Boxing, Drama',
++            'classification'      : 'PG',
++            'studio'              : 'Sony Pictures Home Entertainment',
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=1300280">http://www.dvdempire.com/Exec/v4_item.asp?item_id=1300280</A>',
++            'trailer'             : False,
++            'year'                : 2006,
++            'notes'               : 'Features:\n\
++Deleted Scenes &amp; Alternate Ending\n\
++Boxing\'s Bloopers\n\
++Skill Vs. Will: The Making of Rocky Balboa\n\
++Reality in the Ring: Filming Rocky\'s Final Fight\n\
++Virtual Champion: Creating the Computer Fight\n\
++Audio Commentary with Sylvester Stallone\n\
++\n\
++Video:\n\
++Widescreen 1.85:1 Color (Anamorphic) \n\
++\n\
++Audio:\n\
++ENGLISH: Dolby Digital 5.1 [CC]\n\
++FRENCH: Dolby Digital 5.1\n\
++\n\
++Subtitles:\n\
++English, Spanish, French',
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 9,
++            'screenplay'          : 'Sylvester Stallone',
++            'barcode'             : '043396161900'
++        },
++    }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000655.html">[Griffith-svn] r1183 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000657.html">[Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#656">[ date ]</a>
+              <a href="thread.html#656">[ thread ]</a>
+              <a href="subject.html#656">[ subject ]</a>
+              <a href="author.html#656">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

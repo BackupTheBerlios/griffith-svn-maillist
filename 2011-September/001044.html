@@ -1,0 +1,495 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1585%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110912204319.0B78148125B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001043.html">
+   <LINK REL="Next"  HREF="001045.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1585%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110912204319.0B78148125B%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1585 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Sep 12 22:43:18 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001043.html">[Griffith-svn] r1584 - trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001045.html">[Griffith-svn] r1586 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1044">[ date ]</a>
+              <a href="thread.html#1044">[ thread ]</a>
+              <a href="subject.html#1044">[ subject ]</a>
+              <a href="author.html#1044">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-09-12 22:43:18 +0200 (Mon, 12 Sep 2011)
+New Revision: 1585
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/movie.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+added limited urllib2 support
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-09-06 18:53:07 UTC (rev 1584)
++++ trunk/ChangeLog	2011-09-12 20:43:18 UTC (rev 1585)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-09-12  Michael Jahn
++	* added limited urllib2 support
++
+ 2011-09-04  Piotr O&#380;arowski
+ 	* AniDB movie plugin rewritten (uses HTTP XML API now) - needs lxml module
+ 
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2011-09-06 18:53:07 UTC (rev 1584)
++++ trunk/lib/movie.py	2011-09-12 20:43:18 UTC (rev 1585)
+@@ -74,6 +74,7 @@
+     encode = 'iso-8859-1'
+     fields_to_fetch = []
+     progress = None
++    useurllib2 = False
+ 
+     # functions that plugin should implement: {{{
+     def initialize(self):
+@@ -167,9 +168,10 @@
+             return True
+ 
+         except:
++            self.progress.hide()
+             gutils.error(_(&quot;Connection failed.&quot;))
+             return False
+-        
++
+     def open_page(self, parent_window=None, url=None):
+         if url is None:
+             url_to_fetch = self.url
+@@ -178,7 +180,7 @@
+         if parent_window is not None:
+             self.parent_window = parent_window
+         self.progress.set_data(parent_window, _(&quot;Fetching data&quot;), _(&quot;Wait a moment&quot;), False)
+-        retriever = Retriever(url_to_fetch, self.parent_window, self.progress)
++        retriever = Retriever(url_to_fetch, self.parent_window, self.progress, useurllib2=self.useurllib2)
+         retriever.start()
+         while retriever.isAlive():
+             self.progress.pulse()
+@@ -188,28 +190,32 @@
+                 gtk.main_iteration()
+         data = None
+         try:
+-            if retriever.html:
+-                ifile = file(retriever.html[0], &quot;rb&quot;)
+-                try:
+-                    data = ifile.read()
+-                finally:
+-                    ifile.close()
+-                # check for gzip compressed pages before decoding to unicode
+-                if len(data) &gt; 2 and data[0:2] == '\037\213':
+-                    data = gutils.decompress(data)
+-                try:
+-                    # try to decode it strictly
+-                    data = data.decode(self.encode)
+-                except UnicodeDecodeError, exc:
+-                    # something is wrong, perhaps a wrong character set
+-                    # or some pages are not as strict as they should be
+-                    # (like OFDb, mixes utf8 with iso8859-1)
+-                    # I want to log the error here so that I can find it
+-                    # but the program should not terminate
+-                    log.error(exc)
+-                    data = data.decode(self.encode, 'ignore')
++            if retriever.exception is None:
++                if retriever.html:
++                    ifile = file(retriever.html[0], &quot;rb&quot;)
++                    try:
++                        data = ifile.read()
++                    finally:
++                        ifile.close()
++                    # check for gzip compressed pages before decoding to unicode
++                    if len(data) &gt; 2 and data[0:2] == '\037\213':
++                        data = gutils.decompress(data)
++                    try:
++                        # try to decode it strictly
++                        if self.encode:
++                            data = data.decode(self.encode)
++                    except UnicodeDecodeError, exc:
++                        # something is wrong, perhaps a wrong character set
++                        # or some pages are not as strict as they should be
++                        # (like OFDb, mixes utf8 with iso8859-1)
++                        # I want to log the error here so that I can find it
++                        # but the program should not terminate
++                        log.error(exc)
++                        data = data.decode(self.encode, 'ignore')
++            else:
++                gutils.urllib_error(_(&quot;Connection error&quot;), self.parent_window)
+         except IOError:
+-            pass
++            log.exception('')
+         if url is None:
+             self.page = data
+         urlcleanup()
+@@ -222,7 +228,7 @@
+             dest = &quot;%s.jpg&quot; % tmp_dest
+             try:
+                 self.progress.set_data(self.parent_window, _(&quot;Fetching poster&quot;), _(&quot;Wait a moment&quot;), False)
+-                retriever = Retriever(self.image_url, self.parent_window, self.progress, dest)
++                retriever = Retriever(self.image_url, self.parent_window, self.progress, dest, useurllib2=self.useurllib2)
+                 retriever.start()
+                 while retriever.isAlive():
+                     self.progress.pulse()
+@@ -232,6 +238,7 @@
+                         gtk.main_iteration()
+                 urlcleanup()
+             except:
++                log.exception('')
+                 self.image = &quot;&quot;
+                 try:
+                     os.remove(&quot;%s.jpg&quot; % tmp_dest)
+@@ -242,7 +249,7 @@
+ 
+     def parse_movie(self):
+         try:
+-            fields = list(self.fields_to_fetch) # make a copy
++            fields = list(self.fields_to_fetch)  # make a copy
+ 
+             self.initialize()
+ 
+@@ -293,6 +300,8 @@
+             if 'title' in self.fields_to_fetch and self.title is not None:
+                 if self.title[:4] == u'The ':
+                     self.title = self.title[4:] + u', The'
++        except:
++            log.exception('')
+         finally:
+             # close the progress dialog which was opened in get_movie
+             self.progress.hide()
+@@ -311,6 +320,7 @@
+     title = None
+     remove_accents = True
+     progress = None
++    useurllib2 = False
+ 
+     def __init__(self):
+         pass
+@@ -331,7 +341,7 @@
+             # dont forget to hide the progress dialog
+             self.progress.hide()
+ 
+-    def open_search(self, parent_window):
++    def open_search(self, parent_window, destination=None):
+         self.titles = [&quot;&quot;]
+         self.ids = [&quot;&quot;]
+         if self.url.find('%s') &gt; 0:
+@@ -343,8 +353,8 @@
+             url = self.url.encode(self.encode)
+         except UnicodeEncodeError:
+             url = self.url.encode('utf-8')
+-        self.progress.set_data(parent_window, _(&quot;Searching&quot;), _(&quot;Wait a moment&quot;), False)
+-        retriever = Retriever(url, parent_window, self.progress)
++        self.progress.set_data(parent_window, _(&quot;Searching&quot;), _(&quot;Wait a moment&quot;), True)
++        retriever = Retriever(url, parent_window, self.progress, destination, useurllib2=self.useurllib2)
+         retriever.start()
+         while retriever.isAlive():
+             self.progress.pulse()
+@@ -353,31 +363,42 @@
+             while gtk.events_pending():
+                 gtk.main_iteration()
+         try:
+-            if retriever.html:
+-                ifile = file(retriever.html[0], 'rb')
+-                try:
+-                    self.page = ifile.read()
+-                finally:
+-                    ifile.close()
+-                # check for gzip compressed pages before decoding to unicode
+-                if len(self.page) &gt; 2 and self.page[0:2] == '\037\213':
+-                    self.page = gutils.decompress(self.page)
+-                self.page = self.page.decode(self.encode, 'replace')
++            if retriever.exception is None:
++                if destination:
++                    # caller gave an explicit destination file
++                    # don't care about the content
++                    return True
++                if retriever.html:
++                    ifile = file(retriever.html[0], 'rb')
++                    try:
++                        self.page = ifile.read()
++                    finally:
++                        ifile.close()
++                    # check for gzip compressed pages before decoding to unicode
++                    if len(self.page) &gt; 2 and self.page[0:2] == '\037\213':
++                        self.page = gutils.decompress(self.page)
++                    self.page = self.page.decode(self.encode, 'replace')
++                else:
++                    return False
+             else:
++                self.progress.hide()
++                gutils.urllib_error(_(&quot;Connection error&quot;), parent_window)
+                 return False
+         except IOError:
+-            pass
+-        urlcleanup()
++            log.exception('')
++        finally:
++            urlcleanup()
+         return True
+ 
+ 
+ class Retriever(threading.Thread):
+ 
+-    def __init__(self, URL, parent_window, progress, destination=None):
++    def __init__(self, URL, parent_window, progress, destination=None, useurllib2=False):
+         self.URL = URL
+         self.html = None
++        self.exception = None
+         self.destination = destination
+-        self.parent_window = parent_window
++        self.useurllib2 = useurllib2
+         self.progress = progress
+         self._stopevent = threading.Event()
+         self._sleepperiod = 1.0
+@@ -385,14 +406,15 @@
+ 
+     def run(self):
+         try:
+-            self.html = urlretrieve(self.URL, self.destination, self.hook)
+-            #self.html = urlretrieve(self.URL.encode('utf-8'), self.destination, self.hook)
++            if self.useurllib2:
++                self.html = urlretrieve2(self.URL, self.destination, self.hook)
++            else:
++                self.html = urlretrieve(self.URL, self.destination, self.hook)
+             if self.progress.status:
+                 self.html = []
+-        except IOError:
+-            self.progress.dialog.hide()
+-            gutils.urllib_error(_(&quot;Connection error&quot;), self.parent_window)
+-            self.join()
++        except Exception, e:
++            log.exception('')
++            self.exception = e
+ 
+     def hook(self, count, blockSize, totalSize):
+         if totalSize == -1:
+@@ -412,6 +434,7 @@
+ # which not all sites accepting. (zelluloid.de for example)
+ #
+ _uaurlopener = None
++_tempfilecleanup = None
+ 
+ 
+ def urlretrieve(url, filename=None, reporthook=None, data=None):
+@@ -421,6 +444,33 @@
+     return _uaurlopener.retrieve(url, filename, reporthook, data)
+ 
+ 
++def urlretrieve2(url, filename=None, reporthook=None, data=None):
++    global _tempfilecleanup
++    headers = {
++        'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7',
++        'Cache-Control': 'no-cache',
++        'Pragma': 'no-cache',
++        'Accept-Encoding': 'gzip'}
++    req = urllib2.Request(url, data, headers)
++    response = urllib2.urlopen(req)
++    if not filename:
++        import tempfile
++        (fd, filename) = tempfile.mkstemp()
++        if not _tempfilecleanup:
++            _tempfilecleanup = TempFileCleanup()
++        _tempfilecleanup._tempfiles.append(filename)
++        tfp = os.fdopen(fd, 'wb')
++    else:
++        tfp = file(filename, 'wb')
++    while 1:
++        block = response.read(4096)
++        if block == &quot;&quot;:
++            break
++        tfp.write(block)
++    tfp.close()
++    return [filename, response.info()]
++
++
+ class UAFancyURLopener(FancyURLopener):
+     # use Firefox 3.0 User-Agent string from Windows XP
+     version = 'Mozilla/5.0 (Windows; U; Windows NT 6.0) Gecko/2008052906 Firefox/3.0'
+@@ -432,7 +482,32 @@
+         self.addheaders.append(('Cache-Control', 'no-cache'))
+         self.addheaders.append(('Pragma', 'no-cache'))
+ 
++    def open(self, fullurl, data=None):
++        # prevent blocking calls which doesn't come back
++        import socket
++        socket.setdefaulttimeout(20)
++        return FancyURLopener.open(self, fullurl, data)
+ 
++
++class TempFileCleanup:
++    _tempfiles = []
++
++    def __init__(self):
++        self.__unlink = os.unlink
++
++    def __del__(self):
++        self.cleanup()
++
++    def cleanup(self):
++        if self._tempfiles:
++            for file in self._tempfiles:
++                try:
++                    self.__unlink(file)
++                except OSError:
++                    pass
++            del self._tempfiles[:]
++
++
+ class Progress:
+ 
+     def __init__(self, window, title='', message=''):
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-06 18:53:07 UTC (rev 1584)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2011-09-12 20:43:18 UTC (rev 1585)
+@@ -22,6 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ import urllib2
++import logging
+ from datetime import datetime, timedelta
+ from locale import getdefaultlocale
+ from os.path import getmtime, isfile, join
+@@ -31,6 +32,8 @@
+ from gutils import decompress
+ from movie import Movie, SearchMovie
+ 
++log = logging.getLogger(&quot;Griffith&quot;)
++
+ plugin_name         = 'AnimeDB'
+ plugin_description  = 'Anime DataBase'
+ plugin_url          = 'www.anidb.net'
+@@ -50,7 +53,8 @@
+ 
+ class Plugin(Movie):
+     def __init__(self, aid):
+-        self.encode = 'utf-8'
++        self.encode = None
++        self.useurllib2 = True
+         self._aid = aid
+         self.url = REQUEST + aid
+ 
+@@ -133,7 +137,7 @@
+             key = node.find('epno').text
+             titles = {}
+             for tnode in node.xpath('title'):
+-                titles[tnode.attrib['xml:lang']] = tnode.text
++                titles[tnode.attrib['{<A HREF="http://www.w3.org/XML/1998/namespace">http://www.w3.org/XML/1998/namespace</A>}lang']] = tnode.text
+             duration = node.find('length').text
+             airdate = node.find('airdate')
+             airdate = airdate.text if airdate is not None else None
+@@ -148,37 +152,36 @@
+                 self.notes += ')'
+ 
+ 
+-def load_titles(fpath):
+-    # animetitles.xml.gz is updated once a day
+-    remote = None
+-    download = True
+-    if isfile(fpath):
+-        cache_last_modified = datetime.fromtimestamp(getmtime(fpath))
+-        if cache_last_modified &gt; datetime.now() - timedelta(days=1):
+-            download = False
+-        else:
+-            remote = urllib2.urlopen(ANIME_TITLES_URL)
+-            last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
+-            if cache_last_modified &gt;= last_modified:
++class SearchPlugin(SearchMovie):
++    original_url_search = '<A HREF="http://anidb.net/">http://anidb.net/</A>'
++    translated_url_search = '<A HREF="http://anidb.net/">http://anidb.net/</A>'
++
++    def load_titles(self, fpath, parent_window):
++        # animetitles.xml.gz is updated once a day
++        remote = None
++        download = True
++        if isfile(fpath):
++            cache_last_modified = datetime.fromtimestamp(getmtime(fpath))
++            if cache_last_modified &gt; datetime.now() - timedelta(days=1):
+                 download = False
+-    else:
+-        remote = urllib2.urlopen(ANIME_TITLES_URL)
++            else:
++                remote = urllib2.urlopen(ANIME_TITLES_URL)
++                last_modified = datetime(*remote.info().getdate('Last-Modified')[:7])
++                if cache_last_modified &gt;= last_modified:
++                    download = False
++                remote.close()
+ 
+-    if download:
+-        fp = open(fpath, 'wb')
+-        fp.write(remote.read())
+-        fp.close()
++        if download:
++            log.info('downloading title list from %s' % ANIME_TITLES_URL)
++            self.url = ''
++            self.title = ANIME_TITLES_URL
++            self.open_search(parent_window, fpath)
+ 
+-    return etree.fromstring(decompress(open(fpath, 'rb').read()))
++        return etree.fromstring(decompress(open(fpath, 'rb').read()))
+ 
+-
+-class SearchPlugin(SearchMovie):
+-    original_url_search = '<A HREF="http://anidb.net/">http://anidb.net/</A>'
+-    translated_url_search = '<A HREF="http://anidb.net/">http://anidb.net/</A>'
+-
+     def search(self, parent_window):
+         self._search_results = []
+-        exml = load_titles(join(self.locations['home'], 'animetitles.xml.gz'))
++        exml = self.load_titles(join(self.locations['home'], 'animetitles.xml.gz'), parent_window)
+         for node in exml.xpath(&quot;anime[contains(., '%s')]&quot; % self.title.replace(&quot;'&quot;, r&quot;\'&quot;)):
+             aid = node.attrib['aid']
+             title = node.xpath(&quot;title[@xml:lang='%s']&quot; % lang)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001043.html">[Griffith-svn] r1584 - trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001045.html">[Griffith-svn] r1586 - in trunk/lib: . plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1044">[ date ]</a>
+              <a href="thread.html#1044">[ thread ]</a>
+              <a href="subject.html#1044">[ subject ]</a>
+              <a href="author.html#1044">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,668 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r500 - in griffith: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r500%20-%20in%20griffith%3A%20.%20lib&In-Reply-To=%3C200612082059.kB8Kxcku009080%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000031.html">
+   <LINK REL="Next"  HREF="000033.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r500 - in griffith: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r500%20-%20in%20griffith%3A%20.%20lib&In-Reply-To=%3C200612082059.kB8Kxcku009080%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r500 - in griffith: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  8 21:59:38 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000031.html">[Griffith-svn] r499 - in griffith/lib: . plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000033.html">[Griffith-svn] r501 - griffith
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#32">[ date ]</a>
+              <a href="thread.html#32">[ thread ]</a>
+              <a href="subject.html#32">[ subject ]</a>
+              <a href="author.html#32">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-08 21:59:37 +0100 (Fri, 08 Dec 2006)
+New Revision: 500
+
+Modified:
+   griffith/griffith
+   griffith/lib/backup.py
+   griffith/lib/cover.py
+   griffith/lib/delete.py
+   griffith/lib/initialize.py
+   griffith/lib/preferences.py
+   griffith/lib/sql.py
+Log:
+every database has its own posters dir now
+
+
+Modified: griffith/griffith
+===================================================================
+--- griffith/griffith	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/griffith	2006-12-08 20:59:37 UTC (rev 500)
+@@ -47,13 +47,13 @@
+ 
+ 		# debug object
+ 		global debug
+-		debug = gdebug.GriffithDebug()
+-		self.debug = debug # deprecated
++		debug = self.debug = gdebug.GriffithDebug()
+ 		
+ 		initialize.locations(self)
+ 	
+ 		# Configuration
+ 		self.config = config.Config(file=os.path.join(self.locations['home'], 'griffith.conf'))
++		initialize.location_posters(self.locations, self.config)
+ 		# create/connect db
+ 		self.db = sql.GriffithSQL(self.config, self.debug, self.locations['home'])
+ 
+
+Modified: griffith/lib/backup.py
+===================================================================
+--- griffith/lib/backup.py	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/lib/backup.py	2006-12-08 20:59:37 UTC (rev 500)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005 Vasco Nunes
++# Copyright (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -33,7 +33,7 @@
+ 		action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons= \
+ 		(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK), \
+ 		name='griffith_backup.zip')
+-	if filename[0]:
++	if filename and filename[0]:
+ 		overwrite = None
+ 		if os.path.isfile(filename[0]):
+ 			response = gutils.question(self, \
+@@ -44,43 +44,49 @@
+ 			else:
+ 				overwrite = False
+ 
+-		if overwrite == True or overwrite == None:
++		if overwrite == True or overwrite is None:
+ 			try:
+ 				mzip = zipfile.ZipFile(filename[0], 'w')
+ 			except:
+ 				gutils.error(self, _(&quot;Error creating backup&quot;), self.widgets['window'])
+ 				return False
+-			mzip.write(os.path.join(self.griffith_dir,'griffith.conf'))
+-			if self.db.engine.name == &quot;sqlite&quot;:
+-				mzip.write(os.path.join(self.griffith_dir, self.config[&quot;default_db&quot;]))
++			mzip.write(os.path.join(self.locations['home'],'griffith.conf'))
++			if self.db.metadata.engine.name == 'sqlite':
++				mzip.write(os.path.join(self.locations['home'], self.config['default_db']))
+ 			else:
+ 				from tempfile import mkdtemp
+ 				from shutil import rmtree, move
+-				import sqlalchemy
++				from sqlalchemy import BoundMetaData
+ 				import copy
+ 				# if backup_to_sqlite:
+ 				tmp_dir = mkdtemp()
+ 				tmp_config = copy.deepcopy(self.config)
+-				tmp_config.file = os.path.join(tmp_dir,&quot;griffith.conf&quot;)
+-				tmp_config[&quot;db_type&quot;] = &quot;sqlite&quot;
++				tmp_config.file = os.path.join(tmp_dir,'griffith.conf')
++				tmp_config[&quot;db_type&quot;] = 'sqlite'
+ 				tmp_config[&quot;default_db&quot;] = &quot;griffith.db&quot;
+ 				tmp_config.save()
+ 
+-				tmp_file = os.path.join(tmp_dir, tmp_config[&quot;default_db&quot;])
+-				tmp_engine = sqlalchemy.create_engine('sqlite', {'filename':tmp_file})
+-				for table in self.db.engine.tables.keys():
+-					self.db.engine.tables[table].toengine(tmp_engine)
+-					tmp_engine.tables[table].create()
+-					data =  self.db.engine.tables[table].select().execute().fetchall()
+-					for item in data:
+-						tmp_engine.tables[table].insert(item).execute()
+-				data = None
+-				tmp_engine.commit()
++#				tmp_db = sql.GriffithSQL(tmp_config, self.debug, tmp_dir)
++#				for i in self.db.metadata.tables
++#				tmp_db.
++
++				tmp_file = os.path.join(tmp_dir, tmp_config['default_db'])
++				tmp_metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
++				tmp_metadata.tables = self.db.metadata.tables
++				tmp_metadata.create_all()
++#				for table in self.db.metadata.tables.keys():
++				for table in [t.name for t in self.db.metadata.table_iterator()]: # table_iterator() will return tables in *correct* order
++					data = self.db.metadata.tables[table].select().execute().fetchall()
++					tmp_metadata.tables[table].insert().execute(data)
++#					for item in data:
++#						tmp_metadata.tables[table].insert().execute(item)
++				tmp_metadata.engine.commit()
++				
+ 				mzip.write(tmp_file)
+ 				rmtree(tmp_dir)
+-			posters_dir = os.path.join(self.griffith_dir,'posters')
++			posters_dir = os.path.join(self.locations['posters'])
+ 			for movie in self.db.Movie.select():
+-				if movie.image != None:
++				if movie.image is not None:
+ 					filename = str(movie.image)+&quot;.jpg&quot;
+ 					filename = os.path.join(posters_dir, filename.encode('utf-8'))
+ 					if os.path.isfile(filename):
+@@ -103,14 +109,14 @@
+ 		except:
+ 			gutils.error(self, _(&quot;Can't read backup file&quot;), self.widgets['window'])
+ 			return False
+-		mypath = os.path.join(self.griffith_dir,'posters')
++		mypath = os.path.join(self.locations['posters'])
+ 		for each in zip.namelist():
+ 			file_to_restore = os.path.split(each)
+ 			if not os.path.isdir(file_to_restore[1]):
+ 				if file_to_restore[1].endswith('.jpg'):
+ 					myfile = os.path.join(mypath,file_to_restore[1])
+ 				else:
+-					myfile = os.path.join(self.griffith_dir,file_to_restore[1])
++					myfile = os.path.join(self.locations['home'],file_to_restore[1])
+ 				outfile = open(myfile, 'wb')
+ 				outfile.write(zip.read(each))
+ 				outfile.flush()
+@@ -118,18 +124,18 @@
+ 		zip.close()
+ 
+ 		# restore config file
+-		self.config = config.Config(file=os.path.join(self.griffith_dir,'griffith.conf'))
+-		filename = os.path.join(self.griffith_dir, self.config[&quot;default_db&quot;])
++		self.config = config.Config(file=os.path.join(self.locations['home'],'griffith.conf'))
++		filename = os.path.join(self.locations['home'], self.config[&quot;default_db&quot;])
+ 
+ 		# check if file needs conversion
+ 		if os.path.isfile(filename) and  open(filename).readline()[:47] == &quot;** This file contains an SQLite 2.1 database **&quot;:
+ 			self.debug.show(&quot;RESTORE: SQLite2 database format detected. Converting...&quot;)
+-			if not self.db.convert_from_sqlite2(filename, os.path.join(self.griffith_dir, self.config[&quot;default_db&quot;])):
++			if not self.db.convert_from_sqlite2(filename, os.path.join(self.locations['home'], self.config[&quot;default_db&quot;])):
+ 				self.debug.show(&quot;RESTORE: Can't convert database, aborting.&quot;)
+ 				return False
+ 
+-		self.db.engine.dispose() # close DB
+-		self.db = sql.GriffithSQL(self.config, self.debug, self.griffith_dir)
++		self.db.metadata.engine.dispose() # close DB
++		self.db = sql.GriffithSQL(self.config, self.debug, self.locations['home'])
+ 		from initialize	import dictionaries, people_treeview
+ 		dictionaries(self)
+ 		people_treeview(self)
+@@ -193,7 +199,7 @@
+ 		merged=0
+ 		movies = tmp_db.Movie.count()
+ 		for movie in tmp_db.Movie.select():
+-			if self.db.Movie.get_by(o_title=movie.o_title) != None:
++			if self.db.Movie.get_by(o_title=movie.o_title) is not None:
+ 				continue
+ 			t_movies = {}
+ 			for column in movie.mapper.c.keys():
+@@ -211,15 +217,14 @@
+ 			if self.db.add_movie(t_movies):
+ 				print t_movies
+ 
+-			if movie.image != None:
+-				dest_file = os.path.join(self.griffith_dir, 'posters', movie.image+'.jpg')
++			if movie.image is not None:
++				dest_file = os.path.join(self.locations['posters'], movie.image+'.jpg')
+ 				if not os.path.isfile(dest_file):
+ 					src_file = os.path.join(tmp_dir, movie.image+'.jpg')
+ 					if os.path.isfile(src_file):
+ 						move(src_file, dest_file)
+ 			merged+=1
+ 		rmtree(tmp_dir)
+-		print self.db.Movie.get(1)
+ 
+ 		from initialize	import dictionaries, people_treeview
+ 		dictionaries(self)
+
+Modified: griffith/lib/cover.py
+===================================================================
+--- griffith/lib/cover.py	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/lib/cover.py	2006-12-08 20:59:37 UTC (rev 500)
+@@ -165,7 +165,7 @@
+ 		c.drawString(60, (-pageWidth/2)-8, movie.o_title.encode('utf-8'))
+ 		c.rotate(-90)
+ 		if movie.image is not None:
+-			tmp_dest = os.path.join(self.griffith_dir, &quot;posters&quot;)
++			tmp_dest = self.locations['posters']
+ 			image = os.path.join(tmp_dest, str(movie.image)+&quot;.jpg&quot;)
+ 			c.drawImage(image, x=(pageWidth-30)/2, y=470, width=30, height=50)
+ 		# print movie info
+
+Modified: griffith/lib/delete.py
+===================================================================
+--- griffith/lib/delete.py	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/lib/delete.py	2006-12-08 20:59:37 UTC (rev 500)
+@@ -52,7 +52,7 @@
+ 	if not poster:
+ 		self.debug.show('Delete poster: no poster to delete')
+ 		return False
+-	posters_dir = os.path.join(self.griffith_dir, &quot;posters&quot;)
++	posters_dir = os.path.join(self.locations['posters'])
+ 	image_thumbnail = os.path.join(posters_dir, &quot;t_&quot; + poster + &quot;.jpg&quot;)
+ 	image_mini = os.path.join(posters_dir, &quot;m_&quot; + poster + &quot;.jpg&quot;)
+ 	image_full = os.path.join(posters_dir, poster + &quot;.jpg&quot;)
+
+Modified: griffith/lib/initialize.py
+===================================================================
+--- griffith/lib/initialize.py	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/lib/initialize.py	2006-12-08 20:59:37 UTC (rev 500)
+@@ -55,7 +55,6 @@
+ 		locations['home']           = os.path.join(os.path.expanduser('~'), 'griffith')
+ 		locations['movie_plugins']  = &quot;%s\\lib\\plugins\\movie&quot; % locations['exec']
+ 		locations['export_plugins'] = &quot;%s\\lib\\plugins\\export&quot; % locations['exec']
+-		locations['import_plugins'] = &quot;%s\\lib\\plugins\\import&quot; % locations['exec']
+ 		locations['images']         = &quot;%s\\images&quot; % locations['exec']
+ 		locations['share']          = locations['images']
+ 		locations['glade']          = &quot;%s\\glade\\&quot; % locations['exec']
+@@ -73,11 +72,9 @@
+ 		if os.path.isdir(os.path.join(locations['share'], 'plugins')):
+ 			locations['movie_plugins']  = os.path.join(locations['share'], 'plugins', 'movie')
+ 			locations['export_plugins'] = os.path.join(locations['share'], 'plugins', 'export')
+-			locations['import_plugins'] = os.path.join(locations['share'], 'plugins', 'import')
+ 		else:
+ 			locations['movie_plugins']  = os.path.join(locations['lib'], 'plugins', 'movie')
+ 			locations['export_plugins'] = os.path.join(locations['lib'], 'plugins', 'export')
+-			locations['import_plugins'] = os.path.join(locations['lib'], 'plugins', 'import')
+ 		locations['images']  = os.path.join(locations['share'], 'images')
+ 		locations['desktop'] = os.path.join(os.path.expanduser('~'), 'Desktop')
+ 	else:
+@@ -105,27 +102,35 @@
+ 		raise
+ 		sys.exit()
+ 
+-	locations['posters']  = os.path.join(locations['home'], 'posters')
+-
+ 	if not os.access(locations['home'], os.W_OK):
+ 		debug.show('Cannot write to griffith directory, %s' % locations['home'])
+ 		sys.exit()
+ 
+-	if not os.path.exists(locations['posters']):
+-		debug.show('Creating poster directory')
+-		os.makedirs(locations['posters'])
+-
+ 	# includes plugins in system path for easier importing
+ 	sys.path.append(locations['lib'])
+ 	sys.path.append(locations['movie_plugins'])
+ 	sys.path.append(locations['export_plugins'])
+-	sys.path.append(locations['import_plugins'])
+ 	
+ 	if self:
+ 		self.locations = locations
+ 	else:
+ 		return locations
+ 
++def location_posters(locations, config):
++	if config['posters'] is not None:
++		locations['posters']  = os.path.join(locations['home'], config['posters'])
++	if config['db_type'] == 'sqlite':
++		config['posters'] = 'posters'
++		locations['posters'] = os.path.join(locations['home'], 'posters')
++		config.save()
++	else:
++		config['posters'] = &quot;posters_%(db_type)s_%(db_host)s_%(db_port)s_%(db_name)s_%(db_user)s&quot; % config
++		locations['posters'] = os.path.join(locations['home'], config['posters'])
++		config.save()
++	# check if posters dir exists
++	if not os.path.isdir(locations['posters']):
++		os.makedirs(locations['posters'])
++
+ def gui(self):
+ 	self._ = None
+ 	self.debug.show(&quot;running on %s&quot; % os.name)
+
+Modified: griffith/lib/preferences.py
+===================================================================
+--- griffith/lib/preferences.py	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/lib/preferences.py	2006-12-08 20:59:37 UTC (rev 500)
+@@ -147,111 +147,112 @@
+ 
+ def save_preferences(self):
+ 	w = self.widgets['preferences']
++	c = self.config
+ 	global spell_support
+ 
+ 	was_false = notes_was_false = plot_was_false = 1	
+ 
+-	if self.config.get('use_gtkspell', 'False') == 'True':
++	if c.get('use_gtkspell', 'False') == 'True':
+ 		was_false = 0
+ 
+-	if self.config.get('spell_notes', 'False') == 'True':
++	if c.get('spell_notes', 'False') == 'True':
+ 		notes_was_false = 0
+ 
+-	if self.config.get('spell_plot', 'False') == 'True':
++	if c.get('spell_plot', 'False') == 'True':
+ 		plot_was_false = 0
+ 
+ 	# image
+ 	if w['view_image'].get_active():
+-		self.config['view_image'] = 'True'
++		c['view_image'] = 'True'
+ 	else:
+-		self.config['view_image'] = 'False'
++		c['view_image'] = 'False'
+ 	# original title
+ 	if w['view_o_title'].get_active():
+-		self.config['view_otitle'] = 'True'
++		c['view_otitle'] = 'True'
+ 	else:
+-		self.config['view_otitle'] = 'False'
++		c['view_otitle'] = 'False'
+ 	# title
+ 	if w['view_title'].get_active():
+-		self.config['view_title'] = 'True'
++		c['view_title'] = 'True'
+ 	else:
+-		self.config['view_title'] = 'False'
++		c['view_title'] = 'False'
+ 	# director
+ 	if w['view_director'].get_active():
+-		self.config['view_director'] = 'True'
++		c['view_director'] = 'True'
+ 	else:
+-		self.config['view_director'] = 'False'
++		c['view_director'] = 'False'
+ 	
+ 	# sortby
+ 	if w['sortby'].get_active():
+ 		field = self.sort_criteria[w['sortby'].get_active()]
+ 		if field:
+-			self.config['sortby'] = field
++			c['sortby'] = field
+ 	else:
+-		self.config['sortby'] = 'number'
++		c['sortby'] = 'number'
+ 	
+ 
+ 	# pdf font
+ 	if w['font'].get_filename():
+-		self.config['font'] = w['font'].get_filename()
++		c['font'] = w['font'].get_filename()
+ 
+ 	# spellchecker
+ 	if w['spellchecker'].get_active():
+-		self.config['use_gtkspell'] = 'True'
++		c['use_gtkspell'] = 'True'
+ 	else:
+-		self.config['use_gtkspell'] = 'False'		
++		c['use_gtkspell'] = 'False'		
+ 	if w['spell_notes'].get_active():
+-		self.config['spell_notes'] = 'True'
++		c['spell_notes'] = 'True'
+ 	else:
+-		self.config['spell_notes'] = 'False'
++		c['spell_notes'] = 'False'
+ 	if w['spell_plot'].get_active():
+-		self.config['spell_plot'] = 'True'
++		c['spell_plot'] = 'True'
+ 	else:
+-		self.config['spell_plot'] = 'False'
++		c['spell_plot'] = 'False'
+ 
+ 	# rating image
+-	self.config['rating_image'] = str(w['rating_image'].get_active())
++	c['rating_image'] = str(w['rating_image'].get_active())
+ 
+ 	#defaults
+-	self.config['media'] = self.media_ids[w['media'].get_active()]
+-	self.config['vcodec'] = self.vcodecs_ids[w['vcodec'].get_active()]
+-	self.config['condition'] = str(w['condition'].get_active())
+-	self.config['region'] = str(w['region'].get_active())
+-	self.config['layers'] = str(w['layers'].get_active())
+-	self.config['color'] = str(w['color'].get_active())
++	c['media'] = self.media_ids[w['media'].get_active()]
++	c['vcodec'] = self.vcodecs_ids[w['vcodec'].get_active()]
++	c['condition'] = str(w['condition'].get_active())
++	c['region'] = str(w['region'].get_active())
++	c['layers'] = str(w['layers'].get_active())
++	c['color'] = str(w['color'].get_active())
+ 
+ 	# email reminder
+ 	if w['mail_use_auth'].get_active():
+-		self.config['mail_use_auth'] = 'True'
++		c['mail_use_auth'] = 'True'
+ 	else:
+-		self.config['mail_use_auth'] = 'False'
++		c['mail_use_auth'] = 'False'
+ 
+-	self.config['mail_smtp_server'] = w['mail_smtp_server'].get_text()
+-	self.config['mail_username'] = w['mail_username'].get_text()
+-	self.config['mail_password'] = w['mail_password'].get_text()
+-	self.config['mail_email'] = w['mail_email'].get_text()
++	c['mail_smtp_server'] = w['mail_smtp_server'].get_text()
++	c['mail_username'] = w['mail_username'].get_text()
++	c['mail_password'] = w['mail_password'].get_text()
++	c['mail_email'] = w['mail_email'].get_text()
+ 
+ 	# default movie plugin
+ 	if w['default_plugin'].get_active():
+-		self.config['default_movie_plugin'] = \
++		c['default_movie_plugin'] = \
+ 			gutils.on_combo_box_entry_changed(w['default_plugin'])
+ 	# search for:
+-	self.config['s_classification'] = w['s_classification'].get_active()
+-	self.config['s_country'] = w['s_country'].get_active()
+-	self.config['s_director'] = w['s_director'].get_active()
+-	self.config['s_genre'] = w['s_genre'].get_active()
+-	self.config['s_image'] = w['s_image'].get_active()
+-	self.config['s_notes'] = w['s_notes'].get_active()
+-	self.config['s_o_site'] = w['s_o_site'].get_active()
+-	self.config['s_o_title'] = w['s_o_title'].get_active()
+-	self.config['s_plot'] = w['s_plot'].get_active()
+-	self.config['s_rating'] = w['s_rating'].get_active()
+-	self.config['s_runtime'] = w['s_runtime'].get_active()
+-	self.config['s_site'] = w['s_site'].get_active()
+-	self.config['s_studio'] = w['s_studio'].get_active()
+-	self.config['s_title'] = w['s_title'].get_active()
+-	self.config['s_trailer'] = w['s_trailer'].get_active()
+-	self.config['s_cast'] = w['s_cast'].get_active()
+-	self.config['s_year'] = w['s_year'].get_active()
++	c['s_classification'] = w['s_classification'].get_active()
++	c['s_country'] = w['s_country'].get_active()
++	c['s_director'] = w['s_director'].get_active()
++	c['s_genre'] = w['s_genre'].get_active()
++	c['s_image'] = w['s_image'].get_active()
++	c['s_notes'] = w['s_notes'].get_active()
++	c['s_o_site'] = w['s_o_site'].get_active()
++	c['s_o_title'] = w['s_o_title'].get_active()
++	c['s_plot'] = w['s_plot'].get_active()
++	c['s_rating'] = w['s_rating'].get_active()
++	c['s_runtime'] = w['s_runtime'].get_active()
++	c['s_site'] = w['s_site'].get_active()
++	c['s_studio'] = w['s_studio'].get_active()
++	c['s_title'] = w['s_title'].get_active()
++	c['s_trailer'] = w['s_trailer'].get_active()
++	c['s_cast'] = w['s_cast'].get_active()
++	c['s_year'] = w['s_year'].get_active()
+ 	
+ 	mcounter = 0
+ 	for p in self.plugins:
+@@ -267,79 +268,85 @@
+ 	else:
+ 		save_reader = w['epdf_reader'].get_text()
+ 
+-	self.config['spell_lang'] = w['spell_lang'].get_text()
+-	self.config['pdf_reader'] = save_reader
++	c['spell_lang'] = w['spell_lang'].get_text()
++	c['pdf_reader'] = save_reader
+ 	
+ 	if spell_support:
+-		if self.config.get('use_gtkspell', 'False') == 'False' and not was_false:
++		if c.get('use_gtkspell', 'False') == 'False' and not was_false:
+ 			self.notes_spell.detach()
+ 			self.plot_spell.detach()
+-		elif self.config.get('use_gtkspell', 'False') == 'True' and was_false:
++		elif c.get('use_gtkspell', 'False') == 'True' and was_false:
+ 			initialize.initialize_gtkspell(self)
+ 		else:
+ 			pass
+ 
+-		if self.config.get('use_gtkspell', 'False') == 'True':
+-			if self.config.get('spell_plot', 'True') == 'False' and not plot_was_false:
++		if c.get('use_gtkspell', 'False') == 'True':
++			if c.get('spell_plot', 'True') == 'False' and not plot_was_false:
+ 				self.plot_spell.detach()
+-			elif self.config.get('spell_plot', 'True') == 'True' and plot_was_false:
++			elif c.get('spell_plot', 'True') == 'True' and plot_was_false:
+ 				self.plot_spell = gtkspell.Spell(self.widgets['add']['plot'])
+-				self.plot_spell.set_language(self.config.get('spell_lang', 'en'))
++				self.plot_spell.set_language(c.get('spell_lang', 'en'))
+ 			else:
+ 				pass
+ 
+-			if self.config.get('spell_notes', 'True') == 'False' and not notes_was_false:
++			if c.get('spell_notes', 'True') == 'False' and not notes_was_false:
+ 				self.notes_spell.detach()
+-			elif self.config.get('spell_notes', 'True') == 'True' and notes_was_false:
++			elif c.get('spell_notes', 'True') == 'True' and notes_was_false:
+ 				self.notes_spell = gtkspell.Spell(self.widgets['add']['notes'])
+-				self.notes_spell.set_language(self.config.get('spell_lang', 'en'))
++				self.notes_spell.set_language(c.get('spell_lang', 'en'))
+ 			else:
+ 				pass
+ 	self.pdf_reader = save_reader
+ 
+ 	# database
+-	old = {}
+-	old['db_type']   = self.config['db_type']
+-	old['db_host']   = self.config['db_host']
+-	old['db_port']   = self.config['db_port']
+-	old['db_name']   = self.config['db_name']
+-	old['db_user']   = self.config['db_user']
+-	old['db_passwd'] = self.config['db_passwd']
+-	self.config['db_host']   = w['db_host'].get_text()
+-	self.config['db_port']   = int(w['db_port'].get_value())
+-	self.config['db_name']   = w['db_name'].get_text()
+-	self.config['db_user']   = w['db_user'].get_text()
+-	self.config['db_passwd'] = w['db_passwd'].get_text()
++	old = {
++		'db_type':   c['db_type'],
++		'db_host':   c['db_host'],
++		'db_port':   c['db_port'],
++		'db_name':   c['db_name'],
++		'db_user':   c['db_user'],
++		'db_passwd': c['db_passwd'],
++	}
++	c['db_host']   = w['db_host'].get_text()
++	c['db_port']   = int(w['db_port'].get_value())
++	c['db_name']   = w['db_name'].get_text()
++	c['db_user']   = w['db_user'].get_text()
++	c['db_passwd'] = w['db_passwd'].get_text()
+ 	db_type = int(w['db_type'].get_active())
+ 	if db_type == 1:
+-		self.config['db_type'] = 'postgres'
++		c['db_type'] = 'postgres'
+ 	elif db_type == 2:
+-		self.config['db_type'] = 'mysql'
++		c['db_type'] = 'mysql'
+ 	else:
+-		self.config['db_type'] = 'sqlite'
+-	self.config.save()
++		c['db_type'] = 'sqlite'
+ 
+-	if old['db_type'] != self.config['db_type'] or (old['db_type']!='sqlite' and (\
+-			old['db_host'] != self.config['db_host'] or \
+-			old['db_port'] != self.config['db_port'] or \
+-			old['db_name'] != self.config['db_name'] or \
+-			old['db_user'] != self.config['db_user'] or \
+-			old['db_passwd'] != self.config['db_passwd'])):
++	if old['db_type'] != c['db_type'] or (old['db_type']!='sqlite' and (\
++			old['db_host'] != c['db_host'] or \
++			old['db_port'] != c['db_port'] or \
++			old['db_name'] != c['db_name'] or \
++			old['db_user'] != c['db_user'] or \
++			old['db_passwd'] != c['db_passwd'])):
+ 		self.debug.show('DATABASE: connecting to new db server...')
+-		# NEW DB CONNECTION
++		
++		# new database connection
+ 		import sql
+ 		self.initialized = False
+ 		self.db.metadata.clear()
+ 		from sqlalchemy.orm import clear_mappers
+ 		clear_mappers()
+-		self.db = sql.GriffithSQL(self.config, self.debug, self.locations['home'])
++		self.db = sql.GriffithSQL(c, self.debug, self.locations['home'])
+ 		self.debug.show(&quot;New database Engine: %s&quot; % self.db.metadata.engine.name)
++		
++		# initialize new database
+ 		self.total = int(self.db.Movie.count())
+ 		self.count_statusbar()
+-		from initialize	import dictionaries, people_treeview
++		from initialize	import dictionaries, people_treeview, location_posters
++		c['posters'] = None # force update
++		location_posters(self.locations, self.config)
+ 		dictionaries(self)
+ 		people_treeview(self, False)
+ 		self.initialized = True
+ 	self.clear_details()
+ 	self.populate_treeview()
+ 	self.go_last()
++	c.save()
+
+Modified: griffith/lib/sql.py
+===================================================================
+--- griffith/lib/sql.py	2006-12-08 17:59:51 UTC (rev 499)
++++ griffith/lib/sql.py	2006-12-08 20:59:37 UTC (rev 500)
+@@ -723,11 +723,13 @@
+ 
+ # for debugging (run: ipython sql.py)
+ if __name__ == '__main__':
+-	from initialize import locations
++	import sys
++	import config, gdebug
++	from initialize import locations, location_posters
+ 	locations = locations()
+-	import config, gdebug
+-	import sys
+-	db = GriffithSQL(config.Config(os.path.join(locations['home'], 'griffith.conf')), gdebug.GriffithDebug(True), locations['home'])
++	conf = config.Config(os.path.join(locations['home'], 'griffith.conf'))
++	location_posters(locations, conf)
++	db = GriffithSQL(conf, gdebug.GriffithDebug(True), locations['home'])
+ 	if len(sys.argv)&gt;1:
+ 		if sys.argv[1] == 'echo':
+ 			db.metadata.engine.echo = True # print SQL queries
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000031.html">[Griffith-svn] r499 - in griffith/lib: . plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000033.html">[Griffith-svn] r501 - griffith
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#32">[ date ]</a>
+              <a href="thread.html#32">[ thread ]</a>
+              <a href="subject.html#32">[ subject ]</a>
+              <a href="author.html#32">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

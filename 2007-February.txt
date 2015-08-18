@@ -1,0 +1,2074 @@
+From jessicak at mail.berlios.de  Sat Feb  3 21:45:45 2007
+From: jessicak at mail.berlios.de (jessicak at BerliOS)
+Date: Sat, 3 Feb 2007 21:45:45 +0100
+Subject: [Griffith-svn] r727 - in trunk: . lib/plugins/movie
+Message-ID: <200702032045.l13KjjZm015059@sheep.berlios.de>
+
+Author: jessicak
+Date: 2007-02-03 21:45:44 +0100 (Sat, 03 Feb 2007)
+New Revision: 727
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb plugin updated due to site changes
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-27 20:12:37 UTC (rev 726)
++++ trunk/ChangeLog	2007-02-03 20:45:44 UTC (rev 727)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-02-03 Jessica K. Parth
++	* OFDb movie plugin updated (website changed)
++
+ ---- 0.9 ---
+ 
+ 2007-01-26  Piotr O?arowski
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-01-27 20:12:37 UTC (rev 726)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-02-03 20:45:44 UTC (rev 727)
+@@ -13,13 +13,13 @@
+ plugin_language = _("German")
+ plugin_author = "Christian Sagmueller, Jessica Katharina Parth"
+ plugin_author_email = "Jessica.K.P at women-at-work.org"
+-plugin_version = "0.6"
++plugin_version = "0.7"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+ 		self.encode='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = "http://www.ofdb.de/view.php?page=film&full=1&fid=%s" % str(self.movie_id)
++		self.url = "http://www.ofdb.de/view.php?page=film&fid=%s" % str(self.movie_id)
+ 
+ 	def get_image(self):
+ 		self.image_url = "http://www.ofdb.de/images/film/" + gutils.trim( self.page, "<img src=\"images/film/", "\"" )
+@@ -40,15 +40,9 @@
+ 		self.director = string.capwords(gutils.after(self.director,">"))
+ 
+ 	def get_plot(self):
+-		oldpage = self.page
+-		oldurl = self.url
+ 		storyid = gutils.trim(self.page, 'sid=', '">')
+-		self.url = "http://www.ofdb.de/view.php?page=inhalt&fid=%s&sid=%s" % (str(self.movie_id),storyid)
+-		self.open_page(self.parent_window)
+-		self.plot = gutils.trim(self.page, "</b><br><br>","</")
+-		self.page = oldpage
+-		self.url = oldurl
+-		#self.plot = gutils.trim(self.page,"<b>Inhalt:</b>", "<")
++		story_page = self.open_page(url="http://www.ofdb.de/view.php?page=inhalt&fid=%s&sid=%s" % (str(self.movie_id),storyid))
++		self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,"""Erscheinungsjahr: 
+@@ -69,16 +63,17 @@
+ 		self.genre = self.genre[0:-2]
+ 
+ 	def get_cast(self):
++		cast_page = self.open_page(url="http://www.ofdb.de/view.php?page=film_detail&fid=%s" % str(self.movie_id) )
+ 		self.cast = ""
+-		self.cast = gutils.trim(self.page,"""Darsteller: 
+-              </font></td>
+-            <td>&nbsp;&nbsp;</td>
+-            <td><font face="Arial,Helvetica,sans-serif" size="2" class="Daten"><b>""","</b></font></td>")
+-		self.cast = string.replace(self.cast,"</a><br>", "\n")
++		self.cast = gutils.trim(cast_page,"Darsteller</i>","<td></td>\n</tr>\n</table>\n<br>")
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
++		self.cast = string.replace(self.cast,"&nbsp;", "")
++		self.cast = string.replace(self.cast, "  ", "")
++		self.cast = string.replace(self.cast, "\t", "")
++		self.cast = string.replace(self.cast, "\n\n", "\n")
++		self.cast = string.replace(self.cast, "\n\n", "")
+ 
+ 	def get_classification(self):
+-		#self.classification = gutils.trim(self.page,"MPAA</a>:</b> ",".<br>")
+ 		# ofdb.de got no classification
+ 		self.classification = ""
+ 
+
+
+
+From piotrek at mail.berlios.de  Sun Feb 11 22:23:44 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 11 Feb 2007 22:23:44 +0100
+Subject: [Griffith-svn] r728 - in trunk: . lib
+Message-ID: <200702112123.l1BLNiNO022656@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-11 22:23:43 +0100 (Sun, 11 Feb 2007)
+New Revision: 728
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+   trunk/lib/sql.py
+Log:
+* Fix one more bad case in upgrade function
+* Fix set_loan function
+* raise ValueError instead of Exception when wrong value is set
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-03 20:45:44 UTC (rev 727)
++++ trunk/ChangeLog	2007-02-11 21:23:43 UTC (rev 728)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-02-11  Piotr O?arowski
++	* Fix one more bad case in upgrade function
++
+ 2007-02-03 Jessica K. Parth
+ 	* OFDb movie plugin updated (website changed)
+ 
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-02-03 20:45:44 UTC (rev 727)
++++ trunk/lib/dbupgrade.py	2007-02-11 21:23:43 UTC (rev 728)
+@@ -185,6 +185,7 @@
+ 	old_cursor.execute("UPDATE movies SET rating = 0 WHERE rating NOT IN (0,1,2,3,4,5,6,7,8,9,10);") # rating>10 doesn't work with some DB
+ 	old_cursor.execute("UPDATE movies SET runtime = NULL WHERE runtime > 10000;") # remove strings
+ 	old_cursor.execute("UPDATE loans SET return_date=NULL WHERE return_date=''")
++	old_cursor.execute("UPDATE loans SET return_date=NULL WHERE return_date='None'")
+ 	old_cursor.execute("DELETE FROM loans WHERE date='' OR date ISNULL")
+ 	old_cursor.execute("DELETE FROM volumes WHERE name = ''")
+ 	old_cursor.execute("DELETE FROM volumes WHERE name = 'None'")
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-02-03 20:45:44 UTC (rev 727)
++++ trunk/lib/sql.py	2007-02-11 21:23:43 UTC (rev 728)
+@@ -133,32 +133,32 @@
+ 		def __setitem__(self, key, value):
+ 			if key == 'movie_id' and value:
+ 				if GriffithSQL.Movie.get_by(movie_id=value) is None:
+-					raise Exception('wrong movie_id')
++					raise ValueError('wrong movie_id')
+ 			elif key == 'person_id' and value:
+ 				if GriffithSQL.Person.get_by(person_id=value) is None:
+-					raise Exception('wrong movie_id')
++					raise ValueError('wrong movie_id')
+ 			self[key] = value
+ 		def _validate(self):
+ 			if self.movie_id is None:
+-				raise Exception('movie_id is not set')
++				raise ValueError('movie_id is not set')
+ 			if self.person_id is None:
+-				raise Exception('person_id is not set')
++				raise ValueError('person_id is not set')
+ 			if self.movie is None:
+ 				self.movie = GriffithSQL.Movie.get_by(movie_id=self.movie_id)
+ 				if self.movie is None:
+-					raise Exception('wrong movie_id')
++					raise ValueError('wrong movie_id')
+ 			if self.person is None:
+ 				self.person = GriffithSQL.Person.get_by(person_id=self.person_id)
+ 				if self.person is None:
+-					raise Exception('wrong person_id')
++					raise ValueError('wrong person_id')
+ 			if self.collection_id>0 and self.collection is None:
+ 				self.collection = GriffithSQL.Collection.get_by(collection_id=self.collection_id)
+ 				if self.collection is None:
+-					raise Exception('wrong collection_id')
++					raise ValueError('wrong collection_id')
+ 			if self.volume_id>0 and self.volume is None:
+ 				self.volume = GriffithSQL.Volume.get_by(volume_id=self.volume_id)
+ 				if self.volume is None:
+-					raise Exception('wrong volume_id')
++					raise ValueError('wrong volume_id')
+ 			return True
+ 		def set_loaned(self):
+ 			"""
+@@ -181,7 +181,7 @@
+ 			self.movie.update()
+ 			if self.date is None:
+ 				self.date = func.current_date()	# update loan date
+-			self.return_date is None
++			self.return_date = None
+ 			self.save_or_update()
+ 			try:
+ 				self.mapper.get_session().flush()
+@@ -242,7 +242,7 @@
+ 			return True
+ 		def update_in_db(self, t_movies=None):
+ 			if self.movie_id < 1:
+-				raise Exception('movie_id is not set')
++				raise ValueError('movie_id is not set')
+ 			if t_movies is not None:
+ 				self.languages.clear()
+ 				self.tags.clear()
+
+
+
+From piotrek at mail.berlios.de  Mon Feb 12 01:12:43 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 12 Feb 2007 01:12:43 +0100
+Subject: [Griffith-svn] r729 - in trunk: . lib
+Message-ID: <200702120012.l1C0ChDJ020656@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-12 01:12:43 +0100 (Mon, 12 Feb 2007)
+New Revision: 729
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+Log:
+Fix setting loan status in upgrade function
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-11 21:23:43 UTC (rev 728)
++++ trunk/ChangeLog	2007-02-12 00:12:43 UTC (rev 729)
+@@ -6,6 +6,7 @@
+ 
+ 2007-02-11  Piotr O?arowski
+ 	* Fix one more bad case in upgrade function
++	* Fix setting loan status in upgrade function
+ 
+ 2007-02-03 Jessica K. Parth
+ 	* OFDb movie plugin updated (website changed)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-02-11 21:23:43 UTC (rev 728)
++++ trunk/lib/dbupgrade.py	2007-02-12 00:12:43 UTC (rev 729)
+@@ -369,7 +369,7 @@
+ 	old_cursor.execute("SELECT person_id, movie_id, volume_id, collection_id, date, return_date FROM loans;")
+ 	for i in old_cursor.fetchall():
+ 		vol = col = None
+-		not_returned = i[5] is not None
++		not_returned = i[5] is None
+ 
+ 		if int(i[2]) > 0:
+ 			try:
+
+
+
+From piotrek at mail.berlios.de  Mon Feb 12 21:31:49 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 12 Feb 2007 21:31:49 +0100
+Subject: [Griffith-svn] r730 - in trunk: . data debian lib
+Message-ID: <200702122031.l1CKVn1E020635@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-12 21:31:48 +0100 (Mon, 12 Feb 2007)
+New Revision: 730
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/README
+   trunk/data/griffith.desktop
+   trunk/debian/changelog
+   trunk/lib/dbupgrade.py
+   trunk/lib/main_treeview.py
+   trunk/lib/version.py
+   trunk/winpackage.iss
+   trunk/winsetup.py
+Log:
+prepare 0.9.1 release
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/ChangeLog	2007-02-12 20:31:48 UTC (rev 730)
+@@ -4,19 +4,24 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++---- 0.9.1 ---
++
+ 2007-02-11  Piotr O?arowski
+ 	* Fix one more bad case in upgrade function
+ 	* Fix setting loan status in upgrade function
+ 
+-2007-02-03 Jessica K. Parth
++2007-02-03  Jessica K. Parth
+ 	* OFDb movie plugin updated (website changed)
+ 
++2007-01-27  Piotr O?arowski
++	* English translation fixes (thanks Frijolie)
++
+ ---- 0.9 ---
+ 
+ 2007-01-26  Piotr O?arowski
+ 	* WP and Filmweb movie plugins updated
+ 
+-2007-01-26 Jessica K. Parth
++2007-01-26  Jessica K. Parth
+ 	* Fix AniDB Problems in Windows ( file-open problem in movie.py )
+ 
+ 2007-01-25  Piotr O?arowski
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/NEWS	2007-02-12 20:31:48 UTC (rev 730)
+@@ -1,3 +1,11 @@
++Griffith 0.9.1
++==============
++Loan data is now imported correctly from old database.
++Please change "griffith.db" into "griffith.gri" in griffith.conf file to redo the upgrade process.
++On Linux you can do that with this simple command:
++`sed -ie 's/griffith.db/griffith.gri/' ~/griffith.conf`
++
++
+ Griffith 0.9
+ ============
+ * Possible memory leak fixed (year data from some movie plugins wasn't parsed
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/README	2007-02-12 20:31:48 UTC (rev 730)
+@@ -1,5 +1,5 @@
+-Griffith 0.9 README
+-===================
++Griffith 0.9.1 README
++=====================
+ 
+ This document was last updated on Thu Jan 09 2007.
+ Please see the file COPYING for licensing and warranty information.
+
+Modified: trunk/data/griffith.desktop
+===================================================================
+--- trunk/data/griffith.desktop	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/data/griffith.desktop	2007-02-12 20:31:48 UTC (rev 730)
+@@ -2,7 +2,7 @@
+ Name=Griffith
+ GenericName=Griffith - Movie Collection Manager
+ Comment=Movie Collection Manager
+-Version=0.9
++Version=0.9.1
+ Encoding=UTF-8
+ Exec=griffith
+ Icon=griffith.png
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/debian/changelog	2007-02-12 20:31:48 UTC (rev 730)
+@@ -1,3 +1,9 @@
++griffith (0.9.1-1) unstable; urgency=low
++
++  * New upstream release
++
++ -- Piotr Ozarowski <ozarow at gmail.com>  Mon, 12 Feb 2007 21:30:40 +0100
++
+ griffith (0.9-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/lib/dbupgrade.py	2007-02-12 20:31:48 UTC (rev 730)
+@@ -403,6 +403,7 @@
+ 		l.date = str(i[4])[:10]
+ 		if not_returned:
+ 			m.loaned = True
++			l.return_date = None
+ 		else:
+ 			l.return_date = str(i[5])[:10]
+ 		
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/lib/main_treeview.py	2007-02-12 20:31:48 UTC (rev 730)
+@@ -153,15 +153,15 @@
+ 	else:
+ 		tmp = '0'
+ 	if item.has_key('medium_id') and item['medium_id']:
+-		try:
+-			tmp += ' x ' + item['medium'].name
+-		except:
++		if item.medium is not None:
++			tmp += ' x ' + item.medium.name
++		else:
+ 			pass
+ 	w['medium'].set_markup("<i>%s</i>" % gutils.html_encode(tmp))
+ 	if item.has_key('vcodec_id'):
+-		try:
+-			w['vcodec'].set_markup("<i>%s</i>" % gutils.html_encode(item['vcodec'].name))
+-		except:
++		if item.vcodec is not None:
++			w['vcodec'].set_markup("<i>%s</i>" % gutils.html_encode(item.vcodec.name))
++		else:
+ 			w['vcodec'].set_text('')
+ 	else:
+ 		w['vcodec'].set_text('')
+@@ -220,12 +220,15 @@
+ 		w['return_button'].set_sensitive(True)
+ 		
+ 		data_loan = get_loan_info(self.db, collection_id=item['collection_id'], volume_id=item['volume_id'], movie_id=item['movie_id'])
+-		data_person = self.db.Person.get_by(person_id=data_loan.person.person_id)
+-		self.person_name = str(data_person.name)
+-		self.person_email = str(data_person.email)
+-		self.loan_date = str(data_loan.date)
+-		w['loan_info'].set_label(_("This movie has been loaned to ") + self.person_name + _(" on ") + self.loan_date[:10])
+-	else:
++		if data_loan is None:
++			item.loaned = False
++		else:
++			data_person = self.db.Person.get_by(person_id=data_loan.person.person_id)
++			self.person_name = str(data_person.name)
++			self.person_email = str(data_person.email)
++			self.loan_date = str(data_loan.date)
++			w['loan_info'].set_label(_("This movie has been loaned to ") + self.person_name + _(" on ") + self.loan_date[:10])
++	if item.has_key('loaned') and item['loaned'] != True: # "loaned" status can be changed above, so don't use "else:" in this line
+ 		self.widgets['popups']['loan'].set_sensitive(True)
+ 		self.widgets['popups']['email'].set_sensitive(False)
+ 		self.widgets['popups']['return'].set_sensitive(False)
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/lib/version.py	2007-02-12 20:31:48 UTC (rev 730)
+@@ -23,8 +23,8 @@
+ 
+ from gettext import gettext as _
+ pname        = "Griffith"
+-pversion     = "0.9+svn"
+-pauthor      = "Vasco Nunes <vasco.m.nunes at gmail.com>, Piotr O?arowski <ozarow+griffith at gmail.com>"
++pversion     = "0.9.1"
++pauthor      = "Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>"
+ pyear        = "2005-2007"
+ pwebsite     = "http://griffith.berlios.de/"
+ pdescription = _("Griffith is a film collection manager.")
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/winpackage.iss	2007-02-12 20:31:48 UTC (rev 730)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.9
++AppVerName=Griffith 0.9.1
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://griffith.berlios.de/
+ AppSupportURL=http://griffith.berlios.de/
+@@ -14,7 +14,7 @@
+ LicenseFile=C:\griffith\COPYING
+ InfoAfterFile=C:\griffith\README
+ OutputDir=C:\griffith\installer
+-OutputBaseFilename=griffith-0.9-win32
++OutputBaseFilename=griffith-0.9.1-win32
+ SetupIconFile=C:\griffith\images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,7 +22,7 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.9
++AppVersion=0.9.1
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2007-02-12 00:12:43 UTC (rev 729)
++++ trunk/winsetup.py	2007-02-12 20:31:48 UTC (rev 730)
+@@ -54,7 +54,7 @@
+ 
+ setup(
+     name = "Griffith",
+-    version = "0.9",
++    version = "0.9.1",
+ 	description = 'Griffith - A film manager',
+     author = 'Vasco Nunes/Piotr Ozarowski',
+     author_email = 'vasco.m.nunes at gmail.com',
+
+
+
+From piotrek at mail.berlios.de  Mon Feb 12 23:53:28 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 12 Feb 2007 23:53:28 +0100
+Subject: [Griffith-svn] r731 - in trunk: . lib
+Message-ID: <200702122253.l1CMrSPe030307@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-12 23:53:28 +0100 (Mon, 12 Feb 2007)
+New Revision: 731
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/dbupgrade.py
+   trunk/lib/sql.py
+Log:
+fix broken (loan issue) databases automatically
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-12 20:31:48 UTC (rev 730)
++++ trunk/ChangeLog	2007-02-12 22:53:28 UTC (rev 731)
+@@ -6,6 +6,9 @@
+ 
+ ---- 0.9.1 ---
+ 
++2007-02-12  Piotr O?arowski
++	* Fix broken databases automatically (return date will be set to 2007-01-01) - redo the upgrade process if you don't like it
++
+ 2007-02-11  Piotr O?arowski
+ 	* Fix one more bad case in upgrade function
+ 	* Fix setting loan status in upgrade function
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-02-12 20:31:48 UTC (rev 730)
++++ trunk/NEWS	2007-02-12 22:53:28 UTC (rev 731)
+@@ -1,9 +1,10 @@
+ Griffith 0.9.1
+ ==============
+ Loan data is now imported correctly from old database.
+-Please change "griffith.db" into "griffith.gri" in griffith.conf file to redo the upgrade process.
+-On Linux you can do that with this simple command:
+-`sed -ie 's/griffith.db/griffith.gri/' ~/griffith.conf`
++Broken databases will be fixed automatically, but return date will be set to 2007-01-01.
++If you don't like this behaviour, redo the upgrade process by changing
++"griffith.db" into "griffith.gri" in griffith.conf file. On Linux you can do
++that with this simple command: `sed -ie 's/griffith.db/griffith.gri/' ~/griffith.conf`
+ 
+ 
+ Griffith 0.9
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-02-12 20:31:48 UTC (rev 730)
++++ trunk/lib/dbupgrade.py	2007-02-12 22:53:28 UTC (rev 731)
+@@ -99,9 +99,12 @@
+ 		#self.metadata.commit()
+ 		return True # upgrade process finished
+ 	if version == 1: # fix changes between v1 and v2
+-		pass # v2 is not yet released
+-		#version+=1
+-		#self.Configuration.get_by(param='version').value = version
++		version+=1
++		self.metadata.engine.execute("UPDATE loans SET return_date = '2007-01-01' WHERE return_date='None';")
++		db_version = self.Configuration.get_by(param='version')
++		db_version.value = version
++		db_version.update()
++		db_version.flush()
+ 	#if version == 2:	# fix changes between v2 and v3
+ 	#	version+=1
+ 	#	self.Configuration.get_by(param='version').value = version
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-02-12 20:31:48 UTC (rev 730)
++++ trunk/lib/sql.py	2007-02-12 22:53:28 UTC (rev 731)
+@@ -91,7 +91,7 @@
+ 		return True#}}}
+ 
+ class GriffithSQL:
+-	version = 1	# database format version, incrase after any changes in data structures
++	version = 2	# database format version, incrase after any changes in data structures
+ 	metadata = None
+ 	class Configuration(object):
+ 		def __repr__(self):
+@@ -478,8 +478,8 @@
+ 			v = 0
+ 
+ 		if v is not None and v>1:
+-			v = v.value
+-		if v<self.version:
++			v = int(v.value)
++		if v < self.version:
+ 			from dbupgrade import upgrade_database
+ 			upgrade_database(self, v)
+ 
+
+
+
+From piotrek at mail.berlios.de  Tue Feb 13 15:14:09 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 13 Feb 2007 15:14:09 +0100
+Subject: [Griffith-svn] r732 - in trunk: . lib/plugins/movie
+Message-ID: <200702131414.l1DEE9aT017583@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-13 15:14:09 +0100 (Tue, 13 Feb 2007)
+New Revision: 732
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+KinoDe movie plugin updated (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-12 22:53:28 UTC (rev 731)
++++ trunk/ChangeLog	2007-02-13 14:14:09 UTC (rev 732)
+@@ -6,6 +6,9 @@
+ 
+ ---- 0.9.1 ---
+ 
++2007-02-13  Piotr O?arowski
++	* KinoDe movie plugin updated (thanks to Michael Jahn)
++
+ 2007-02-12  Piotr O?arowski
+ 	* Fix broken databases automatically (return date will be set to 2007-01-01) - redo the upgrade process if you don't like it
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-12 22:53:28 UTC (rev 731)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-13 14:14:09 UTC (rev 732)
+@@ -32,7 +32,7 @@
+ plugin_language = _("German")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.3"
++plugin_version = "1.4"
+ 
+ class Plugin(movie.Movie):
+ 	url_to_use = "http://www.kino.de/kinofilm.php4?"
+@@ -57,14 +57,11 @@
+ 		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+ 	
+ 	def get_image(self):
+-		if (self.url_type == "V"):
+-			self.image_url = "http://www.kino.de/pix/MBBILDER/VIDEO/" + gutils.trim(self.tmp_page,"IMG SRC=\"/pix/MBBILDER/VIDEO/", "\"")
+-		else:
+-			self.image_url = gutils.trim(self.tmp_page,"IMG SRC=\"/pix/MBBILDER/KINOPLAK/", "\"")
+-			if self.image_url <> '':
+-				self.image_url = "http://www.kino.de/pix/MBBILDER/KINOPLAK/" + self.image_url
+-			else:
+-				self.image_url = "http://www.kino.de/pix/MBBILDER/KINO/" + gutils.trim(self.tmp_page,"IMG SRC=\"/pix/MBBILDER/KINO/", "\"")
++		# first, try to get the second picture before the JavaScript block (it should be the original poster)
++		# if there is no second picture, use the first picture (it should be a picture from the film)
++		self.image_url = "http://images.kino.de/flbilder/" + gutils.trim(gutils.after(gutils.before(self.tmp_page, "<script language="), "img src=\"http://images.kino.de/flbilder/"),"img src=\"http://images.kino.de/flbilder/", "\"")
++		if (self.image_url == "http://images.kino.de/flbilder/"):
++			self.image_url = "http://images.kino.de/flbilder/" + gutils.trim(self.tmp_page,"img src=\"http://images.kino.de/flbilder/", "\"")
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page,"span CLASS=\"standardsmall\"><br>(",")<")
+@@ -88,14 +85,8 @@
+ 			self.url = self.url_to_use + "typ=film&nr=" + str(self.movie_id)
+ 			self.open_page(self.parent_window)
+ 		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+-		if (self.url_type == "V"):
+-			self.plot = gutils.after(self.tmp_page,"IMG SRC=\"/pix/MBBILDER/VIDEO")
+-			self.plot = gutils.trim(self.plot,"</TABLE>", "</TD>")
+-		else:
+-			self.plot = gutils.after(self.tmp_page,"IMG SRC=\"/pix/MBBILDER/KINOPLAK")
+-			self.plot = gutils.trim(self.plot,"</TABLE>", "</TD>")
+-			if self.plot == '':
+-				self.plot = gutils.trim(self.tmp_page, "BORDER=\"0\" align=\"left\" ><TR><TD>", "</TD>")
++		self.plot = gutils.after(self.tmp_page,"<TABLE width=\"100%\" CELLPADDING=\"0\" CELLSPACING=\"0\" BORDER=\"0\" align=\"left\" ><TR><TD>")
++		self.plot = gutils.before(self.plot, "<TR><TD  valign=\"top\"")
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,"class=\"standardsmall\"><br><b>DVD</b> - <b>","<BR>")
+
+
+
+From iznogoud at mail.berlios.de  Tue Feb 13 23:58:17 2007
+From: iznogoud at mail.berlios.de (iznogoud at mail.berlios.de)
+Date: Tue, 13 Feb 2007 23:58:17 +0100
+Subject: [Griffith-svn] r733 - tags
+Message-ID: <200702132258.l1DMwH9F004098@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-02-13 23:58:12 +0100 (Tue, 13 Feb 2007)
+New Revision: 733
+
+Added:
+   tags/0.9.1/
+Log:
+0.9.1 release
+
+Copied: tags/0.9.1 (from rev 732, trunk)
+
+
+
+From piotrek at mail.berlios.de  Wed Feb 14 15:00:46 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 14 Feb 2007 15:00:46 +0100
+Subject: [Griffith-svn] r734 - in trunk: . debian lib lib/plugins/movie
+Message-ID: <200702141400.l1EE0koo026156@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-14 15:00:45 +0100 (Wed, 14 Feb 2007)
+New Revision: 734
+
+Modified:
+   trunk/ChangeLog
+   trunk/debian/changelog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/version.py
+Log:
+* KinoDe movie plugin updated (thanks to Michael Jahn)
+* Version changed to 0.9.1+svn
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-13 22:58:12 UTC (rev 733)
++++ trunk/ChangeLog	2007-02-14 14:00:45 UTC (rev 734)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-02-14  Piotr O?arowski
++	* KinoDe movie plugin updated (thanks to Michael Jahn)
++
+ ---- 0.9.1 ---
+ 
+ 2007-02-13  Piotr O?arowski
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-02-13 22:58:12 UTC (rev 733)
++++ trunk/debian/changelog	2007-02-14 14:00:45 UTC (rev 734)
+@@ -1,3 +1,9 @@
++griffith (0.9.1+svn-1) UNRELEASED; urgency=low
++
++  * New upstream release
++
++ -- Piotr Ozarowski <ozarow at gmail.com>  Wed, 14 Feb 2007 14:59:22 +0100
++
+ griffith (0.9.1-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-13 22:58:12 UTC (rev 733)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-14 14:00:45 UTC (rev 734)
+@@ -32,7 +32,7 @@
+ plugin_language = _("German")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.4"
++plugin_version = "1.5"
+ 
+ class Plugin(movie.Movie):
+ 	url_to_use = "http://www.kino.de/kinofilm.php4?"
+@@ -85,8 +85,16 @@
+ 			self.url = self.url_to_use + "typ=film&nr=" + str(self.movie_id)
+ 			self.open_page(self.parent_window)
+ 		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+-		self.plot = gutils.after(self.tmp_page,"<TABLE width=\"100%\" CELLPADDING=\"0\" CELLSPACING=\"0\" BORDER=\"0\" align=\"left\" ><TR><TD>")
+-		self.plot = gutils.before(self.plot, "<TR><TD  valign=\"top\"")
++		# little steps to perfect plot (I hope ... it's a terrible structured content ... )
++		self.plot = gutils.trim(self.tmp_page,"Kurzinfo", "</TD></TR><tr><td></td></tr><TR>")
++		if (self.plot == ""):
++			self.plot = gutils.trim(self.tmp_page,"Kurzinfo", "<script language=\"JavaScript\">")
++		self.plot = gutils.after(self.plot, "Fotoshow</A>")
++		self.plot = gutils.after(self.plot, "Filmpreise</A>")
++		self.plot = gutils.after(self.plot, "Games zum Film</A>")
++		self.plot = gutils.after(self.plot, " Crew</A>")
++		self.plot = gutils.before(self.plot, "FOTOSHOW</SPAN>")
++		self.plot = gutils.after(self.plot, "</TABLE>")
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,"class=\"standardsmall\"><br><b>DVD</b> - <b>","<BR>")
+@@ -132,6 +140,8 @@
+ 
+ 	def get_studio(self):
+ 		self.studio = gutils.trim(self.page,"Verleih: ", "</b>")
++		if (self.studio == ""):
++			self.studio = gutils.trim(self.page,"Anbieter: ", "</b>")
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ""
+@@ -152,26 +162,89 @@
+ 	def get_rating(self):
+ 		self.rating = "0"
+ 
++	def get_notes(self):
++		self.notes = ""
++		self.url = self.url_to_use + "typ=features&nr=" + str(self.movie_id)
++		self.open_page(self.parent_window)
++		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
++		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Sprache</b>", "</TD></TR>")), "&nbsp;", "")
++		if (self.tmp_notes != ""):
++			self.notes = self.notes + "Sprachen:\n" + self.tmp_notes + "\n\n"
++		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Untertitel</b>", "</TD></TR>")), "&nbsp;", "")
++		if (self.tmp_notes != ""):
++			self.notes = self.notes + "Untertitel:\n" + self.tmp_notes + "\n\n"
++		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Mehrkanalton</b>", "</TD></TR>")), "&nbsp;", "")
++		if (self.tmp_notes != ""):
++			self.notes = self.notes + "Mehrkanalton:\n" + self.tmp_notes + "\n\n"
++		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>EAN</b>", "</TD></TR>")), "&nbsp;", "")
++		if (self.tmp_notes != ""):
++			self.notes = self.notes + "EAN:\n" + self.tmp_notes + "\n\n"
++
++#
++# kino.de use iso-8859-1
++# it's not necessary to decode the page
++# in fact if utf-8 is used you can't search for movies with german umlaut
++# and if you use the decode call you get a terrible formatted result list
++#
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+ 	def __init__(self):
+ 		self.original_url_search    = "http://www.kino.de/megasuche.php4?typ=filme&wort="
+ 		self.translated_url_search    = "http://www.kino.de/megasuche.php4?typ=filme&wort="
+-		self.encode='utf-8'
++#		self.encode='utf-8'
++		self.encode='iso-8859-1'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		tmp_page = self.page.decode('iso-8859-1')
+-		tmp_page = string.replace( tmp_page, "</B>", "</b>" )
+-		tmp_page = string.replace( tmp_page, "A HREF", "a href" )
+-		tmp_page = gutils.trim(tmp_page,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
+-		
++		self.tmp_pagemovie = string.replace( self.page, "</B>", "</b>" )
++		self.tmp_pagemovie = string.replace( self.tmp_pagemovie, "A HREF", "a href" )
++		self.tmp_pagemovie = gutils.trim(self.tmp_pagemovie,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
++		#
++		# try to get all result pages (not so nice, but it works)
++		#
++		self.tmp_pagecount = gutils.trim(self.tmp_pagemovie, "&nbsp;von ", "</SPAN>")
++		try:
++			self.tmp_pagecountint = int(self.tmp_pagecount)
++		except:
++			self.tmp_pagecountint = 1
++		self.tmp_pagecountintcurrent = 1
++		while (self.tmp_pagecountint > self.tmp_pagecountintcurrent):
++			self.tmp_pagecountintcurrent = self.tmp_pagecountintcurrent + 1
++			self.url = "http://www.kino.de/megasuche.php4?typ=filme&page=" + str(self.tmp_pagecountintcurrent) + "&wort="
++			self.open_search(parent_window)
++			self.tmp_page = string.replace( self.page, "</B>", "</b>" )
++			self.tmp_page = string.replace( self.tmp_page, "A HREF", "a href" )
++			self.tmp_page = gutils.trim(self.tmp_page,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
++			self.tmp_pagemovie = self.tmp_pagemovie + self.tmp_page
++		#
++		# Look for DVD and VHS
++		#
+ 		self.url = "http://www.kino.de/megasuche.php4?typ=video&wort="
+ 		self.open_search(parent_window)
+-		self.page = string.replace( self.page, "<B>", "<b>" )
+-		self.page = string.replace( self.page, "A HREF", "a href" )
+-		self.page = gutils.trim(self.page,"align=center><b>Video/DVD 1", '<!-- PRINT-CONTENT-ENDE-->');
+-		self.page = tmp_page + self.page.decode('iso-8859-1')
++		self.tmp_pagevideo = string.replace( self.page, "<B>", "<b>" )
++		self.tmp_pagevideo = string.replace( self.tmp_pagevideo, "A HREF", "a href" )
++		self.tmp_pagevideo = gutils.trim(self.tmp_pagevideo,"align=center><b>Video/DVD 1", '<!-- PRINT-CONTENT-ENDE-->');
++		self.tmp_pagevideo = self.tmp_pagemovie + self.tmp_pagevideo
++		#
++		# try to get all result pages (not so nice, but it works)
++		#
++		self.tmp_pagecount = gutils.trim(self.page, "&nbsp;von ", "</SPAN>")
++		try:
++			self.tmp_pagecountint = int(self.tmp_pagecount)
++		except:
++			self.tmp_pagecountint = 1
++		self.tmp_pagecountintcurrent = 1
++		while (self.tmp_pagecountint > self.tmp_pagecountintcurrent):
++			self.tmp_pagecountintcurrent = self.tmp_pagecountintcurrent + 1
++			self.url = "http://www.kino.de/megasuche.php4?typ=video&page=" + str(self.tmp_pagecountintcurrent) + "&wort="
++			self.open_search(parent_window)
++			self.tmp_page = string.replace( self.page, "<B>", "<b>" )
++			self.tmp_page = string.replace( self.tmp_page, "A HREF", "a href" )
++			self.tmp_page = gutils.trim(self.tmp_page,"align=center><b>Video/DVD ", '<!-- PRINT-CONTENT-ENDE-->');
++			self.tmp_pagevideo = self.tmp_pagevideo + self.tmp_page
++
++		self.page = self.tmp_pagevideo
+ 		return self.page
+ 
+ 	def get_searches(self):
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-02-13 22:58:12 UTC (rev 733)
++++ trunk/lib/version.py	2007-02-14 14:00:45 UTC (rev 734)
+@@ -23,7 +23,7 @@
+ 
+ from gettext import gettext as _
+ pname        = "Griffith"
+-pversion     = "0.9.1"
++pversion     = "0.9.1+svn"
+ pauthor      = "Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>"
+ pyear        = "2005-2007"
+ pwebsite     = "http://griffith.berlios.de/"
+
+
+
+From piotrek at mail.berlios.de  Wed Feb 14 17:33:26 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 14 Feb 2007 17:33:26 +0100
+Subject: [Griffith-svn] r735 - in trunk: . lib/plugins/movie
+Message-ID: <200702141633.l1EGXQoP008273@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-14 17:33:25 +0100 (Wed, 14 Feb 2007)
+New Revision: 735
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+FilmeVonAZ movie plugin updated (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-14 14:00:45 UTC (rev 734)
++++ trunk/ChangeLog	2007-02-14 16:33:25 UTC (rev 735)
+@@ -5,7 +5,7 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
+ 2007-02-14  Piotr O?arowski
+-	* KinoDe movie plugin updated (thanks to Michael Jahn)
++	* KinoDe and FilmeVonAZ movie plugins updated (thanks to Michael Jahn)
+ 
+ ---- 0.9.1 ---
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2007-02-14 14:00:45 UTC (rev 734)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2007-02-14 16:33:25 UTC (rev 735)
+@@ -32,11 +32,11 @@
+ plugin_language = _("German")
+ plugin_author = "Michael Jahn"
+ plugin_author_email = "<mikej06 at hotmail.com>"
+-plugin_version = "1.1"
++plugin_version = "1.2"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode='utf-8'
+ 		self.movie_id = id
+ 		self.url = "http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&wert=" + str(self.movie_id)
+ 
+@@ -73,11 +73,11 @@
+ 					self.delimiter = ", "
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.trim(self.page, "(Darsteller)", "\n\n\n")
++		self.cast = gutils.trim(self.page, "(Darsteller)", "</span> \r\n\t\t\r\n")
+ 		self.cast = gutils.clean(self.cast)
+ 		self.cast = self.cast.replace(" als ", _(" as "))
+ 		self.cast = self.cast.replace("			", "")
+-		self.cast = self.cast.replace("\n", "")
++		self.cast = self.cast.replace("\r\n", "")
+ 		self.cast = self.cast.replace(", ", "\n")
+ 		self.cast = self.cast.replace(",", "")
+ 
+@@ -106,11 +106,29 @@
+ 	def __init__(self):
+ 		self.original_url_search	= "http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&wert="
+ 		self.translated_url_search	= "http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&wert="
+-		self.encode='iso-8859-1'
++		self.encode='utf-8'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.page = gutils.trim(self.page,"Alle Treffer aus der Kategorie", "<!-- ENDE ErgebnissAusgabe -->");
++		# used for looking for subpages
++		tmp_page = gutils.trim(self.page, "<!-- Blaettern -->", "<!-- ErgebnissAusgabe -->");
++		elements = string.split(tmp_page, '" class="text_navi">')
++		# first results
++		self.tmp_page = gutils.trim(self.page,"Alle Treffer aus der Kategorie", "<!-- ENDE ErgebnissAusgabe -->");
++		# look for subpages
++		for element in elements:
++			element = gutils.before(element, "</a>")
++			try:
++				tmp_element = int(element)
++			except:
++				tmp_element = 1
++			if (tmp_element <> 1):
++				self.url = "http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&currentPage=" + str(tmp_element) + "&wert="
++				self.open_search(parent_window)
++				tmp_page2 = gutils.trim(self.page,"Alle Treffer aus der Kategorie", "<!-- ENDE ErgebnissAusgabe -->");
++				tmp_page = tmp_page + tmp_page2
++		self.page = tmp_page
++
+ 		return self.page
+ 
+ 	def get_searches(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-14 14:00:45 UTC (rev 734)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-14 16:33:25 UTC (rev 735)
+@@ -167,18 +167,18 @@
+ 		self.url = self.url_to_use + "typ=features&nr=" + str(self.movie_id)
+ 		self.open_page(self.parent_window)
+ 		self.tmp_page = gutils.trim(self.page, "<!-- PRINT-CONTENT-START-->", "<!-- PRINT-CONTENT-ENDE-->")
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Sprache</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (self.tmp_notes != ""):
+-			self.notes = self.notes + "Sprachen:\n" + self.tmp_notes + "\n\n"
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Untertitel</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (self.tmp_notes != ""):
+-			self.notes = self.notes + "Untertitel:\n" + self.tmp_notes + "\n\n"
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Mehrkanalton</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (self.tmp_notes != ""):
+-			self.notes = self.notes + "Mehrkanalton:\n" + self.tmp_notes + "\n\n"
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>EAN</b>", "</TD></TR>")), "&nbsp;", "")
+-		if (self.tmp_notes != ""):
+-			self.notes = self.notes + "EAN:\n" + self.tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Sprache</b>", "</TD></TR>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "Sprachen:\n" + tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Untertitel</b>", "</TD></TR>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "Untertitel:\n" + tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>Mehrkanalton</b>", "</TD></TR>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "Mehrkanalton:\n" + tmp_notes + "\n\n"
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, "<b>EAN</b>", "</TD></TR>")), "&nbsp;", "")
++		if (tmp_notes != ""):
++			self.notes = self.notes + "EAN:\n" + tmp_notes + "\n\n"
+ 
+ #
+ # kino.de use iso-8859-1
+@@ -197,54 +197,54 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.tmp_pagemovie = string.replace( self.page, "</B>", "</b>" )
+-		self.tmp_pagemovie = string.replace( self.tmp_pagemovie, "A HREF", "a href" )
+-		self.tmp_pagemovie = gutils.trim(self.tmp_pagemovie,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
++		tmp_pagemovie = string.replace( self.page, "</B>", "</b>" )
++		tmp_pagemovie = string.replace( tmp_pagemovie, "A HREF", "a href" )
++		tmp_pagemovie = gutils.trim(tmp_pagemovie,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
+ 		#
+ 		# try to get all result pages (not so nice, but it works)
+ 		#
+-		self.tmp_pagecount = gutils.trim(self.tmp_pagemovie, "&nbsp;von ", "</SPAN>")
++		tmp_pagecount = gutils.trim(tmp_pagemovie, "&nbsp;von ", "</SPAN>")
+ 		try:
+-			self.tmp_pagecountint = int(self.tmp_pagecount)
++			tmp_pagecountint = int(tmp_pagecount)
+ 		except:
+-			self.tmp_pagecountint = 1
+-		self.tmp_pagecountintcurrent = 1
+-		while (self.tmp_pagecountint > self.tmp_pagecountintcurrent):
+-			self.tmp_pagecountintcurrent = self.tmp_pagecountintcurrent + 1
+-			self.url = "http://www.kino.de/megasuche.php4?typ=filme&page=" + str(self.tmp_pagecountintcurrent) + "&wort="
++			tmp_pagecountint = 1
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountint > tmp_pagecountintcurrent):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = "http://www.kino.de/megasuche.php4?typ=filme&page=" + str(tmp_pagecountintcurrent) + "&wort="
+ 			self.open_search(parent_window)
+-			self.tmp_page = string.replace( self.page, "</B>", "</b>" )
+-			self.tmp_page = string.replace( self.tmp_page, "A HREF", "a href" )
+-			self.tmp_page = gutils.trim(self.tmp_page,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
+-			self.tmp_pagemovie = self.tmp_pagemovie + self.tmp_page
++			tmp_page = string.replace( self.page, "</B>", "</b>" )
++			tmp_page = string.replace( tmp_page, "A HREF", "a href" )
++			tmp_page = gutils.trim(tmp_page,'</b></div><br>', '<!-- PRINT-CONTENT-ENDE-->');
++			tmp_pagemovie = tmp_pagemovie + tmp_page
+ 		#
+ 		# Look for DVD and VHS
+ 		#
+ 		self.url = "http://www.kino.de/megasuche.php4?typ=video&wort="
+ 		self.open_search(parent_window)
+-		self.tmp_pagevideo = string.replace( self.page, "<B>", "<b>" )
+-		self.tmp_pagevideo = string.replace( self.tmp_pagevideo, "A HREF", "a href" )
+-		self.tmp_pagevideo = gutils.trim(self.tmp_pagevideo,"align=center><b>Video/DVD 1", '<!-- PRINT-CONTENT-ENDE-->');
+-		self.tmp_pagevideo = self.tmp_pagemovie + self.tmp_pagevideo
++		tmp_pagevideo = string.replace( self.page, "<B>", "<b>" )
++		tmp_pagevideo = string.replace( tmp_pagevideo, "A HREF", "a href" )
++		tmp_pagevideo = gutils.trim(tmp_pagevideo,"align=center><b>Video/DVD 1", '<!-- PRINT-CONTENT-ENDE-->');
++		tmp_pagevideo = tmp_pagemovie + tmp_pagevideo
+ 		#
+ 		# try to get all result pages (not so nice, but it works)
+ 		#
+-		self.tmp_pagecount = gutils.trim(self.page, "&nbsp;von ", "</SPAN>")
++		tmp_pagecount = gutils.trim(self.page, "&nbsp;von ", "</SPAN>")
+ 		try:
+-			self.tmp_pagecountint = int(self.tmp_pagecount)
++			tmp_pagecountint = int(tmp_pagecount)
+ 		except:
+-			self.tmp_pagecountint = 1
+-		self.tmp_pagecountintcurrent = 1
+-		while (self.tmp_pagecountint > self.tmp_pagecountintcurrent):
+-			self.tmp_pagecountintcurrent = self.tmp_pagecountintcurrent + 1
+-			self.url = "http://www.kino.de/megasuche.php4?typ=video&page=" + str(self.tmp_pagecountintcurrent) + "&wort="
++			tmp_pagecountint = 1
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountint > tmp_pagecountintcurrent):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = "http://www.kino.de/megasuche.php4?typ=video&page=" + str(tmp_pagecountintcurrent) + "&wort="
+ 			self.open_search(parent_window)
+-			self.tmp_page = string.replace( self.page, "<B>", "<b>" )
+-			self.tmp_page = string.replace( self.tmp_page, "A HREF", "a href" )
+-			self.tmp_page = gutils.trim(self.tmp_page,"align=center><b>Video/DVD ", '<!-- PRINT-CONTENT-ENDE-->');
+-			self.tmp_pagevideo = self.tmp_pagevideo + self.tmp_page
++			tmp_page = string.replace( self.page, "<B>", "<b>" )
++			tmp_page = string.replace( tmp_page, "A HREF", "a href" )
++			tmp_page = gutils.trim(tmp_page,"align=center><b>Video/DVD ", '<!-- PRINT-CONTENT-ENDE-->');
++			tmp_pagevideo = tmp_pagevideo + tmp_page
+ 
+-		self.page = self.tmp_pagevideo
++		self.page = tmp_pagevideo
+ 		return self.page
+ 
+ 	def get_searches(self):
+
+
+
+From piotrek at mail.berlios.de  Mon Feb 19 15:53:39 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Mon, 19 Feb 2007 15:53:39 +0100
+Subject: [Griffith-svn] r736 - in trunk: . lib/plugins/movie
+Message-ID: <200702191453.l1JErdB0014409@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-19 15:53:38 +0100 (Mon, 19 Feb 2007)
+New Revision: 736
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+Log:
+* CSFD movie plugin updated (still needs work)
+* DVDEmpire movie plugin added (thanks to Michael Jahn)
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/AUTHORS	2007-02-19 14:53:38 UTC (rev 736)
+@@ -20,8 +20,9 @@
+ * CSFD movie plugin
+ 
+ Michael Jahn <mikej06 at hotmail.com>
++* DVDEmpire movie plugin
++* FilmeVonAZ movie plugin
+ * Kino.de movie plugin
+-* FilmeVonAZ movie plugin
+ 
+ Jessica Katharina Parth <Jessica.K.P at women-at-work.org>
+ * OFDb movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/ChangeLog	2007-02-19 14:53:38 UTC (rev 736)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O??arowski
+ 
++2007-02-19  Piotr O??arowski
++	* CSFD movie plugin updated (still needs work)
++	* DVDEmpire movie plugin added (thanks to Michael Jahn)
++
+ 2007-02-14  Piotr O??arowski
+ 	* KinoDe and FilmeVonAZ movie plugins updated (thanks to Michael Jahn)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2007-02-19 14:53:38 UTC (rev 736)
+@@ -30,7 +30,7 @@
+ plugin_language = _("Czech")
+ plugin_author = "Blondak"
+ plugin_author_email = "<blondak at neser.cz>"
+-plugin_version = "0.7"
++plugin_version = "0.8"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -51,15 +51,19 @@
+ 			self.o_title = self.o_title[len(self.o_title)-1]
+ 		else:
+ 			self.o_title = ""
++		if self.o_title == "":
++			self.o_title = self.get_title(True)
+ 
+-	def get_title(self):
+-		self.title = re.search(r"<title>([^,]*), ",self.page)
+-		if self.title:
+-			self.title = self.title.group(1)
++	def get_title(self, ret=False):
++		data = re.search(r"<title>([^,]*), ",self.page)
++		if data:
++			data = data.group(1)
+ 		else:
+-			self.title = ""
+-		if self.o_title == "":
+-			self.o_title = self.title
++			data = ""
++		if ret is True:
++			return data
++		else:
++			self.title = data
+ 
+ 	def get_director(self):
+ 		self.director = re.search(r"Re?ie:(.*)<br><b>Hraj?:",self.page)
+@@ -155,9 +159,9 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		self.id = self.re_items=re.search(r"window.location.href='http://www.csfd.cz/(/film/[^']*)'",self.page)
+-		if self.id:
+-			self.ids.append(self.id.group(1))
++		tmp_id = self.re_items=re.search(r"window.location.href='http://www.csfd.cz/(/film/[^']*)'",self.page)
++		if tmp_id:
++			self.ids.append(tmp_id.group(1))
+ 		else:
+ 			self.re_items=re.findall(r"href=\"(/film/[^\"]+)[^>]*>([^<]+)</a>([^<]*)",self.page)
+ 			self.number_results = len(self.re_items)
+
+Added: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2007-02-19 14:53:38 UTC (rev 736)
+@@ -0,0 +1,167 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import re
++
++plugin_name = "DVD Empire"
++plugin_description = "International Retailer of DVD Movies"
++plugin_url = "www.dvdempire.com"
++plugin_language = _("English")
++plugin_author = "Michael Jahn"
++plugin_author_email = "<mikej06 at hotmail.com>"
++plugin_version = "1.0"
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = "http://www.dvdempire.com/Exec/v4_item.asp?item_id=" + str(self.movie_id)
++	
++	def get_image(self):
++		tmp_page = gutils.trim(self.page, '<td align="center" valign="top" class="fontsmall">', '</td>')
++		self.image_url = gutils.trim(tmp_page, '<img src=\'', '\' ')
++
++	def get_o_title(self):
++		self.o_title = gutils.strip_tags(gutils.trim(self.page,'<td class="fontxlarge" valign="top" align="left">', '<nobr>'))
++
++	def get_title(self):
++		self.title = gutils.strip_tags(gutils.trim(self.page,'<td class="fontxlarge" valign="top" align="left">', '<nobr>'))
++
++	def get_director(self):
++		self.director = gutils.strip_tags(gutils.trim(self.page,">Directors:","</a>"))
++		self.director = self.director.replace('&nbsp;', '')
++		self.director = self.director.replace('&#149;', '')
++
++	def get_plot(self):
++		self.plot = gutils.strip_tags(gutils.trim(self.page, '<td width="100%" valign="top" class="fontsmall3">', '</td>'))
++		self.plot = self.plot.replace('\x93', '"')
++
++	def get_year(self):
++		self.year = gutils.strip_tags(gutils.trim(self.page, '>Production Year:', '<br />'))
++
++	def get_runtime(self):
++		self.runtime = gutils.strip_tags(gutils.trim(self.page, '>Length:', '<br />'))
++
++	def get_genre(self):
++		self.genre = ""
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.page, '>Actors:', '</td><td')
++		self.cast = self.cast.replace('<br>', '\n')
++		self.cast = self.cast.replace('<br />', '\n')
++		self.cast = self.cast.replace('&nbsp;', '')
++		self.cast = self.cast.replace('&#8226;', '')
++		self.cast = self.cast.replace('&#149;', '')
++		self.cast = gutils.strip_tags(self.cast)
++
++	def get_classification(self):
++		self.classification = gutils.strip_tags(gutils.trim(self.page, '>Rating:', '<br />'))
++
++	def get_studio(self):
++		self.studio = gutils.strip_tags(gutils.trim(self.page, '>Studio:', '<br />'))
++
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = self.url
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		self.country = ""
++
++	def get_rating(self):
++		self.rating = "0"
++
++	def get_notes(self):
++		self.notes = ''
++		tmp_page = gutils.trim(self.page, 'Features:', '<b>')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page <> '':
++			self.notes = self.notes + '\nFeatures:\n' + tmp_page + '\n'
++		tmp_page = gutils.trim(self.page, 'Video:', '<b>')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page <> '':
++			self.notes = self.notes + '\nVideo:\n' + tmp_page + '\n'
++		tmp_page = gutils.trim(self.page, 'Audio:', '<b>')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page <> '':
++			self.notes = self.notes + '\nAudio:\n' + tmp_page + '\n'
++		tmp_page = gutils.trim(self.page, 'Subtitles:', '<b>')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page <> '':
++			self.notes = self.notes + '\nSubtitles:\n' + tmp_page + '\n'
++
++class SearchPlugin(movie.SearchMovie):
++	def __init__(self):
++		self.original_url_search   = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&string="
++		self.translated_url_search = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&string="
++		self.encode = 'iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		# short the content
++		tmp_page = gutils.trim(self.page,'<select name="sort"', 'Click Here to make a Suggestion</a>')
++		#
++		# try to get all result pages (not so nice, but it works)
++		#
++		tmp_pagecount = gutils.trim(self.page, '<div id="Search_Container" name="Search_Container">', '</table>')
++		tmp_pagecountintuse = 1
++		elements = tmp_pagecount.split("&page=")
++		for element in elements:
++			try:
++				tmp_pagecountint = int(gutils.before(element, '\''))
++			except:
++				tmp_pagecountint = 0
++			if tmp_pagecountint > tmp_pagecountintuse:
++				tmp_pagecountintuse = tmp_pagecountint
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountintuse > tmp_pagecountintcurrent):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = "http://www.dvdempire.com/Exec/v1_search_all.asp?&site_media_id=0&pp=3&used=0&page=" + str(tmp_pagecountintcurrent) + "&string="
++			self.open_search(parent_window)
++			tmp_page2 = gutils.trim(self.page,'<select name="sort"', 'Click Here to make a Suggestion</a>')
++			tmp_page = tmp_page + tmp_page2
++
++		self.page = tmp_page
++		return self.page
++
++	def get_searches(self):
++		split_pattern = re.compile('<a href=["\']/Exec/v4_item[.]asp[?]userid=[0-9]+[&]amp;item_id=')
++		check_pattern = re.compile('[0-9]+[&]amp;searchID=[0-9]+[\']>')
++		elements = split_pattern.split(self.page)
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				is_an_item = check_pattern.search(element)
++				if is_an_item:
++					tmp_title = gutils.strip_tags(gutils.trim(element, ">", "</a>"))
++					if tmp_title <> '':
++						tmp_id = gutils.before(element,'&')
++						self.ids.append(tmp_id)
++						self.titles.append(tmp_title)
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+
+From piotrek at mail.berlios.de  Tue Feb 20 16:03:24 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 20 Feb 2007 16:03:24 +0100
+Subject: [Griffith-svn] r737 - in trunk: . lib/plugins/movie
+Message-ID: <200702201503.l1KF3OsG030714@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-20 16:03:24 +0100 (Tue, 20 Feb 2007)
+New Revision: 737
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDB movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-19 14:53:38 UTC (rev 736)
++++ trunk/ChangeLog	2007-02-20 15:03:24 UTC (rev 737)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-02-20  Piotr O?arowski
++	* IMDB movie plugin updated
++
+ 2007-02-19  Piotr O?arowski
+ 	* CSFD movie plugin updated (still needs work)
+ 	* DVDEmpire movie plugin added (thanks to Michael Jahn)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-02-19 14:53:38 UTC (rev 736)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2007-02-20 15:03:24 UTC (rev 737)
+@@ -30,9 +30,9 @@
+ plugin_description	= 'Internet Movie Database'
+ plugin_url		= 'www.imdb.com'
+ plugin_language		= _('English')
+-plugin_author		= 'Vasco Nunes'
+-plugin_author_email	= '<vasco.m.nunes at gmail.com>'
+-plugin_version		= '1.0'
++plugin_author		= 'Vasco Nunes, Piotr O?arowski'
++plugin_author_email	= 'griffith-private at lists.berlios.de'
++plugin_version		= '1.1'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -48,44 +48,42 @@
+ 			self.image_url = gutils.trim(self.page[tmp:], 'src="', '"')
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '<strong class="title">', ' <small>')
++		self.o_title = gutils.trim(self.page, '<h1>', ' <span')
+ 
+-	def get_title(self):
+-		self.title = gutils.trim(self.page, '<strong class="title">', ' <small>')
++	def get_title(self):	# same as get_o_title()
++		self.title = gutils.trim(self.page, '<h1>', ' <span')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,'Directed by</b><br>', '<br>')
++		self.director = gutils.trim(self.page,'<h5>Directed by</h5>', '<br/>\n<br/>')
++		self.director = self.director.replace('<br/>', ', ')
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page, '<b class="ch">Plot', '<a href="/rg/title-tease/plot')
+-		self.plot = gutils.after(self.plot, ':</b> ')
++		self.plot = gutils.trim(self.page, '<h5>Plot Outline:</h5>', '</div>')
++		self.plot = self.__before_more(self.plot)
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>)</small>')
++		self.year = gutils.trim(self.page, '<a href="/Sections/Years/', '</a>')
+ 		self.year = gutils.after(self.year, '">')
+ 
+ 	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page, '<b class="ch">Runtime:</b>', ' min')
++		self.runtime = gutils.trim(self.page, '<h5>Runtime:</h5>', ' min')
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page, '<a href="/Sections/Genres/', '<br>')
+-		self.genre = gutils.after(self.genre, '/">')
+-		self.genre = string.replace(self.genre, '(more)', '')
++		self.genre = gutils.trim(self.page, '<h5>Genre:</h5>', '</div>')
++		self.genre = self.__before_more(self.genre)
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+-		self.cast = gutils.trim(self.page, 'Cast overview, first billed only:', '<a href="fullcredits">')
+-		if (self.cast==''):
+-			self.cast = gutils.trim(self.page, 'cast: ','<a href="fullcredits">')
+-		self.cast = string.replace(self.cast, ' .... ', _(' as '))
++		self.cast = gutils.trim(self.page, '<table class="cast">', '</table>')
++		self.cast = string.replace(self.cast, ' ... ', _(' as '))
+ 		self.cast = string.replace(self.cast, '</tr><tr>', "\n")
+-		self.cast = string.replace(self.cast, '</tr><tr bgcolor="#FFFFFF">', "\n")
+-		self.cast = string.replace(self.cast, '</tr><tr bgcolor="#F0F0F0">', "\n")
+-		self.cast = string.strip(gutils.strip_tags(self.cast))
++		self.cast = string.replace(self.cast, '</tr><tr class="even">', "\n")
++		self.cast = string.replace(self.cast, '</tr><tr class="odd">', "\n")
++		self.cast = self.__before_more(self.cast)
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.page, 'MPAA</a>:</b> ', '.<br>')
+-		self.classification = ''
++		self.classification = gutils.trim(self.page, '<h5><a href="/mpaa">MPAA</a>:</h5>', '</div>')
++		self.classification = gutils.trim(self.classification, 'Rated ', ' ')
+ 
+ 	def get_studio(self):
+ 		self.studio = ''
+@@ -100,14 +98,38 @@
+ 		self.trailer = "http://www.imdb.com/title/tt%s/trailers" % self.movie_id
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page, '<b class="ch">Country:</b>', '</a>')
+-		self.country = gutils.after(self.country, '/">')
++		self.country = gutils.trim(self.page, '<h5>Country:</h5>', '</div>')
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.trim(self.page, '<b class="ch">User Rating:</b>', '/10</b> (')
++		self.rating = gutils.trim(self.page, '<b>User Rating:</b>', '/10')
+ 		if self.rating:
+ 			self.rating = str(float(gutils.clean(self.rating)))
+ 
++	def get_notes(self):
++		language = gutils.trim(self.page, '<h5>Language:</h5>', '</div>')
++		language = gutils.strip_tags(language)
++		color = gutils.trim(self.page, '<h5>Color:</h5>', '</div>')
++		color = gutils.strip_tags(color)
++		sound = gutils.trim(self.page, '<h5>Sound Mix:</h5>', '</div>')
++		sound = gutils.strip_tags(sound)
++		tagline = gutils.trim(self.page, '<h5>Tagline:</h5>', '</div>')
++		tagline = self.__before_more(tagline)
++		tagline = gutils.strip_tags(tagline)
++		if len(language)>0:
++			self.notes = "%s: %s\n" %(_('Language'), language)
++		if len(sound)>0:
++			self.notes += "%s: %s\n" %(gutils.strip_tags(_('<b>Audio</b>')), sound)
++		if len(color)>0:
++			self.notes += "%s: %s\n" %(_('Color'), color)
++		if len(tagline)>0:
++			self.notes += "%s: %s\n" %('Tagline', tagline)
++	
++	def __before_more(self, data):
++		tmp = string.find(data, '>more<')
++		if tmp>0:
++			data = data[:tmp] + '>'
++		return data
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+ 	def __init__(self):
+
+
+
+From piotrek at mail.berlios.de  Tue Feb 20 16:29:27 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 20 Feb 2007 16:29:27 +0100
+Subject: [Griffith-svn] r738 - in trunk: . images lib
+Message-ID: <200702201529.l1KFTRul032320@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-20 16:29:26 +0100 (Tue, 20 Feb 2007)
+New Revision: 738
+
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/images/seen.png
+   trunk/images/unseen.png
+   trunk/lib/about.py
+Log:
+* New seen/unseen icons (thanks to dragonskulle)
+* About window updated
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-02-20 15:03:24 UTC (rev 737)
++++ trunk/AUTHORS	2007-02-20 15:29:26 UTC (rev 738)
+@@ -27,3 +27,6 @@
+ Jessica Katharina Parth <Jessica.K.P at women-at-work.org>
+ * OFDb movie plugin
+ * CSV import plugin
++
++dragonskulle <dragonskulle at gmail.com>:
++* seen / unseen icons
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-20 15:03:24 UTC (rev 737)
++++ trunk/ChangeLog	2007-02-20 15:29:26 UTC (rev 738)
+@@ -6,6 +6,8 @@
+ 
+ 2007-02-20  Piotr O?arowski
+ 	* IMDB movie plugin updated
++	* New seen/unseen icons (thanks to dragonskulle)
++	* About window updated
+ 
+ 2007-02-19  Piotr O?arowski
+ 	* CSFD movie plugin updated (still needs work)
+
+Modified: trunk/images/seen.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/images/unseen.png
+===================================================================
+(Binary files differ)
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2007-02-20 15:03:24 UTC (rev 737)
++++ trunk/lib/about.py	2007-02-20 15:29:26 UTC (rev 738)
+@@ -35,18 +35,22 @@
+ 		dialog.set_version(version.pversion)
+ 		dialog.set_copyright("Copyright ? 2005-2007 Vasco Nunes. Piotr O?arowski")
+ 		dialog.set_website(version.pwebsite)
+-		dialog.set_authors([_("Main Authors") + ":\n"+ \
++		dialog.set_authors([
++			_("Main Authors") + ':',
+ 			version.pauthor.replace(', ', '\n') + "\n",
+-			'%s:\nJessica Katharina Parth <Jessica.K.P at women-at-work.org>\n'%_("Programmer") +"\n"+ \
+-
+-			_('Contributors:'),
++			_("Programmer") + ':',
++			'Jessica Katharina Parth <Jessica.K.P at women-at-work.org>\n',
++			_('Contributors:'), # FIXME: remove ":"
+ 			'Christian Sagmueller <christian at sagmueller.net>\n' \
+-			'Arjen Schwarz <arjen.schwarz at gmail.com>' \
+-			])
++			'Arjen Schwarz <arjen.schwarz at gmail.com>\n' \
++			'Michael Jahn <mikej06 at hotmail.com>'
++		])
+ 		dialog.set_artists([_("Logo, icon and general artwork " + \
+ 			"by Peek <peekpt at gmail.com>." + \
+-			"\nPlease visit http://www.peekmambo.com/")])
+-		dialog.set_translator_credits( \
++			"\nPlease visit http://www.peekmambo.com/\n"),
++			'seen / unseen icons by dragonskulle <dragonskulle at gmail.com>'
++		])
++		dialog.set_translator_credits(\
+ 			_("Bulgarian") + ":\n\t" + \
+ 				"Luchezar P. Petkov <luchezar.petkov at gmail.com>\n" + \
+ 			_("Brasilian Portuguese") + ":\n\t" + \
+@@ -75,9 +79,12 @@
+ 		logo_file = os.path.abspath(os.path.join(images_dir, 'griffith.png'))
+ 		logo = gtk.gdk.pixbuf_new_from_file(logo_file)
+ 		dialog.set_logo(logo)
+-		dialog.set_license(_("This program is released under the GNU" + \
+-			"General Public License.\n" + \
+-			"Please visit http://www.gnu.org/copyleft/gpl.html for details."))
++		if os.path.isfile('/usr/share/common-licenses/GPL-2'):
++			dialog.set_license(open('/usr/share/common-licenses/GPL-2').read())
++		else:
++			dialog.set_license(_("This program is released under the GNU" + \
++				"General Public License.\n" + \
++				"Please visit http://www.gnu.org/copyleft/gpl.html for details."))
+ 		dialog.set_comments(version.pdescription)
+ 		dialog.run()
+ 		dialog.destroy()
+
+
+
+From piotrek at mail.berlios.de  Tue Feb 20 17:01:12 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 20 Feb 2007 17:01:12 +0100
+Subject: [Griffith-svn] r739 - in trunk: . data lib
+Message-ID: <200702201601.l1KG1Cin002907@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-20 17:01:12 +0100 (Tue, 20 Feb 2007)
+New Revision: 739
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/README
+   trunk/data/griffith.desktop
+   trunk/lib/version.py
+   trunk/winpackage.iss
+   trunk/winsetup.py
+Log:
+prepare to release 0.9.2
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/ChangeLog	2007-02-20 16:01:12 UTC (rev 739)
+@@ -4,6 +4,8 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++---- 0.9.2 ---
++
+ 2007-02-20  Piotr O?arowski
+ 	* IMDB movie plugin updated
+ 	* New seen/unseen icons (thanks to dragonskulle)
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/NEWS	2007-02-20 16:01:12 UTC (rev 739)
+@@ -1,3 +1,10 @@
++Griffith 0.9.2
++==============
++* Updated movie plugins: IMDB, CSFD, KinoDE, FilmeVonAZ
++* New movie plugin: DVDEmpire
++* New seen/unseen icons
++
++
+ Griffith 0.9.1
+ ==============
+ Loan data is now imported correctly from old database.
+@@ -20,7 +27,6 @@
+ 
+ Griffith 0.9-rc3
+ ================
+-
+ * Old database is not modified during upgrade process (bug introduced in 0.9-rc2)
+ * Catch some more bad cases while upgrading database
+ * Fix upgrading volume / collection loan data
+@@ -29,7 +35,6 @@
+ 
+ Griffith 0.9-rc2
+ ================
+-
+ * Griffith works now a lot faster with large (>1000 movies) databases
+ * Fix displaying volume/collection's loan status
+ * Config files are now fully cross-platform
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/README	2007-02-20 16:01:12 UTC (rev 739)
+@@ -1,4 +1,4 @@
+-Griffith 0.9.1 README
++Griffith 0.9.2 README
+ =====================
+ 
+ This document was last updated on Thu Jan 09 2007.
+
+Modified: trunk/data/griffith.desktop
+===================================================================
+--- trunk/data/griffith.desktop	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/data/griffith.desktop	2007-02-20 16:01:12 UTC (rev 739)
+@@ -2,7 +2,7 @@
+ Name=Griffith
+ GenericName=Griffith - Movie Collection Manager
+ Comment=Movie Collection Manager
+-Version=0.9.1
++Version=0.9.2
+ Encoding=UTF-8
+ Exec=griffith
+ Icon=griffith.png
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/lib/version.py	2007-02-20 16:01:12 UTC (rev 739)
+@@ -23,7 +23,7 @@
+ 
+ from gettext import gettext as _
+ pname        = "Griffith"
+-pversion     = "0.9.1+svn"
++pversion     = "0.9.2"
+ pauthor      = "Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>"
+ pyear        = "2005-2007"
+ pwebsite     = "http://griffith.berlios.de/"
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/winpackage.iss	2007-02-20 16:01:12 UTC (rev 739)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.9.1
++AppVerName=Griffith 0.9.2
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://griffith.berlios.de/
+ AppSupportURL=http://griffith.berlios.de/
+@@ -14,7 +14,7 @@
+ LicenseFile=C:\griffith\COPYING
+ InfoAfterFile=C:\griffith\README
+ OutputDir=C:\griffith\installer
+-OutputBaseFilename=griffith-0.9.1-win32
++OutputBaseFilename=griffith-0.9.2-win32
+ SetupIconFile=C:\griffith\images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,7 +22,7 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.9.1
++AppVersion=0.9.2
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2007-02-20 15:29:26 UTC (rev 738)
++++ trunk/winsetup.py	2007-02-20 16:01:12 UTC (rev 739)
+@@ -54,7 +54,7 @@
+ 
+ setup(
+     name = "Griffith",
+-    version = "0.9.1",
++    version = "0.9.2",
+ 	description = 'Griffith - A film manager',
+     author = 'Vasco Nunes/Piotr Ozarowski',
+     author_email = 'vasco.m.nunes at gmail.com',
+
+
+
+From piotrek at mail.berlios.de  Tue Feb 20 17:02:10 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 20 Feb 2007 17:02:10 +0100
+Subject: [Griffith-svn] r740 - trunk/debian
+Message-ID: <200702201602.l1KG299l003011@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-20 17:02:09 +0100 (Tue, 20 Feb 2007)
+New Revision: 740
+
+Modified:
+   trunk/debian/changelog
+Log:
+update debian changelog
+
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-02-20 16:01:12 UTC (rev 739)
++++ trunk/debian/changelog	2007-02-20 16:02:09 UTC (rev 740)
+@@ -1,8 +1,8 @@
+-griffith (0.9.1+svn-1) UNRELEASED; urgency=low
++griffith (0.9.2-1) unstable; urgency=low
+ 
+   * New upstream release
+ 
+- -- Piotr Ozarowski <ozarow at gmail.com>  Wed, 14 Feb 2007 14:59:22 +0100
++ -- Piotr Ozarowski <ozarow at gmail.com>  Tue, 20 Feb 2007 17:01:26 +0100
+ 
+ griffith (0.9.1-1) unstable; urgency=low
+ 
+
+
+
+From piotrek at mail.berlios.de  Wed Feb 21 00:00:17 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 21 Feb 2007 00:00:17 +0100
+Subject: [Griffith-svn] r741 - tags
+Message-ID: <200702202300.l1KN0Hqs008129@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-21 00:00:16 +0100 (Wed, 21 Feb 2007)
+New Revision: 741
+
+Added:
+   tags/0.9.2/
+Log:
+tagging 0.9.2
+
+
+Copied: tags/0.9.2 (from rev 740, trunk)
+
+
+
+From piotrek at mail.berlios.de  Wed Feb 21 00:16:22 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 21 Feb 2007 00:16:22 +0100
+Subject: [Griffith-svn] r742 - in extra_artwork: . debian images
+Message-ID: <200702202316.l1KNGMl7009101@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-21 00:16:21 +0100 (Wed, 21 Feb 2007)
+New Revision: 742
+
+Added:
+   extra_artwork/images/PluginMovieDVDEmpire.png
+Modified:
+   extra_artwork/ChangeLog
+   extra_artwork/Makefile
+   extra_artwork/debian/changelog
+Log:
+* Added DVDEmpire icon
+* Prepare to release extra artwork 0.9.2
+
+
+Modified: extra_artwork/ChangeLog
+===================================================================
+--- extra_artwork/ChangeLog	2007-02-20 23:00:16 UTC (rev 741)
++++ extra_artwork/ChangeLog	2007-02-20 23:16:21 UTC (rev 742)
+@@ -1,12 +1,17 @@
+-# $Id: ChangeLog,v 1.1.1.1 2005/10/01 12:14:37 iznogoud Exp $
++# $Id$
+ 
+ Griffith extra art work ChangeLog
+ ---------------------------------
+ (c) 2005-2006 Vasco Nunes
+ 
++---- 0.9.2 ----
++
++2007-02-20  Piotr Ozarowski
++	* Added DVDEmpire icon
++
+ ---- 0.9 ----
+ 
+-2006-08-15  Piotr Ozarowski
++2001-01-27  Piotr Ozarowski
+ 	* Added FilmeVonAZ icon
+ 	* PNG images recompressed
+ 	* Empty README file deleted
+
+
+Property changes on: extra_artwork/ChangeLog
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: extra_artwork/Makefile
+===================================================================
+--- extra_artwork/Makefile	2007-02-20 23:00:16 UTC (rev 741)
++++ extra_artwork/Makefile	2007-02-20 23:16:21 UTC (rev 742)
+@@ -2,7 +2,7 @@
+ 
+ # (c) 2005-2007 Vasco Nunes, Piotr Ozarowski
+ 
+-# $Id: Makefile,v 1.1.1.1 2005/10/01 12:14:37 iznogoud Exp $
++# $Id$
+ 
+ 
+ PACKAGE=griffith-extra-artwork
+
+
+Property changes on: extra_artwork/Makefile
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: extra_artwork/debian/changelog
+===================================================================
+--- extra_artwork/debian/changelog	2007-02-20 23:00:16 UTC (rev 741)
++++ extra_artwork/debian/changelog	2007-02-20 23:16:21 UTC (rev 742)
+@@ -1,3 +1,9 @@
++griffith-extra-artwork (0.9.2-1) restricted; urgency=low
++
++  * New upstream release
++
++ -- Piotr Ozarowski <ozarow at gmail.com>  Wed, 21 Feb 2007 00:14:18 +0100
++
+ griffith-extra-artwork (0.9-1) restricted; urgency=low
+ 
+   * New upstream release
+
+Added: extra_artwork/images/PluginMovieDVDEmpire.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: extra_artwork/images/PluginMovieDVDEmpire.png
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+
+
+From piotrek at mail.berlios.de  Wed Feb 21 00:17:39 2007
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Wed, 21 Feb 2007 00:17:39 +0100
+Subject: [Griffith-svn] r743 - extra_artwork
+Message-ID: <200702202317.l1KNHd5N009211@sheep.berlios.de>
+
+Author: piotrek
+Date: 2007-02-21 00:17:39 +0100 (Wed, 21 Feb 2007)
+New Revision: 743
+
+Modified:
+   extra_artwork/Makefile
+Log:
+version changed to 0.9.2
+
+
+Modified: extra_artwork/Makefile
+===================================================================
+--- extra_artwork/Makefile	2007-02-20 23:16:21 UTC (rev 742)
++++ extra_artwork/Makefile	2007-02-20 23:17:39 UTC (rev 743)
+@@ -6,7 +6,7 @@
+ 
+ 
+ PACKAGE=griffith-extra-artwork
+-VERSION=0.9
++VERSION=0.9.2
+ 
+ .PHONY: help clean install
+ 
+
+
+
+From iznogoud at mail.berlios.de  Sun Feb 25 17:41:35 2007
+From: iznogoud at mail.berlios.de (iznogoud at mail.berlios.de)
+Date: Sun, 25 Feb 2007 17:41:35 +0100
+Subject: [Griffith-svn] r744 - trunk
+Message-ID: <200702251641.l1PGfZO0008530@sheep.berlios.de>
+
+Author: iznogoud
+Date: 2007-02-25 17:41:28 +0100 (Sun, 25 Feb 2007)
+New Revision: 744
+
+Modified:
+   trunk/winsetup.py
+Log:
+minor changes to winsetup.py
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2007-02-20 23:17:39 UTC (rev 743)
++++ trunk/winsetup.py	2007-02-25 16:41:28 UTC (rev 744)
+@@ -46,7 +46,7 @@
+ 
+ opts = {
+     "py2exe": {
+-        "includes": "pygtk,cairo,pangocairo,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip",
++        "includes": "pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.ext,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.mods.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip",
+         "optimize": 2,
+ 		"dist_dir": "dist",
+     }
+@@ -60,7 +60,7 @@
+     author_email = 'vasco.m.nunes at gmail.com',
+     url = 'http://griffith.berlios.de',
+     license = 'GPL',
+-    console = [
++    windows = [
+         {
+             "script": "griffith",
+             "icon_resources": [(1, "images\griffith.ico")]
+@@ -113,6 +113,6 @@
+ 		glob.glob("lib\\plugins\\imp\\*.*")),
+ 		("images",
+ 		glob.glob("images\\*.png")),
+-		("",
++		("lib",
+ 		glob.glob("lib\\*.*"))],
+ )
+
+
+

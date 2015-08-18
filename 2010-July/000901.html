@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1439 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1439%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20100721201008.71C15480B05%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000900.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1439 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1439%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20100721201008.71C15480B05%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1439 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 21 22:10:08 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000900.html">[Griffith-svn] r1438 - trunk/lib
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#901">[ date ]</a>
+              <a href="thread.html#901">[ thread ]</a>
+              <a href="subject.html#901">[ subject ]</a>
+              <a href="author.html#901">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-07-21 22:10:08 +0200 (Wed, 21 Jul 2010)
+New Revision: 1439
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/gutils.py
+   trunk/lib/sql.py
+Log:
+adjusting sqlite page size to the value of the filesystem page size (performance optimization)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-07-21 19:09:49 UTC (rev 1438)
++++ trunk/ChangeLog	2010-07-21 20:10:08 UTC (rev 1439)
+@@ -5,6 +5,11 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-07-21  Michael Jahn
++	* compatibility fixes for sqlalchemy 0.6
++	* adjusting sqlite page size to the value of the filesystem page size
++	  (performance optimization)
++
+ 2010-07-15  Michael Jahn
+ 	* updated movie plugin FilmeVonA-Z
+ 
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-07-21 19:09:49 UTC (rev 1438)
++++ trunk/lib/gutils.py	2010-07-21 20:10:08 UTC (rev 1439)
+@@ -745,3 +745,42 @@
+ 
+ def get_defaultthumbnail_fname(self):
+     return os.path.join(self.locations['images'], 'default_thumbnail.png')
++
++def get_filesystem_pagesize(path):
++    pagesize = 1024
++    # retrieve filesystem page size for optimizing filesystem based database systems like sqlite
++    try:
++        if is_windows_system():
++            pagesize = 4096 # almost the best for standard windows systems
++
++            # try to find the perfect value from the filesystem
++            import ctypes
++
++            drive = os.path.splitdrive(path)
++            sectorsPerCluster = ctypes.c_ulonglong(0)
++            bytesPerSector = ctypes.c_ulonglong(0)
++            rootPathName = ctypes.c_wchar_p(unicode(drive[0]))
++
++            ctypes.windll.kernel32.GetDiskFreeSpaceW(rootPathName,
++                ctypes.pointer(sectorsPerCluster),
++                ctypes.pointer(bytesPerSector),
++                None,
++                None,
++            )
++            pagesize = sectorsPerCluster.value * bytesPerSector.value
++        else:
++            # I could not try it out on non-windows platforms
++            # if it doesn't work the default page size is returned
++            from os import statvfs
++            stats = statvfs(path)
++            pagesize = stats.f_bsize
++    except:
++        log.error('')
++
++    # adjust page size
++    if pagesize &gt; 32768:
++        pagesize = 32768
++    if pagesize &lt; 1024:
++        pagesize = 1024
++
++    return pagesize
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2010-07-21 19:09:49 UTC (rev 1438)
++++ trunk/lib/sql.py	2010-07-21 20:10:08 UTC (rev 1439)
+@@ -35,6 +35,7 @@
+ 
+ import db # ORM data (SQLAlchemy stuff)
+ from gutils import warning # TODO: get rid of this import
++from gutils import get_filesystem_pagesize
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -68,8 +69,14 @@
+                             'engine_kwargs': {'echo': False, 'convert_unicode': False}})
+ 
+         # connect to database --------------------------------------{{{
++        dbinitializingsql = None
+         if config.get('type', section='database') == 'sqlite':
+-            url = &quot;<A HREF="sqlite:///%s.db">sqlite:///%s.db</A>&quot; % os.path.join(griffith_dir, conn_params['name'])
++            sqlitefile = &quot;%s.db&quot; % os.path.join(griffith_dir, conn_params['name'])
++            if not os.path.isfile(sqlitefile):
++                # for new created database this is an optimization step syncing the database page size
++                # to the filesystem page size
++                dbinitializingsql = 'PRAGMA page_size=' + str(get_filesystem_pagesize(sqlitefile))
++            url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % sqlitefile
+         elif config.get('type', section='database') == 'postgres':
+             url = &quot;<A HREF="postgres://%(user">postgres://%(user</A>)s:%(passwd)s@%(host)s:%(port)d/%(name)s&quot; % conn_params
+         elif config.get('type', section='database') == 'mysql':
+@@ -94,6 +101,8 @@
+         try:
+             engine = create_engine(url, **conn_params['engine_kwargs'])
+             conn = engine.connect()
++            if dbinitializingsql is not None:
++                engine.execute(dbinitializingsql)
+         except Exception, e:    # InvalidRequestError, ImportError
+             log.info(&quot;MetaData: %s&quot;, e)
+             if not fallback:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000900.html">[Griffith-svn] r1438 - trunk/lib
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#901">[ date ]</a>
+              <a href="thread.html#901">[ thread ]</a>
+              <a href="subject.html#901">[ subject ]</a>
+              <a href="author.html#901">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

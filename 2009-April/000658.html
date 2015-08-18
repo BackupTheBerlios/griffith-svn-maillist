@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1186%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200904112009.n3BK9o5P014026%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000657.html">
+   <LINK REL="Next"  HREF="000659.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1186%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200904112009.n3BK9o5P014026%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 11 22:09:50 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000657.html">[Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000659.html">[Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#658">[ date ]</a>
+              <a href="thread.html#658">[ thread ]</a>
+              <a href="subject.html#658">[ subject ]</a>
+              <a href="author.html#658">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-11 22:09:31 +0200 (Sat, 11 Apr 2009)
+New Revision: 1186
+
+Modified:
+   branches/0.9.x/lib/movie.py
+   trunk/lib/movie.py
+Log:
+added two headers to the http requests to work around some trouble with UMTS and other mobile internet connections.
+mobile internet connections are using transparent &quot;compression&quot; by default which means that &quot;white characters&quot;
+are removed from html pages before transmission. it breaks the movie import plugins sometimes.
+
+Modified: branches/0.9.x/lib/movie.py
+===================================================================
+--- branches/0.9.x/lib/movie.py	2009-04-08 20:16:23 UTC (rev 1185)
++++ branches/0.9.x/lib/movie.py	2009-04-11 20:09:31 UTC (rev 1186)
+@@ -338,15 +338,21 @@
+ #
+ _uaurlopener = None
+ def urlretrieve(url, filename=None, reporthook=None, data=None):
+-    global _uaurlopener
+-    if not _uaurlopener:
+-        _uaurlopener = UAFancyURLopener()
+-    return _uaurlopener.retrieve(url, filename, reporthook, data)
++	global _uaurlopener
++	if not _uaurlopener:
++		_uaurlopener = UAFancyURLopener()
++	return _uaurlopener.retrieve(url, filename, reporthook, data)
+ 
+ class UAFancyURLopener(FancyURLopener):
+ 	# use Firefox 3.0 User-Agent string from Windows XP
+ 	version = 'Mozilla/5.0 (Windows; U; Windows NT 6.0) Gecko/2008052906 Firefox/3.0'
+-	
++	def __init__(self, *args, **kwargs):
++		FancyURLopener.__init__(self, *args, **kwargs)
++		# additional HTTP headers to work around the html file compression which
++		# is used by UMTS connections. compression breaks the movie import plugins sometimes
++		self.addheaders.append(('Cache-Control', 'no-cache'))
++		self.addheaders.append(('Pragma', 'no-cache'))
++
+ class Progress:
+ 	def __init__(self, window, title = '', message = ''):
+ 		self.status = False
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2009-04-08 20:16:23 UTC (rev 1185)
++++ trunk/lib/movie.py	2009-04-11 20:09:31 UTC (rev 1186)
+@@ -387,7 +387,13 @@
+ class UAFancyURLopener(FancyURLopener):
+     # use Firefox 3.0 User-Agent string from Windows XP
+     version = 'Mozilla/5.0 (Windows; U; Windows NT 6.0) Gecko/2008052906 Firefox/3.0'
+-    
++    def __init__(self, *args, **kwargs):
++        FancyURLopener.__init__(self, *args, **kwargs)
++        # additional HTTP headers to work around the html file compression which
++        # is used by UMTS connections. compression breaks the movie import plugins sometimes
++        self.addheaders.append(('Cache-Control', 'no-cache'))
++        self.addheaders.append(('Pragma', 'no-cache'))
++
+ class Progress:
+     def __init__(self, window, title = '', message = ''):
+         self.status = False
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000657.html">[Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000659.html">[Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#658">[ date ]</a>
+              <a href="thread.html#658">[ thread ]</a>
+              <a href="subject.html#658">[ subject ]</a>
+              <a href="author.html#658">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r906 - branches/0.9.x trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r906%20-%20branches/0.9.x%20trunk&In-Reply-To=%3C200801272015.m0RKF7JF014211%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000400.html">
+   <LINK REL="Next"  HREF="000402.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r906 - branches/0.9.x trunk</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r906%20-%20branches/0.9.x%20trunk&In-Reply-To=%3C200801272015.m0RKF7JF014211%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r906 - branches/0.9.x trunk">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 21:15:07 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000400.html">[Griffith-svn] r905 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000402.html">[Griffith-svn] r907 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#401">[ date ]</a>
+              <a href="thread.html#401">[ thread ]</a>
+              <a href="subject.html#401">[ subject ]</a>
+              <a href="author.html#401">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-01-27 21:14:26 +0100 (Sun, 27 Jan 2008)
+New Revision: 906
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/NEWS
+   branches/0.9.x/winpackage.iss
+   branches/0.9.x/winsetup.bat
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+Log:
+* use relative paths in scripts for windows package
+* updated ChangeLog and NEWS
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/ChangeLog	2008-01-27 20:14:26 UTC (rev 906)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-01-27  Michael Jahn
++	* Zelluloid plugin updated
++
+ 2008-01-27  Piotr O&#380;arowski
+ 	* AniDB movie plugin updated
+ 
+
+Modified: branches/0.9.x/NEWS
+===================================================================
+--- branches/0.9.x/NEWS	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/NEWS	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.6
+ ==============
+ * Distribute local copy of SQLAlchemy 0.3.11 (Griffith 0.10 which will work with SQLAlchemy 0.4.x is not ready yet)
+-* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ
++* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ, Zelluloid
+ * Translation changes:
+   + new: Estonian, Hungarian, Indonesian, Korean, Occitan (post 1500), Pashto, Slovak
+   + updated: almost all :-)
+
+Modified: branches/0.9.x/winpackage.iss
+===================================================================
+--- branches/0.9.x/winpackage.iss	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/winpackage.iss	2008-01-27 20:14:26 UTC (rev 906)
+@@ -11,18 +11,19 @@
+ DefaultDirName={pf}\Griffith
+ DefaultGroupName=Griffith
+ AllowNoIcons=true
+-LicenseFile=C:\griffith\COPYING
+-InfoAfterFile=C:\griffith\README
+-OutputDir=C:\griffith\installer
++LicenseFile=COPYING
++InfoAfterFile=README
++OutputDir=installer
+ OutputBaseFilename=griffith-0.9.6-win32
+-SetupIconFile=C:\griffith\images\griffith.ico
++SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+-WizardImageFile=C:\griffith\images\griffith_win32_installer.bmp
++WizardImageFile=images\griffith_win32_installer.bmp
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+ AppVersion=0.9.6
++VersionInfoVersion=0.9.6
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -51,8 +52,8 @@
+ Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+ 
+ [Files]
+-Source: C:\griffith\dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
+-Source: C:\griffith\dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
++Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+ [INI]
+
+Modified: branches/0.9.x/winsetup.bat
+===================================================================
+--- branches/0.9.x/winsetup.bat	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/winsetup.bat	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,9 +1,24 @@
+ @rem *** Used to create a Python exe  
+- 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rem</A> ***** get rid of all the old files in the build folder 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rd</A> /S /Q build 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rd</A> /S /Q dist 
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at set</A> GTKDIR=%GTK_BASEPATH%
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at set</A> GRIFFITHDIR=.\
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> *** check the configuration
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> not exist &quot;%GTKDIR%&quot; (
++   @echo Can't find directory %GTKDIR%.
++   @goto END
++)
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> not exist &quot;%GRIFFITHDIR%&quot; (
++   @echo Can't find directory %GRIFFITHDIR%.
++   @goto END
++)
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> ***** get rid of all the old files in the build folder
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> exist &quot;%GRIFFITHDIR%\build&quot; @rd /S /Q build 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> exist &quot;%GRIFFITHDIR%\dist&quot; @rd /S /Q dist 
++
+ @mkdir dist\etc
+ @mkdir dist\share
+ @mkdir dist\lib
+@@ -13,10 +28,14 @@
+ 
+ @python.exe -OO winsetup.py py2exe
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at xcopy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\etc&quot; c:\griffith\dist\etc /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at xcopy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\lib&quot; c:\griffith\dist\lib /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at xcopy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\share\locale&quot; c:\griffith\dist\share\locale /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> &quot;%GTKDIR%\etc&quot; &quot;%GRIFFITHDIR%\dist\etc&quot; /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> &quot;%GTKDIR%\lib&quot; &quot;%GRIFFITHDIR%\dist\lib&quot; /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> &quot;%GTKDIR%\share\locale&quot; &quot;%GRIFFITHDIR%\dist\share\locale&quot; /s /e
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at copy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\share\themes\MS-Windows\gtk-2.0\*.*&quot; c:\griffith\dist\
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at copy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\bin\jpeg62.dll&quot; c:\griffith\dist\
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rem</A> **** pause so we can see the exit codes 
+\ No newline at end of file
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at copy</A> &quot;%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at copy</A> &quot;%GTKDIR%\bin\jpeg62.dll&quot; &quot;%GRIFFITHDIR%\dist\&quot;
++
++:END
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> **** pause so we can see the exit codes
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at pause</A>
+\ No newline at end of file
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/ChangeLog	2008-01-27 20:14:26 UTC (rev 906)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-01-27  Michael Jahn
++	* Zelluloid plugin updated
++
+ 2008-01-27  Piotr O&#380;arowski
+ 	* AniDB movie plugin updated
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/NEWS	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.6
+ ==============
+ * Distribute local copy of SQLAlchemy 0.3.11 (Griffith 0.10 which will work with SQLAlchemy 0.4.x is not ready yet)
+-* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ
++* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ, Zelluloid
+ * Translation changes:
+   + new: Estonian, Hungarian, Indonesian, Korean, Occitan (post 1500), Pashto, Slovak
+   + updated: almost all :-)
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/winpackage.iss	2008-01-27 20:14:26 UTC (rev 906)
+@@ -11,18 +11,19 @@
+ DefaultDirName={pf}\Griffith
+ DefaultGroupName=Griffith
+ AllowNoIcons=true
+-LicenseFile=C:\griffith\COPYING
+-InfoAfterFile=C:\griffith\README
+-OutputDir=C:\griffith\installer
++LicenseFile=COPYING
++InfoAfterFile=README
++OutputDir=installer
+ OutputBaseFilename=griffith-0.9.5-win32
+-SetupIconFile=C:\griffith\images\griffith.ico
++SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+-WizardImageFile=C:\griffith\images\griffith_win32_installer.bmp
++WizardImageFile=images\griffith_win32_installer.bmp
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+ AppVersion=0.9.5
++VersionInfoVersion=0.9.5
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -51,8 +52,8 @@
+ Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+ 
+ [Files]
+-Source: C:\griffith\dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
+-Source: C:\griffith\dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
++Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use &quot;Flags: ignoreversion&quot; on any shared system files
+ 
+ [INI]
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/winsetup.bat	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,9 +1,24 @@
+ @rem *** Used to create a Python exe  
+- 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rem</A> ***** get rid of all the old files in the build folder 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rd</A> /S /Q build 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rd</A> /S /Q dist 
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at set</A> GTKDIR=%GTK_BASEPATH%
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at set</A> GRIFFITHDIR=.\
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> *** check the configuration
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> not exist &quot;%GTKDIR%&quot; (
++   @echo Can't find directory %GTKDIR%.
++   @goto END
++)
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> not exist &quot;%GRIFFITHDIR%&quot; (
++   @echo Can't find directory %GRIFFITHDIR%.
++   @goto END
++)
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> ***** get rid of all the old files in the build folder
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> exist &quot;%GRIFFITHDIR%\build&quot; @rd /S /Q build 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at if</A> exist &quot;%GRIFFITHDIR%\dist&quot; @rd /S /Q dist 
++
+ @mkdir dist\etc
+ @mkdir dist\share
+ @mkdir dist\lib
+@@ -13,10 +28,14 @@
+ 
+ @python.exe -OO winsetup.py py2exe
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at xcopy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\etc&quot; c:\griffith\dist\etc /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at xcopy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\lib&quot; c:\griffith\dist\lib /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at xcopy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\share\locale&quot; c:\griffith\dist\share\locale /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> &quot;%GTKDIR%\etc&quot; &quot;%GRIFFITHDIR%\dist\etc&quot; /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> &quot;%GTKDIR%\lib&quot; &quot;%GRIFFITHDIR%\dist\lib&quot; /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> &quot;%GTKDIR%\share\locale&quot; &quot;%GRIFFITHDIR%\dist\share\locale&quot; /s /e
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at copy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\share\themes\MS-Windows\gtk-2.0\*.*&quot; c:\griffith\dist\
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at copy</A> &quot;C:\Programas\Ficheiros comuns\GTK\2.0\bin\jpeg62.dll&quot; c:\griffith\dist\
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">- at rem</A> **** pause so we can see the exit codes 
+\ No newline at end of file
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at copy</A> &quot;%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*&quot; &quot;%GRIFFITHDIR%\dist\&quot;
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at copy</A> &quot;%GTKDIR%\bin\jpeg62.dll&quot; &quot;%GRIFFITHDIR%\dist\&quot;
++
++:END
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at rem</A> **** pause so we can see the exit codes
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at pause</A>
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000400.html">[Griffith-svn] r905 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000402.html">[Griffith-svn] r907 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#401">[ date ]</a>
+              <a href="thread.html#401">[ thread ]</a>
+              <a href="subject.html#401">[ subject ]</a>
+              <a href="author.html#401">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1613 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2012-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1613%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20120107165115.30BFC4811E7%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001068.html">
+   <LINK REL="Next"  HREF="001070.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1613 - in trunk: . lib/plugins/movie</H1>
+    <B>lanus at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1613%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20120107165115.30BFC4811E7%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1613 - in trunk: . lib/plugins/movie">lanus at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  7 17:51:15 CET 2012</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001068.html">[Griffith-svn] r1612 - in trunk: . lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="001070.html">[Griffith-svn] r1614 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1069">[ date ]</a>
+              <a href="thread.html#1069">[ thread ]</a>
+              <a href="subject.html#1069">[ subject ]</a>
+              <a href="author.html#1069">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lanus
+Date: 2012-01-07 17:51:14 +0100 (Sat, 07 Jan 2012)
+New Revision: 1613
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieDVDpt.py
+Modified:
+   trunk/ChangeLog
+Log:
+Added a plugin for the portuguese website www.dvdpt.com
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2012-01-02 21:14:32 UTC (rev 1612)
++++ trunk/ChangeLog	2012-01-07 16:51:14 UTC (rev 1613)
+@@ -4,6 +4,8 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2012-01-07  Ivo Nunes
++    * Added a plugin for the portuguese website www.dvdpt.com
+ 
+ 2012-01-02  Michael Jahn
+ 	* [#909513] code errors in import plugins
+
+Added: trunk/lib/plugins/movie/PluginMovieDVDpt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDpt.py	                        (rev 0)
++++ trunk/lib/plugins/movie/PluginMovieDVDpt.py	2012-01-07 16:51:14 UTC (rev 1613)
+@@ -0,0 +1,143 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id: PluginMovieDVDpt.py 1138 2009-01-31 21:48:43Z mikej06 $'
++
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr Ozarowski
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string
++
++plugin_name         = &quot;DVDpt&quot;
++plugin_description  = &quot;&quot;
++plugin_url          = &quot;dvdpt.com&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Ivo Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">netherblood at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.1&quot;
++
++class Plugin(movie.Movie):
++    &quot;&quot;&quot;A movie plugin object&quot;&quot;&quot;
++    def __init__(self, id):
++        self.encode='iso-8859-1'
++        self.movie_id = id
++        self.url = &quot;<A HREF="http://www.dvdpt.com/">http://www.dvdpt.com/</A>&quot; + str(self.movie_id) + &quot;.php&quot;
++
++    def get_image(self):
++        &quot;&quot;&quot;Finds the film's poster image&quot;&quot;&quot;
++        self.image_url = &quot;<A HREF="http://www.dvdpt.com/">http://www.dvdpt.com/</A>&quot; + str(self.movie_id) + &quot;.jpg&quot;
++
++    def get_o_title(self):
++        &quot;&quot;&quot;Finds the film's original title&quot;&quot;&quot;
++        self.o_title = string.capwords(gutils.trim(self.page, '&lt;font face=arial size=-1&gt;&lt;b&gt;&quot;', '&quot;'))
++
++    def get_title(self):
++        &quot;&quot;&quot;Finds the film's local title.
++        Probably the original title translation&quot;&quot;&quot;
++        self.title = string.capwords(gutils.trim(self.page, &quot;&lt;title&gt;&quot;, &quot;&lt;/title&gt;&quot;))
++
++    def get_director(self):
++        &quot;&quot;&quot;Finds the film's director&quot;&quot;&quot;
++        self.director = gutils.trim(self.page, &quot;&lt;b&gt;REALIZADOR&lt;/b&gt;&lt;/font&gt;\n&lt;br /&gt;\n&lt;font face=arial size=-1&gt;&quot;, &quot;\n&lt;br /&gt;&lt;br /&gt;&quot;)
++        self.director = gutils.strip_tags(self.director)
++
++    def get_plot(self):
++        &quot;&quot;&quot;Finds the film's plot&quot;&quot;&quot;
++        self.plot = gutils.trim(self.page, '&lt;center&gt;\n&lt;b&gt;&quot;', '&quot;&lt;/b&gt;&lt;br /&gt;')
++
++    def get_year(self):
++        &quot;&quot;&quot;Finds the film's year&quot;&quot;&quot;
++        self.year = gutils.trim(self.page, '&quot; (', ' -')
++
++    def get_runtime(self):
++        &quot;&quot;&quot;Finds the film's running time&quot;&quot;&quot;
++        self.runtime = gutils.trim(self.page, &quot; - &quot;, &quot;m)&quot;)
++        #self.runtime = gutils.after(self.runtime, &quot;-1&gt;&quot;)
++
++    def get_genre(self):
++        &quot;&quot;&quot;Finds the film's genre&quot;&quot;&quot;
++        self.genre = &quot;&quot;
++
++    def get_cast(self):
++        self.cast = gutils.trim(self.page, &quot;&lt;b&gt;INT&#201;RPRETES&lt;/b&gt;&lt;/font&gt;\n&lt;br /&gt;\n&lt;font face=arial size=-1&gt;&quot;, &quot;\n&lt;/div&gt;&quot;)
++
++    def get_classification(self):
++        &quot;&quot;&quot;Find the film's classification&quot;&quot;&quot;
++        self.classification = &quot;&quot;
++
++    def get_studio(self):
++        &quot;&quot;&quot;Find the studio&quot;&quot;&quot;
++        self.studio = gutils.trim(self.page, &quot;&lt;font color=red face=arial size=-1&gt;&lt;b&gt;EST&#218;DIO&lt;/b&gt;&lt;/font&gt; \n&lt;br /&gt;\n&lt;font face=arial size=-1&gt;&quot;, &quot;&lt;br /&gt;&quot;)
++
++    def get_o_site(self):
++        &quot;&quot;&quot;Find the film's oficial site&quot;&quot;&quot;
++        self.o_site = &quot;&quot;
++
++    def get_site(self):
++        &quot;&quot;&quot;Find the film's imdb details page&quot;&quot;&quot;
++        self.site = &quot;&quot;
++
++    def get_trailer(self):
++        &quot;&quot;&quot;Find the film's trailer page or location&quot;&quot;&quot;
++        self.trailer = &quot;&quot;
++
++    def get_country(self):
++        &quot;&quot;&quot;Find the film's country&quot;&quot;&quot;
++        self.country = &quot;&quot;
++
++    def get_rating(self):
++        &quot;&quot;&quot;Find the film's rating. From 0 to 10.
++        Convert if needed when assigning.&quot;&quot;&quot;
++        self.rating = &quot;&quot;
++
++class SearchPlugin(movie.SearchMovie):
++    &quot;&quot;&quot;A movie search object&quot;&quot;&quot;
++    def __init__(self):
++        self.original_url_search   = &quot;<A HREF="http://search.freefind.com/find.html?id=58910933&amp;pageid=r&amp;mode=all&amp;n=0&amp;query=">http://search.freefind.com/find.html?id=58910933&amp;pageid=r&amp;mode=all&amp;n=0&amp;query=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://search.freefind.com/find.html?id=58910933&amp;pageid=r&amp;mode=all&amp;n=0&amp;query=">http://search.freefind.com/find.html?id=58910933&amp;pageid=r&amp;mode=all&amp;n=0&amp;query=</A>&quot;
++        self.encode                = 'utf-8'
++
++    def search(self, parent_window):
++        &quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
++        if not self.open_search(parent_window):
++            return None
++        self.sub_search()
++        return self.page
++
++    def sub_search(self):
++        &quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
++        self.page = gutils.trim(self.page, \
++            &quot;&lt;!-- search results copyright FreeFind.com.  All rights reserved. Results may not be re-used, meta searched, or searched robotically --&gt;&quot;, &quot;&lt;table class=search-nav-form-table&gt;&quot;)
++
++    def get_searches(self):
++        &quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
++        elements = string.split(self.page, &quot;&lt;br&gt;&quot;)
++        self.number_results = elements[-1]
++
++        if (len(elements[0])):
++            for element in elements:
++                self.ids.append(gutils.trim(element, '&lt;a  href=&quot;<A HREF="http://www.dvdpt.com/">http://www.dvdpt.com/</A>', '.php&quot; &gt;'))
++                title = gutils.trim(element, '.php&quot; &gt;', '&lt;/a&gt;')
++                title = title.replace(&quot;&lt;b&gt;&quot;, &quot;&quot;)
++                title = title.replace(&quot;&lt;/b&gt;&quot;, &quot;&quot;)
++                self.titles.append(title)
++        else:
++            self.number_results = 0
++
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieDVDpt.py
+___________________________________________________________________
+Added: svn:executable
+   + *
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001068.html">[Griffith-svn] r1612 - in trunk: . lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="001070.html">[Griffith-svn] r1614 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1069">[ date ]</a>
+              <a href="thread.html#1069">[ thread ]</a>
+              <a href="subject.html#1069">[ subject ]</a>
+              <a href="author.html#1069">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

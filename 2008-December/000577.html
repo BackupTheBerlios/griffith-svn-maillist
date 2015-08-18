@@ -1,0 +1,720 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1102 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1102%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200812252132.mBPLWd9H032537%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000576.html">
+   <LINK REL="Next"  HREF="000578.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1102 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1102%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200812252132.mBPLWd9H032537%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1102 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 25 22:32:39 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000576.html">[Griffith-svn] r1101 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000578.html">[Griffith-svn] r1103 - in branches/0.9.x: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#577">[ date ]</a>
+              <a href="thread.html#577">[ thread ]</a>
+              <a href="subject.html#577">[ subject ]</a>
+              <a href="author.html#577">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-12-25 22:32:03 +0100 (Thu, 25 Dec 2008)
+New Revision: 1102
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+Log:
+Cinematografo movie plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-12-25 20:59:08 UTC (rev 1101)
++++ branches/0.9.x/ChangeLog	2008-12-25 21:32:03 UTC (rev 1102)
+@@ -7,6 +7,7 @@
+ 
+ 2008-12-25  Michael Jahn
+ 	* [#309373] export to pdf
++	* Cinematografo movie plugin updated
+ 
+ 2008-12-19  Michael Jahn
+ 	* OFDb, IMDB-de movie plugin updated
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCinematografo.py	2008-12-25 20:59:08 UTC (rev 1101)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCinematografo.py	2008-12-25 21:32:03 UTC (rev 1102)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#380;arowski
++# Copyright (c) 2005-2008 Vasco Nunes, Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -21,7 +21,7 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie, string
++import gutils, movie, string, re
+ 
+ plugin_name = &quot;Cinematografo&quot;
+ plugin_description = &quot;Rivista del Cinematografo dal 1928&quot;
+@@ -29,124 +29,249 @@
+ plugin_language = _(&quot;Italian&quot;)
+ plugin_author = &quot;Vasco Nunes, Piotr O&#380;arowski&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.1&quot;
++plugin_version = &quot;1.2&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+ 		self.encode='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?codice=%s">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?codice=%s</A>&quot; % str(self.movie_id)
++		self.url = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=%s">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=%s</A>&quot; % str(self.movie_id)
+ 
+ 	def get_image(self):
+-		&quot;Find the film's poster image&quot;
+-		tmp_poster = gutils.trim(self.page, &quot;../images_locandine/%s/&quot;%self.movie_id, &quot;.JPG\&quot;&quot;)
++		# Find the film's poster image
++		tmp_poster = self.regextrim(self.page, &quot;../images_locandine/%s/&quot; % self.movie_id, &quot;.(JPG|jpg)\&quot;&quot;)
+ 		if tmp_poster != &quot;&quot;:
+-			self.image_url = &quot;<A HREF="http://www.cinematografo.it/bancadati/images_locandine/%s/%s.JPG">http://www.cinematografo.it/bancadati/images_locandine/%s/%s.JPG</A>&quot; % (self.movie_id, tmp_poster)
++			self.image_url = &quot;<A HREF="http://www.cinematografo.it/bancadati/images_locandine/%s/%s.jpg">http://www.cinematografo.it/bancadati/images_locandine/%s/%s.jpg</A>&quot; % (self.movie_id, tmp_poster)
+ 		else:
+ 			self.image_url=&quot;&quot;
+ 
+ 	def get_o_title(self):
+-		&quot;Find the film's original title&quot;
++		# Find the film's original title
+ 		self.o_title = gutils.trim(self.page, &quot;&gt;Titolo Originale&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+ 		self.o_title = string.capwords(self.o_title)
++		# if nothing found, use the title
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, &quot;&lt;!--TITOLO--&gt;&quot;, &quot;&lt;!--FINE TITOLO--&gt;&quot;)
++			self.o_title = gutils.trim(self.o_title, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)
+ 
+ 	def get_title(self):
+-		&quot;&quot;&quot;Find the film's local title.
+-		Probably the original title translation&quot;&quot;&quot;
++		# Find the film's local title.
++		# Probably the original title translation
+ 		self.title = gutils.trim(self.page, &quot;&lt;!--TITOLO--&gt;&quot;, &quot;&lt;!--FINE TITOLO--&gt;&quot;)
+ 		self.title = gutils.trim(self.title, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)
+-		self.title = string.capwords(self.title)
+ 
+ 	def get_director(self):
+-		&quot;Find the film's director&quot;
++		# Find the film's director
+ 		self.director = gutils.trim(self.page, &quot;&gt;Regia&quot;, &quot;Attori&lt;&quot;)
+ 		self.director = self.director.replace(&quot;&nbsp;&nbsp;&quot;, &quot;&nbsp;&quot;)
+ 		self.director = gutils.strip_tags(self.director)
+ 		self.director = string.strip(self.director)
+ 
+ 	def get_plot(self):
+-		&quot;Find the film's plot&quot;
++		# Find the film's plot
+ 		self.plot = gutils.trim(self.page, &quot;\&quot;fontYellowB\&quot;&gt;Trama&lt;/font&gt;&quot;, &quot;\n&quot;)
+ 
+ 	def get_year(self):
+-		&quot;Find the film's year&quot;
++		# Find the film's year
+ 		self.year = gutils.trim(self.page, &quot;&gt;Anno&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+-		self.year = gutils.after(self.year, &quot;\n                  &quot;)
+-		self.year = gutils.before(self.year, &quot;\n&quot;)
++		self.year = gutils.digits_only(gutils.clean(self.year))
+ 
+ 	def get_runtime(self):
+-		&quot;Find the film's running time&quot;
++		# Find the film's running time
+ 		self.runtime = gutils.trim(self.page, &quot;&gt;Durata&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+-		self.runtime = gutils.after(self.runtime, &quot;\n                  &quot;)
+-		self.runtime = gutils.before(self.runtime, &quot;\n&quot;)
++		self.runtime = gutils.digits_only(gutils.clean(self.runtime))
+ 
+ 	def get_genre(self):
+-		&quot;Find the film's genre&quot;
++		# Find the film's genre
+ 		self.genre = gutils.trim(self.page, &quot;&gt;Genere&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;).lower()
+ 
+ 	def get_cast(self):
+-		&quot;Find the actors. Try to make it comma separated.&quot;
+-		self.cast = gutils.trim(self.page, &quot;&gt;Attori&lt;/font&gt;&quot;, &quot;\n&quot;)
++		# Find the actors. Try to make it comma separated.
++		self.cast = self.regextrim(self.page, &quot;&gt;Attori&lt;/font&gt;&quot;, '(&lt;font class=&quot;fontViolaB&quot;&gt;|\n)')
+ 		self.cast = string.replace(self.cast, &quot;target='_self'&gt;&quot;, &quot;\n&gt;&quot;)
+-		self.cast = string.replace(self.cast, &quot;&nbsp;&nbsp;&quot;, ' ')
+-		self.cast = string.replace(self.cast, &quot;&lt;a&gt;&quot;,_(&quot; as &quot;))
++		self.cast = string.replace(self.cast, &quot;&lt;a&gt;&quot;,_(&quot; as &quot;).encode('utf8'))
+ 		self.cast = string.replace(self.cast, &quot;&lt;/tr&gt;&lt;tr&gt;&quot;, '\n')
+ 		self.cast = string.replace(self.cast, &quot;...vedi il resto del cast&quot;, '')
++		self.cast = gutils.clean(self.cast)
++		self.cast = string.replace(self.cast, &quot;&nbsp;&nbsp;&quot;, ' ')
++		self.cast = re.sub('[ ]+', ' ', self.cast)
++		self.cast = re.sub('\n[ ]+', '\n', self.cast)
+ 
+ 	def get_classification(self):
+-		&quot;Find the film's classification&quot;
+-		self.classification = &quot;&quot;
++		# Find the film's classification
++		self.classification = ''
+ 
+ 	def get_studio(self):
+-		&quot;Find the studio&quot;
+-		self.studio = string.capwords(gutils.trim(self.page, &quot;&gt;Distribuzione&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;))
++		# Find the studio
++		self.studio = string.capwords(gutils.clean(gutils.trim(self.page, &quot;&gt;Distribuzione&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)))
+ 
+ 	def get_o_site(self):
+-		&quot;Find the film's oficial site&quot;
+-		self.o_site = &quot;&quot;
++		# Find the film's oficial site
++		self.o_site = ''
+ 
+ 	def get_site(self):
+-		&quot;Find the film's imdb details page&quot;
++		# Find the film's imdb details page
+ 		self.site = self.url
+ 
+ 	def get_trailer(self):
+-		&quot;Find the film's trailer page or location&quot;
++		# Find the film's trailer page or location
+ 		self.trailer = &quot;&quot;
+ 
+ 	def get_country(self):
+-		&quot;Find the film's country&quot;
++		# Find the film's country
+ 		self.country = gutils.trim(self.page, &quot;&gt;Origine&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+ 
+ 	def get_rating(self):
+-		&quot;&quot;&quot;Find the film's rating. From 0 to 10.
+-		Convert if needed when assigning.&quot;&quot;&quot;
++		# Find the film's rating. From 0 to 10.
++		# Convert if needed when assigning.
+ 		self.rating = 0
+ 
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
+ class SearchPlugin(movie.SearchMovie):
+-	&quot;A movie search object&quot;
++	# A movie search object
+ 	def __init__(self):
+ 		self.encode='iso-8859-1'
+-		self.original_url_search = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/trovatitoli.jsp?tipo=CONTIENEPAROLE&amp;word=">http://www.cinematografo.it/bancadati/consultazione/trovatitoli.jsp?tipo=CONTIENEPAROLE&amp;word=</A>&quot;
++		self.original_url_search   = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/trovatitoli.jsp?tipo=CONTIENEPAROLE&amp;word=">http://www.cinematografo.it/bancadati/consultazione/trovatitoli.jsp?tipo=CONTIENEPAROLE&amp;word=</A>&quot;
+ 		self.translated_url_search = self.original_url_search
+ 
+ 	def search(self, parent_window):
+-		&quot;Perform the web search&quot;
++		# Perform the web search
+ 		self.open_search(parent_window)
+ 		self.sub_search()
+ 		return self.page
+ 
+ 	def sub_search(self):
+-		&quot;Isolating just a portion (with the data we want) of the results&quot;
+-		self.page = gutils.trim(self.page, &quot;&lt;td valign=\&quot;top\&quot; width=\&quot;73%\&quot; bgcolor=\&quot;#4d4d4d\&quot;&gt;&quot;, &quot;&lt;/td&gt;&quot;)
++		# Isolating just a portion (with the data we want) of the results
++		self.page = gutils.trim(self.page, '&lt;td valign=&quot;top&quot; width=&quot;73%&quot; bgcolor=&quot;#4d4d4d&quot;&gt;', '&lt;/td&gt;')
+ 
+ 	def get_searches(self):
+-		&quot;Try to find both id and film title for each search result&quot;
++		# Try to find both id and film title for each search result
+ 		elements = string.split(self.page, &quot;&lt;li&gt;&quot;)
+ 		self.number_results = elements[-1]
+ 
+ 		if (elements[0] != ''):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element, &quot;?codice=&quot;, &quot;\&quot;&gt;&quot;))
+-				self.titles.append(gutils.convert_entities(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)))
++				id = gutils.trim(element, &quot;?codice=&quot;, &quot;\&quot;&gt;&quot;)
++				if id &lt;&gt; '':
++					self.ids.append(id)
++					self.titles.append(gutils.convert_entities(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)))
+ 		else:
+ 			self.number_results = 0
++
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky'	: [ 12, 12 ],
++		'per&#242;'	: [  6,  6 ]
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'47931' : { 
++			'title' 			: 'Rocky Balboa',
++			'o_title' 			: 'Rocky Balboa',
++			'director'			: 'Sylvester Stallone',
++			'plot' 				: True,
++			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Tim Carr' + _(' as ') + 'Buddy\n\
++James Binns' + _(' as ') + 'Procuratore\n\
++Rick Collum' + _(' as ') + 'Impiegato nell\'ufficio\n\
++Michael Ahl' + _(' as ') + 'Proprietario del ristorante\n\
++Nancy de Zutter' + _(' as ') + 'Proprietaria del ristorante\n\
++Peter Defeo' + _(' as ') + 'Venditore\n\
++Angela Boyd' + _(' as ') + 'Ragazza ubriaca al banco del bar\n\
++Ron Borges' + _(' as ') + 'Reporter\n\
++A.J. Benza' + _(' as ') + 'L.C. Luco\n\
++Frank Bednarz' + _(' as ') + 'Tifoso al bordo del ring\n\
++Marvin Beck' + _(' as ') + 'Uomo d\'affari nel pub irlandese\n\
++Frank Hansen' + _(' as ') + 'Proprietario del bar\n\
++Tony Devon' + _(' as ') + 'Vicino di casa\n\
++Michael Buffer' + _(' as ') + 'Se stesso',
++			'country'			: 'USA',
++			'genre'				: 'drammatico, sportivo',
++			'classification'	: False,
++			'studio'			: '20th Century Fox Italia',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=47931">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=47931</A>',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 102,
++			'image'				: True,
++			'rating'			: False
++		},
++		'3996' : { 
++			'title' 			: 'Amor non ho, per&#242;... per&#242;...',
++			'o_title' 			: 'Amor non ho, per&#242;... per&#242;...',
++			'director'			: 'Giorgio Bianchi',
++			'plot' 				: True,
++			'cast'				: 'Renato Rascel' + _(' as ') + 'Teodoro\n\
++Gina Lollobrigida' + _(' as ') + 'Gina\n\
++Luigi Pavese' + _(' as ') + 'Antonio Scutipizzo\n\
++Aroldo Tieri' + _(' as ') + 'Giuliano\n\
++Carlo Ninchi' + _(' as ') + 'Maurizio\n\
++Kiki Urbani' + _(' as ') + 'Kiki, la ballerina\n\
++Adriana Danieli' + _(' as ') + 'Olga\n\
++Strelsa Brown' + _(' as ') + 'Mabel\n\
++Virgilio Riento' + _(' as ') + 'Il contadino\n\
++Gabriele Tinti' + _(' as ') + '(Gastone Tinti) Un componente dell\'orchestra\n\
++Guglielmo Barnab&#242;' + _(' as ') + '\n\
++Giuseppe De Martino' + _(' as ') + '\n\
++Raimondo Vianello' + _(' as ') + '(Riccardo Vianello) \n\
++Maria Carla Vittone' + _(' as ') + '\n\
++Marco Tulli' + _(' as ') + '\n\
++Giuseppe Ricagno' + _(' as ') + '\n\
++Luciano Rebeggiani' + _(' as ') + '\n\
++Kurt Lary' + _(' as ') + '\n\
++Giovanni Lesa' + _(' as ') + '\n\
++Riccardo Ferri' + _(' as ') + '\n\
++Pia De Doses' + _(' as ') + '\n\
++Guido Barbarisi' + _(' as ') + '\n\
++Galeazzo Benti as',
++			'country'			: 'ITALIA',
++			'genre'				: 'commedia',
++			'classification'	: False,
++			'studio'			: 'Minervafilm - Mfd Home Video',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=3996">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=3996</A>',
++			'trailer'			: False,
++			'year'				: 1951,
++			'notes'				: False,
++			'runtime'			: 90,
++			'image'				: False,
++			'rating'			: False
++		},
++	}
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-12-25 20:59:08 UTC (rev 1101)
++++ trunk/ChangeLog	2008-12-25 21:32:03 UTC (rev 1102)
+@@ -7,6 +7,7 @@
+ 
+ 2008-12-25  Michael Jahn
+ 	* [#309373] export to pdf
++	* Cinematografo movie plugin updated
+ 
+ 2008-12-19  Michael Jahn
+ 	* OFDb, IMDB-de movie plugin updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2008-12-25 20:59:08 UTC (rev 1101)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2008-12-25 21:32:03 UTC (rev 1102)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#380;arowski
++# Copyright (c) 2005-2008 Vasco Nunes, Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -21,133 +21,244 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie, string
++import gutils, movie, string, re
+ 
+-plugin_name = &quot;Cinematografo&quot;
+-plugin_description = &quot;Rivista del Cinematografo dal 1928&quot;
+-plugin_url = &quot;www.cinematografo.it&quot;
+-plugin_language = _(&quot;Italian&quot;)
+-plugin_author = &quot;Vasco Nunes, Piotr O&#380;arowski&quot;
++plugin_name         = &quot;Cinematografo&quot;
++plugin_description  = &quot;Rivista del Cinematografo dal 1928&quot;
++plugin_url          = &quot;www.cinematografo.it&quot;
++plugin_language     = _(&quot;Italian&quot;)
++plugin_author       = &quot;Vasco Nunes, Piotr O&#380;arowski&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.1&quot;
++plugin_version      = &quot;1.2&quot;
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.encode='iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?codice=%s">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?codice=%s</A>&quot; % str(self.movie_id)
++        self.url = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=%s">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=%s</A>&quot; % str(self.movie_id)
+ 
+     def get_image(self):
+-        &quot;Find the film's poster image&quot;
+-        tmp_poster = gutils.trim(self.page, &quot;../images_locandine/%s/&quot;%self.movie_id, &quot;.JPG\&quot;&quot;)
++        # Find the film's poster image
++        tmp_poster = gutils.regextrim(self.page, &quot;../images_locandine/%s/&quot; % self.movie_id, &quot;.(JPG|jpg)\&quot;&quot;)
+         if tmp_poster != &quot;&quot;:
+-            self.image_url = &quot;<A HREF="http://www.cinematografo.it/bancadati/images_locandine/%s/%s.JPG">http://www.cinematografo.it/bancadati/images_locandine/%s/%s.JPG</A>&quot; % (self.movie_id, tmp_poster)
++            self.image_url = &quot;<A HREF="http://www.cinematografo.it/bancadati/images_locandine/%s/%s.jpg">http://www.cinematografo.it/bancadati/images_locandine/%s/%s.jpg</A>&quot; % (self.movie_id, tmp_poster)
+         else:
+             self.image_url=&quot;&quot;
+ 
+     def get_o_title(self):
+-        &quot;Find the film's original title&quot;
++        # Find the film's original title
+         self.o_title = gutils.trim(self.page, &quot;&gt;Titolo Originale&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+         self.o_title = string.capwords(self.o_title)
++        # if nothing found, use the title
++        if self.o_title == '':
++            self.o_title = gutils.trim(self.page, &quot;&lt;!--TITOLO--&gt;&quot;, &quot;&lt;!--FINE TITOLO--&gt;&quot;)
++            self.o_title = gutils.trim(self.o_title, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)
+ 
+     def get_title(self):
+-        &quot;&quot;&quot;Find the film's local title.
+-        Probably the original title translation&quot;&quot;&quot;
++        # Find the film's local title.
++        # Probably the original title translation
+         self.title = gutils.trim(self.page, &quot;&lt;!--TITOLO--&gt;&quot;, &quot;&lt;!--FINE TITOLO--&gt;&quot;)
+         self.title = gutils.trim(self.title, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)
+-        self.title = string.capwords(self.title)
+ 
+     def get_director(self):
+-        &quot;Find the film's director&quot;
++        # Find the film's director
+         self.director = gutils.trim(self.page, &quot;&gt;Regia&quot;, &quot;Attori&lt;&quot;)
+         self.director = self.director.replace(&quot;&nbsp;&nbsp;&quot;, &quot;&nbsp;&quot;)
+         self.director = gutils.strip_tags(self.director)
+         self.director = string.strip(self.director)
+ 
+     def get_plot(self):
+-        &quot;Find the film's plot&quot;
++        # Find the film's plot
+         self.plot = gutils.trim(self.page, &quot;\&quot;fontYellowB\&quot;&gt;Trama&lt;/font&gt;&quot;, &quot;\n&quot;)
+ 
+     def get_year(self):
+-        &quot;Find the film's year&quot;
++        # Find the film's year
+         self.year = gutils.trim(self.page, &quot;&gt;Anno&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+-        self.year = gutils.after(self.year, &quot;\n                  &quot;)
+-        self.year = gutils.before(self.year, &quot;\n&quot;)
++        self.year = gutils.digits_only(gutils.clean(self.year))
+ 
+     def get_runtime(self):
+-        &quot;Find the film's running time&quot;
++        # Find the film's running time
+         self.runtime = gutils.trim(self.page, &quot;&gt;Durata&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+-        self.runtime = gutils.after(self.runtime, &quot;\n                  &quot;)
+-        self.runtime = gutils.before(self.runtime, &quot;\n&quot;)
++        self.runtime = gutils.digits_only(gutils.clean(self.runtime))
+ 
+     def get_genre(self):
+-        &quot;Find the film's genre&quot;
++        # Find the film's genre
+         self.genre = gutils.trim(self.page, &quot;&gt;Genere&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;).lower()
+ 
+     def get_cast(self):
+-        &quot;Find the actors. Try to make it comma separated.&quot;
+-        self.cast = gutils.trim(self.page, &quot;&gt;Attori&lt;/font&gt;&quot;, &quot;\n&quot;)
++        # Find the actors. Try to make it comma separated.
++        self.cast = gutils.regextrim(self.page, &quot;&gt;Attori&lt;/font&gt;&quot;, '(&lt;font class=&quot;fontViolaB&quot;&gt;|\n)')
+         self.cast = string.replace(self.cast, &quot;target='_self'&gt;&quot;, &quot;\n&gt;&quot;)
+-        self.cast = string.replace(self.cast, &quot;&nbsp;&nbsp;&quot;, ' ')
+-        self.cast = string.replace(self.cast, &quot;&lt;a&gt;&quot;,_(&quot; as &quot;))
++        self.cast = string.replace(self.cast, &quot;&lt;a&gt;&quot;,_(&quot; as &quot;).encode('utf8'))
+         self.cast = string.replace(self.cast, &quot;&lt;/tr&gt;&lt;tr&gt;&quot;, '\n')
+         self.cast = string.replace(self.cast, &quot;...vedi il resto del cast&quot;, '')
++        self.cast = gutils.clean(self.cast)
++        self.cast = string.replace(self.cast, &quot;&nbsp;&nbsp;&quot;, ' ')
++        self.cast = re.sub('[ ]+', ' ', self.cast)
++        self.cast = re.sub('\n[ ]+', '\n', self.cast)
+ 
+     def get_classification(self):
+-        &quot;Find the film's classification&quot;
+-        self.classification = &quot;&quot;
++        # Find the film's classification
++        self.classification = ''
+ 
+     def get_studio(self):
+-        &quot;Find the studio&quot;
+-        self.studio = string.capwords(gutils.trim(self.page, &quot;&gt;Distribuzione&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;))
++        # Find the studio
++        self.studio = string.capwords(gutils.clean(gutils.trim(self.page, &quot;&gt;Distribuzione&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)))
+ 
+     def get_o_site(self):
+-        &quot;Find the film's oficial site&quot;
+-        self.o_site = &quot;&quot;
++        # Find the film's oficial site
++        self.o_site = ''
+ 
+     def get_site(self):
+-        &quot;Find the film's imdb details page&quot;
++        # Find the film's imdb details page
+         self.site = self.url
+ 
+     def get_trailer(self):
+-        &quot;Find the film's trailer page or location&quot;
++        # Find the film's trailer page or location
+         self.trailer = &quot;&quot;
+ 
+     def get_country(self):
+-        &quot;Find the film's country&quot;
++        # Find the film's country
+         self.country = gutils.trim(self.page, &quot;&gt;Origine&lt;/font&gt;&quot;, &quot;&lt;/tr&gt;&quot;)
+ 
+     def get_rating(self):
+-        &quot;&quot;&quot;Find the film's rating. From 0 to 10.
+-        Convert if needed when assigning.&quot;&quot;&quot;
++        # Find the film's rating. From 0 to 10.
++        # Convert if needed when assigning.
+         self.rating = 0
+ 
+ class SearchPlugin(movie.SearchMovie):
+-    &quot;A movie search object&quot;
++    # A movie search object
+     def __init__(self):
+         self.encode='iso-8859-1'
+         self.original_url_search = &quot;<A HREF="http://www.cinematografo.it/bancadati/consultazione/trovatitoli.jsp?tipo=CONTIENEPAROLE&amp;word=">http://www.cinematografo.it/bancadati/consultazione/trovatitoli.jsp?tipo=CONTIENEPAROLE&amp;word=</A>&quot;
+         self.translated_url_search = self.original_url_search
+ 
+     def search(self, parent_window):
+-        &quot;Perform the web search&quot;
+-        if not self.open_search(parent_window):
+-            return None
++        # Perform the web search
++        self.open_search(parent_window)
+         self.sub_search()
+         return self.page
+ 
+     def sub_search(self):
+-        &quot;Isolating just a portion (with the data we want) of the results&quot;
+-        self.page = gutils.trim(self.page, &quot;&lt;td valign=\&quot;top\&quot; width=\&quot;73%\&quot; bgcolor=\&quot;#4d4d4d\&quot;&gt;&quot;, &quot;&lt;/td&gt;&quot;)
++        # Isolating just a portion (with the data we want) of the results
++        self.page = gutils.trim(self.page, '&lt;td valign=&quot;top&quot; width=&quot;73%&quot; bgcolor=&quot;#4d4d4d&quot;&gt;', '&lt;/td&gt;')
+ 
+     def get_searches(self):
+-        &quot;Try to find both id and film title for each search result&quot;
++        # Try to find both id and film title for each search result
+         elements = string.split(self.page, &quot;&lt;li&gt;&quot;)
+         self.number_results = elements[-1]
+ 
+         if (elements[0] != ''):
+             for element in elements:
+-                self.ids.append(gutils.trim(element, &quot;?codice=&quot;, &quot;\&quot;&gt;&quot;))
+-                self.titles.append(gutils.convert_entities(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)))
++                id = gutils.trim(element, &quot;?codice=&quot;, &quot;\&quot;&gt;&quot;)
++                if id &lt;&gt; '':
++                    self.ids.append(id)
++                    self.titles.append(gutils.convert_entities(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&quot;)))
+         else:
+             self.number_results = 0
++
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky' : [ 12, 12 ],
++        'per&#242;'  : [  6,  6 ]
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '47931' : { 
++            'title'             : 'Rocky Balboa',
++            'o_title'           : 'Rocky Balboa',
++            'director'          : 'Sylvester Stallone',
++            'plot'              : True,
++            'cast'              : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Tim Carr' + _(' as ') + 'Buddy\n\
++James Binns' + _(' as ') + 'Procuratore\n\
++Rick Collum' + _(' as ') + 'Impiegato nell\'ufficio\n\
++Michael Ahl' + _(' as ') + 'Proprietario del ristorante\n\
++Nancy de Zutter' + _(' as ') + 'Proprietaria del ristorante\n\
++Peter Defeo' + _(' as ') + 'Venditore\n\
++Angela Boyd' + _(' as ') + 'Ragazza ubriaca al banco del bar\n\
++Ron Borges' + _(' as ') + 'Reporter\n\
++A.J. Benza' + _(' as ') + 'L.C. Luco\n\
++Frank Bednarz' + _(' as ') + 'Tifoso al bordo del ring\n\
++Marvin Beck' + _(' as ') + 'Uomo d\'affari nel pub irlandese\n\
++Frank Hansen' + _(' as ') + 'Proprietario del bar\n\
++Tony Devon' + _(' as ') + 'Vicino di casa\n\
++Michael Buffer' + _(' as ') + 'Se stesso',
++            'country'           : 'USA',
++            'genre'             : 'drammatico, sportivo',
++            'classification'    : False,
++            'studio'            : '20th Century Fox Italia',
++            'o_site'            : False,
++            'site'              : '<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=47931">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=47931</A>',
++            'trailer'           : False,
++            'year'              : 2006,
++            'notes'             : False,
++            'runtime'           : 102,
++            'image'             : True,
++            'rating'            : False
++        },
++        '3996' : { 
++            'title'             : 'Amor non ho, per&#242;... per&#242;...',
++            'o_title'           : 'Amor non ho, per&#242;... per&#242;...',
++            'director'          : 'Giorgio Bianchi',
++            'plot'              : True,
++            'cast'              : 'Renato Rascel' + _(' as ') + 'Teodoro\n\
++Gina Lollobrigida' + _(' as ') + 'Gina\n\
++Luigi Pavese' + _(' as ') + 'Antonio Scutipizzo\n\
++Aroldo Tieri' + _(' as ') + 'Giuliano\n\
++Carlo Ninchi' + _(' as ') + 'Maurizio\n\
++Kiki Urbani' + _(' as ') + 'Kiki, la ballerina\n\
++Adriana Danieli' + _(' as ') + 'Olga\n\
++Strelsa Brown' + _(' as ') + 'Mabel\n\
++Virgilio Riento' + _(' as ') + 'Il contadino\n\
++Gabriele Tinti' + _(' as ') + '(Gastone Tinti) Un componente dell\'orchestra\n\
++Guglielmo Barnab&#242;' + _(' as ') + '\n\
++Giuseppe De Martino' + _(' as ') + '\n\
++Raimondo Vianello' + _(' as ') + '(Riccardo Vianello) \n\
++Maria Carla Vittone' + _(' as ') + '\n\
++Marco Tulli' + _(' as ') + '\n\
++Giuseppe Ricagno' + _(' as ') + '\n\
++Luciano Rebeggiani' + _(' as ') + '\n\
++Kurt Lary' + _(' as ') + '\n\
++Giovanni Lesa' + _(' as ') + '\n\
++Riccardo Ferri' + _(' as ') + '\n\
++Pia De Doses' + _(' as ') + '\n\
++Guido Barbarisi' + _(' as ') + '\n\
++Galeazzo Benti as',
++            'country'           : 'ITALIA',
++            'genre'             : 'commedia',
++            'classification'    : False,
++            'studio'            : 'Minervafilm - Mfd Home Video',
++            'o_site'            : False,
++            'site'              : '<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=3996">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=3996</A>',
++            'trailer'           : False,
++            'year'              : 1951,
++            'notes'             : False,
++            'runtime'           : 90,
++            'image'             : False,
++            'rating'            : False
++        },
++    }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000576.html">[Griffith-svn] r1101 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000578.html">[Griffith-svn] r1103 - in branches/0.9.x: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#577">[ date ]</a>
+              <a href="thread.html#577">[ thread ]</a>
+              <a href="subject.html#577">[ subject ]</a>
+              <a href="author.html#577">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

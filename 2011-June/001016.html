@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1557 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1557%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110616214731.4F7E248140B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001015.html">
+   <LINK REL="Next"  HREF="001017.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1557 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1557%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110616214731.4F7E248140B%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1557 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 16 23:47:31 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001015.html">[Griffith-svn] r1556 - in trunk: . lib/db
+</A></li>
+        <LI>Next message: <A HREF="001017.html">[Griffith-svn] r1558 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1016">[ date ]</a>
+              <a href="thread.html#1016">[ thread ]</a>
+              <a href="subject.html#1016">[ subject ]</a>
+              <a href="author.html#1016">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-06-16 23:47:30 +0200 (Thu, 16 Jun 2011)
+New Revision: 1557
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/quick_filter.py
+Log:
+[#721033] Wrong behaviour
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-06-13 20:46:47 UTC (rev 1556)
++++ trunk/ChangeLog	2011-06-16 21:47:30 UTC (rev 1557)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-06-16  Michael Jahn
++	* [#721033] Wrong behaviour
++
+ 2011-06-13  Michael Jahn
+ 	* [#789246] movies.studio field length too short in postgres
+ 	  added a LengthValidator which truncates text fields
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-06-13 20:46:47 UTC (rev 1556)
++++ trunk/griffith	2011-06-16 21:47:30 UTC (rev 1557)
+@@ -414,11 +414,11 @@
+                     movie.seen = True
+                     self.db.session.add(movie)
+                     self.db.session.commit()
+-            for this_iter in self.selected_iter:
+-                self.treemodel.set_value(this_iter,6,movie.seen)
+-            self.treeview_clicked()
+-            self.populate_treeview()
+-            self.count_statusbar()
++        for this_iter in self.selected_iter:
++            val = self.treemodel.get_value(this_iter,6)
++            self.treemodel.set_value(this_iter, 6, not val)
++        self.treeview_clicked()
++        self.count_statusbar()
+ 
+     def sugest_movie(self, *args):
+         if not self.widgets['menu']['not_seen_movies'].get_active():
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2011-06-13 20:46:47 UTC (rev 1556)
++++ trunk/lib/quick_filter.py	2011-06-16 21:47:30 UTC (rev 1557)
+@@ -54,7 +54,6 @@
+     # prevent multiple treeview updates
+     self.initialized = False
+     self.widgets['filter']['text'].set_text('')
+-    self.widgets['filter']['criteria'].set_active(0)
+     self.widgets['filter']['collection'].set_active(0)
+     self.widgets['filter']['advfilter'].set_active(0)
+     self.initialized = True
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001015.html">[Griffith-svn] r1556 - in trunk: . lib/db
+</A></li>
+	<LI>Next message: <A HREF="001017.html">[Griffith-svn] r1558 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1016">[ date ]</a>
+              <a href="thread.html#1016">[ thread ]</a>
+              <a href="subject.html#1016">[ subject ]</a>
+              <a href="author.html#1016">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

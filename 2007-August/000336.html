@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r825 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r825%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200708042041.l74Kfl27012042%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000335.html">
+   <LINK REL="Next"  HREF="000337.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r825 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r825%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200708042041.l74Kfl27012042%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r825 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug  4 22:41:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000335.html">[Griffith-svn] r824 - in trunk: . export_templates/html_table	export_templates/html_table/data export_templates/html_tables	export_templates/html_tables/data lib lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000337.html">[Griffith-svn] r826 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-08-04 22:41:46 +0200 (Sat, 04 Aug 2007)
+New Revision: 825
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/loan.py
+Log:
+Fixed volume/colection loaning problem
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-08-04 13:31:15 UTC (rev 824)
++++ trunk/ChangeLog	2007-08-04 20:41:46 UTC (rev 825)
+@@ -8,6 +8,7 @@
+ 	* Removing tags function fixed
+ 	* Copy all files from &quot;data&quot; subdirectory to the exported location in HTML export plugin
+ 	  + add index.htm files to html_table{,s} templates
++	* Fixed volume/colection loaning problem
+ 
+ 2007-08-01  Piotr O&#380;arowski
+ 	* Translation files synchronized with Rosetta
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-08-04 13:31:15 UTC (rev 824)
++++ trunk/NEWS	2007-08-04 20:41:46 UTC (rev 825)
+@@ -1,5 +1,6 @@
+ Griffith 0.9.4
+ ==============
++* Fixed volume/colection loaning problem
+ * Support for different database names with sqlite
+ * Updated movie plugins: OFDb, PTGate, Kino.de, DVD-Palace and IMDB-de
+ * New movie plugins: FilmTipset
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2007-08-04 13:31:15 UTC (rev 824)
++++ trunk/lib/loan.py	2007-08-04 20:41:46 UTC (rev 825)
+@@ -82,6 +82,13 @@
+ def return_loan(self):
+ 	if self._movie_id:
+ 		loan = self.db.Loan.get_by(movie_id=self._movie_id, return_date=None)
++		if loan is None:
++			movie = self.db.Movie.get_by(movie_id=self._movie_id)
++			if movie.collection is not None and movie.collection.loaned:
++				#print len(movie.loans) # FIXME: why it's == 0? (mappers problem?)
++				loan = self.db.Loan.get_by(collection_id=movie.collection.collection_id, return_date=None)
++			if movie.volume is not None and movie.volume.loaned:
++				loan = self.db.Loan.get_by(volume_id=movie.volume.volume_id, return_date=None)
+ 		if loan and loan.set_returned():
+ 			self.treeview_clicked()
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000335.html">[Griffith-svn] r824 - in trunk: . export_templates/html_table	export_templates/html_table/data export_templates/html_tables	export_templates/html_tables/data lib lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000337.html">[Griffith-svn] r826 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

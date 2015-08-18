@@ -1,0 +1,433 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r946 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r946%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200804121403.m3CE3w1d026091%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000431.html">
+   <LINK REL="Next"  HREF="000433.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r946 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r946%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200804121403.m3CE3w1d026091%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r946 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 12 16:03:58 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000431.html">[Griffith-svn] r945 - trunk/po
+</A></li>
+        <LI>Next message: <A HREF="000433.html">[Griffith-svn] r947 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#432">[ date ]</a>
+              <a href="thread.html#432">[ thread ]</a>
+              <a href="subject.html#432">[ subject ]</a>
+              <a href="author.html#432">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-04-12 16:03:43 +0200 (Sat, 12 Apr 2008)
+New Revision: 946
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+updated OFDb plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-04-03 20:31:20 UTC (rev 945)
++++ branches/0.9.x/ChangeLog	2008-04-12 14:03:43 UTC (rev 946)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-04-13  Michael Jahn
++	* updated OFDb plugin
++
+ 2008-04-01  Michael Jahn
+ 	* fixed html export if sorted by collection, media, video codec or volume
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-04-03 20:31:20 UTC (rev 945)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-04-12 14:03:43 UTC (rev 946)
+@@ -17,13 +17,13 @@
+ plugin_language = _(&quot;German&quot;)
+ plugin_author = &quot;Christian Sagmueller, Jessica Katharina Parth&quot;
+ plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&quot;
+-plugin_version = &quot;0.8&quot;
++plugin_version = &quot;0.9&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode='utf-8'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=%s">http://www.ofdb.de/view.php?page=film&amp;fid=%s</A>&quot; % str(self.movie_id)
++		self.url = &quot;<A HREF="http://www.ofdb.de/%s">http://www.ofdb.de/%s</A>&quot; % str(self.movie_id)
+ 
+ 	def initialize(self):
+ 		# OFDb didn't provide the runtime, studio and classification but it provide a link to the german imdb entry
+@@ -35,12 +35,12 @@
+ 			self.imdb_page = ''
+ 
+ 	def get_image(self):
+-		self.image_url = &quot;<A HREF="http://www.ofdb.de/images/film/">http://www.ofdb.de/images/film/</A>&quot; + gutils.trim( self.page, &quot;&lt;img src=\&quot;images/film/&quot;, &quot;\&quot;&quot; )
++		self.image_url = &quot;<A HREF="http://img.ofdb.de/film/">http://img.ofdb.de/film/</A>&quot; + gutils.trim(self.page, 'img src=&quot;<A HREF="http://img.ofdb.de/film/">http://img.ofdb.de/film/</A>', '&quot;' )
+ 		
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, 'Originaltitel:', '&lt;/tr&gt;')
++		self.o_title = gutils.clean(gutils.trim(self.page, 'Originaltitel:', '&lt;/tr&gt;'))
+ 		if self.o_title == '':
+-			self.o_title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
++			self.o_title = string.replace(self.o_title, '&nbsp;', '' )
+ 
+ 	def get_title(self):
+ 		self.title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
+@@ -49,8 +49,9 @@
+ 		self.director = gutils.trim(self.page,&quot;Regie: &quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+ 	def get_plot(self):
+-		storyid = self.regextrim(self.page, '([?]|[&amp;])sid=', '(&quot;&gt;|[&amp;])')
+-		story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s">http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s</A>&quot; % (str(self.movie_id),storyid))
++		storyid = self.regextrim(self.page, '&lt;a href=&quot;plot/', '(&quot;&gt;|[&amp;])')
++		if not storyid is None:
++			story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/plot/%s">http://www.ofdb.de/plot/%s</A>&quot; % (storyid))
+ 		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+ 	def get_year(self):
+@@ -71,7 +72,9 @@
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+-		cast_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s">http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s</A>&quot; % str(self.movie_id) )
++		movie_id_elements = string.split(self.movie_id, ',')
++		movie_id_elements[0] = string.replace(movie_id_elements[0], &quot;film/&quot;, &quot;&quot;)
++		cast_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s">http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s</A>&quot; % str(movie_id_elements[0]) )
+ 		self.cast = gutils.trim(cast_page, 'Darsteller&lt;/i&gt;', '&lt;/table&gt;')
+ 		self.cast = re.sub('(\n|\t|&nbsp;)', '', self.cast)
+ 		self.cast = string.replace(self.cast, '\t', '')
+@@ -92,7 +95,7 @@
+ 		self.o_site = &quot;&quot;
+ 
+ 	def get_site(self):
+-		self.site = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=">http://www.ofdb.de/view.php?page=film&amp;fid=</A>&quot; + str(self.movie_id)
++		self.site = self.url
+ 
+ 	def get_trailer(self):
+ 		self.trailer = &quot;&quot;
+@@ -121,9 +124,9 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search    = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=</A>&quot;
+-		self.translated_url_search    = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=</A>&quot;
+-		self.encode='iso-8859-1'
++		self.original_url_search   = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=OTitel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=OTitel&amp;SText=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=DTitel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=DTitel&amp;SText=</A>&quot;
++		self.encode='utf-8'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+@@ -138,10 +141,15 @@
+ 
+ 		if (elements[0]&lt;&gt;''):
+ 			for element in elements:
+-				elementid = gutils.digits_only( gutils.trim(element,'&lt;a href=&quot;view.php?page=film&amp;fid=','&quot;&gt;') )
+-				if elementid != 0:
++				elementid = gutils.trim(element,'&lt;a href=&quot;','&quot;')
++				if not elementid is None:
+ 					self.ids.append(elementid)
+-					self.titles.append(gutils.trim(element,'&quot;&gt;', '&lt;/a&gt;'))
++					elementname = gutils.clean(element)
++					p1 = string.find(elementname, '&gt;')
++					if p1 == -1:
++						self.titles.append(elementname)
++					else:
++						self.titles.append(elementname[p1+1:])
+ 
+ #
+ # Plugin Test
+@@ -166,7 +174,7 @@
+ 	#        * or the expected value
+ 	#
+ 	test_configuration = {
+-		'103013' : { 
++		'film/103013,Rocky%20Balboa' : { 
+ 			'title' 			: 'Rocky Balboa',
+ 			'o_title' 			: 'Rocky Balboa',
+ 			'director'			: 'Sylvester Stallone',
+@@ -200,7 +208,7 @@
+ Jody Giambelluca\n\
+ Frank Stallone\n\
+ Fran Pultro\n\
+-Michael Buffer\n\
++Michael Buffer as Ring Announcer\n\
+ Jack Lazzarado\n\
+ Marc Ratner\n\
+ Anthony Lato Jr.\n\
+@@ -232,7 +240,7 @@
+ 			'classification'	: False,
+ 			'studio'			: 'Metro-Goldwyn-Mayer (MGM)',
+ 			'o_site'			: False,
+-			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=103013">http://www.ofdb.de/view.php?page=film&amp;fid=103013</A>',
++			'site'				: '<A HREF="http://www.ofdb.de/film/103013,Rocky%20Balboa">http://www.ofdb.de/film/103013,Rocky%20Balboa</A>',
+ 			'trailer'			: False,
+ 			'year'				: 2006,
+ 			'notes'				: False,
+@@ -240,7 +248,7 @@
+ 			'image'				: True,
+ 			'rating'			: 8
+ 		},
+-		'22489' : { 
++		'film/22489,Ein-Gl%C3%BCckliches-Jahr' : { 
+ 			'title' 			: 'Gl&#252;ckliches Jahr, Ein',
+ 			'o_title' 			: 'Bonne ann&#233;e, La',
+ 			'director'			: 'Claude Lelouch',
+@@ -272,7 +280,7 @@
+ 			'classification'	: False,
+ 			'studio'			: 'Les Films 13',
+ 			'o_site'			: False,
+-			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=22489">http://www.ofdb.de/view.php?page=film&amp;fid=22489</A>',
++			'site'				: '<A HREF="http://www.ofdb.de/film/22489,Ein-Gl%C3%BCckliches-Jahr">http://www.ofdb.de/film/22489,Ein-Gl%C3%BCckliches-Jahr</A>',
+ 			'trailer'			: False,
+ 			'year'				: 1973,
+ 			'notes'				: False,
+@@ -280,7 +288,7 @@
+ 			'image'				: True,
+ 			'rating'			: 7
+ 		},
+-		'54088' : { 
++		'film/54088,Arahan' : { 
+ 			'title' 			: 'Arahan',
+ 			'o_title' 			: 'Arahan jangpung daejakjeon',
+ 			'director'			: 'Ryoo Seung-wan',
+@@ -308,7 +316,7 @@
+ 			'classification'	: '16',
+ 			'studio'			: 'Fun and Happiness',
+ 			'o_site'			: False,
+-			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=54088">http://www.ofdb.de/view.php?page=film&amp;fid=54088</A>',
++			'site'				: '<A HREF="http://www.ofdb.de/film/54088,Arahan">http://www.ofdb.de/film/54088,Arahan</A>',
+ 			'trailer'			: False,
+ 			'year'				: 2004,
+ 			'notes'				: False,
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-04-03 20:31:20 UTC (rev 945)
++++ trunk/ChangeLog	2008-04-12 14:03:43 UTC (rev 946)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-04-13  Michael Jahn
++	* updated OFDb plugin
++
+ 2008-04-01  Michael Jahn
+ 	* fixed html export if sorted by collection, media, video codec or volume
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-04-03 20:31:20 UTC (rev 945)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-04-12 14:03:43 UTC (rev 946)
+@@ -17,13 +17,13 @@
+ plugin_language = _(&quot;German&quot;)
+ plugin_author = &quot;Christian Sagmueller, Jessica Katharina Parth&quot;
+ plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&quot;
+-plugin_version = &quot;0.8&quot;
++plugin_version = &quot;0.9&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode='utf-8'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=%s">http://www.ofdb.de/view.php?page=film&amp;fid=%s</A>&quot; % str(self.movie_id)
++		self.url = &quot;<A HREF="http://www.ofdb.de/%s">http://www.ofdb.de/%s</A>&quot; % str(self.movie_id)
+ 
+ 	def initialize(self):
+ 		# OFDb didn't provide the runtime, studio and classification but it provide a link to the german imdb entry
+@@ -35,12 +35,12 @@
+ 			self.imdb_page = ''
+ 
+ 	def get_image(self):
+-		self.image_url = &quot;<A HREF="http://www.ofdb.de/images/film/">http://www.ofdb.de/images/film/</A>&quot; + gutils.trim( self.page, &quot;&lt;img src=\&quot;images/film/&quot;, &quot;\&quot;&quot; )
++		self.image_url = &quot;<A HREF="http://img.ofdb.de/film/">http://img.ofdb.de/film/</A>&quot; + gutils.trim(self.page, 'img src=&quot;<A HREF="http://img.ofdb.de/film/">http://img.ofdb.de/film/</A>', '&quot;' )
+ 		
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, 'Originaltitel:', '&lt;/tr&gt;')
++		self.o_title = gutils.clean(gutils.trim(self.page, 'Originaltitel:', '&lt;/tr&gt;'))
+ 		if self.o_title == '':
+-			self.o_title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
++			self.o_title = string.replace(self.o_title, '&nbsp;', '' )
+ 
+ 	def get_title(self):
+ 		self.title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
+@@ -49,8 +49,9 @@
+ 		self.director = gutils.trim(self.page,&quot;Regie: &quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+ 	def get_plot(self):
+-		storyid = self.regextrim(self.page, '([?]|[&amp;])sid=', '(&quot;&gt;|[&amp;])')
+-		story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s">http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s</A>&quot; % (str(self.movie_id),storyid))
++		storyid = self.regextrim(self.page, '&lt;a href=&quot;plot/', '(&quot;&gt;|[&amp;])')
++		if not storyid is None:
++			story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/plot/%s">http://www.ofdb.de/plot/%s</A>&quot; % (storyid))
+ 		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+ 	def get_year(self):
+@@ -71,7 +72,9 @@
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+-		cast_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s">http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s</A>&quot; % str(self.movie_id) )
++		movie_id_elements = string.split(self.movie_id, ',')
++		movie_id_elements[0] = string.replace(movie_id_elements[0], &quot;film/&quot;, &quot;&quot;)
++		cast_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s">http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s</A>&quot; % str(movie_id_elements[0]) )
+ 		self.cast = gutils.trim(cast_page, 'Darsteller&lt;/i&gt;', '&lt;/table&gt;')
+ 		self.cast = re.sub('(\n|\t|&nbsp;)', '', self.cast)
+ 		self.cast = string.replace(self.cast, '\t', '')
+@@ -92,7 +95,7 @@
+ 		self.o_site = &quot;&quot;
+ 
+ 	def get_site(self):
+-		self.site = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=">http://www.ofdb.de/view.php?page=film&amp;fid=</A>&quot; + str(self.movie_id)
++		self.site = self.url
+ 
+ 	def get_trailer(self):
+ 		self.trailer = &quot;&quot;
+@@ -121,9 +124,9 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search    = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=</A>&quot;
+-		self.translated_url_search    = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=Titel&amp;SText=</A>&quot;
+-		self.encode='iso-8859-1'
++		self.original_url_search   = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=OTitel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=OTitel&amp;SText=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=DTitel&amp;SText=">http://www.ofdb.de/view.php?page=suchergebnis&amp;Kat=DTitel&amp;SText=</A>&quot;
++		self.encode='utf-8'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+@@ -138,10 +141,15 @@
+ 
+ 		if (elements[0]&lt;&gt;''):
+ 			for element in elements:
+-				elementid = gutils.digits_only( gutils.trim(element,'&lt;a href=&quot;view.php?page=film&amp;fid=','&quot;&gt;') )
+-				if elementid != 0:
++				elementid = gutils.trim(element,'&lt;a href=&quot;','&quot;')
++				if not elementid is None:
+ 					self.ids.append(elementid)
+-					self.titles.append(gutils.trim(element,'&quot;&gt;', '&lt;/a&gt;'))
++					elementname = gutils.clean(element)
++					p1 = string.find(elementname, '&gt;')
++					if p1 == -1:
++						self.titles.append(elementname)
++					else:
++						self.titles.append(elementname[p1+1:])
+ 
+ #
+ # Plugin Test
+@@ -166,7 +174,7 @@
+ 	#        * or the expected value
+ 	#
+ 	test_configuration = {
+-		'103013' : { 
++		'film/103013,Rocky%20Balboa' : { 
+ 			'title' 			: 'Rocky Balboa',
+ 			'o_title' 			: 'Rocky Balboa',
+ 			'director'			: 'Sylvester Stallone',
+@@ -200,7 +208,7 @@
+ Jody Giambelluca\n\
+ Frank Stallone\n\
+ Fran Pultro\n\
+-Michael Buffer\n\
++Michael Buffer as Ring Announcer\n\
+ Jack Lazzarado\n\
+ Marc Ratner\n\
+ Anthony Lato Jr.\n\
+@@ -232,7 +240,7 @@
+ 			'classification'	: False,
+ 			'studio'			: 'Metro-Goldwyn-Mayer (MGM)',
+ 			'o_site'			: False,
+-			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=103013">http://www.ofdb.de/view.php?page=film&amp;fid=103013</A>',
++			'site'				: '<A HREF="http://www.ofdb.de/film/103013,Rocky%20Balboa">http://www.ofdb.de/film/103013,Rocky%20Balboa</A>',
+ 			'trailer'			: False,
+ 			'year'				: 2006,
+ 			'notes'				: False,
+@@ -240,7 +248,7 @@
+ 			'image'				: True,
+ 			'rating'			: 8
+ 		},
+-		'22489' : { 
++		'film/22489,Ein-Gl%C3%BCckliches-Jahr' : { 
+ 			'title' 			: 'Gl&#252;ckliches Jahr, Ein',
+ 			'o_title' 			: 'Bonne ann&#233;e, La',
+ 			'director'			: 'Claude Lelouch',
+@@ -272,7 +280,7 @@
+ 			'classification'	: False,
+ 			'studio'			: 'Les Films 13',
+ 			'o_site'			: False,
+-			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=22489">http://www.ofdb.de/view.php?page=film&amp;fid=22489</A>',
++			'site'				: '<A HREF="http://www.ofdb.de/film/22489,Ein-Gl%C3%BCckliches-Jahr">http://www.ofdb.de/film/22489,Ein-Gl%C3%BCckliches-Jahr</A>',
+ 			'trailer'			: False,
+ 			'year'				: 1973,
+ 			'notes'				: False,
+@@ -280,7 +288,7 @@
+ 			'image'				: True,
+ 			'rating'			: 7
+ 		},
+-		'54088' : { 
++		'film/54088,Arahan' : { 
+ 			'title' 			: 'Arahan',
+ 			'o_title' 			: 'Arahan jangpung daejakjeon',
+ 			'director'			: 'Ryoo Seung-wan',
+@@ -308,7 +316,7 @@
+ 			'classification'	: '16',
+ 			'studio'			: 'Fun and Happiness',
+ 			'o_site'			: False,
+-			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=54088">http://www.ofdb.de/view.php?page=film&amp;fid=54088</A>',
++			'site'				: '<A HREF="http://www.ofdb.de/film/54088,Arahan">http://www.ofdb.de/film/54088,Arahan</A>',
+ 			'trailer'			: False,
+ 			'year'				: 2004,
+ 			'notes'				: False,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000431.html">[Griffith-svn] r945 - trunk/po
+</A></li>
+	<LI>Next message: <A HREF="000433.html">[Griffith-svn] r947 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#432">[ date ]</a>
+              <a href="thread.html#432">[ thread ]</a>
+              <a href="subject.html#432">[ subject ]</a>
+              <a href="author.html#432">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

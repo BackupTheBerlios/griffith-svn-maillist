@@ -1,0 +1,309 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1305%20-%20in%20trunk%3A%20.%20lib/plugins/export%0A%09lib/plugins/imp&In-Reply-To=%3C200909291933.n8TJXIDc012552%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000772.html">
+   <LINK REL="Next"  HREF="000774.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1305%20-%20in%20trunk%3A%20.%20lib/plugins/export%0A%09lib/plugins/imp&In-Reply-To=%3C200909291933.n8TJXIDc012552%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1305 - in trunk: . lib/plugins/export	lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 29 21:33:18 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000772.html">[Griffith-svn] r1304 - trunk/lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000774.html">[Griffith-svn] r1306 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#773">[ date ]</a>
+              <a href="thread.html#773">[ thread ]</a>
+              <a href="subject.html#773">[ subject ]</a>
+              <a href="author.html#773">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-09-29 21:32:44 +0200 (Tue, 29 Sep 2009)
+New Revision: 1305
+
+Added:
+   trunk/lib/plugins/imp/GCstar.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportGCstar.py
+   trunk/lib/plugins/imp/AMC.py
+Log:
+* GCstar import plugin added
+* svn attribute &quot;Id&quot; added to AMC.py
+* GCstar export plugin default filename changed from gcstar.xml to gcstar.gcs
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-09-29 19:25:37 UTC (rev 1304)
++++ trunk/ChangeLog	2009-09-29 19:32:44 UTC (rev 1305)
+@@ -5,11 +5,13 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-09-29  Michael Jahn
++	* GCstar import plugin added
++
+ 2009-09-26  Piotr O&#380;arowski
+ 	* Display a message during database upgrades
+ 
+ 2009-09-25  Michael Jahn
+-	* FilmScoop movie plugin added (thanks to Squeri Andrea)
+ 	* Amazon movie plugin updated
+ 
+ 2009-09-14  Piotr O&#380;arowski
+
+Modified: trunk/lib/plugins/export/PluginExportGCstar.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportGCstar.py	2009-09-29 19:25:37 UTC (rev 1304)
++++ trunk/lib/plugins/export/PluginExportGCstar.py	2009-09-29 19:32:44 UTC (rev 1305)
+@@ -37,7 +37,7 @@
+         XmlExportBase.__init__(self, database, locations, parent_window, search_conditions, config)
+         self.config_section = 'export-gcstar'
+         self.export_name    = 'GCstar database export'
+-        self.filename       = 'gcstar.xml'
++        self.filename       = 'gcstar.gcs'
+         self.encoding       = 'utf-8'
+         self.true_value     = '1'
+         self.false_value    = '0'
+
+
+Property changes on: trunk/lib/plugins/imp/AMC.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/lib/plugins/imp/GCstar.py
+===================================================================
+--- trunk/lib/plugins/imp/GCstar.py	2009-09-29 19:25:37 UTC (rev 1304)
++++ trunk/lib/plugins/imp/GCstar.py	2009-09-29 19:32:44 UTC (rev 1305)
+@@ -0,0 +1,181 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import os
++import sys
++import gutils
++import string
++import struct
++from xml.dom import minidom
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++class ImportPlugin(IP):
++    description  = _('GCstar (version 1.4.x)')
++    author       = 'Michael Jahn'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++    version      = '1.0'
++    file_filters = '*.[gG][cC][sS]'
++    mime_types   = None
++
++    fileversion  = None
++    filedom      = None
++    items        = None
++    itemindex    = 0
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.filedom:
++            try:
++                collectionElement = self.filedom.getElementsByTagName('collection')[0]
++                count = int(collectionElement.getAttribute('items'))
++            except Exception, e:
++                log.error(str(e))
++        else:
++            log.error('No filedom object.')
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.filedom:
++            self.filedom = minidom.parse(self.filename)
++        if not self.items:
++            self.items = self.filedom.getElementsByTagName('item')
++            self.itemindex = 0
++        if not self.items or len(self.items) &lt; 1:
++            return None
++        if len(self.items) &lt;= self.itemindex:
++            return None
++        
++        details = {}
++        try:
++            item = self.items[self.itemindex]
++            
++            details['title']          = item.getAttribute('title')
++            details['o_title']        = item.getAttribute('original')
++            details['year']           = item.getAttribute('date')
++            details['runtime']        = item.getAttribute('time')
++            details['country']        = item.getAttribute('country')
++            details['site']           = item.getAttribute('webPage')
++            details['seen']           = item.getAttribute('seen') == '1'
++            details['director']       = item.getAttribute('director')
++            try:
++                details['number']     = int(item.getAttribute('id'))
++            except:
++                pass
++            try:
++                details['media_num']  = int(item.getAttribute('number'))
++            except:
++                pass
++            details['trailer']        = item.getAttribute('trailer')
++            details['classification'] = item.getAttribute('age')
++            details['rating']         = item.getAttribute('rating')
++            synopsis = item.getElementsByTagName('synopsis')
++            if len(synopsis) and len(synopsis[0].childNodes):
++                details['plot'] = synopsis[0].childNodes[0].data
++            comment = item.getElementsByTagName('comment')
++            if len(comment) and len(comment[0].childNodes):
++                details['notes'] = comment[0].childNodes[0].data
++            genres = item.getElementsByTagName('genre')
++            if len(genres):
++                genrelines = genres[0].getElementsByTagName('line')
++                genre = ''
++                try:
++                    for genreline in genrelines:
++                        genrecols = genreline.getElementsByTagName('col')
++                        if len(genrecols) and len(genrecols[0].childNodes):
++                            genre = genre + genrecols[0].childNodes[0].data + ', '
++                except:
++                    log.error(str(e))
++                if len(genre) &gt; 2:
++                    details['genre'] = genre[:-2]
++            actors = item.getElementsByTagName('actors')
++            if len(actors):
++                actorlines = actors[0].getElementsByTagName('line')
++                cast = ''
++                try:
++                    for actorline in actorlines:
++                        actorcols = actorline.getElementsByTagName('col')
++                        if len(actorcols):
++                            if len(actorcols) &gt; 1 and len(actorcols[0].childNodes) and len(actorcols[1].childNodes):
++                                cast = cast + actorcols[0].childNodes[0].data + _(' as ') + actorcols[1].childNodes[0].data + &quot;\n&quot;
++                            else:
++                                if len(actorcols[0].childNodes):
++                                    cast = cast + actorcols[0].childNodes[0].data + &quot;\n&quot;
++                except:
++                    log.error(str(e))
++                if len(cast):
++                    details['cast'] = cast
++        except EOFError:
++            details = None
++        except Exception, e:
++            log.error(str(e))
++            details = None
++        self.itemindex = self.itemindex +  1
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.filedom:
++            self.filedom.unlink()
++            self.filedom = None
++            self.fileversion = None
++            self.items = None
++            self.itemindex = 0
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        self.filedom = minidom.parse(self.filename)
++        try:
++            collectionElement = self.filedom.getElementsByTagName('collection')[0]
++            type = collectionElement.getAttribute('type')
++            if type == 'GCfilms':
++                version = collectionElement.getAttribute('version')
++        except Exception, e:
++            log.error(str(e))
++            self.filedom.unlink()
++            self.filedom = None
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/GCstar.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000772.html">[Griffith-svn] r1304 - trunk/lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000774.html">[Griffith-svn] r1306 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#773">[ date ]</a>
+              <a href="thread.html#773">[ thread ]</a>
+              <a href="subject.html#773">[ subject ]</a>
+              <a href="author.html#773">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

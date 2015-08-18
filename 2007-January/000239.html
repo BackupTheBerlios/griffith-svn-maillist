@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r719 - in trunk: . debian lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r719%20-%20in%20trunk%3A%20.%20debian%20lib/plugins/movie&In-Reply-To=%3C200701261850.l0QIoa1S027163%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000238.html">
+   <LINK REL="Next"  HREF="000240.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r719 - in trunk: . debian lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r719%20-%20in%20trunk%3A%20.%20debian%20lib/plugins/movie&In-Reply-To=%3C200701261850.l0QIoa1S027163%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r719 - in trunk: . debian lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 26 19:50:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000238.html">[Griffith-svn] r718 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000240.html">[Griffith-svn] r720 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#239">[ date ]</a>
+              <a href="thread.html#239">[ thread ]</a>
+              <a href="subject.html#239">[ subject ]</a>
+              <a href="author.html#239">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-26 19:50:35 +0100 (Fri, 26 Jan 2007)
+New Revision: 719
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/debian/changelog
+   trunk/lib/plugins/movie/PluginMovieWP.py
+Log:
+WP movie plugin updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-26 16:25:17 UTC (rev 718)
++++ trunk/ChangeLog	2007-01-26 18:50:35 UTC (rev 719)
+@@ -6,6 +6,9 @@
+ 
+ ---- 0.9 ---
+ 
++2007-01-26  Piotr O&#380;arowski
++	* WP movie plugin updated
++
+ 2007-01-26 Jessica K. Parth
+ 	* Fix AniDB Problems in Windows ( file-open problem in movie.py )
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-01-26 16:25:17 UTC (rev 718)
++++ trunk/NEWS	2007-01-26 18:50:35 UTC (rev 719)
+@@ -2,7 +2,7 @@
+ ============
+ * Possible memory leak fixed (year data from some movie plugins wasn't parsed
+   correctly)
+-* AnimeDB and PTGate movie plugins updated
++* AnimeDB, PTGate and WP movie plugins updated
+ * CSV import plugin updated
+ * Fetch from Amazon function recognizes more posters now
+ * First movie is selected by default now
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2007-01-26 16:25:17 UTC (rev 718)
++++ trunk/debian/changelog	2007-01-26 18:50:35 UTC (rev 719)
+@@ -2,7 +2,7 @@
+ 
+   * New upstream release
+ 
+- -- Piotr Ozarowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;  Wed, 24 Jan 2007 12:35:10 +0100
++ -- Piotr Ozarowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;  Fri, 26 Jan 2007 19:49:36 +0100
+ 
+ griffith (0.9~rc3-1) unstable; urgency=low
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieWP.py	2007-01-26 16:25:17 UTC (rev 718)
++++ trunk/lib/plugins/movie/PluginMovieWP.py	2007-01-26 18:50:35 UTC (rev 719)
+@@ -32,7 +32,7 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O&#380;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '2.1'
++plugin_version      = '2.2'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -43,7 +43,7 @@
+ 	def initialize(self):
+ 		self.page = gutils.trim(self.page, '&lt;h1 class=&quot;mp0&quot;&gt;', '&lt;/div&gt;\n&lt;/div&gt;')
+ 		self.cast_page = self.open_page(url=&quot;<A HREF="http://film.wp.pl/id,%s,film_obsada_i_tworcy.html">http://film.wp.pl/id,%s,film_obsada_i_tworcy.html</A>&quot; % self.movie_id)
+-		self.cast_page = gutils.trim(self.cast_page, '&lt;h1 class=&quot;mp0&quot;&gt;', &quot;&lt;/div&gt;\n\n\t&lt;/div&gt;\r\n&quot;)
++		self.cast_page = gutils.trim(self.cast_page, '&lt;h1 class=&quot;mp0&quot;&gt;', &quot;&lt;/div&gt;\r\n&lt;/div&gt;\r\n&quot;)
+ 
+ 	def get_image(self):
+ 		self.image_url = gutils.trim(self.page, '&lt;img src=&quot;', '&quot; name=&quot;o')
+@@ -63,10 +63,13 @@
+ 				self.title = self.title[:pos]
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.cast_page, '&gt;re\xBFyser	&lt;/div&gt;', '&lt;/div&gt;')
++		self.director = gutils.trim(self.cast_page, '&gt;re\xBFyser\t&lt;/div&gt;', '&lt;/div&gt;')
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page, ' /&gt;', '\t\t&lt;div class=&quot;clr&quot;&gt;')
++		pos = string.find(self.plot, &quot;&lt;br&gt;Zobacz tak\xBFe:&lt;br&gt;&quot;)
++		if pos &gt; 0:
++			self.plot = self.plot[:pos]
+ 		self.plot = string.replace(self.plot,&quot;\r\n\r\n&quot;, '')
+ 
+ 	def get_year(self):
+@@ -90,8 +93,8 @@
+ 		self.cast = gutils.trim(self.cast_page, '&lt;h2&gt;OBSADA:&lt;/h2&gt;', '&lt;div class=&quot;b')
+ 		self.cast = gutils.after(self.cast, '&lt;div class=&quot;clr&quot;&gt;&lt;/div&gt;')
+ 		self.cast = string.replace(self.cast, '\t', '')
++		self.cast = string.replace(self.cast, '\n&lt;/div&gt;\n&lt;', _(' as ')+'&lt;')
+ 		self.cast = gutils.strip_tags(self.cast)
+-		self.cast = string.replace(self.cast, '\n\n                ', _(' as '))
+ 		self.cast = string.replace(self.cast,  &quot;%s\n&quot; % _(' as '), &quot;\n&quot;)
+ 
+ 	def get_classification(self):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000238.html">[Griffith-svn] r718 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000240.html">[Griffith-svn] r720 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#239">[ date ]</a>
+              <a href="thread.html#239">[ thread ]</a>
+              <a href="subject.html#239">[ subject ]</a>
+              <a href="author.html#239">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

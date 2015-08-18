@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1243 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1243%20-%20trunk/lib&In-Reply-To=%3C200907051908.n65J8LfL013279%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000712.html">
+   <LINK REL="Next"  HREF="000714.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1243 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1243%20-%20trunk/lib&In-Reply-To=%3C200907051908.n65J8LfL013279%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1243 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jul  5 21:08:21 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000712.html">[Griffith-svn] r1242 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000714.html">[Griffith-svn] r1244 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#713">[ date ]</a>
+              <a href="thread.html#713">[ thread ]</a>
+              <a href="subject.html#713">[ subject ]</a>
+              <a href="author.html#713">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-05 21:08:21 +0200 (Sun, 05 Jul 2009)
+New Revision: 1243
+
+Modified:
+   trunk/lib/add.py
+Log:
+use new db session (transaction) while adding/updating movies
+
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2009-07-05 18:16:25 UTC (rev 1242)
++++ trunk/lib/add.py	2009-07-05 19:08:21 UTC (rev 1243)
+@@ -67,10 +67,12 @@
+ 
+ 
+ def update_movie(self):
++    session = self.db.Session()
++
+     if self._am_movie_id is not None:
+-        movie = self.db.session.query(db.Movie).filter_by(movie_id=self._am_movie_id).one()
++        movie = session.query(db.Movie).filter_by(movie_id=self._am_movie_id).one()
+     else:
+-        movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).one()
++        movie = session.query(db.Movie).filter_by(movie_id=self._movie_id).one()
+     if movie is None: # movie was deleted in the meantime
+         return add_movie_db(self, True)
+     
+@@ -85,7 +87,7 @@
+         else:
+             new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+             details[&quot;poster_md5&quot;] = new_poster_md5
+-            if self.db.session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
++            if session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
+                 try:
+                     data = file(tmp_image_path, 'rb').read()
+                 except Exception, e:
+@@ -94,19 +96,19 @@
+                     poster = db.Poster(md5sum=new_poster_md5, data=data)
+                     del details[&quot;image&quot;]
+                     details['poster_md5'] = new_poster_md5
+-                    self.db.session.add(poster)
++                    session.add(poster)
+ 
+                     # delete old image
+                     import delete
+-                    old_poster = self.db.session.query(db.Poster).filter_by(md5sum=old_poster_md5).first()
++                    old_poster = session.query(db.Poster).filter_by(md5sum=old_poster_md5).first()
+                     if old_poster and len(old_poster.movies) == 1: # other movies are not using the same poster
+-                        self.db.session.delete(old_poster)
++                        session.delete(old_poster)
+                         delete.delete_poster_from_cache(self, old_poster_md5)
+ 
+-    update_movie_instance(movie, details, self.db.session)
++    update_movie_instance(movie, details, session)
+     
+-    self.db.session.add(movie)
+-    if commit(self, self.db.session):
++    session.add(movie)
++    if commit(session):
+         treeselection = self.widgets['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
+         
+@@ -644,6 +646,8 @@
+ 
+ 
+ def add_movie_db(self, close):
++    session = self.db.Session()
++
+     details = get_details(self)
+     if not details['o_title'] and not details['title']:
+         gutils.error(self.widgets['results']['window'],
+@@ -652,13 +656,13 @@
+         return False
+ 
+     if details['o_title']:
+-        if self.db.session.query(db.Movie).filter_by(o_title=details['o_title']).count() &gt; 0:
++        if session.query(db.Movie).filter_by(o_title=details['o_title']).count() &gt; 0:
+             response = gutils.question(_('Movie with that title already exists, are you sure you want to add?'), \
+                                        False, self.widgets['add']['window'])
+             if response == gtk.RESPONSE_NO:
+                 return False
+     if details['title']:
+-        if self.db.session.query(db.Movie).filter_by(title=details['title']).count() &gt; 0:
++        if session.query(db.Movie).filter_by(title=details['title']).count() &gt; 0:
+             response = gutils.question(_('Movie with that title already exists, are you sure you want to add?'), \
+                                        False, self.widgets['add']['window'])
+             if response == gtk.RESPONSE_NO:
+@@ -669,7 +673,7 @@
+         if os.path.isfile(tmp_image_path):
+             new_poster_md5 = gutils.md5sum(file(tmp_image_path, 'rb'))
+ 
+-            if self.db.session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
++            if session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
+                 try:
+                     data = file(tmp_image_path, 'rb').read()
+                 except Exception, e:
+@@ -678,7 +682,7 @@
+                     poster = db.Poster(md5sum=new_poster_md5, data=data)
+                     del details[&quot;image&quot;]
+                     details[&quot;poster_md5&quot;] = new_poster_md5
+-                    self.db.session.add(poster)
++                    session.add(poster)
+             try:
+                 os.remove(tmp_image_path)
+             except Exception, e:
+@@ -687,9 +691,9 @@
+             log.warn(&quot;cannot read temporary file: %s&quot;, tmp_image_path)
+ 
+ 
+-    movie = update_movie_instance(None, details, self.db.session)
+-    self.db.session.add(movie)
+-    if not commit(self, self.db.session):
++    movie = update_movie_instance(None, details, session)
++    session.add(movie)
++    if not commit(session):
+         return False
+ 
+     rows = len(self.treemodel)
+@@ -738,13 +742,15 @@
+ 
+ 
+ def clone_movie(self):
++    session = self.db.Session()
++
+     treeselection = self.widgets['treeview'].get_selection()
+     (tmp_model, tmp_iter) = treeselection.get_selected()
+     if tmp_iter is None:
+         log.warn(&quot;cannot clone movie: no item selected&quot;)
+         return False
+     number = tmp_model.get_value(tmp_iter, 0)
+-    movie = self.db.session.query(db.Movie).filter_by(number=number).first()
++    movie = session.query(db.Movie).filter_by(number=number).first()
+ 
+     if movie is None:
+         log.warn(&quot;cannot clone movie: Movie(%s) not found&quot;, number)
+@@ -800,8 +806,8 @@
+     new_movie.loans          = movie.loans
+     
+     # save
+-    self.db.session.add(new_movie)
+-    if not commit(self, self.db.session):
++    session.add(new_movie)
++    if not commit(session):
+         return False
+ 
+     image_path = gutils.get_image_fname(movie.poster_md5, self.db)
+@@ -850,7 +856,7 @@
+     return movie
+ 
+ 
+-def commit(self, session):
++def commit(session):
+     try:
+         session.commit()
+     except IntegrityError, e:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000712.html">[Griffith-svn] r1242 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000714.html">[Griffith-svn] r1244 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#713">[ date ]</a>
+              <a href="thread.html#713">[ thread ]</a>
+              <a href="subject.html#713">[ subject ]</a>
+              <a href="author.html#713">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,843 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1207 - in trunk: . glade lib lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1207%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/plugins/export&In-Reply-To=%3C200906082140.n58LeYFr006932%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000677.html">
+   <LINK REL="Next"  HREF="000679.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1207 - in trunk: . glade lib lib/plugins/export</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1207%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/plugins/export&In-Reply-To=%3C200906082140.n58LeYFr006932%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1207 - in trunk: . glade lib lib/plugins/export">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun  8 23:40:34 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000677.html">[Griffith-svn] r1206 - in trunk: . debian lib
+</A></li>
+        <LI>Next message: <A HREF="000679.html">[Griffith-svn] r1208 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#678">[ date ]</a>
+              <a href="thread.html#678">[ thread ]</a>
+              <a href="subject.html#678">[ subject ]</a>
+              <a href="author.html#678">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-08 23:40:30 +0200 (Mon, 08 Jun 2009)
+New Revision: 1207
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/backup.py
+   trunk/lib/db.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/delete.py
+   trunk/lib/edit.py
+   trunk/lib/gutils.py
+   trunk/lib/loan.py
+   trunk/lib/people.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/sql.py
+Log:
+* Restoring from backup to PostgreSQL/MySQL partially works via merging
+* get rid of &quot;self&quot; in gutils.warning
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/ChangeLog	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-06-08  Piotr O&#380;arowski
++	* Restoring from backup to PostgreSQL/MySQL partially works via merging
++
+ 2009-06-07  Piotr O&#380;arowski
+ 	* Recognize more resolution aliases
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/glade/griffith.glade	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -66,6 +66,19 @@
+                       &lt;/widget&gt;
+                     &lt;/child&gt;
+                     &lt;child&gt;
++                      &lt;widget class=&quot;GtkImageMenuItem&quot; id=&quot;merge&quot;&gt;
++                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Merge backup&lt;/property&gt;
++                        &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                        &lt;signal name=&quot;activate&quot; handler=&quot;on_merge_activate&quot;/&gt;
++                        &lt;child internal-child=&quot;image&quot;&gt;
++                          &lt;widget class=&quot;GtkImage&quot; id=&quot;menu-item-image11&quot;&gt;
++                            &lt;property name=&quot;stock&quot;&gt;gtk-revert-to-saved&lt;/property&gt;
++                          &lt;/widget&gt;
++                        &lt;/child&gt;
++                      &lt;/widget&gt;
++                    &lt;/child&gt;
++                    &lt;child&gt;
+                       &lt;widget class=&quot;GtkSeparatorMenuItem&quot; id=&quot;separatormenuitem1&quot;&gt;
+                         &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                       &lt;/widget&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/griffith	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -95,7 +95,8 @@
+         if config.get('file', 'griffith.db', section='database').lower().endswith('.gri'):
+             log.info('Old database format detected. Converting...')
+             from dbupgrade import convert_from_old_db
+-            if convert_from_old_db(self, filename, os.path.join(self.locations['home'], 'griffith.db')):
++            db = convert_from_old_db(config, filename, os.path.join(self.locations['home'], 'griffith.db'), self.locations)
++            if db:
+                 config.save()
+             else:
+                 log.error('Cant convert old database, exiting.')
+@@ -616,7 +617,7 @@
+                 else:
+                     initialize.language_combos(self)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select a language first&quot;)
+ 
+@@ -676,7 +677,7 @@
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select tag first&quot;)
+ 
+@@ -735,7 +736,7 @@
+                 else:
+                     initialize.acodec_combos(self)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select an audio codec first&quot;)
+ 
+@@ -793,7 +794,7 @@
+                 else:
+                     initialize.achannel_combos(self)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select an audio channel entry first&quot;)
+ 
+@@ -851,7 +852,7 @@
+                 else:
+                     initialize.subformat_combos(self)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select a subtitle format first&quot;)
+ 
+@@ -909,7 +910,7 @@
+                 else:
+                     initialize.media_combos(self)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select a medium entry first&quot;)
+ 
+@@ -967,7 +968,7 @@
+                 else:
+                     initialize.vcodec_combos(self)
+             else:
+-                gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
++                gutils.warning(msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+             log.warn(&quot;You have to select a video codec entry first&quot;)
+ 
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/add.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -855,7 +855,7 @@
+         session.commit()
+     except IntegrityError, e:
+         session.rollback()
+-        gutils.warning(self, str(e.orig))
++        gutils.warning(str(e.orig))
+         log.warn(&quot;Cannot commit movie: %s&quot;, e.message)
+         return False
+     except Exception, e:
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/backup.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -21,17 +21,23 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gtk
++import copy
++import datetime
++import logging
+ import os.path
+ import zipfile
+-import logging
+-import datetime
+-log = logging.getLogger(&quot;Griffith&quot;)
++from StringIO import StringIO
++from shutil import rmtree, move
++from tempfile import mkdtemp
++import gtk
++from sqlalchemy import create_engine
+ import config
+-import edit
+ import gutils
++import db
+ import sql
+ 
++log = logging.getLogger('Griffith')
++
+ def backup(self):
+     &quot;&quot;&quot;perform a compressed griffith database/posters/preferences backup&quot;&quot;&quot;
+     #if self.db.session.bind.engine.name != 'sqlite':
+@@ -67,39 +73,34 @@
+                 fileName = os.path.join(self.locations['home'], self.config.get('name','griffith', section='database') + '.db').encode('utf-8')
+                 mzip.write(fileName)
+             else:
+-                from tempfile import mkdtemp
+-                from shutil import rmtree
+-                from StringIO import StringIO
+-                from sqlalchemy import create_engine
+-                import copy
+-                import db
++                try:
++                    tmp_dir = mkdtemp()
++                    tmp_config = copy.deepcopy(self.config)
++                    tmp_config._file = os.path.join(tmp_dir, 'griffith.cfg')
++                    tmp_config.set('type', 'sqlite', section='database')
++                    tmp_config.set('file', 'griffith.db', section='database')
++                    tmp_config.save()
++                    mzip.write(tmp_config._file)
+ 
+-                tmp_dir = mkdtemp()
+-                tmp_config = copy.deepcopy(self.config)
+-                tmp_config._file = os.path.join(tmp_dir, 'griffith.cfg')
+-                tmp_config.set('type', 'sqlite', section='database')
+-                tmp_config.set('file', 'griffith.db', section='database')
+-                tmp_config.save()
+-                mzip.write(tmp_config._file)
++                    tmp_file = os.path.join(tmp_dir, 'griffith.db')
++                    tmp_engine = create_engine(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
++                    db.metadata.create_all(bind=tmp_engine)
+ 
+-                tmp_file = os.path.join(tmp_dir, 'griffith.db')
+-                tmp_engine = create_engine(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
+-                db.metadata.create_all(bind=tmp_engine)
++                    # SQLite doesn't care about foreign keys much so we can just copy the data
++                    for table in db.metadata.sorted_tables:
++                        if table.name in ('posters', 'filters'):
++                            continue # see below
++                        data = table.select(bind=self.db.session.bind).execute().fetchall()
++                        if data:
++                            table.insert(bind=tmp_engine).execute(data)
++                    
++                    # posters
++                    for poster in db.metadata.tables['posters'].select(bind=self.db.session.bind).execute():
++                        db.metadata.tables['posters'].insert(bind=tmp_engine).execute(md5sum=poster.md5sum, data=StringIO(poster.data).read())
+ 
+-                # SQLite doesn't care about foreign keys much so we can just copy the data
+-                for table in db.metadata.sorted_tables:
+-                    if table.name in ('posters', 'filters'):
+-                        continue # see below
+-                    data = table.select(bind=self.db.session.bind).execute().fetchall()
+-                    if data:
+-                        table.insert(bind=tmp_engine).execute(data)
+-                
+-                # posters
+-                for poster in db.metadata.tables['posters'].select(bind=self.db.session.bind).execute():
+-                    db.metadata.tables['posters'].insert(bind=tmp_engine).execute(md5sum=poster.md5sum, data=StringIO(poster.data).read())
+-
+-                mzip.write(tmp_file)
+-                rmtree(tmp_dir)
++                    mzip.write(tmp_file)
++                finally:
++                    rmtree(tmp_dir)
+             gutils.info(_(&quot;Backup has been created&quot;), self.widgets['window'])
+ 
+ def restore(self):
+@@ -167,91 +168,135 @@
+         self.populate_treeview()
+         gutils.info(_(&quot;Backup restored&quot;), self.widgets['window'])
+ 
+-def merge(self):    # FIXME
++def copy_db(src_engine, dst_engine):
++    log.debug('replacing old database with new one')
++    db.metadata.drop_all(dst_engine) # remove all previous data
++    db.metadata.create_all(dst_engine) # remove all previous data
++    for table in db.metadata.table_iterator(reverse=False):
++        log.debug('... processing %s table', table)
++        data = [dict((col.key, x[col.name]) for col in table.c)
++                    for x in src_engine.execute(table.select())]
++        if data:
++            log.debug('inserting new data...')
++            dst_engine.execute(table.insert(), data)
++
++def merge_db(src_db, dst_db): # FIXME
++    merged = 0
++    src_session = src_db.Session() # create new session
++    dst_session = dst_db.Session() # create new session
++    movies = src_session.query(db.Movie).count()
++    for movie in src_session.query(db.Movie).all():
++        if dst_session.query(db.Movie).filter_by(o_title=movie.o_title).first() is not None:
++            continue
++        t_movies = {}
++        for column in movie.mapper.c.keys():
++            t_movies[column] = eval(&quot;movie.%s&quot;%column)
++
++        # replace number with new one
++        t_movies[&quot;number&quot;] = gutils.find_next_available(self.db)
++
++        # don't restore volume/collection/tag/language/loan data (it's dangerous)
++        t_movies.pop('movie_id')
++        t_movies.pop('loaned')
++        t_movies.pop('volume_id')
++        t_movies.pop('collection_id')
++
++        if dst_db.add_movie(t_movies): # FIXME
++            print t_movies
++
++        if movie.image is not None:
++            dest_file = os.path.join(self.locations['posters'], movie.image+'.jpg')
++            if not os.path.isfile(dest_file):
++                src_file = os.path.join(tmp_dir, movie.image+'.jpg')
++                if os.path.isfile(src_file):
++                    move(src_file, dest_file)
++        merged += 1
++    return merged
++
++def merge(self, replace=True):
+     &quot;&quot;&quot;
+-        Merge database from:
+-        * compressed backup
+-        * SQLite2 *.gri file
+-        * SQLite3 *.db file
++    Merge database from:
++    * compressed backup (*.zip)
++    * SQLite2 *.gri file
++    * SQLite3 *.db file
+     &quot;&quot;&quot;
++
++    # let user select a backup file
+     filename = gutils.file_chooser(_(&quot;Restore Griffith backup&quot;), \
+-        action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons= \
+-        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, \
+-        gtk.STOCK_OPEN, gtk.RESPONSE_OK))[0]
+-    if filename:
+-        from tempfile import mkdtemp
+-        from shutil import rmtree, move
++                    action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons= \
++                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK), backup=True)[0]
++    if not filename:
++        log.debug('no file selected')
++        return False
+ 
+-        #tmp_config={}
+-        #tmp_config.get('type', 'sqlite', section='database')
++    try:
++        tmp_dir = mkdtemp()
+ 
+         if filename.lower().endswith('.zip'):
+-            tmp_dir = mkdtemp()
+             try:
+-                zip = zipfile.ZipFile(filename, 'r')
++                zip_file = zipfile.ZipFile(filename, 'r')
+             except:
+                 gutils.error(self, _(&quot;Can't read backup file&quot;), self.widgets['window'])
+                 return False
+-            for each in zip.namelist():
+-                file_to_restore = os.path.split(each)
+-                if not os.path.isdir(file_to_restore[1]):
+-                    myfile = os.path.join(tmp_dir, file_to_restore[1])
+-                    outfile = open(myfile, 'wb')
+-                    outfile.write(zip.read(each))
+-                    outfile.flush()
+-                    outfile.close()
+-            # load stored database filename
+-            tmp_config = config.Config(file=os.path.join(tmp_dir,'griffith.conf'))
+-            filename = os.path.join(tmp_dir, tmp_config('name', 'griffith', section='database') + '.db')
+-            zip.close()
+ 
+-        # check if file needs conversion
+-        if filename.lower().endswith(&quot;.gri&quot;):
+-            if os.path.isfile(filename) and  open(filename).readline()[:47] == &quot;** This file contains an SQLite 2.1 database **&quot;:
+-                log.info(&quot;MERGE: SQLite2 database format detected. Converting...&quot;)
+-                if not self.db.convert_from_sqlite2(filename, os.path.join(tmp_dir, self.config.get('file', 'griffith.db', section='database'))):
+-                    log.info(&quot;MERGE: Can't convert database, aborting.&quot;)
+-                    return False
+-        tmp_dir, tmp_file = os.path.split(filename)
+-        self.config.get('file', tmp_file, section='database') 
++            old_config_file = False
++            # unpack files to temporary directory
++            for file_path in zip_file.namelist():
++                file_name = os.path.split(file_path)[-1]
++                if not os.path.isdir(file_name):
++                    if not file_name:
++                        log.debug('skipping %s', file_path)
++                        continue
+ 
+-        tmp_db = sql.GriffithSQL(tmp_config, tmp_dir, self.locations)
++                    new_file = os.path.join(tmp_dir, file_name)
++                    if file_name.endswith('.conf'):
++                        old_config_file = new_file
++                    outfile = open(new_file, 'wb')
++                    outfile.write(zip_file.read(file_path))
++                    outfile.close()
++            zip_file.close()
++            
++            # restore config file (new one will be created if old config format is detected)
++            tmp_config = config.Config(file=os.path.join(tmp_dir, 'griffith.cfg'))
++            if old_config_file:
++                log.info('Old config file detected. Please note that it will not be used.')
++                f = open(old_config_file, 'r')
++                old_config_raw_data = f.read()
++                f.close()
++                if old_config_raw_data.find('griffith.gri') &gt;= -1:
++                    tmp_config.set('file', 'griffith.gri', section='database')
+ 
+-        merged=0
+-        movies = tmp_db.Movie.count()
+-        for movie in tmp_db.Movie.query.all():
+-            if self.db.Movie.query.filter_by(o_title=movie.o_title).first() is not None:
+-                continue
+-            t_movies = {}
+-            for column in movie.mapper.c.keys():
+-                t_movies[column] = eval(&quot;movie.%s&quot;%column)
++            # update filename var. to point to the unpacked database
++            filename = os.path.join(tmp_dir, tmp_config.get('name', 'griffith', section='database') + '.db')
++        else: # not a zip file? prepare a fake config file then
++            tmp_config = config.Config(file=os.path.join(tmp_dir, 'griffith.cfg'))
++            tmp_config.set('type', 'sqlite', section='database')
++            tmp_config.set('file', 'griffith.db', section='database')
+ 
+-            # replace number with new one
+-            t_movies[&quot;number&quot;] = gutils.find_next_available(self.db)
++        # prepare temporary GriffithSQL instance
++        locations = {'home': tmp_dir}
++        # check if file needs conversion
++        if filename.lower().endswith('.gri'):
++            from dbupgrade import convert_from_old_db
++            tmp_db = convert_from_old_db(tmp_config, filename, os.path.join(tmp_dir, 'griffith.db'), locations)
++            if not tmp_db:
++                log.info(&quot;MERGE: Can't convert database, aborting.&quot;)
++                return False
++        else:
++            tmp_db = sql.GriffithSQL(tmp_config, tmp_dir, locations)
+ 
+-            # don't restore volume/collection/tag/language/loan data (it's dangerous)
+-            t_movies.pop('movie_id')
+-            t_movies.pop('loaned')
+-            t_movies.pop('volume_id')
+-            t_movies.pop('collection_id')
++        if replace: # FIXME:
++            copy_db(tmp_db.session.bind, self.db.session.bind)
++        else:
++            merge_db(tmp_db, self.db)
+ 
+-            if self.db.add_movie(t_movies):
+-                print t_movies
+-
+-            if movie.image is not None:
+-                dest_file = os.path.join(self.locations['posters'], movie.image+'.jpg')
+-                if not os.path.isfile(dest_file):
+-                    src_file = os.path.join(tmp_dir, movie.image+'.jpg')
+-                    if os.path.isfile(src_file):
+-                        move(src_file, dest_file)
+-            merged+=1
+-        rmtree(tmp_dir)
+-
+-        from initialize    import dictionaries, people_treeview
++        from initialize import dictionaries, people_treeview
+         dictionaries(self)
+         people_treeview(self)
+         # let's refresh the treeview
+         self.clear_details()
+-        self.populate_treeview(self.db.Movie.query.all())
++        self.populate_treeview(self.db.query(db.Movie).all())
+         #gutils.info(_(&quot;Databases merged!\n\nProcessed movies: %s\nMerged movies: %s&quot;%(movies, merged)), self.widgets['window'])
++    finally:
++        rmtree(tmp_dir)
+ 
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/db.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -130,7 +130,6 @@
+     for res, aliases in _res_aliases.iteritems():
+         for alias in aliases:
+             _res_alias_res[alias.upper()] = res
+-    print aliases, alias, res
+     del aliases, alias, res
+ 
+     def _set_resolution(self, res_string):
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/dbupgrade.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -213,7 +213,7 @@
+                 log.error(&quot;Cannot add '%s' column: %s&quot;, key, e)
+                 return False
+ 
+-        log.info('... creading missing indexes')
++        log.info('... creating missing indexes')
+         try:
+             i = Index('ix_movies_title', db.movies_table.c.title)
+             i.create(bind=b)
+@@ -221,7 +221,7 @@
+             i.create(bind=b)
+         except Exception, e:
+             log.error(&quot;Cannot create new index, skipping (%s)&quot;, e)
+-        
++
+         db_version = self.session.query(db.Configuration).filter_by(param=u'version').one()
+         db_version.value = unicode(version)
+         self.session.add(db_version)
+@@ -234,24 +234,32 @@
+ # for Griffith &lt;= 0.6.2 compatibility
+ # ---------------------------------------------------
+ 
+-def convert_from_old_db(self, source_file, destination_file):    #{{{
++def convert_from_old_db(config, source_file, destination_file, locations):    #{{{
++    &quot;&quot;&quot;
++    convert .gri database into .bd one
++    &quot;&quot;&quot;
++
+     log.info('Converting old database - it can take several minutes...')
+     log.debug(&quot;Source file: %s&quot;, source_file)
+     gutils.info(_(&quot;Griffith will now convert your database to the new format. This can take several minutes if you have a large database.&quot;))
+-    from sqlalchemy.orm import clear_mappers
+     from sql import GriffithSQL
+     from gutils import digits_only
+     import os
+ 
+     if not os.path.isfile(source_file):
+         return False
++
++    if 'home' not in locations:
++        log.error(&quot;locations doesn't contain home path, cannot convert old database&quot;)
++        return False
++
+     if open(source_file).readline()[:47] == '** This file contains an SQLite 2.1 database **':
+         log.debug('SQLite 2.1 detected')
+         try:
+             import sqlite
+         except ImportError:
+             log.error('Old DB conversion: please install pysqlite legacy (v1.0)')
+-            gutils.warning(self,_(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;))
++            gutils.warning(_(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;))
+             return False
+     else:
+         try:    # Python 2.5
+@@ -278,7 +286,7 @@
+             print '$ mv ~/.griffith/griffith.gri{,2}'
+             print '$ mv ~/.griffith/griffith.gri{3,}'
+             print 'or install pysqlite in version 1.0'
+-            gutils.warning(self,_(&quot;Your database is most probably in SQLite2 format, please convert it to SQLite3&quot;))
++            gutils.warning(_(&quot;Your database is most probably in SQLite2 format, please convert it to SQLite3&quot;))
+         else:
+             raise
+         return False
+@@ -320,17 +328,17 @@
+     old_cursor.execute(&quot;DELETE FROM collections WHERE name = 'None'&quot;)
+     old_cursor.execute(&quot;DELETE FROM languages WHERE name = ''&quot;)
+     
+-    self.config.set('type','sqlite', section='database')
+-    self.config.set('file', 'griffith.db', section='database')
+-    self.config['posters'] = 'posters'
+-    self.config.set('color', 0, section='defaults')
+-    self.config.set('condition', 0, section='defaults')
+-    self.config.set('layers', 0, section='defaults')
+-    self.config.set('media', 0, section='defaults')
+-    self.config.set('region', 0, section='defaults')
+-    self.config.set('vcodec', 0, section='defaults')
+-    self.locations['posters'] = os.path.join(self.locations['home'], 'posters')
+-    new_db = GriffithSQL(self.config, self.locations['home'], self.locations)
++    config.set('type','sqlite', section='database')
++    config.set('file', 'griffith.db', section='database')
++    config['posters'] = 'posters'
++    config.set('color', 0, section='defaults')
++    config.set('condition', 0, section='defaults')
++    config.set('layers', 0, section='defaults')
++    config.set('media', 0, section='defaults')
++    config.set('region', 0, section='defaults')
++    config.set('vcodec', 0, section='defaults')
++    locations['posters'] = os.path.join(locations['home'], 'posters')
++    new_db = GriffithSQL(config, locations['home'], locations)
+ 
+     # collections
+     collection_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
+
+Modified: trunk/lib/delete.py
+===================================================================
+--- trunk/lib/delete.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/delete.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -36,7 +36,7 @@
+         return False
+     
+     if movie.loaned:
+-        gutils.warning(self, msg=_(&quot;You can't delete movie while it is loaned.&quot;))
++        gutils.warning(msg=_(&quot;You can't delete movie while it is loaned.&quot;))
+         return False
+ 
+     response = gutils.question(_(&quot;Are you sure you want to delete this movie?&quot;), True, self.widgets['window'])
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/edit.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -185,14 +185,14 @@
+                     page = page + 1
+         log.info(&quot;... %s posters found&quot; % result.TotalResults)
+     except:
+-        gutils.warning(self, _(&quot;No posters found for this movie.&quot;))
++        gutils.warning(_(&quot;No posters found for this movie.&quot;))
+         return
+ 
+     from widgets import connect_poster_signals, reconnect_add_signals
+     connect_poster_signals(self, get_poster_select_dc, result, current_poster)
+ 
+     if not hasattr(result, 'Item') or not len(result.Item):
+-        gutils.warning(self, _(&quot;No posters found for this movie.&quot;))
++        gutils.warning(_(&quot;No posters found for this movie.&quot;))
+         reconnect_add_signals(self)
+         return
+ 
+@@ -261,7 +261,7 @@
+             urlcleanup()
+         except:
+             canceled = True
+-            gutils.warning(self, _(&quot;Sorry. A connection error has occurred.&quot;))
++            gutils.warning(_(&quot;Sorry. A connection error has occurred.&quot;))
+             try:
+                 os.remove(file_to_copy)
+             except:
+@@ -279,7 +279,7 @@
+                 url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % result.Item[f].ASIN).read()
+                 if url.find('no-img-sm._V47056216_.gif') &gt; 0:
+                     log.warn('No image available')
+-                    gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++                    gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+                     return False
+                 url = gutils.after(url, 'id=&quot;imageViewerDiv&quot;&gt;&lt;img src=&quot;')
+                 url = gutils.before(url, '&quot; id=&quot;prodImage&quot;')
+@@ -292,7 +292,7 @@
+             if not im:
+                 # something wrong with the image, give some feedback to the user
+                 log.warn('No image available')
+-                gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++                gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+                 return False
+ 
+             if im.mode != 'RGB': # convert GIFs
+@@ -318,7 +318,7 @@
+ 
+             self.widgets['poster_window'].hide()
+         else:
+-            gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++            gutils.warning(_(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
+     else:
+         # cleanup temporary files after canceling the download
+         if os.path.isfile(file_to_copy):
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/gutils.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -241,7 +241,7 @@
+     dialog.run()
+     dialog.destroy()
+ 
+-def warning(self, msg, parent=None):
++def warning(msg, parent=None):
+     dialog = gtk.MessageDialog(parent,
+             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+             gtk.MESSAGE_WARNING, gtk.BUTTONS_OK, msg)
+@@ -269,7 +269,7 @@
+     dialog.destroy()
+     return response
+ 
+-def file_chooser(title, action=None, buttons=None, name='', folder=os.path.expanduser('~'), picture=False):
++def file_chooser(title, action=None, buttons=None, name='', folder=os.path.expanduser('~'), picture=False, backup=False):
+     dialog = gtk.FileChooserDialog(title=title, action=action, buttons=buttons)
+     dialog.set_default_response(gtk.RESPONSE_OK)
+     if name:
+@@ -291,6 +291,12 @@
+         mfilter.add_pattern(&quot;*.[tT][iI][fF]{1,2}&quot;)
+         mfilter.add_pattern(&quot;*.[xX][pP][mM]&quot;)
+         dialog.add_filter(mfilter)
++    elif backup:
++        mfilter.set_name(_('backups'))
++        mfilter.add_pattern('*.[zZ][iI][pP]')
++        mfilter.add_pattern('*.[gG][rR][iI]')
++        mfilter.add_pattern('*.[dD][bB]')
++        dialog.add_filter(mfilter)
+     mfilter = gtk.FileFilter()
+     mfilter.set_name(_(&quot;All files&quot;))
+     mfilter.add_pattern(&quot;*&quot;)
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/loan.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -75,7 +75,7 @@
+     
+     resp = sql.loan_movie(self.db, movie.movie_id, person.person_id, loan_whole_collection)
+     if resp == -1:
+-        gutils.warning(self, _(&quot;Collection contains loaned movie.\nLoan aborted!&quot;))
++        gutils.warning(_(&quot;Collection contains loaned movie.\nLoan aborted!&quot;))
+         return False
+     elif resp:
+         self.update_statusbar(_(&quot;Movie loaned&quot;))
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/people.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -54,7 +54,7 @@
+             p.email = self.widgets['person']['email'].get_text().decode('utf-8')
+             p.phone = gutils.digits_only(self.widgets['person']['phone'].get_text().decode('utf-8'))
+         except ValueError, e:
+-            gutils.warning(self, e.message)
++            gutils.warning(e.message)
+             return False
+         self.widgets['person']['window'].hide()
+         self.db.session.add(p)
+@@ -99,7 +99,7 @@
+         p.email = self.widgets['person']['e_email'].get_text().decode('utf-8')
+         p.phone = self.widgets['person']['e_phone'].get_text().decode('utf-8')
+     except ValueError, e:
+-        gutils.warning(self, e.message)
++        gutils.warning(e.message)
+         return False
+     self.db.session.add(p)
+     try:
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -558,7 +558,7 @@
+             try:
+                 gutils.copytree(data_path, config['exported_dir'])
+             except Exception, err:
+-                gutils.warning(self, str(err))
++                gutils.warning(str(err))
+         
+         # persist config
+         if self.config is not None:
+@@ -599,7 +599,7 @@
+                 try:
+                     shutil.copy(config['custom_style_file'],config['exported_dir'])
+                 except:
+-                    gutils.warning(self,_(&quot;Can't copy %s!&quot;)%style_file)
++                    gutils.warning(_(&quot;Can't copy %s!&quot;)%style_file)
+                     config['custom_style'] = False
+                 style = os.path.split(self.settings['custom_style_file'])[1]
+             else:
+@@ -612,7 +612,7 @@
+             try:
+                 shutil.copy(style_path,config['exported_dir'])
+             except:
+-                gutils.warning(self,_(&quot;Can't copy %s!&quot;)%style_path)
++                gutils.warning(_(&quot;Can't copy %s!&quot;)%style_path)
+ 
+         # select exported movies
+         exported_movies = self.select().fetchall()
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-06-07 13:40:24 UTC (rev 1206)
++++ trunk/lib/sql.py	2009-06-08 21:40:30 UTC (rev 1207)
+@@ -105,15 +105,15 @@
+             if not fallback:
+                 raise e
+             config.set('type', 'sqlite', section='database')
+-            gutils.warning(self, &quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
++            gutils.warning(&quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config.get('name', 'griffith', section='database') + '.db')
+             engine = create_engine(url)
+             conn = engine.connect()
+ 
+         # try to establish a db connection
+         try:
+-            Session = sessionmaker(bind=engine)
+-            session = Session()
++            self.Session = sessionmaker(bind=engine) # create new sessions using this class
++            self.session = self.Session() # global session
+             #self.metadata.bind.connect()
+         except Exception, e:
+             log.info(&quot;engine connection error: %s&quot;, e)
+@@ -123,11 +123,8 @@
+             config.set('type', 'sqlite', section='database')
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+             engine = create_engine(url)
+-            Session = sessionmaker(bind=engine)
+-            session = Session()
+-
+-        self.session = session # global session
+-        self.Session = Session # create new sessions using this class
++            self.Session = sessionmaker(bind=engine)
++            self.session = self.Session()
+         #}}}
+ 
+         # check if database needs an upgrade
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000677.html">[Griffith-svn] r1206 - in trunk: . debian lib
+</A></li>
+	<LI>Next message: <A HREF="000679.html">[Griffith-svn] r1208 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#678">[ date ]</a>
+              <a href="thread.html#678">[ thread ]</a>
+              <a href="subject.html#678">[ subject ]</a>
+              <a href="author.html#678">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

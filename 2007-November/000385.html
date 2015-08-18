@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r880 - in trunk: . lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r880%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200711122155.lACLtPSu006630%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000384.html">
+   <LINK REL="Next"  HREF="000386.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r880 - in trunk: . lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r880%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C200711122155.lACLtPSu006630%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r880 - in trunk: . lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 12 22:55:25 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000384.html">[Griffith-svn] r879 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000386.html">[Griffith-svn] r881 - in trunk: . lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#385">[ date ]</a>
+              <a href="thread.html#385">[ thread ]</a>
+              <a href="subject.html#385">[ subject ]</a>
+              <a href="author.html#385">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-11-12 22:55:06 +0100 (Mon, 12 Nov 2007)
+New Revision: 880
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+fixed pdf export with non-ascii characters in filename
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-11-12 21:07:38 UTC (rev 879)
++++ trunk/ChangeLog	2007-11-12 21:55:06 UTC (rev 880)
+@@ -6,6 +6,7 @@
+ 
+ 2007-11-12  Michael Jahn
+ 	* Kino.de plugin updated
++	* fixed pdf export with non-ascii characters in filename
+ 
+ 2007-11-08  Michael Jahn
+ 	* status bar shows count of movies after applying a filter
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-11-12 21:07:38 UTC (rev 879)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2007-11-12 21:55:06 UTC (rev 880)
+@@ -37,6 +37,7 @@
+ import string
+ import sys
+ import config
++from locale import getdefaultlocale
+ 
+ exec_location = os.path.abspath(os.path.dirname(sys.argv[0]))
+ 
+@@ -51,7 +52,7 @@
+         self.db = database
+         self.locations = locations
+         self.parent = parent_window
+-	self.config = kwargs['config']
++        self.config = kwargs['config']
+         self.styles = getSampleStyleSheet()
+         self.export_simple_pdf()
+         self.fontName = &quot;&quot;
+@@ -68,7 +69,8 @@
+         filename = gutils.file_chooser(_(&quot;Export a PDF&quot;), action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK),name=&quot;griffith_simple_list.pdf&quot;)
+         if filename[0]:
+             overwrite = None
+-            if os.path.isfile(filename[0]):
++            pdffilename = filename[0].decode('utf-8')
++            if os.path.isfile(pdffilename):
+                 response = gutils.question(self,_(&quot;File exists. Do you want to overwrite it?&quot;),1,self.parent)
+                 if response==-8:
+                     overwrite = True
+@@ -76,7 +78,10 @@
+                     overwrite = False
+                     
+             if overwrite == True or overwrite is None:
+-                c = SimpleDocTemplate(filename[0])
++                defaultLang, defaultEnc = getdefaultlocale()
++                if defaultEnc is None:
++                    defaultEnc = 'UTF-8'
++                c = SimpleDocTemplate(pdffilename.encode(defaultEnc))
+                 style = self.styles[&quot;Normal&quot;]
+                 Story = [Spacer(1,2*inch)]
+                 # define some custom stylesheetfont
+@@ -88,7 +93,7 @@
+                 Story.append(p)
+                 Story.append(Paragraph(&quot; &quot;,style))
+                 movies = self.db.Movie.select()
+-		for movie in movies:
++                for movie in movies:
+                     number = movie.number
+                     original_title = str(movie.o_title)
+                     title = str(movie.title)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000384.html">[Griffith-svn] r879 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000386.html">[Griffith-svn] r881 - in trunk: . lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#385">[ date ]</a>
+              <a href="thread.html#385">[ thread ]</a>
+              <a href="subject.html#385">[ subject ]</a>
+              <a href="author.html#385">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

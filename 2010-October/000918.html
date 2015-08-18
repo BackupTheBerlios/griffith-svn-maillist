@@ -1,0 +1,285 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1456 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1456%20-%20trunk/lib&In-Reply-To=%3C20101003114150.3B571480F75%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000917.html">
+   <LINK REL="Next"  HREF="000919.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1456 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1456%20-%20trunk/lib&In-Reply-To=%3C20101003114150.3B571480F75%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1456 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct  3 13:41:50 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000917.html">[Griffith-svn] r1455 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000919.html">[Griffith-svn] r1457 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#918">[ date ]</a>
+              <a href="thread.html#918">[ thread ]</a>
+              <a href="subject.html#918">[ subject ]</a>
+              <a href="author.html#918">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-10-03 13:41:49 +0200 (Sun, 03 Oct 2010)
+New Revision: 1456
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/main_treeview.py
+Log:
+refactoring adding and modifying entries in the mainlist
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-10-01 19:57:05 UTC (rev 1455)
++++ trunk/lib/add.py	2010-10-03 11:41:49 UTC (rev 1456)
+@@ -32,6 +32,7 @@
+ import db
+ import gutils
+ import initialize
++import main_treeview
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -114,38 +115,8 @@
+     if commit(session):
+         treeselection = self.widgets['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
++        main_treeview.setmovie(self, movie, tmp_iter, tmp_model)
+ 
+-        if new_poster_md5 and new_poster_md5 != old_poster_md5:
+-            # update thumbnail in main list
+-            new_image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
+-            if not new_image_path:
+-                new_image_path = gutils.get_defaultthumbnail_fname(self)
+-            handler = self.Image.set_from_file(new_image_path)
+-            pixbuf = self.Image.get_pixbuf()
+-            tmp_model.set_value(tmp_iter, 1, pixbuf)
+-        # update main treelist
+-        tmp_model.set_value(tmp_iter, 0, &quot;%004d&quot; % int(movie.number))
+-        tmp_model.set_value(tmp_iter, 2, movie.o_title)
+-        tmp_model.set_value(tmp_iter, 3, movie.title)
+-        tmp_model.set_value(tmp_iter, 4, movie.director)
+-        tmp_model.set_value(tmp_iter, 5, movie.genre)
+-        tmp_model.set_value(tmp_iter, 6, movie.seen)
+-        if movie.year is None:
+-            tmp_model.set_value(tmp_iter, 7, '')
+-        else:
+-            tmp_model.set_value(tmp_iter, 7, movie.year)
+-        if movie.runtime is None:
+-            tmp_model.set_value(tmp_iter, 8, '')
+-        else:
+-            tmp_model.set_value(tmp_iter, 8, &quot;%003d&quot; % int(movie.runtime) + _(' min'))
+-        if movie.rating is None:
+-            tmp_model.set_value(tmp_iter, 9, '')
+-        else:
+-            tmp_model.set_value(tmp_iter, 9, movie.rating)
+-        if movie.created:
+-            tmp_model.set_value(tmp_iter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
+-        if movie.updated:
+-            tmp_model.set_value(tmp_iter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
+         # close add window
+         self.widgets['add']['window'].hide()
+         # refresh
+@@ -710,52 +681,15 @@
+     session.add(movie)
+     if not commit(session):
+         return False
+-    details['created'] = movie.created
+-    details['updated'] = movie.created
+ 
+-    rows = len(self.treemodel)
+-    if rows &gt; 0:
+-        insert_after = self.treemodel.get_iter(rows-1)    # last
+-    else:
+-        insert_after = None
+-    myiter = self.treemodel.insert_after(None, insert_after)
+-
+-    image_path = ''
+-    if new_poster_md5:
+-        image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
+-    if not image_path or not os.path.isfile(image_path):
+-        image_path = gutils.get_defaultthumbnail_fname(self)
+-    handler = self.Image.set_from_file(image_path)
+-    pixbuf = self.Image.get_pixbuf()
+-    self.treemodel.set_value(myiter, 0, '%004d' % details['number'])
+-    self.treemodel.set_value(myiter, 1, pixbuf)
+-    self.treemodel.set_value(myiter, 2, details['o_title'])
+-    self.treemodel.set_value(myiter, 3, details['title'])
+-    self.treemodel.set_value(myiter, 4, details['director'])
+-    self.treemodel.set_value(myiter, 5, details['genre'])
+-    self.treemodel.set_value(myiter, 6, details['seen'])
+-    if details['year'] is None:
+-        self.treemodel.set_value(myiter, 7, '')
+-    else:
+-        self.treemodel.set_value(myiter, 7, int(details['year']))
+-    if details['runtime'] is None:
+-        self.treemodel.set_value(myiter, 8, '')
+-    else:
+-        self.treemodel.set_value(myiter, 8, '%003d' % int(details['runtime']) + _(' min'))
+-    if details['rating'] is None:
+-        self.treemodel.set_value(myiter, 9, '')
+-    else:
+-        self.treemodel.set_value(myiter, 9, int(details['rating']))
+-    if details['created']:
+-        self.treemodel.set_value(myiter, 10, details['created'].strftime('%Y-%m-%d %H:%M'))
+-    if details['updated']:
+-        self.treemodel.set_value(myiter, 11, details['updated'].strftime('%Y-%m-%d %H:%M'))
+-    #update statusbar
++    # create and select new entry in main treelist
++    myiter = main_treeview.addmovie(self, movie)
++    main_treeview.select(self, myiter)
++    
++    # update statusbar
+     self.total += 1
+     self.count_statusbar()
+-    #select new entry from main treelist
+-    self.widgets['treeview'].get_selection().select_iter(myiter)
+-    self.treeview_clicked()
++    
+     clear(self)
+ 
+     if close:
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2010-10-01 19:57:05 UTC (rev 1455)
++++ trunk/lib/main_treeview.py	2010-10-03 11:41:49 UTC (rev 1456)
+@@ -487,39 +487,8 @@
+         self.updated_column.set_visible(False)
+ 
+     for movie in movies:
+-        myiter = self.treemodel.append(None)
++        addmovie(self, movie)
+ 
+-        self.treemodel.set_value(myiter, 0, '%004d' % int(movie.number))
+-
+-        if self.config.get('image', True, section='mainlist') == True:
+-            filename = None
+-            if movie.poster_md5:
+-                filename = gutils.get_image_fname(movie.poster_md5, self.db, &quot;s&quot;)
+-            if not filename:
+-                filename = os.path.join(self.locations['images'], 'default_thumbnail.png')
+-
+-            self.Image.set_from_file(filename)
+-            try:
+-                pixbuf = self.Image.get_pixbuf()
+-                self.treemodel.set_value(myiter, 1, pixbuf)
+-            except:
+-                log.exception(&quot;can't load the image %s&quot; % filename)
+-        self.treemodel.set_value(myiter, 2, movie.o_title)
+-        self.treemodel.set_value(myiter, 3, movie.title)
+-        self.treemodel.set_value(myiter, 4, movie.director)
+-        self.treemodel.set_value(myiter, 5, movie.genre)
+-        self.treemodel.set_value(myiter, 6, movie.seen)
+-        if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
+-            self.treemodel.set_value(myiter, 7, movie.year)
+-        if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
+-            self.treemodel.set_value(myiter, 8, '%003d' % movie.runtime + _(' min'))
+-        if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+-            self.treemodel.set_value(myiter, 9, movie.rating)
+-        if movie.created:
+-            self.treemodel.set_value(myiter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
+-        if movie.updated:
+-            self.treemodel.set_value(myiter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
+-
+     # restore user sort column
+     if sort_column_id is not None:
+         self.treemodel.set_sort_column_id(sort_column_id, order)
+@@ -532,4 +501,55 @@
+     self.count_statusbar()
+ #}}}
+ 
++def addmovie(self, movie): #{{{
++    myiter = self.treemodel.append(None)
++    setmovie(self, movie, myiter)
++    return myiter
++#}}}
++
++def setmovie(self, movie, iter, treemodel = None): #{{{
++    if not treemodel:
++        treemodel = self.treemodel
++
++    treemodel.set_value(iter, 0, '%004d' % int(movie.number))
++
++    if self.config.get('image', True, section='mainlist') == True:
++        filename = None
++        if movie.poster_md5:
++            filename = gutils.get_image_fname(movie.poster_md5, self.db, &quot;s&quot;)
++        if not filename:
++            filename = os.path.join(self.locations['images'], 'default_thumbnail.png')
++
++        self.Image.set_from_file(filename)
++        try:
++            pixbuf = self.Image.get_pixbuf()
++            treemodel.set_value(iter, 1, pixbuf)
++        except:
++            log.exception(&quot;can't load the image %s&quot; % filename)
++
++    treemodel.set_value(iter, 2, movie.o_title)
++    treemodel.set_value(iter, 3, movie.title)
++    treemodel.set_value(iter, 4, movie.director)
++    treemodel.set_value(iter, 5, movie.genre)
++    treemodel.set_value(iter, 6, movie.seen)
++    if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
++        treemodel.set_value(iter, 7, movie.year)
++    if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
++        treemodel.set_value(iter, 8, '%003d' % movie.runtime + _(' min'))
++    if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
++        treemodel.set_value(iter, 9, movie.rating)
++    if movie.created:
++        treemodel.set_value(iter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
++    if movie.updated:
++        treemodel.set_value(iter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
++    return iter
++#}}}
++
++def select(self, iter, ensurevisible = True): #{{{
++    self.widgets['treeview'].get_selection().select_iter(iter)
++    if ensurevisible:
++        self.widgets['treeview'].scroll_to_cell(self.treemodel.get_path(iter))
++    self.treeview_clicked()
++#}}}
++
+ # vim: fdm=marker
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000917.html">[Griffith-svn] r1455 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000919.html">[Griffith-svn] r1457 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#918">[ date ]</a>
+              <a href="thread.html#918">[ thread ]</a>
+              <a href="subject.html#918">[ subject ]</a>
+              <a href="author.html#918">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

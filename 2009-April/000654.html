@@ -1,0 +1,1036 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1182 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1182%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200904051847.n35Il6Ua020741%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000653.html">
+   <LINK REL="Next"  HREF="000655.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1182 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1182%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200904051847.n35Il6Ua020741%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1182 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr  5 20:47:06 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000653.html">[Griffith-svn] r1181 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000655.html">[Griffith-svn] r1183 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#654">[ date ]</a>
+              <a href="thread.html#654">[ thread ]</a>
+              <a href="subject.html#654">[ subject ]</a>
+              <a href="author.html#654">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-05 20:46:43 +0200 (Sun, 05 Apr 2009)
+New Revision: 1182
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+Log:
+[#269907] PluginMovieFilmDb.py: list index out of range
+and complete update of the plugin with test data
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-04-02 10:20:06 UTC (rev 1181)
++++ branches/0.9.x/ChangeLog	2009-04-05 18:46:43 UTC (rev 1182)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-04-05  Michael Jahn
++	* [#269907] PluginMovieFilmDb.py: list index out of range
++	  and complete update of the plugin with test data
++
+ 2009-04-02  Michael Jahn
+ 	* fixed error when saving extended ascii data with pysqlite 2.5.x
+ 	* IMDB-de plugin updated
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-02 10:20:06 UTC (rev 1181)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-05 18:46:43 UTC (rev 1182)
+@@ -1,144 +1,314 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2007 Michael Jahn
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-import gutils
+-import movie
+-import string
+-
+-plugin_name		= 'FilmDb.de'
+-plugin_description	= 'FILMDB.DE'
+-plugin_url		= 'www.filmdb.de'
+-plugin_language		= _('German')
+-plugin_author		= 'Michael Jahn'
+-plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;'
+-plugin_version		= '1.0'
+-
+-class Plugin(movie.Movie):
+-	def __init__(self, id):
+-		self.encode='iso-8859-1'
+-		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=">http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=</A>&quot; + self.movie_id
+-
+-	def initialize(self):
+-		self.tmp_page = gutils.trim(self.page, &quot;&lt;h1&gt;Filmdatenbank - &quot;, &quot;Kommentare&lt;/a&gt;&quot;)
+-	
+-	def get_image(self):
+-		self.image_url = gutils.trim(self.tmp_page, '&lt;td background=&quot;', '&quot;');
+-
+-	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '&lt;h1&gt;Filmdatenbank - ', '&lt;/h1&gt;')
+-
+-	def get_title(self):
+-		self.title = gutils.trim(self.page, '&lt;h1&gt;Filmdatenbank - ', '&lt;/h1&gt;')
+-
+-	def get_director(self):
+-		self.director = gutils.after(gutils.trim(self.tmp_page, 'regisseursuche.php', '&lt;/a&gt;'), '&gt;')
+-
+-	def get_plot(self):
+-		self.plot = gutils.trim(self.tmp_page, '&gt;Inhalt&lt;/strong&gt;', '&lt;td width=&quot;150&quot; valign=&quot;top&quot;&gt;')
+-		self.plot = self.plot.replace('\t', '')
+-		self.plot = self.plot.replace('\n', '')
+-		self.plot = self.plot.replace('&#132;', '&quot;')
+-		self.plot = self.plot.replace('&#147;', '&quot;')
+-
+-	def get_year(self):
+-		elements = string.split(self.tmp_page, 'landjahrsuche.php')
+-		self.year = gutils.trim(elements[2], '&gt;', '&lt;/a&gt;') + '\n'
+-
+-	def get_runtime(self):
+-		self.runtime = &quot;&quot;
+-		tmp = gutils.trim(self.tmp_page, '&lt;/a&gt;  &#150; ', ' Stunden')
+-		if tmp &lt;&gt; '':
+-			elements = string.split(tmp, ':')
+-			try:
+-				hours = int(elements[0])
+-				mins = int(elements[1])
+-				self.runtime = str(hours * 60 + mins)
+-			except:
+-				self.runtime = &quot;&quot;
+-
+-	def get_genre(self):
+-		self.genre = gutils.after(gutils.trim(self.tmp_page, 'genresuche.php', '&lt;/a&gt;'), '&gt;')
+-
+-	def get_cast(self):
+-		self.cast = &quot;&quot;
+-		elements = string.split(self.tmp_page, 'schauspielersuche.php')
+-		elements[0] = ''
+-		for element in elements:
+-			if element &lt;&gt; '':
+-				self.cast = self.cast + gutils.trim(element, '&gt;', '&lt;/a&gt;') + '\n'
+-
+-	def get_classification(self):
+-		self.classification = &quot;&quot;
+-
+-	def get_studio(self):
+-		self.studio = &quot;&quot;
+-
+-	def get_o_site(self):
+-		self.o_site = &quot;&quot;
+-
+-	def get_site(self):
+-		self.site = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=">http://www.filmdb.de/filmanzeige.php?filmid=</A>&quot; + self.movie_id
+-
+-	def get_trailer(self):
+-		self.trailer = &quot;&quot;
+-
+-	def get_country(self):
+-		elements = string.split(self.tmp_page, 'landjahrsuche.php')
+-		self.country = gutils.trim(elements[1], '&gt;', '&lt;/a&gt;') + '\n'
+-
+-	def get_rating(self):
+-		self.rating = gutils.trim(self.tmp_page, 'Unsere User haben diesen Film mit ', ' bewertet.')
+-		self.rating = self.rating.replace('%', '')
+-		self.rating = gutils.strip_tags(self.rating)
+-		elements = self.rating.split('.')
+-		try:
+-			tmprating = int(elements[0])
+-			self.rating = str(tmprating / 10)
+-		except:
+-			self.rating = '0'
+-
+-	def get_notes(self):
+-		self.notes = &quot;&quot;
+-
+-class SearchPlugin(movie.SearchMovie):
+-
+-	def __init__(self):
+-		self.original_url_search   = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
+-		self.translated_url_search = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
+-		self.encode='iso-8859-1'
+-
+-	def search(self,parent_window):
+-		self.open_search(parent_window)
+-		return gutils.trim(self.page, &quot;&lt;span class=font_normal&gt;&quot;, &quot;&lt;table width=590&quot;)
+-
+-	def get_searches(self):
+-		elements = string.split(self.page, &quot;&lt;!--&quot;)
+-		elements[0] = ''
+-		for element in elements:
+-			if element &lt;&gt; '':
+-				self.ids.append(gutils.trim(element, &quot;filmid=&quot;, &quot;&gt;&quot;))
+-				self.titles.append(gutils.trim(
+-					gutils.after(element, &quot;filmid=&quot;), &quot;&gt;&quot;, &quot;&lt;&quot;) + &quot; - &quot; +
+-					gutils.trim(gutils.after(element, &quot;&lt;/a&gt;&quot;), &quot;&lt;td&gt;&quot;, &quot;&lt;/td&gt;&quot;) + &quot; - &quot; +
+-					gutils.trim(gutils.after(gutils.after(element, &quot;&lt;td&gt;&quot;), &quot;&lt;td&gt;&quot;), &quot;&lt;td&gt;&quot;, &quot;&lt;/td&gt;&quot;))
++&#239;&#187;&#191;# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007-2009 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string, re
++
++plugin_name         = 'FilmDb.de'
++plugin_description  = 'FILMDB.DE'
++plugin_url          = 'www.filmdb.de'
++plugin_language     = _('German')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;'
++plugin_version      = '1.1'
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode   = 'iso-8859-1'
++		self.movie_id = id
++		self.url      = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=">http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=</A>&quot; + self.movie_id
++
++	def get_image(self):
++		tmp = gutils.trim(self.page, 'plakat.php?', '\'')
++		if tmp:
++			page_image = self.open_page(url='<A HREF="http://www.filmdb.de/plakat.php?">http://www.filmdb.de/plakat.php?</A>' + tmp)
++			tmp = gutils.trim(self.page, '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>', '&quot;')
++			if tmp:
++				self.image_url = '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>' + tmp
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
++
++	def get_director(self):
++		self.director = ''
++		elements = re.split('regisseursuche.php?', self.page)
++		elements[0] = ''
++		listelement = ''
++		for element in elements:
++			if element &lt;&gt; '':
++				self.director = self.director + listelement + gutils.trim(element, '&gt;', '&lt;/a&gt;')
++				listelement = ', '
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, 'noshade style=\'color:#FFCCCC;\'&gt;', '&lt;')
++		if self.plot == '':
++			self.plot = gutils.trim(self.page, 'noshade style=\'color:#FFCCCC;\'&gt;', '&quot;')
++		self.plot = self.plot.replace('\t', '')
++		self.plot = self.plot.replace('\n', '')
++		self.plot = self.plot.replace(u'\x93', '&quot;')
++		self.plot = self.plot.replace(u'\x84', '&quot;')
++
++	def get_year(self):
++		elements = string.split(self.page, 'landjahrsuche.php')
++		if len(elements) &gt; 1:
++			self.year = gutils.trim(elements[2], '&gt;', '&lt;/a&gt;')
++		else:
++			self.year = ''
++
++	def get_runtime(self):
++		self.runtime = &quot;&quot;
++		tmp = gutils.trim(self.page, 'L&auml;nge: ', '&lt;')
++		if tmp &lt;&gt; '':
++			elements = string.split(tmp, ':')
++			try:
++				hours = int(elements[0])
++				mins = int(elements[1])
++				self.runtime = str(hours * 60 + mins)
++			except:
++				self.runtime = &quot;&quot;
++
++	def get_genre(self):
++		self.genre = gutils.after(gutils.trim(self.page, 'genresuche.php', '&lt;/a&gt;'), '&gt;')
++
++	def get_cast(self):
++		self.cast = &quot;&quot;
++		tmp = gutils.trim(self.page, 'function schauspiel()', '}')
++		if tmp == '':
++			tmp = self.page
++		elements = string.split(tmp, 'schauspielersuche.php')
++		elements[0] = ''
++		for element in elements:
++			if element &lt;&gt; '':
++				self.cast = self.cast + gutils.clean(gutils.trim(element, '&gt;', '&lt;/a&gt;')) + '\n'
++
++	def get_classification(self):
++		self.classification = &quot;&quot;
++
++	def get_studio(self):
++		self.studio = &quot;&quot;
++
++	def get_o_site(self):
++		self.o_site = &quot;&quot;
++
++	def get_site(self):
++		self.site = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=">http://www.filmdb.de/filmanzeige.php?filmid=</A>&quot; + self.movie_id
++
++	def get_trailer(self):
++		self.trailer = &quot;&quot;
++
++	def get_country(self):
++		elements = string.split(self.page, 'landjahrsuche.php')
++		if len (elements) &gt; 0:
++			self.country = gutils.trim(elements[1], '&gt;', '&lt;/a&gt;') + '\n'
++
++	def get_rating(self):
++		self.rating = gutils.trim(self.page, 'Unsere User haben diesen Film mit ', ' bewertet.')
++		self.rating = self.rating.replace('%', '')
++		self.rating = gutils.strip_tags(self.rating)
++		elements = self.rating.split('.')
++		try:
++			tmprating = int(elements[0])
++			self.rating = str(tmprating / 10)
++		except:
++			self.rating = '0'
++
++	def get_notes(self):
++		self.notes = ''
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
++		self.encode                = 'iso-8859-1'
++		self.remove_accents        = False
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		return self.page
++
++	def get_searches(self):
++		elements = re.split('(?:href=[&quot;]*filmanzeige[.]php[?]filmid=)', self.page)
++		elements[0] = ''
++		for element in elements:
++			if element &lt;&gt; '':
++				idmatch = re.search('([&gt;]|[&quot;])', element)
++				if idmatch:
++					self.ids.append(element[:idmatch.end() - 1])
++					self.titles.append(gutils.trim(element, '&gt;', '&lt;') + ' - ' +
++						gutils.trim(gutils.after(element, '&lt;/a&gt;'), '&lt;td&gt;', '&lt;/td&gt;') + ' - ' +
++						gutils.trim(gutils.after(element, '&lt;td&gt;'), '&lt;td&gt;', '&lt;/td&gt;'))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa' : [  1,  1 ],
++		'Arahan'       : [  1,  1 ],
++		'M&#195;&#164;rchen'      : [ 23, 23 ]
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'Rocky Balboa' : { 
++			'title'               : 'Rocky Balboa',
++			'o_title'             : 'Rocky Balboa',
++			'director'            : 'Sylvester Stallone',
++			'plot'                : True,
++			'cast'                : 'Dolph Lundgren\n\
++Sylvester Stallone\n\
++Carl Weathers\n\
++Burt Young\n\
++Mike Tyson\n\
++Talia Shire\n\
++Burgess Meredith\n\
++Tony Burton\n\
++Mr. T\n\
++Milo Ventimiglia\n\
++Frank Stallone\n\
++Michael Buffer\n\
++Geraldine Hughes\n\
++Lahmard J. Tate\n\
++Don Sherman\n\
++Robert Michael Kelly\n\
++LeRoy Neiman\n\
++Stu Nahan\n\
++Skip Bayless\n\
++Gunnar Peterson\n\
++Tobias Segal\n\
++Marc Ratner\n\
++Henry G. Sanders\n\
++Angela Boyd\n\
++Ana Gerena\n\
++Ricky Cavazos\n\
++Rick Buchborn\n\
++Fran Pultro\n\
++Joe Cortez\n\
++Charles Johnson\n\
++Jody Giambelluca\n\
++Yahya\n\
++Tim Carr\n\
++Jack Lazzarado\n\
++Carter Mitchell\n\
++Barney Fitzpatrick\n\
++Maureen Schilling\n\
++James Binns\n\
++Antonio Tarver\n\
++A.J. Benza\n\
++Matt Frack\n\
++Louis Giansante\n\
++Kevin King Templeton\n\
++Woody Paige\n\
++Pedro Lovell\n\
++Nick Baker\n\
++Brian Kenny\n\
++Paul Dion Monte\n\
++Jim Lampley\n\
++Dana Jacobson\n\
++Bert Randolph Sugar\n\
++Bernard Fern&#195;&#161;ndez\n\
++Larry Merchant\n\
++Anthony Lato Jr.\n\
++Max Kellerman\n\
++Lou DiBella\n\
++Vinod Kumar\n\
++Johnnie Hobbs Jr.\n\
++Jay Crawford\n\
++Gary Compton\n\
++James Francis Kelly III',
++			'country'             : 'USA',
++			'genre'               : 'Drama',
++			'classification'      : False,
++			'studio'              : False,
++			'o_site'              : False,
++			'site'                : '<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=Rocky">http://www.filmdb.de/filmanzeige.php?filmid=Rocky</A> Balboa',
++			'trailer'             : False,
++			'year'                : 2006,
++			'notes'               : False,
++			'runtime'             : 102,
++			'image'               : True,
++			'rating'              : False
++		},
++		'Tatort -%3Cwbr %2F%3E M%26auml%3Brchenwald' : { 
++			'title'               : 'Tatort - M&#195;&#164;rchenwald',
++			'o_title'             : 'Tatort - M&#195;&#164;rchenwald',
++			'director'            : 'Christiane Balthasar',
++			'plot'                : True,
++			'cast'                : 'Maria Furtw&#195;&#164;ngler\n\
++Hannes Jaenicke\n\
++Charly H&#195;&#188;bner\n\
++Ingo Naujoks\n\
++Michael Wittenborn',
++			'country'             : 'D',
++			'genre'               : False,
++			'classification'      : False,
++			'studio'              : False,
++			'o_site'              : False,
++			'site'                : '<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=Tatort">http://www.filmdb.de/filmanzeige.php?filmid=Tatort</A> -%3Cwbr %2F%3E M%26auml%3Brchenwald',
++			'trailer'             : False,
++			'year'                : 2004,
++			'notes'               : False,
++			'runtime'             : 90,
++			'image'               : True,
++			'rating'              : False
++		},
++		'Arahan' : { 
++			'title'               : 'Arahan',
++			'o_title'             : 'Arahan',
++			'director'            : 'Ryoo Seung-Wan',
++			'plot'                : True,
++			'cast'                : 'So-yi Yoon\n\
++Doo-hong Jung\n\
++Ryu Seung-beom\n\
++Ahn Sung-ki\n\
++Yun Ju-Sang',
++			'country'             : 'RK',
++			'genre'               : 'Actionkom&#195;&#182;die',
++			'classification'      : False,
++			'studio'              : False,
++			'o_site'              : False,
++			'site'                : '<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=Arahan">http://www.filmdb.de/filmanzeige.php?filmid=Arahan</A>',
++			'trailer'             : False,
++			'year'                : 2004,
++			'notes'               : False,
++			'runtime'             : 109,
++			'image'               : False,
++			'rating'              : False
++		}
++	}
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-04-02 10:20:06 UTC (rev 1181)
++++ trunk/ChangeLog	2009-04-05 18:46:43 UTC (rev 1182)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-04-05  Michael Jahn
++	* [#269907] PluginMovieFilmDb.py: list index out of range
++	  and complete update of the plugin with test data
++
+ 2009-04-02  Michael Jahn
+ 	* IMDB-de plugin updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-02 10:20:06 UTC (rev 1181)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-05 18:46:43 UTC (rev 1182)
+@@ -1,145 +1,315 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2007 Michael Jahn
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-import gutils
+-import movie
+-import string
+-
+-plugin_name        = 'FilmDb.de'
+-plugin_description    = 'FILMDB.DE'
+-plugin_url        = 'www.filmdb.de'
+-plugin_language        = _('German')
+-plugin_author        = 'Michael Jahn'
+-plugin_author_email    = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;'
+-plugin_version        = '1.0'
+-
+-class Plugin(movie.Movie):
+-    def __init__(self, id):
+-        self.encode='iso-8859-1'
+-        self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=">http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=</A>&quot; + self.movie_id
+-
+-    def initialize(self):
+-        self.tmp_page = gutils.trim(self.page, &quot;&lt;h1&gt;Filmdatenbank - &quot;, &quot;Kommentare&lt;/a&gt;&quot;)
+-    
+-    def get_image(self):
+-        self.image_url = gutils.trim(self.tmp_page, '&lt;td background=&quot;', '&quot;');
+-
+-    def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;h1&gt;Filmdatenbank - ', '&lt;/h1&gt;')
+-
+-    def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;h1&gt;Filmdatenbank - ', '&lt;/h1&gt;')
+-
+-    def get_director(self):
+-        self.director = gutils.after(gutils.trim(self.tmp_page, 'regisseursuche.php', '&lt;/a&gt;'), '&gt;')
+-
+-    def get_plot(self):
+-        self.plot = gutils.trim(self.tmp_page, '&gt;Inhalt&lt;/strong&gt;', '&lt;td width=&quot;150&quot; valign=&quot;top&quot;&gt;')
+-        self.plot = self.plot.replace('\t', '')
+-        self.plot = self.plot.replace('\n', '')
+-        self.plot = self.plot.replace('&#132;', '&quot;')
+-        self.plot = self.plot.replace('&#147;', '&quot;')
+-
+-    def get_year(self):
+-        elements = string.split(self.tmp_page, 'landjahrsuche.php')
+-        self.year = gutils.trim(elements[2], '&gt;', '&lt;/a&gt;') + '\n'
+-
+-    def get_runtime(self):
+-        self.runtime = &quot;&quot;
+-        tmp = gutils.trim(self.tmp_page, '&lt;/a&gt;  &#150; ', ' Stunden')
+-        if tmp &lt;&gt; '':
+-            elements = string.split(tmp, ':')
+-            try:
+-                hours = int(elements[0])
+-                mins = int(elements[1])
+-                self.runtime = str(hours * 60 + mins)
+-            except:
+-                self.runtime = &quot;&quot;
+-
+-    def get_genre(self):
+-        self.genre = gutils.after(gutils.trim(self.tmp_page, 'genresuche.php', '&lt;/a&gt;'), '&gt;')
+-
+-    def get_cast(self):
+-        self.cast = &quot;&quot;
+-        elements = string.split(self.tmp_page, 'schauspielersuche.php')
+-        elements[0] = ''
+-        for element in elements:
+-            if element &lt;&gt; '':
+-                self.cast = self.cast + gutils.trim(element, '&gt;', '&lt;/a&gt;') + '\n'
+-
+-    def get_classification(self):
+-        self.classification = &quot;&quot;
+-
+-    def get_studio(self):
+-        self.studio = &quot;&quot;
+-
+-    def get_o_site(self):
+-        self.o_site = &quot;&quot;
+-
+-    def get_site(self):
+-        self.site = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=">http://www.filmdb.de/filmanzeige.php?filmid=</A>&quot; + self.movie_id
+-
+-    def get_trailer(self):
+-        self.trailer = &quot;&quot;
+-
+-    def get_country(self):
+-        elements = string.split(self.tmp_page, 'landjahrsuche.php')
+-        self.country = gutils.trim(elements[1], '&gt;', '&lt;/a&gt;') + '\n'
+-
+-    def get_rating(self):
+-        self.rating = gutils.trim(self.tmp_page, 'Unsere User haben diesen Film mit ', ' bewertet.')
+-        self.rating = self.rating.replace('%', '')
+-        self.rating = gutils.strip_tags(self.rating)
+-        elements = self.rating.split('.')
+-        try:
+-            tmprating = int(elements[0])
+-            self.rating = str(tmprating / 10)
+-        except:
+-            self.rating = '0'
+-
+-    def get_notes(self):
+-        self.notes = &quot;&quot;
+-
+-class SearchPlugin(movie.SearchMovie):
+-
+-    def __init__(self):
+-        self.original_url_search   = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
+-        self.translated_url_search = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
+-        self.encode='iso-8859-1'
+-
+-    def search(self,parent_window):
+-        if not self.open_search(parent_window):
+-            return None
+-        return gutils.trim(self.page, &quot;&lt;span class=font_normal&gt;&quot;, &quot;&lt;table width=590&quot;)
+-
+-    def get_searches(self):
+-        elements = string.split(self.page, &quot;&lt;!--&quot;)
+-        elements[0] = ''
+-        for element in elements:
+-            if element &lt;&gt; '':
+-                self.ids.append(gutils.trim(element, &quot;filmid=&quot;, &quot;&gt;&quot;))
+-                self.titles.append(gutils.trim(
+-                    gutils.after(element, &quot;filmid=&quot;), &quot;&gt;&quot;, &quot;&lt;&quot;) + &quot; - &quot; +
+-                    gutils.trim(gutils.after(element, &quot;&lt;/a&gt;&quot;), &quot;&lt;td&gt;&quot;, &quot;&lt;/td&gt;&quot;) + &quot; - &quot; +
+-                    gutils.trim(gutils.after(gutils.after(element, &quot;&lt;td&gt;&quot;), &quot;&lt;td&gt;&quot;), &quot;&lt;td&gt;&quot;, &quot;&lt;/td&gt;&quot;))
++&#239;&#187;&#191;# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007-2009 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string, re
++
++plugin_name         = 'FilmDb.de'
++plugin_description  = 'FILMDB.DE'
++plugin_url          = 'www.filmdb.de'
++plugin_language     = _('German')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;'
++plugin_version      = '1.0'
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.encode   = 'iso-8859-1'
++        self.movie_id = id
++        self.url      = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=">http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=</A>&quot; + self.movie_id
++
++    def get_image(self):
++        tmp = gutils.trim(self.page, 'plakat.php?', '\'')
++        if tmp:
++            page_image = self.open_page(url='<A HREF="http://www.filmdb.de/plakat.php?">http://www.filmdb.de/plakat.php?</A>' + tmp)
++            tmp = gutils.trim(self.page, '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>', '&quot;')
++            if tmp:
++                self.image_url = '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>' + tmp
++
++    def get_o_title(self):
++        self.o_title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
++
++    def get_title(self):
++        self.title = gutils.trim(self.page, '&lt;h1&gt;', '&lt;/h1&gt;')
++
++    def get_director(self):
++        self.director = ''
++        elements = re.split('regisseursuche.php?', self.page)
++        elements[0] = ''
++        listelement = ''
++        for element in elements:
++            if element &lt;&gt; '':
++                self.director = self.director + listelement + gutils.trim(element, '&gt;', '&lt;/a&gt;')
++                listelement = ', '
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, 'noshade style=\'color:#FFCCCC;\'&gt;', '&lt;')
++        if self.plot == '':
++            self.plot = gutils.trim(self.page, 'noshade style=\'color:#FFCCCC;\'&gt;', '&quot;')
++        self.plot = self.plot.replace('\t', '')
++        self.plot = self.plot.replace('\n', '')
++        self.plot = self.plot.replace(u'\x93', '&quot;')
++        self.plot = self.plot.replace(u'\x84', '&quot;')
++
++    def get_year(self):
++        elements = string.split(self.page, 'landjahrsuche.php')
++        if len(elements) &gt; 1:
++            self.year = gutils.trim(elements[2], '&gt;', '&lt;/a&gt;')
++        else:
++            self.year = ''
++
++    def get_runtime(self):
++        self.runtime = &quot;&quot;
++        tmp = gutils.trim(self.page, 'L&auml;nge: ', '&lt;')
++        if tmp &lt;&gt; '':
++            elements = string.split(tmp, ':')
++            try:
++                hours = int(elements[0])
++                mins = int(elements[1])
++                self.runtime = str(hours * 60 + mins)
++            except:
++                self.runtime = &quot;&quot;
++
++    def get_genre(self):
++        self.genre = gutils.after(gutils.trim(self.page, 'genresuche.php', '&lt;/a&gt;'), '&gt;')
++
++    def get_cast(self):
++        self.cast = &quot;&quot;
++        tmp = gutils.trim(self.page, 'function schauspiel()', '}')
++        if tmp == '':
++            tmp = self.page
++        elements = string.split(tmp, 'schauspielersuche.php')
++        elements[0] = ''
++        for element in elements:
++            if element &lt;&gt; '':
++                self.cast = self.cast + gutils.clean(gutils.trim(element, '&gt;', '&lt;/a&gt;')) + '\n'
++
++    def get_classification(self):
++        self.classification = &quot;&quot;
++
++    def get_studio(self):
++        self.studio = &quot;&quot;
++
++    def get_o_site(self):
++        self.o_site = &quot;&quot;
++
++    def get_site(self):
++        self.site = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=">http://www.filmdb.de/filmanzeige.php?filmid=</A>&quot; + self.movie_id
++
++    def get_trailer(self):
++        self.trailer = &quot;&quot;
++
++    def get_country(self):
++        elements = string.split(self.page, 'landjahrsuche.php')
++        if len (elements) &gt; 0:
++            self.country = gutils.trim(elements[1], '&gt;', '&lt;/a&gt;') + '\n'
++
++    def get_rating(self):
++        self.rating = gutils.trim(self.page, 'Unsere User haben diesen Film mit ', ' bewertet.')
++        self.rating = self.rating.replace('%', '')
++        self.rating = gutils.strip_tags(self.rating)
++        elements = self.rating.split('.')
++        try:
++            tmprating = int(elements[0])
++            self.rating = str(tmprating / 10)
++        except:
++            self.rating = '0'
++
++    def get_notes(self):
++        self.notes = ''
++
++class SearchPlugin(movie.SearchMovie):
++
++    def __init__(self):
++        self.original_url_search   = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.filmdb.de/globalsuche.php?name=">http://www.filmdb.de/globalsuche.php?name=</A>&quot;
++        self.encode                = 'iso-8859-1'
++        self.remove_accents        = False
++
++    def search(self,parent_window):
++        if not self.open_search(parent_window):
++            return None
++        return self.page
++
++    def get_searches(self):
++        elements = re.split('(?:href=[&quot;]*filmanzeige[.]php[?]filmid=)', self.page)
++        elements[0] = ''
++        for element in elements:
++            if element &lt;&gt; '':
++                idmatch = re.search('([&gt;]|[&quot;])', element)
++                if idmatch:
++                    self.ids.append(element[:idmatch.end() - 1])
++                    self.titles.append(gutils.trim(element, '&gt;', '&lt;') + ' - ' +
++                            gutils.trim(gutils.after(element, '&lt;/a&gt;'), '&lt;td&gt;', '&lt;/td&gt;') + ' - ' +
++                            gutils.trim(gutils.after(element, '&lt;td&gt;'), '&lt;td&gt;', '&lt;/td&gt;'))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [  1,  1 ],
++        'Arahan'       : [  1,  1 ],
++        'M&#195;&#164;rchen'      : [ 23, 23 ]
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        'Rocky Balboa' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Dolph Lundgren\n\
++Sylvester Stallone\n\
++Carl Weathers\n\
++Burt Young\n\
++Mike Tyson\n\
++Talia Shire\n\
++Burgess Meredith\n\
++Tony Burton\n\
++Mr. T\n\
++Milo Ventimiglia\n\
++Frank Stallone\n\
++Michael Buffer\n\
++Geraldine Hughes\n\
++Lahmard J. Tate\n\
++Don Sherman\n\
++Robert Michael Kelly\n\
++LeRoy Neiman\n\
++Stu Nahan\n\
++Skip Bayless\n\
++Gunnar Peterson\n\
++Tobias Segal\n\
++Marc Ratner\n\
++Henry G. Sanders\n\
++Angela Boyd\n\
++Ana Gerena\n\
++Ricky Cavazos\n\
++Rick Buchborn\n\
++Fran Pultro\n\
++Joe Cortez\n\
++Charles Johnson\n\
++Jody Giambelluca\n\
++Yahya\n\
++Tim Carr\n\
++Jack Lazzarado\n\
++Carter Mitchell\n\
++Barney Fitzpatrick\n\
++Maureen Schilling\n\
++James Binns\n\
++Antonio Tarver\n\
++A.J. Benza\n\
++Matt Frack\n\
++Louis Giansante\n\
++Kevin King Templeton\n\
++Woody Paige\n\
++Pedro Lovell\n\
++Nick Baker\n\
++Brian Kenny\n\
++Paul Dion Monte\n\
++Jim Lampley\n\
++Dana Jacobson\n\
++Bert Randolph Sugar\n\
++Bernard Fern&#195;&#161;ndez\n\
++Larry Merchant\n\
++Anthony Lato Jr.\n\
++Max Kellerman\n\
++Lou DiBella\n\
++Vinod Kumar\n\
++Johnnie Hobbs Jr.\n\
++Jay Crawford\n\
++Gary Compton\n\
++James Francis Kelly III',
++            'country'             : 'USA',
++            'genre'               : 'Drama',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=Rocky">http://www.filmdb.de/filmanzeige.php?filmid=Rocky</A> Balboa',
++            'trailer'             : False,
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : False
++        },
++        'Tatort -%3Cwbr %2F%3E M%26auml%3Brchenwald' : { 
++            'title'               : 'Tatort - M&#195;&#164;rchenwald',
++            'o_title'             : 'Tatort - M&#195;&#164;rchenwald',
++            'director'            : 'Christiane Balthasar',
++            'plot'                : True,
++            'cast'                : 'Maria Furtw&#195;&#164;ngler\n\
++Hannes Jaenicke\n\
++Charly H&#195;&#188;bner\n\
++Ingo Naujoks\n\
++Michael Wittenborn',
++            'country'             : 'D',
++            'genre'               : False,
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=Tatort">http://www.filmdb.de/filmanzeige.php?filmid=Tatort</A> -%3Cwbr %2F%3E M%26auml%3Brchenwald',
++            'trailer'             : False,
++            'year'                : 2004,
++            'notes'               : False,
++            'runtime'             : 90,
++            'image'               : True,
++            'rating'              : False
++        },
++        'Arahan' : { 
++            'title'               : 'Arahan',
++            'o_title'             : 'Arahan',
++            'director'            : 'Ryoo Seung-Wan',
++            'plot'                : True,
++            'cast'                : 'So-yi Yoon\n\
++Doo-hong Jung\n\
++Ryu Seung-beom\n\
++Ahn Sung-ki\n\
++Yun Ju-Sang',
++            'country'             : 'RK',
++            'genre'               : 'Actionkom&#195;&#182;die',
++            'classification'      : False,
++            'studio'              : False,
++            'o_site'              : False,
++            'site'                : '<A HREF="http://www.filmdb.de/filmanzeige.php?filmid=Arahan">http://www.filmdb.de/filmanzeige.php?filmid=Arahan</A>',
++            'trailer'             : False,
++            'year'                : 2004,
++            'notes'               : False,
++            'runtime'             : 109,
++            'image'               : False,
++            'rating'              : False
++        }
++    }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000653.html">[Griffith-svn] r1181 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000655.html">[Griffith-svn] r1183 - branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#654">[ date ]</a>
+              <a href="thread.html#654">[ thread ]</a>
+              <a href="subject.html#654">[ subject ]</a>
+              <a href="author.html#654">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

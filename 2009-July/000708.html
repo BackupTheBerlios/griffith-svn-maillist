@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1238 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1238%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200907042040.n64Ke6De030727%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000707.html">
+   <LINK REL="Next"  HREF="000709.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1238 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1238%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200907042040.n64Ke6De030727%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1238 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Jul  4 22:40:06 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000707.html">[Griffith-svn] r1237 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000709.html">[Griffith-svn] r1239 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#708">[ date ]</a>
+              <a href="thread.html#708">[ thread ]</a>
+              <a href="subject.html#708">[ subject ]</a>
+              <a href="author.html#708">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-04 22:40:05 +0200 (Sat, 04 Jul 2009)
+New Revision: 1238
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/backup.py
+Log:
+Rollback all pending operations before creating new database
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-04 13:21:34 UTC (rev 1237)
++++ trunk/ChangeLog	2009-07-04 20:40:05 UTC (rev 1238)
+@@ -11,8 +11,8 @@
+ 	  database otherwise default region will be used
+ 	* Mail content can be translated again (gettext issue fixed)
+ 	* [#269865] Don't change movie plugin selection after adding a movie
++	* Rollback all pending operations before creating new database
+ 
+-
+ 2009-07-03  Michael Jahn
+ 	* updated IMDb plugin
+ 	* added Ant Movie Catalog import plugin
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-07-04 13:21:34 UTC (rev 1237)
++++ trunk/griffith	2009-07-04 20:40:05 UTC (rev 1238)
+@@ -1364,6 +1364,8 @@
+                     delete_poster_from_cache(self, poster[0])
+ 
+                 log.debug('dropping old tables...')
++                self.db.session.rollback() # cancel all pending operations
++                self.db.session.bind.engine.dispose()
+                 db.metadata.drop_all(self.db.session.bind.engine)
+                 #from sqlalchemy.orm import clear_mappers
+                 #clear_mappers()
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-07-04 13:21:34 UTC (rev 1237)
++++ trunk/lib/backup.py	2009-07-04 20:40:05 UTC (rev 1238)
+@@ -127,6 +127,7 @@
+ 
+ def merge_db(src_db, dst_db): # FIXME
+     merged = 0
++    dst_db.session.rollback() # cancel all pending operations
+     src_session = src_db.Session() # create new session
+     dst_session = dst_db.Session() # create new session
+     movies = src_session.query(db.Movie).count()
+@@ -138,7 +139,7 @@
+             t_movies[column] = eval(&quot;movie.%s&quot;%column)
+ 
+         # replace number with new one
+-        t_movies[&quot;number&quot;] = gutils.find_next_available(self.db)
++        t_movies[&quot;number&quot;] = gutils.find_next_available(dst_db)
+ 
+         # don't restore volume/collection/tag/language/loan data (it's dangerous)
+         t_movies.pop('movie_id')
+@@ -237,6 +238,7 @@
+         if merge:
+             merge_db(tmp_db, self.db)
+         else:
++            self.db.session.rollback() # cancel all pending operations
+             copy_db(tmp_db.session.bind, self.db.session.bind)
+             # update old database section with current config values
+             # (important while restoring to external databases)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000707.html">[Griffith-svn] r1237 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000709.html">[Griffith-svn] r1239 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#708">[ date ]</a>
+              <a href="thread.html#708">[ thread ]</a>
+              <a href="subject.html#708">[ subject ]</a>
+              <a href="author.html#708">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

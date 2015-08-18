@@ -1,0 +1,365 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1381 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1381%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C201001052005.o05K5bEP022433%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000846.html">
+   <LINK REL="Next"  HREF="000848.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1381 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1381%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C201001052005.o05K5bEP022433%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1381 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  5 21:05:37 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000846.html">[Griffith-svn] r1380 - trunk/lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000848.html">[Griffith-svn] r1382 - trunk/lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#847">[ date ]</a>
+              <a href="thread.html#847">[ thread ]</a>
+              <a href="subject.html#847">[ subject ]</a>
+              <a href="author.html#847">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-05 21:05:23 +0100 (Tue, 05 Jan 2010)
+New Revision: 1381
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+Log:
+save and restore sorting column in main list
+pep8ify
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-05 20:04:41 UTC (rev 1380)
++++ trunk/ChangeLog	2010-01-05 20:05:23 UTC (rev 1381)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-01-05  Michael Jahn
++	* save and restore sorting column in main list
++
+ 2010-01-04  Piotr O&#380;arowski
+ 	* Add Croatian translation (thanks to Davor I and nafterburner)
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-01-05 20:04:41 UTC (rev 1380)
++++ trunk/griffith	2010-01-05 20:05:23 UTC (rev 1381)
+@@ -1210,7 +1210,13 @@
+             elif treeview_column == self.rating_column:
+                 columnorder = columnorder + delimiter + 'rating'
+                 delimiter = ','
+-        self.config.set('columnorder',  columnorder,  section='mainlist')
++        self.config.set('columnorder', columnorder, section='mainlist')
++        columnsorting = self.treemodel.get_sort_column_id()
++        self.config.set('columnsortid', columnsorting[0], section='mainlist')
++        if columnsorting[1] == None:
++            self.config.set('columnsortorder', 0, section='mainlist')
++        else:
++            self.config.set('columnsortorder', int(columnsorting[1]), section='mainlist')
+         self.config.save()
+ 
+     def restore_state(self):
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-01-05 20:04:41 UTC (rev 1380)
++++ trunk/lib/initialize.py	2010-01-05 20:05:23 UTC (rev 1381)
+@@ -167,7 +167,7 @@
+ 
+ 
+ def treeview(self):
+-    self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str)
++    self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int)
+     self.widgets['treeview'].set_model(self.treemodel)
+     self.widgets['treeview'].set_headers_visible(True)
+     # number column
+@@ -281,6 +281,19 @@
+             elif col == 'rating':
+                 self.widgets['treeview'].move_column_after(self.rating_column, currentcol)
+                 currentcol = self.rating_column
++    # reflect saved column sorting
++    columnsortid = self.config.get('columnsortid', None, section='mainlist')
++    columnsortorder = self.config.get('columnsortorder', None, section='mainlist')
++    try:
++        if columnsortid:
++            columnsortid = int(columnsortid)
++            if columnsortorder:
++                columnsortorder = gtk.SortType(int(columnsortorder))
++            else:
++                columnsortorder = gtk.SORT_ASCENDING
++            self.treemodel.set_sort_column_id(columnsortid, columnsortorder)
++    except:
++        log.exception('')
+     # add data to treeview
+     self.total = self.db.session.query(db.Movie).count()
+     self.widgets['treeview'].show()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2010-01-05 20:04:41 UTC (rev 1380)
++++ trunk/lib/main_treeview.py	2010-01-05 20:05:23 UTC (rev 1381)
+@@ -34,6 +34,7 @@
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ def treeview_clicked(self):
+     if self.initialized is False:
+         return False
+@@ -43,7 +44,7 @@
+         if tmp_iter is None:
+             log.info('Treeview: no selection')
+             return False
+-        number = tmp_model.get_value(tmp_iter,0)
++        number = tmp_model.get_value(tmp_iter, 0)
+         movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+         if movie is None:
+             log.info(&quot;Treeview: movie doesn't exists (number=%s)&quot;, number)
+@@ -61,6 +62,7 @@
+     else:
+         set_details(self, {})
+ 
++
+ def set_details(self, item=None):#{{{
+     if item is None:
+         item = {}
+@@ -130,7 +132,7 @@
+     else:
+         w['genre'].set_text('')
+     if 'cond' in item and item['cond']:
+-        if str(item['cond']) in [ str(i) for i in range(len(self._conditions)) ]:
++        if str(item['cond']) in [str(i) for i in range(len(self._conditions))]:
+             w['condition'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._conditions[item['cond']])
+         else:
+             w['condition'].set_text('')
+@@ -138,7 +140,7 @@
+     else:
+         w['condition'].set_text('')
+     if 'region' in item and item['region']:
+-        if str(item['region']) in [ str(i) for i in range(len(self._regions)) ]:
++        if str(item['region']) in [str(i) for i in range(len(self._regions))]:
+             w['region'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item['region']))
+             if int(item['region']) &lt; 9:
+                 self.widgets['tooltips'].set_tip(w['region'], self._regions[int(item['region'])])
+@@ -150,7 +152,7 @@
+         w['region'].set_text('')
+         self.widgets['tooltips'].set_tip(w['region'], self._regions[0]) # N/A
+     if 'layers' in item and item['layers']:
+-        if str(item['layers']) in [ str(i) for i in range(len(self._layers)) ]:
++        if str(item['layers']) in [str(i) for i in range(len(self._layers))]:
+             w['layers'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._layers[item['layers']])
+         else:
+             log.info(&quot;Wrong value in 'layers' field (movie_id=%s, layers=%s)&quot; % (item['movie_id'], item['layers']))
+@@ -158,7 +160,7 @@
+     else:
+         w['layers'].set_text('')
+     if 'color' in item and item['color']:
+-        if str(item['color']) in [ str(i) for i in range(len(self._colors)) ]:
++        if str(item['color']) in [str(i) for i in range(len(self._colors))]:
+             w['color'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % self._colors[item['color']])
+         else:
+             log.info(&quot;Wrong value in 'color' field (movie_id=%s, color=%s)&quot; % (item['movie_id'], item['color']))
+@@ -264,7 +266,7 @@
+         w['loan_button'].set_sensitive(False)
+         w['email_reminder_button'].set_sensitive(True)
+         w['return_button'].set_sensitive(True)
+-        
++
+         if getattr(item, 'loan_details', None) is None:
+             log.warning(&quot;movie has no loan data, changing 'loaned' flag to False (movie_id: %s)&quot;, item['movie_id'])
+             item.loaned = False
+@@ -286,12 +288,12 @@
+         w['loan_button'].set_sensitive(True)
+         w['loan_info'].set_markup(&quot;&lt;b&gt;%s&lt;/b&gt;&quot; % _(&quot;Movie not loaned&quot;))
+ 
+-    # loan history    
++    # loan history
+     self.loans_treemodel.clear()
+     if getattr(item, 'loan_history', None) is not None:
+         for loan in item.loan_history:
+             myiter = self.loans_treemodel.append(None)
+-            self.loans_treemodel.set_value(myiter, 0,'%s' % str(loan.date)[:10])
++            self.loans_treemodel.set_value(myiter, 0, '%s' % str(loan.date)[:10])
+             if loan.return_date and  loan.return_date != '':
+                 self.loans_treemodel.set_value(myiter, 1, str(loan.return_date)[:10])
+             else:
+@@ -300,7 +302,7 @@
+             self.loans_treemodel.set_value(myiter, 2, person.name)
+ 
+     # volumes/collections
+-    if 'volume_id' in item and item['volume_id']&gt;0:
++    if 'volume_id' in item and item['volume_id'] &gt; 0:
+         if 'volume' in item and item['volume']:
+             w['volume'].set_markup(&quot;&lt;b&gt;%s&lt;/b&gt;&quot; % gutils.html_encode(item['volume'].name))
+             w['show_volume_button'].set_sensitive(True)
+@@ -310,7 +312,7 @@
+     else:
+             w['volume'].set_text('')
+             w['show_volume_button'].set_sensitive(False)
+-    if 'collection_id' in item and item['collection_id']&gt;0:
++    if 'collection_id' in item and item['collection_id'] &gt; 0:
+         if 'collection' in item and item['collection']:
+             w['collection'].set_markup(&quot;&lt;b&gt;%s&lt;/b&gt;&quot; % gutils.html_encode(item['collection'].name))
+             w['show_collection_button'].set_sensitive(True)
+@@ -326,7 +328,7 @@
+         i.destroy()
+     for i in w['subtitle_vbox'].get_children():
+         i.destroy()
+-    if 'languages' in item and len(item['languages'])&gt;0:
++    if 'languages' in item and len(item['languages']) &gt; 0:
+         for i in item['languages']:
+             if i.type == 3: # subtitles
+                 if i.subformat:
+@@ -336,17 +338,17 @@
+                 w['subtitle_vbox'].pack_start(gtk.Label(tmp))
+             else:
+                 language = i.language.name
+-                if i.type is not None and len(self._lang_types[i.type])&gt;0:
++                if i.type is not None and len(self._lang_types[i.type]) &gt; 0:
+                     language += &quot; &lt;i&gt;%s&lt;/i&gt;&quot; % self._lang_types[i.type]
+                 tmp = ''
+                 if i.achannel:
+                     tmp = i.achannel.name
+                 if i.acodec:
+-                    if len(tmp)&gt;0:
++                    if len(tmp) &gt; 0:
+                         tmp += &quot;, %s&quot; % i.acodec.name
+                     else:
+                         tmp = i.acodec.name
+-                if len(tmp)&gt;0:
++                if len(tmp) &gt; 0:
+                     tmp = &quot;%s (%s)&quot; % (language, tmp)
+                 else:
+                     tmp = language
+@@ -363,15 +365,16 @@
+         tmp = tmp[:-2] # cut last comma
+         w['tags'].set_text(tmp)
+     #}}}
+-    
++
++
+ def populate(self, movies=None, where=None, qf=True):#{{{
+     if self.initialized is False: # dont try to fill movie list if Griffith is not initialized yet
+         return False
+-    
++
+     if qf and not movies or isinstance(movies, Select): # if &quot;.execute().fetchall()&quot; not invoked on movies yet
+         if not where: # due to possible 'seen', 'loaned', 'collection_id' in where
+             import advfilter
+-            
++
+             # saved in advfilter
+             name = self.widgets['filter']['advfilter'].get_active_text()[:-3].decode('utf-8') # :-3 due to additional '   ' in the name
+             if name:
+@@ -414,12 +417,12 @@
+             else:
+                 cond['sort_by'] = set((sort_column_name, ))
+             movies = sql.update_whereclause(movies, cond)
+-        
++
+         # additional whereclause (volume_id, collection_id, ...)
+         if where:
+             for i in where:
+                 if i in db.Movie:
+-                    movies.append_whereclause(db.Movie[i]==where[i])
++                    movies.append_whereclause(db.Movie[i] == where[i])
+         movies = movies.execute().fetchall()
+ 
+     self.total = len(movies)
+@@ -474,12 +477,12 @@
+         self.rating_column.set_visible(True)
+     else:
+         self.rating_column.set_visible(False)
+-        
++
+     for movie in movies:
+         myiter = self.treemodel.append(None)
+-        
+-        self.treemodel.set_value(myiter,0,'%004d' % int(movie.number))
+ 
++        self.treemodel.set_value(myiter, 0, '%004d' % int(movie.number))
++
+         if self.config.get('image', True, section='mainlist') == True:
+             filename = None
+             if movie.poster_md5:
+@@ -490,22 +493,22 @@
+             self.Image.set_from_file(filename)
+             pixbuf = self.Image.get_pixbuf()
+             self.treemodel.set_value(myiter, 1, pixbuf)
+-        self.treemodel.set_value(myiter,2,movie.o_title)
+-        self.treemodel.set_value(myiter,3,movie.title)
+-        self.treemodel.set_value(myiter,4,movie.director)
+-        self.treemodel.set_value(myiter,5,movie.genre)
+-        self.treemodel.set_value(myiter,6,movie.seen)
++        self.treemodel.set_value(myiter, 2, movie.o_title)
++        self.treemodel.set_value(myiter, 3, movie.title)
++        self.treemodel.set_value(myiter, 4, movie.director)
++        self.treemodel.set_value(myiter, 5, movie.genre)
++        self.treemodel.set_value(myiter, 6, movie.seen)
+         if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
+-            self.treemodel.set_value(myiter,7,movie.year)
++            self.treemodel.set_value(myiter, 7, movie.year)
+         if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
+-            self.treemodel.set_value(myiter,8, '%003d' % movie.runtime + _(' min'))
++            self.treemodel.set_value(myiter, 8, '%003d' % movie.runtime + _(' min'))
+         if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+-            self.treemodel.set_value(myiter,9,movie.rating)
++            self.treemodel.set_value(myiter, 9, movie.rating)
+ 
+     # restore user sort column
+     if sort_column_id is not None:
+-        self.treemodel.set_sort_column_id(sort_column_id, gtk.SORT_ASCENDING)
+-    
++        self.treemodel.set_sort_column_id(sort_column_id, order)
++
+     # add new treemodel and allow refreshs again
+     self.widgets['treeview'].set_model(self.treemodel)
+     self.widgets['treeview'].thaw_child_notify()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000846.html">[Griffith-svn] r1380 - trunk/lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000848.html">[Griffith-svn] r1382 - trunk/lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#847">[ date ]</a>
+              <a href="thread.html#847">[ thread ]</a>
+              <a href="subject.html#847">[ subject ]</a>
+              <a href="author.html#847">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,444 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1149 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1149%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200902072127.n17LRQJG021331%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000623.html">
+   <LINK REL="Next"  HREF="000625.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1149 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1149%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200902072127.n17LRQJG021331%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1149 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Feb  7 22:27:26 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000623.html">[Griffith-svn] r1148 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000625.html">[Griffith-svn] r1150 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#624">[ date ]</a>
+              <a href="thread.html#624">[ thread ]</a>
+              <a href="subject.html#624">[ subject ]</a>
+              <a href="author.html#624">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-02-07 22:27:00 +0100 (Sat, 07 Feb 2009)
+New Revision: 1149
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+Log:
+CineMovies movie plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-02-05 20:31:57 UTC (rev 1148)
++++ branches/0.9.x/ChangeLog	2009-02-07 21:27:00 UTC (rev 1149)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-02-07  Michael Jahn
++	* CineMovies movie plugin updated
++
+ 2009-02-05  Michael Jahn
+ 	* AniDB movie plugin updated
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-02-05 20:31:57 UTC (rev 1148)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-02-07 21:27:00 UTC (rev 1149)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#380;arowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -22,84 +22,101 @@
+ # GNU General Public License, version 2 or later
+ 
+ import gutils
+-import movie,string
++import movie,string,re
+ 
+-plugin_name = &quot;Cinemovies&quot;
+-plugin_description = &quot;Cinemovies&quot;
+-plugin_url = &quot;www.cinemovies.fr&quot;
+-plugin_language = _(&quot;French&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.2&quot;
++plugin_name         = &quot;Cinemovies&quot;
++plugin_description  = &quot;Cinemovies&quot;
++plugin_url          = &quot;www.cinemovies.fr&quot;
++plugin_language     = _(&quot;French&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.3&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode   = 'iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=">http://www.cinemovies.fr/fiche_film.php?IDfilm=</A>&quot; + str(self.movie_id)
++		self.url      = &quot;<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=">http://www.cinemovies.fr/fiche_film.php?IDfilm=</A>&quot; + str(self.movie_id)
+ 
++	def initialize(self):
++		self.page = self.page.decode(self.encode)
++		self.page_cast = self.open_page(self.parent_window, url = '<A HREF="http://www.cinemovies.fr/fiche_cast.php?IDfilm=">http://www.cinemovies.fr/fiche_cast.php?IDfilm=</A>'+ str(self.movie_id))
++		self.page_cast = self.page_cast.decode(self.encode)
++
+ 	def get_image(self):
+-		self.image_url = &quot;<A HREF="http://www.cinemovies.fr/images/data/films/Pfilm">http://www.cinemovies.fr/images/data/films/Pfilm</A>&quot;
+-		self.image_url = self.image_url + string.strip(gutils.trim(self.page,&quot;data/films/Pfilm&quot;,&quot;.jpg&quot;)) + &quot;.jpg&quot;
++		self.image_url = '<A HREF="http://www.cinemovies.fr/images/data/affiches/Paff">http://www.cinemovies.fr/images/data/affiches/Paff</A>'
++		self.image_url = self.image_url + string.strip(gutils.trim(self.page, 'data/affiches/Paff', '.jpg')) + '.jpg'
+ 
+ 	def get_o_title(self):
+-		self.o_title = string.capwords(gutils.trim(self.page,&quot;Titre original&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/td&gt;&quot;))
++		self.o_title = gutils.trim(self.page, 'Titre original :', '&lt;/tr&gt;')
++		self.o_title = self.o_title.encode(self.encode)
+ 
+ 	def get_title(self):
+-		self.title = string.capwords(gutils.trim(self.page,&quot;&lt;TR&gt;&lt;TD class=\&quot;arial12blacknews\&quot;&gt;&quot;,&quot; :&lt;/TD&gt;&lt;/TR&gt;&lt;TR&gt;&lt;TD&quot;))
++		self.title = gutils.trim(self.page, '&lt;h1 class=&quot;h1artist&quot;&gt;', '&lt;/h1&gt;')
++		self.title = self.title.encode(self.encode)
+ 
+ 	def get_director(self):
+-		self.director = string.strip(gutils.trim(self.page,&quot; par:&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/a&gt;&quot;))
++		self.director = string.strip(gutils.trim(self.page, 'par :&lt;/b&gt;&lt;/td&gt;', '&lt;/a&gt;'))
++		self.director = self.director.encode(self.encode)
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page,&quot;L'histoire&lt;/font&gt;&lt;/td&gt;&quot;,&quot;&lt;/p&gt;&lt;br&gt;&quot;)
++		self.plot = gutils.trim(gutils.after(self.page, '&gt;L\'histoire&lt;'), '&lt;div id=&quot;story_fiche&quot;&gt;', '&lt;/div&gt;')
++		self.plot = self.plot.encode(self.encode)
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,&quot;&lt;B&gt;Ano:&lt;/B&gt; &lt;FONT SIze=-1&gt;&quot;,&quot;&lt;/FONT&gt;&quot;)
++		self.year = gutils.trim(self.page, 'Date(s) de Sortie(s)', '&lt;/a&gt;')
++		if len(self.year) &gt; 4:
++			self.year = self.year[len(self.year) - 4:len(self.year)].encode(self.encode)
+ 
+ 	def get_runtime(self):
+-		self.runtime = gutils.trim(self.page,&quot;height=\&quot;12\&quot;&gt;Dur&#233;e: &quot;,&quot;&lt;/td&gt;&quot;)
++		self.runtime = gutils.clean(gutils.trim(self.page, u'&gt;Dur&#233;e :', '&lt;/tr&gt;'))
++		if self.runtime:
++			self.runtime = str (int(gutils.before(self.runtime,&quot;h&quot;))*60 + int(gutils.after(self.runtime,&quot;h&quot;)))
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page,&quot;Genre: &quot;,&quot;&lt;/b&gt;&lt;/a&gt;&quot;)
++		self.genre = gutils.trim(self.page, 'Genre :', '&lt;/tr&gt;')
++		self.genre = self.genre.encode(self.encode)
+ 
+ 	def get_cast(self):
+-		self.cast = &quot;&quot;
+-		self.cast = gutils.trim(self.page,&quot;&lt;b&gt;Avec:&lt;/b&gt;&quot;,&quot;&lt;/tr&gt;&quot;)
++		self.cast = gutils.trim(self.page_cast, 'diens&lt;/b&gt; :', '&lt;/table&gt;')
++		self.cast = self.cast.replace('\n', '')
++		self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
++		self.cast = gutils.clean(self.cast)
++		self.cast = re.sub('\n[ \t]+', '\n', self.cast)
++		self.cast = re.sub('[.]+', _(' as '), self.cast)
++		self.cast = re.sub(_(' as ') + '(\n|$)', '\n', self.cast)
++		self.cast = self.cast.encode(self.encode)
+ 
+ 	def get_classification(self):
+-		self.classification = gutils.trim(self.page,&quot;&lt;B&gt;Idade:&lt;/B&gt; &lt;FONT SIze=-1&gt;&quot;,&quot;&lt;/FONT&gt;&quot;)
++		self.classification = ''
+ 
+ 	def get_studio(self):
+-		self.studio = string.strip(gutils.trim(self.page,&quot;&nbsp;Studio/Distributeur&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/td&gt;&quot;))
++		self.studio = string.strip(gutils.trim(self.page, 'Distributeur :', '&lt;/tr&gt;'))
++		self.studio = self.studio.encode(self.encode)
+ 
+ 	def get_o_site(self):
+-		self.o_site = gutils.trim(self.page,&quot;&lt;A HREF='&quot;, &quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_siteoficial.gif'&quot;)
++		self.o_site = gutils.after(gutils.after(gutils.trim(self.page, '&gt;Site(s) Officiel(s):&lt;', '&lt;/a'), '&lt;a '), '&gt;')
++		self.o_site = self.o_site.encode(self.encode)
+ 
+ 	def get_site(self):
+-		self.site = gutils.trim(self.page,&quot;/imagens/bf_siteoficial.gif' WIDTH=89 HEIGHT=18 BORDER=0 ALT=''&gt;&quot;, &quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_imdb.gif'&quot;)
+-		self.site = gutils.after(self.site,&quot;&lt;A HREF='&quot;)
+-		self.site = string.replace(self.site,&quot;'&quot;,&quot;&quot;)
++		self.site = self.url
+ 
+ 	def get_trailer(self):
+-		self.trailer = gutils.trim(self.page,&quot;/imagens/bf_imdb.gif' WIDTH=89 HEIGHT=18 BORDER=0 ALT=''&gt;&quot;, &quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_trailer.gif'&quot;)
+-		self.trailer = gutils.after(self.trailer,&quot;&lt;A HREF='&quot;)
++		self.trailer = ''
+ 
+ 	def get_country(self):
+-		self.country = string.strip(gutils.trim(self.page,&quot;&nbsp;Pays&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/td&gt;&quot;))
++		self.country = gutils.trim(self.page, 'Pays :', '&lt;/tr&gt;')
++		self.country = self.country.encode(self.encode)
+ 
+ 	def get_rating(self):
+-		tmp_rating = gutils.trim(self.page,&quot;&lt;td width=\&quot;100%\&quot; class=\&quot;arial12blacknews\&quot;&gt;&lt;p align=\&quot;center\&quot;&gt;&lt;font size=\&quot;5\&quot;&gt;&quot;,&quot;/5&lt;/font&gt;&lt;/td&gt;&quot;)
+-		if tmp_rating != &quot;&quot;:
+-			self.rating = str(float(tmp_rating)*2)
+-		else:
+-			self.rating = &quot;&quot;
++		self.rating = gutils.clean(gutils.trim(self.page, '&lt;DIV id=scoree&gt;', '&lt;/DIV&gt;')).encode(self.encode)
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.encode='iso-8859-1'
+-		self.original_url_search	= &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?cherche=">http://www.cinemovies.fr/resultat_recherche.php?cherche=</A>&quot;
+-		self.translated_url_search	= &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?cherche=">http://www.cinemovies.fr/resultat_recherche.php?cherche=</A>&quot;
++		self.encode                = 'iso-8859-1'
++		self.original_url_search   = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=">http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=">http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=</A>&quot;
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+@@ -107,15 +124,17 @@
+ 		return self.page
+ 
+ 	def sub_search(self):
+-		self.page = gutils.trim(self.page,&quot;height=\&quot;6\&quot;&gt;Films&lt;/td&gt;&quot;, &quot;height=\&quot;6\&quot;&gt;News&lt;/td&gt;&quot;)
++		self.page = gutils.trim(self.page, '&lt;div class=searchban&gt;Les film', '&lt;div class=spaceblank&gt;')
+ 
+ 	def get_searches(self):
+-		elements = string.split(self.page,&quot;&lt;/tr&gt;  &lt;tr&gt;&quot;)
++		elements = string.split(self.page, '&lt;tr')
+ 		self.number_results = elements[-1]
+ 
+ 		if (elements[0]&lt;&gt;''):
+ 			for element in elements:
+-				self.ids.append(gutils.trim(element,&quot;?IDfilm=&quot;,&quot;\&quot; class=\&quot;arial&quot;))
+-				self.titles.append(gutils.convert_entities(gutils.strip_tags(gutils.trim(element,&quot;12black3\&quot;&gt;&quot;,&quot;&lt;/font&gt;&lt;br&gt;&quot;))))
++				self.ids.append(gutils.trim(element, 'IDfilm=', '&quot;'))
++				title = gutils.convert_entities(gutils.strip_tags(gutils.after(gutils.trim(element, 'IDfilm=', '&lt;/a&gt;'), '&gt;')))
++				year = gutils.after(gutils.trim(element, '&lt;td valign=&quot;bottom&quot;', '&lt;/td&gt;'), '&gt;')
++				self.titles.append(title + ' (' + year + ')')
+ 		else:
+ 			self.number_results = 0
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-02-05 20:31:57 UTC (rev 1148)
++++ trunk/ChangeLog	2009-02-07 21:27:00 UTC (rev 1149)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-02-07  Michael Jahn
++	* CineMovies movie plugin updated
++
+ 2009-02-05  Michael Jahn
+ 	* AniDB movie plugin updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-02-05 20:31:57 UTC (rev 1148)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-02-07 21:27:00 UTC (rev 1149)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#380;arowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -22,84 +22,90 @@
+ # GNU General Public License, version 2 or later
+ 
+ import gutils
+-import movie,string
++import movie,string,re
+ 
+-plugin_name = &quot;Cinemovies&quot;
+-plugin_description = &quot;Cinemovies&quot;
+-plugin_url = &quot;www.cinemovies.fr&quot;
+-plugin_language = _(&quot;French&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email=&quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.2&quot;
++plugin_name         = &quot;Cinemovies&quot;
++plugin_description  = &quot;Cinemovies&quot;
++plugin_url          = &quot;www.cinemovies.fr&quot;
++plugin_language     = _(&quot;French&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version      = &quot;0.3&quot;
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+-        self.encode='iso-8859-1'
++        self.encode   = 'iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=">http://www.cinemovies.fr/fiche_film.php?IDfilm=</A>&quot; + str(self.movie_id)
++        self.url      = &quot;<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=">http://www.cinemovies.fr/fiche_film.php?IDfilm=</A>&quot; + str(self.movie_id)
+ 
++    def initialize(self):
++        self.page_cast = self.open_page(self.parent_window, url = '<A HREF="http://www.cinemovies.fr/fiche_cast.php?IDfilm=">http://www.cinemovies.fr/fiche_cast.php?IDfilm=</A>'+ str(self.movie_id))
++
+     def get_image(self):
+-        self.image_url = &quot;<A HREF="http://www.cinemovies.fr/images/data/films/Pfilm">http://www.cinemovies.fr/images/data/films/Pfilm</A>&quot;
+-        self.image_url = self.image_url + string.strip(gutils.trim(self.page,&quot;data/films/Pfilm&quot;,&quot;.jpg&quot;)) + &quot;.jpg&quot;
++        self.image_url = '<A HREF="http://www.cinemovies.fr/images/data/affiches/Paff">http://www.cinemovies.fr/images/data/affiches/Paff</A>'
++        self.image_url = self.image_url + string.strip(gutils.trim(self.page, 'data/affiches/Paff', '.jpg')) + '.jpg'
+ 
+     def get_o_title(self):
+-        self.o_title = string.capwords(gutils.trim(self.page,&quot;Titre original&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/td&gt;&quot;))
++        self.o_title = gutils.trim(self.page, 'Titre original :', '&lt;/tr&gt;')
+ 
+     def get_title(self):
+-        self.title = string.capwords(gutils.trim(self.page,&quot;&lt;TR&gt;&lt;TD class=\&quot;arial12blacknews\&quot;&gt;&quot;,&quot; :&lt;/TD&gt;&lt;/TR&gt;&lt;TR&gt;&lt;TD&quot;))
++        self.title = gutils.trim(self.page, '&lt;h1 class=&quot;h1artist&quot;&gt;', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        self.director = string.strip(gutils.trim(self.page,&quot; par:&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/a&gt;&quot;))
++        self.director = string.strip(gutils.trim(self.page, 'par :&lt;/b&gt;&lt;/td&gt;', '&lt;/a&gt;'))
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page,&quot;L'histoire&lt;/font&gt;&lt;/td&gt;&quot;,&quot;&lt;/p&gt;&lt;br&gt;&quot;)
++        self.plot = gutils.trim(gutils.after(self.page, '&gt;L\'histoire&lt;'), '&lt;div id=&quot;story_fiche&quot;&gt;', '&lt;/div&gt;')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page,&quot;&lt;B&gt;Ano:&lt;/B&gt; &lt;FONT SIze=-1&gt;&quot;,&quot;&lt;/FONT&gt;&quot;)
++        self.year = gutils.trim(self.page, 'Date(s) de Sortie(s)', '&lt;/a&gt;')
++        if len(self.year) &gt; 4:
++            self.year = self.year[len(self.year) - 4:len(self.year)]
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page,&quot;height=\&quot;12\&quot;&gt;Dur&#233;e: &quot;,&quot;&lt;/td&gt;&quot;)
++        self.runtime = gutils.clean(gutils.trim(self.page, u'&gt;Dur&#233;e :', '&lt;/tr&gt;'))
++        if self.runtime:
++            self.runtime = str (int(gutils.before(self.runtime,&quot;h&quot;))*60 + int(gutils.after(self.runtime,&quot;h&quot;)))
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page,&quot;Genre: &quot;,&quot;&lt;/b&gt;&lt;/a&gt;&quot;)
++        self.genre = gutils.trim(self.page, 'Genre :', '&lt;/tr&gt;')
+ 
+     def get_cast(self):
+-        self.cast = &quot;&quot;
+-        self.cast = gutils.trim(self.page,&quot;&lt;b&gt;Avec:&lt;/b&gt;&quot;,&quot;&lt;/tr&gt;&quot;)
++        self.cast = gutils.trim(self.page_cast, 'diens&lt;/b&gt; :', '&lt;/table&gt;')
++        self.cast = self.cast.replace('\n', '')
++        self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
++        self.cast = gutils.clean(self.cast)
++        self.cast = re.sub('\n[ \t]+', '\n', self.cast)
++        self.cast = re.sub('[.]+', _(' as '), self.cast)
++        self.cast = re.sub(_(' as ') + '(\n|$)', '\n', self.cast)
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page,&quot;&lt;B&gt;Idade:&lt;/B&gt; &lt;FONT SIze=-1&gt;&quot;,&quot;&lt;/FONT&gt;&quot;)
++        self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = string.strip(gutils.trim(self.page,&quot;&nbsp;Studio/Distributeur&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/td&gt;&quot;))
++        self.studio = string.strip(gutils.trim(self.page, 'Distributeur :', '&lt;/tr&gt;'))
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page,&quot;&lt;A HREF='&quot;, &quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_siteoficial.gif'&quot;)
++        self.o_site = gutils.after(gutils.after(gutils.trim(self.page, '&gt;Site(s) Officiel(s):&lt;', '&lt;/a'), '&lt;a '), '&gt;')
+ 
+     def get_site(self):
+-        self.site = gutils.trim(self.page,&quot;/imagens/bf_siteoficial.gif' WIDTH=89 HEIGHT=18 BORDER=0 ALT=''&gt;&quot;, &quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_imdb.gif'&quot;)
+-        self.site = gutils.after(self.site,&quot;&lt;A HREF='&quot;)
+-        self.site = string.replace(self.site,&quot;'&quot;,&quot;&quot;)
++        self.site = self.url
+ 
+     def get_trailer(self):
+-        self.trailer = gutils.trim(self.page,&quot;/imagens/bf_imdb.gif' WIDTH=89 HEIGHT=18 BORDER=0 ALT=''&gt;&quot;, &quot;' TARGET=_blank&gt;&lt;IMG SRC='/imagens/bf_trailer.gif'&quot;)
+-        self.trailer = gutils.after(self.trailer,&quot;&lt;A HREF='&quot;)
++        self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = string.strip(gutils.trim(self.page,&quot;&nbsp;Pays&lt;/b&gt;&lt;/td&gt;&quot;,&quot;&lt;/td&gt;&quot;))
++        self.country = gutils.trim(self.page, 'Pays :', '&lt;/tr&gt;')
+ 
+     def get_rating(self):
+-        tmp_rating = gutils.trim(self.page,&quot;&lt;td width=\&quot;100%\&quot; class=\&quot;arial12blacknews\&quot;&gt;&lt;p align=\&quot;center\&quot;&gt;&lt;font size=\&quot;5\&quot;&gt;&quot;,&quot;/5&lt;/font&gt;&lt;/td&gt;&quot;)
+-        if tmp_rating != &quot;&quot;:
+-            self.rating = str(float(tmp_rating)*2)
+-        else:
+-            self.rating = &quot;&quot;
++        self.rating = gutils.clean(gutils.trim(self.page, '&lt;DIV id=scoree&gt;', '&lt;/DIV&gt;'))
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+-        self.encode='iso-8859-1'
+-        self.original_url_search    = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?cherche=">http://www.cinemovies.fr/resultat_recherche.php?cherche=</A>&quot;
+-        self.translated_url_search    = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?cherche=">http://www.cinemovies.fr/resultat_recherche.php?cherche=</A>&quot;
++        self.encode                = 'iso-8859-1'
++        self.original_url_search   = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=">http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=">http://www.cinemovies.fr/resultat_recherche.php?typsearch=11&amp;cherche=</A>&quot;
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -108,15 +114,17 @@
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.trim(self.page,&quot;height=\&quot;6\&quot;&gt;Films&lt;/td&gt;&quot;, &quot;height=\&quot;6\&quot;&gt;News&lt;/td&gt;&quot;)
++        self.page = gutils.trim(self.page, '&lt;div class=searchban&gt;Les film', '&lt;div class=spaceblank&gt;')
+ 
+     def get_searches(self):
+-        elements = string.split(self.page,&quot;&lt;/tr&gt;  &lt;tr&gt;&quot;)
++        elements = string.split(self.page, '&lt;tr')
+         self.number_results = elements[-1]
+ 
+         if (elements[0]&lt;&gt;''):
+             for element in elements:
+-                self.ids.append(gutils.trim(element,&quot;?IDfilm=&quot;,&quot;\&quot; class=\&quot;arial&quot;))
+-                self.titles.append(gutils.convert_entities(gutils.strip_tags(gutils.trim(element,&quot;12black3\&quot;&gt;&quot;,&quot;&lt;/font&gt;&lt;br&gt;&quot;))))
++                self.ids.append(gutils.trim(element, 'IDfilm=', '&quot;'))
++                title = gutils.convert_entities(gutils.strip_tags(gutils.after(gutils.trim(element, 'IDfilm=', '&lt;/a&gt;'), '&gt;')))
++                year = gutils.after(gutils.trim(element, '&lt;td valign=&quot;bottom&quot;', '&lt;/td&gt;'), '&gt;')
++                self.titles.append(title + ' (' + year + ')')
+         else:
+             self.number_results = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000623.html">[Griffith-svn] r1148 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000625.html">[Griffith-svn] r1150 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#624">[ date ]</a>
+              <a href="thread.html#624">[ thread ]</a>
+              <a href="subject.html#624">[ subject ]</a>
+              <a href="author.html#624">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

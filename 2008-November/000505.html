@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1025 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1025%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811012214.mA1ME6Jh026951%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000504.html">
+   <LINK REL="Next"  HREF="000506.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1025 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1025%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811012214.mA1ME6Jh026951%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1025 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov  1 23:14:06 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000504.html">[Griffith-svn] r1024 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000506.html">[Griffith-svn] r1026 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#505">[ date ]</a>
+              <a href="thread.html#505">[ thread ]</a>
+              <a href="subject.html#505">[ subject ]</a>
+              <a href="author.html#505">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-01 23:13:44 +0100 (Sat, 01 Nov 2008)
+New Revision: 1025
+
+Modified:
+   trunk/griffith
+   trunk/lib/dbupgrade.py
+   trunk/lib/sql.py
+Log:
+* load movie pictures from locations['posters'] when upgrading to 0.10
+* added MySQL and MSSQL support for 0.10
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-11-01 22:09:44 UTC (rev 1024)
++++ trunk/griffith	2008-11-01 22:13:44 UTC (rev 1025)
+@@ -109,7 +109,7 @@
+         
+         # create/connect db
+         from sql import GriffithSQL
+-        self.db = GriffithSQL(self.config, self.locations['home'])
++        self.db = GriffithSQL(self.config, self.locations['home'], self.locations)
+ 
+         # let's check any console arguments to parse
+         gconsole.check_args_with_db(self)
+@@ -1288,7 +1288,7 @@
+                 treeview.set_cursor_on_cell(0)
+ 
+ if __name__ == &quot;__main__&quot;:
+-    developer = False # TODO: get from config
++    developer = True # TODO: get from config
+     if not developer and '~' in version.pversion or '-' in version.pversion:
+         response = gutils.question(_(&quot;&quot;&quot;This is development version of Griffith.
+ We're not providing upgrade path from dev. versions.
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-11-01 22:09:44 UTC (rev 1024)
++++ trunk/lib/dbupgrade.py	2008-11-01 22:13:44 UTC (rev 1025)
+@@ -30,7 +30,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+-def upgrade_database(self, version):
++def upgrade_database(self, version, locations):
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
+     b = self.session.bind
+     if version == 0:
+@@ -134,10 +134,15 @@
+                    'screenplay': 'ALTER TABLE movies ADD COLUMN screenplay VARCHAR(256) NULL;',
+                    'cameraman' : 'ALTER TABLE movies ADD COLUMN cameraman VARCHAR(256) NULL;'}
+         if e_type == 'mysql':
+-            pass
++            queries = {'poster_md5': 'ALTER TABLE movies ADD COLUMN poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum);',
++                       'ratio_id'  : 'ALTER TABLE movies ADD COLUMN ratio_id INTEGER NOT NULL DEFAULT 1 REFERENCES ratios(ratio_id);',
++                       'screenplay': 'ALTER TABLE movies ADD COLUMN screenplay VARCHAR(256) NULL;',
++                       'cameraman' : 'ALTER TABLE movies ADD COLUMN cameraman VARCHAR(256) NULL;'}
+         elif e_type == 'mssql':
+-            #queries['ratio_id'] = &quot;FIXME&quot;
+-            pass
++            queries = {'poster_md5': 'ALTER TABLE movies ADD poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum);',
++                       'ratio_id'  : 'ALTER TABLE movies ADD ratio_id INTEGER NOT NULL REFERENCES ratios(ratio_id) DEFAULT 1;',
++                       'screenplay': 'ALTER TABLE movies ADD screenplay VARCHAR(256) NULL;',
++                       'cameraman' : 'ALTER TABLE movies ADD cameraman VARCHAR(256) NULL;'}
+         for key, query in queries.items():
+             try:
+                 self.session.bind.execute(query)
+@@ -147,7 +152,7 @@
+         
+         log.info(&quot;... saving posters in database&quot;)
+         for movie in self.session.query(db.Movie).all():
+-            poster_file_name = os.path.join(self.data_dir, self.config.get(&quot;poster&quot;, &quot;posters&quot;), &quot;%s.jpg&quot; % movie.image)
++            poster_file_name = os.path.join(locations['posters'], &quot;%s.jpg&quot; % movie.image)
+             if os.path.isfile(poster_file_name):
+                 poster_md5  = gutils.md5sum(file(poster_file_name, 'rb'))
+                 poster = self.session.query(db.Poster).filter_by(md5sum=poster_md5).first()
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-11-01 22:09:44 UTC (rev 1024)
++++ trunk/lib/sql.py	2008-11-01 22:13:44 UTC (rev 1025)
+@@ -39,7 +39,7 @@
+ class GriffithSQL:
+     version = 3    # database format version, increase after changing data structures
+ 
+-    def __init__(self, config, griffith_dir, reconnect=True):
++    def __init__(self, config, griffith_dir, locations, reconnect=True):
+         #mapper = Session.mapper
+         self.config = config
+         self.data_dir = griffith_dir
+@@ -147,7 +147,7 @@
+             v = int(v.value)
+         if v &lt; self.version:
+             from dbupgrade import upgrade_database
+-            if not upgrade_database(self, v):
++            if not upgrade_database(self, v, locations):
+                 import sys
+                 sys.exit(1)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000504.html">[Griffith-svn] r1024 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000506.html">[Griffith-svn] r1026 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#505">[ date ]</a>
+              <a href="thread.html#505">[ thread ]</a>
+              <a href="subject.html#505">[ subject ]</a>
+              <a href="author.html#505">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

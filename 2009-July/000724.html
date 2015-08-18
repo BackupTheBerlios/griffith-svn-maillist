@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1254 - trunk/lib/db
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1254%20-%20trunk/lib/db&In-Reply-To=%3C200907062047.n66KlSh5027259%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000723.html">
+   <LINK REL="Next"  HREF="000725.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1254 - trunk/lib/db</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1254%20-%20trunk/lib/db&In-Reply-To=%3C200907062047.n66KlSh5027259%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1254 - trunk/lib/db">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  6 22:47:28 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000723.html">[Griffith-svn] r1253 - in trunk/lib: . db
+</A></li>
+        <LI>Next message: <A HREF="000725.html">[Griffith-svn] r1255 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#724">[ date ]</a>
+              <a href="thread.html#724">[ thread ]</a>
+              <a href="subject.html#724">[ subject ]</a>
+              <a href="author.html#724">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-06 22:47:27 +0200 (Mon, 06 Jul 2009)
+New Revision: 1254
+
+Modified:
+   trunk/lib/db/__init__.py
+   trunk/lib/db/_objects.py
+   trunk/lib/db/tables.py
+Log:
+no need for table reflection
+
+
+Modified: trunk/lib/db/__init__.py
+===================================================================
+--- trunk/lib/db/__init__.py	2009-07-06 20:27:17 UTC (rev 1253)
++++ trunk/lib/db/__init__.py	2009-07-06 20:47:27 UTC (rev 1254)
+@@ -22,11 +22,7 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-
+-# XXX: keep stdlib and SQLAlchemy imports only in this module
+-
+ import logging
+-import re
+ 
+ from sqlalchemy import MetaData, func, select, and_
+ from sqlalchemy.orm import mapper, relation, deferred, column_property
+@@ -37,13 +33,7 @@
+ 
+ log = logging.getLogger('Griffith')
+ 
+-EMAIL_PATTERN = re.compile('^[a-z0-9]+[.a-z0-9_+-]*@[a-z0-9_-]+(\.[a-z0-9_-]+)+$', re.IGNORECASE)
+ 
+-### clases #################################################### {{{
+-
+-#}}}
+-
+-### mappers ################################################### {{{
+ mapper(Configuration, tables.configuration)
+ mapper(Volume, tables.volumes, order_by=tables.volumes.c.name, properties={
+     'movies': relation(Movie, backref='volume')})
+@@ -99,5 +89,4 @@
+     'data'  : deferred(tables.posters.c.data)
+     })
+ mapper(Filter, tables.filters)
+-#}}}
+ 
+
+Modified: trunk/lib/db/_objects.py
+===================================================================
+--- trunk/lib/db/_objects.py	2009-07-06 20:27:17 UTC (rev 1253)
++++ trunk/lib/db/_objects.py	2009-07-06 20:47:27 UTC (rev 1254)
+@@ -23,11 +23,14 @@
+ 
+ import logging
+ import string
++import re
+ 
+ from sqlalchemy.orm import validates
+ 
+ log = logging.getLogger('Griffith')
+ 
++EMAIL_PATTERN = re.compile('^[a-z0-9]+[.a-z0-9_+-]*@[a-z0-9_-]+(\.[a-z0-9_-]+)+$', re.IGNORECASE)
++
+ class DBTable(object):
+     def __init__(self, **kwargs):
+         for i in kwargs:
+
+Modified: trunk/lib/db/tables.py
+===================================================================
+--- trunk/lib/db/tables.py	2009-07-06 20:27:17 UTC (rev 1253)
++++ trunk/lib/db/tables.py	2009-07-06 20:47:27 UTC (rev 1254)
+@@ -30,14 +30,40 @@
+ 
+ log = logging.getLogger('Griffith')
+ 
++posters = Table('posters', metadata,
++    Column('md5sum', Unicode(32), primary_key=True),
++    Column('data', Binary(1048576), nullable=False))
++
++volumes = Table('volumes', metadata,
++    Column('volume_id', Integer, primary_key=True),
++    Column('name', Unicode(64), nullable=False, unique=True),
++    Column('loaned', Boolean, nullable=False, default=False))
++
++collections = Table('collections', metadata,
++    Column('collection_id', Integer, primary_key=True),
++    Column('name', Unicode(64), nullable=False, unique=True),
++    Column('loaned', Boolean, nullable=False, default=False))
++
++media = Table('media', metadata,
++    Column('medium_id', Integer, primary_key=True),
++    Column('name', Unicode(64), nullable=False, unique=True))
++
++ratios = Table('ratios', metadata,
++    Column('ratio_id', Integer, primary_key=True),
++    Column('name', Unicode(5), nullable=False, unique=True))
++
++vcodecs = Table('vcodecs', metadata,
++    Column('vcodec_id', Integer, primary_key=True),
++    Column('name', Unicode(64), nullable=False, unique=True))
++
+ movies = Table('movies', metadata,
+     Column('movie_id', Integer, primary_key=True),
+     Column('number', Integer, nullable=False, unique=True, index=True),
+-    Column('collection_id', ForeignKey('collections.collection_id')),
+-    Column('volume_id', ForeignKey('volumes.volume_id')),
+-    Column('medium_id', ForeignKey('media.medium_id')),
+-    Column('ratio_id', ForeignKey('ratios.ratio_id')),
+-    Column('vcodec_id', ForeignKey('vcodecs.vcodec_id')),
++    Column('collection_id', ForeignKey(collections.c.collection_id)),
++    Column('volume_id', ForeignKey(volumes.c.volume_id)),
++    Column('medium_id', ForeignKey(media.c.medium_id)),
++    Column('ratio_id', ForeignKey(ratios.c.ratio_id)),
++    Column('vcodec_id', ForeignKey(vcodecs.c.vcodec_id)),
+     Column('loaned', Boolean, nullable=False, default=False),
+     Column('seen', Boolean, nullable=False, default=False),
+     Column('rating', SmallInteger(2)),
+@@ -62,7 +88,7 @@
+     Column('country', Unicode(128)),
+     Column('genre', Unicode(128)),
+     Column('image', Unicode(128)), # XXX: deprecated
+-    Column('poster_md5', ForeignKey('posters.md5sum')),
++    Column('poster_md5', ForeignKey(posters.c.md5sum)),
+     Column('studio', Unicode(128)),
+     Column('classification', Unicode(128)),
+     Column('cast', Text),
+@@ -78,38 +104,16 @@
+ loans = Table('loans', metadata,
+     Column('loan_id', Integer, primary_key=True),
+     Column('person_id',  ForeignKey(people.c.person_id), nullable=False),
+-    Column('movie_id', ForeignKey('movies.movie_id'), nullable=False),
+-    Column('volume_id', ForeignKey('volumes.volume_id')),
+-    Column('collection_id', ForeignKey('collections.collection_id')),
++    Column('movie_id', ForeignKey(movies.c.movie_id), nullable=False),
++    Column('volume_id', ForeignKey(volumes.c.volume_id)),
++    Column('collection_id', ForeignKey(collections.c.collection_id)),
+     Column('date', Date, nullable=False, default=func.current_date()),
+     Column('return_date', Date, nullable=True))
+ 
+-volumes = Table('volumes', metadata,
+-    Column('volume_id', Integer, primary_key=True),
+-    Column('name', Unicode(64), nullable=False, unique=True),
+-    Column('loaned', Boolean, nullable=False, default=False))
+-
+-collections = Table('collections', metadata,
+-    Column('collection_id', Integer, primary_key=True),
+-    Column('name', Unicode(64), nullable=False, unique=True),
+-    Column('loaned', Boolean, nullable=False, default=False))
+-
+-media = Table('media', metadata,
+-    Column('medium_id', Integer, primary_key=True),
+-    Column('name', Unicode(64), nullable=False, unique=True))
+-
+-ratios = Table('ratios', metadata,
+-    Column('ratio_id', Integer, primary_key=True),
+-    Column('name', Unicode(5), nullable=False, unique=True))
+-
+ languages = Table('languages', metadata,
+     Column('lang_id', Integer, primary_key=True),
+     Column('name', Unicode(64), nullable=False, unique=True))
+ 
+-vcodecs = Table('vcodecs', metadata,
+-    Column('vcodec_id', Integer, primary_key=True),
+-    Column('name', Unicode(64), nullable=False, unique=True))
+-
+ acodecs = Table('acodecs', metadata,
+     Column('acodec_id', Integer, primary_key=True),
+     Column('name', Unicode(64), nullable=False, unique=True))
+@@ -129,25 +133,21 @@
+ movie_lang = Table('movie_lang', metadata,
+     Column('ml_id', Integer, primary_key=True),
+     Column('type', SmallInteger), # 0: Original, 1:lector, 2:dubbing, 3:subtitle
+-    Column('movie_id', ForeignKey('movies.movie_id'), nullable=False),
+-    Column('lang_id', ForeignKey('languages.lang_id'), nullable=False),
+-    Column('acodec_id', ForeignKey('acodecs.acodec_id')),
+-    Column('achannel_id', ForeignKey('achannels.achannel_id')),
+-    Column('subformat_id', ForeignKey('subformats.subformat_id')))
++    Column('movie_id', ForeignKey(movies.c.movie_id), nullable=False),
++    Column('lang_id', ForeignKey(languages.c.lang_id), nullable=False),
++    Column('acodec_id', ForeignKey(acodecs.c.acodec_id)),
++    Column('achannel_id', ForeignKey(achannels.c.achannel_id)),
++    Column('subformat_id', ForeignKey(subformats.c.subformat_id)))
+ 
+ movie_tag = Table('movie_tag', metadata,
+     Column('mt_id', Integer, primary_key=True),
+-    Column('movie_id', ForeignKey('movies.movie_id')),
+-    Column('tag_id', ForeignKey('tags.tag_id')))
++    Column('movie_id', ForeignKey(movies.c.movie_id)),
++    Column('tag_id', ForeignKey(tags.c.tag_id)))
+ 
+ configuration = Table('configuration', metadata,
+     Column('param', Unicode(16), primary_key=True),
+     Column('value', Unicode(128), nullable=False))
+ 
+-posters = Table('posters', metadata,
+-    Column('md5sum', Unicode(32), primary_key=True),
+-    Column('data', Binary(1048576), nullable=False))
+-
+ filters = Table('filters', metadata,
+     Column('name', Unicode(64), primary_key=True),
+     Column('data', PickleType, nullable=False))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000723.html">[Griffith-svn] r1253 - in trunk/lib: . db
+</A></li>
+	<LI>Next message: <A HREF="000725.html">[Griffith-svn] r1255 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#724">[ date ]</a>
+              <a href="thread.html#724">[ thread ]</a>
+              <a href="subject.html#724">[ subject ]</a>
+              <a href="author.html#724">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1085 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1085%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200812090007.mB907esZ009239%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000559.html">
+   <LINK REL="Next"  HREF="000561.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1085 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1085%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200812090007.mB907esZ009239%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1085 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec  9 01:07:40 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000559.html">[Griffith-svn] r1084 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000561.html">[Griffith-svn] r1086 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#560">[ date ]</a>
+              <a href="thread.html#560">[ thread ]</a>
+              <a href="subject.html#560">[ subject ]</a>
+              <a href="author.html#560">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-12-09 01:07:39 +0100 (Tue, 09 Dec 2008)
+New Revision: 1085
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/edit.py
+Log:
+update the md5 *after* all other queries (so that UPDATE will not be invoked)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-12-07 21:55:58 UTC (rev 1084)
++++ trunk/ChangeLog	2008-12-09 00:07:39 UTC (rev 1085)
+@@ -6,8 +6,14 @@
+ 
+ 
+ 2008-12-07  Piotr O&#380;arowski
++	* update_image(): update the md5 *after* all other queries (so that UPDATE will not be invoked)
++
++2008-12-07  Piotr O&#380;arowski
+ 	* CSFD movie plugin updated (thanks to Ale&#353; Nejdr)
+ 
++2008-12-03  Piotr O&#380;arowski
++	* Add few indexes to the model
++
+ 2008-12-01  Piotr O&#380;arowski
+ 	* HTML export plugin exports posters again (closes: 304072)
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-12-07 21:55:58 UTC (rev 1084)
++++ trunk/griffith	2008-12-09 00:07:39 UTC (rev 1085)
+@@ -354,7 +354,7 @@
+             return
+         number = tmp_model.get_value(tmp_iter, 0)
+         movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+-        if movie:
++        if movie and movie.poster_md5:
+             filename = gutils.get_image_fname(movie.poster_md5, self.db)
+             self.widgets['big_poster'].set_from_file(filename)
+             self.widgets['poster_window'].show()
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2008-12-07 21:55:58 UTC (rev 1084)
++++ trunk/lib/edit.py	2008-12-09 00:07:39 UTC (rev 1085)
+@@ -64,11 +64,13 @@
+ 
+     movie = session.query(db.Movie).filter_by(number=number).one()
+     old_poster_md5 = movie.poster_md5
+-    movie.poster_md5 = poster_md5
+ 
+     if not session.query(db.Poster).filter_by(md5sum=poster_md5).first():
+         poster = db.Poster(md5sum=poster_md5, data=file(filename, 'rb').read())
+         session.add(poster)
++
++    # update the md5 *after* all other queries (so that UPDATE will not be invoked)
++    movie.poster_md5 = poster_md5
+     
+     if old_poster_md5:
+         delete.delete_poster(self, old_poster_md5)
+@@ -80,9 +82,10 @@
+         session.rollback()
+         log.error(&quot;cannot add poster to database: %s&quot; % e)
+         return False
+-   
++
+     filename = gutils.get_image_fname(poster_md5, self.db, 's')
+-    update_tree_thumbnail(self, filename)
++    if filename:
++        update_tree_thumbnail(self, filename)
+ 
+     self.widgets['movie']['picture_button'].set_sensitive(True)
+     self.widgets['add']['delete_poster'].set_sensitive(True)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000559.html">[Griffith-svn] r1084 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000561.html">[Griffith-svn] r1086 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#560">[ date ]</a>
+              <a href="thread.html#560">[ thread ]</a>
+              <a href="subject.html#560">[ subject ]</a>
+              <a href="author.html#560">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

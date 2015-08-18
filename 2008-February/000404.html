@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r912 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r912%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200802032021.m13KLOiZ012651%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000405.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r912 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r912%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200802032021.m13KLOiZ012651%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r912 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Feb  3 21:21:24 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000405.html">[Griffith-svn] r913 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#404">[ date ]</a>
+              <a href="thread.html#404">[ thread ]</a>
+              <a href="subject.html#404">[ subject ]</a>
+              <a href="author.html#404">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-02-03 21:21:06 +0100 (Sun, 03 Feb 2008)
+New Revision: 912
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/griffith
+   branches/0.9.x/lib/widgets.py
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/widgets.py
+Log:
+hit enter key in title/original title box starts retrieving data from web for a new entry
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-29 20:48:39 UTC (rev 911)
++++ branches/0.9.x/ChangeLog	2008-02-03 20:21:06 UTC (rev 912)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-02-03  Michael Jahn
++	* hit enter key in title/original title box starts retrieving data from web for a new entry
++
+ ---- 0.9.6 ---
+ 
+ 2008-01-27  Michael Jahn
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2008-01-29 20:48:39 UTC (rev 911)
++++ branches/0.9.x/griffith	2008-02-03 20:21:06 UTC (rev 912)
+@@ -227,6 +227,11 @@
+ 	def source_changed(self, *args):
+ 		add.source_changed(self)
+ 
++	def on_enter(self, *args):
++		# push Get From Web button if return key is pressed in title box 
++		if self._am_movie_id is None:
++			self.widgets['add']['b_get_from_web'].clicked()
++
+ 	# preferences ---------------------------------------------------------
+ 
+ 	def show_preferences(self, *args):
+
+Modified: branches/0.9.x/lib/widgets.py
+===================================================================
+--- branches/0.9.x/lib/widgets.py	2008-01-29 20:48:39 UTC (rev 911)
++++ branches/0.9.x/lib/widgets.py	2008-02-03 20:21:06 UTC (rev 912)
+@@ -138,6 +138,8 @@
+ 	}
+ 	self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+ 	self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
++	self.widgets['add']['o_title'].connect('activate', self.on_enter)
++	self.widgets['add']['title'].connect('activate', self.on_enter)
+ 	self.widgets['add']['window'].set_transient_for(self.widgets['window'])
+ 	#}}}
+ 
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-29 20:48:39 UTC (rev 911)
++++ trunk/ChangeLog	2008-02-03 20:21:06 UTC (rev 912)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-02-03  Michael Jahn
++	* hit enter key in title/original title box starts retrieving data from web for a new entry
++
+ ---- 0.9.6 ---
+ 
+ 2008-01-27  Michael Jahn
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-01-29 20:48:39 UTC (rev 911)
++++ trunk/griffith	2008-02-03 20:21:06 UTC (rev 912)
+@@ -225,6 +225,11 @@
+ 	def source_changed(self, *args):
+ 		add.source_changed(self)
+ 
++	def on_enter(self, *args):
++		# push Get From Web button if return key is pressed in title box 
++		if self._am_movie_id is None:
++			self.widgets['add']['b_get_from_web'].clicked()
++
+ 	# preferences ---------------------------------------------------------
+ 
+ 	def show_preferences(self, *args):
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-01-29 20:48:39 UTC (rev 911)
++++ trunk/lib/widgets.py	2008-02-03 20:21:06 UTC (rev 912)
+@@ -138,6 +138,8 @@
+ 	}
+ 	self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+ 	self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
++	self.widgets['add']['o_title'].connect('activate', self.on_enter)
++	self.widgets['add']['title'].connect('activate', self.on_enter)
+ 	self.widgets['add']['window'].set_transient_for(self.widgets['window'])
+ 	#}}}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000405.html">[Griffith-svn] r913 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#404">[ date ]</a>
+              <a href="thread.html#404">[ thread ]</a>
+              <a href="subject.html#404">[ subject ]</a>
+              <a href="author.html#404">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

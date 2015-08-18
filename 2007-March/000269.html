@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r749 - / extra_plugins extra_plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r749%20-%20/%20extra_plugins%20extra_plugins/movie&In-Reply-To=%3C200703232115.l2NLFWpS001508%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000268.html">
+   <LINK REL="Next"  HREF="000270.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r749 - / extra_plugins extra_plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r749%20-%20/%20extra_plugins%20extra_plugins/movie&In-Reply-To=%3C200703232115.l2NLFWpS001508%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r749 - / extra_plugins extra_plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar 23 22:15:32 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000268.html">[Griffith-svn] r748 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000270.html">[Griffith-svn] r750 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#269">[ date ]</a>
+              <a href="thread.html#269">[ thread ]</a>
+              <a href="subject.html#269">[ subject ]</a>
+              <a href="author.html#269">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-03-23 22:15:32 +0100 (Fri, 23 Mar 2007)
+New Revision: 749
+
+Added:
+   extra_plugins/
+   extra_plugins/movie/
+   extra_plugins/movie/PluginMovieAdultFilmDatabase.py
+Log:
+* new extra_plugins repository
+* new AdultFilmDatabase movie plugin (thanks to Michael Jahn)
+
+
+Added: extra_plugins/movie/PluginMovieAdultFilmDatabase.py
+===================================================================
+--- extra_plugins/movie/PluginMovieAdultFilmDatabase.py	2007-03-23 21:14:16 UTC (rev 748)
++++ extra_plugins/movie/PluginMovieAdultFilmDatabase.py	2007-03-23 21:15:32 UTC (rev 749)
+@@ -0,0 +1,119 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++
++plugin_name		= 'AdultFilmDatabase.com'
++plugin_description	= 'ADULTFILMDATABASE.COM'
++plugin_url		= 'www.adultfilmdatabase.com'
++plugin_language		= _('English')
++plugin_author		= 'Michael Jahn'
++plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;'
++plugin_version		= '1.0'
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = &quot;<A HREF="http://www.adultfilmdatabase.com/video.cfm?videoid=">http://www.adultfilmdatabase.com/video.cfm?videoid=</A>&quot; + self.movie_id
++
++	def get_image(self):
++		self.image_url = '<A HREF="http://www.adultfilmdatabase.com/Graphics/Boxes/200">http://www.adultfilmdatabase.com/Graphics/Boxes/200</A>' + gutils.trim(self.page, '/Graphics/Boxes/200', '&quot;')
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;')
++
++	def get_director(self):
++		self.director = ''
++		delimiter = ''
++		elements = string.split(self.page, '&lt;a HREF=&quot;/director.cfm')
++		elements[0] = ''
++		for element in elements:
++			if element &lt;&gt; '':
++				self.director = self.director + gutils.trim(element, '&gt;', '&lt;') + delimiter
++				delimiter = ', '
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, 'COLSPAN=&quot;2&quot;&gt;&lt;BR&gt;', '&lt;/td&gt;')
++
++	def get_year(self):
++		self.year = gutils.strip_tags(gutils.trim(self.page, 'Year:', '&lt;tr&gt;'))
++
++	def get_runtime(self):
++		self.runtime = gutils.strip_tags(gutils.trim(self.page, 'Length:', '&lt;tr&gt;'))
++
++	def get_genre(self):
++		self.genre = gutils.trim(self.page, 'Genres:&lt;/td&gt;', '&lt;/td&gt;')
++		if self.genre == '':
++			self.genre = gutils.trim(self.page, 'Genre:&lt;/td&gt;', '&lt;/td&gt;')
++		self.genre = self.genre.replace('\t', '')
++		self.genre = self.genre.replace('\n', '')
++		self.genre = self.genre.replace('\r', '')
++		
++	def get_cast(self):
++		self.cast = ''
++		elements = string.split(self.page, '&lt;a HREF=&quot;/actor.cfm')
++		elements[0] = ''
++		for element in elements:
++			if element &lt;&gt; '':
++				self.cast = self.cast + gutils.trim(element, '&lt;U&gt;', '&lt;/U&gt;') + '\n'
++
++	def get_studio(self):
++		self.studio = gutils.trim(self.page, 'Studio:', '&lt;tr&gt;')
++
++	def get_site(self):
++		self.site = '<A HREF="http://www.adultfilmdatabase.com/video.cfm?videoid=">http://www.adultfilmdatabase.com/video.cfm?videoid=</A>' + self.movie_id
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = &quot;<A HREF="http://www.adultfilmdatabase.com/lookup.cfm?searchtype=Video&amp;find=">http://www.adultfilmdatabase.com/lookup.cfm?searchtype=Video&amp;find=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.adultfilmdatabase.com/lookup.cfm?searchtype=Video&amp;find=">http://www.adultfilmdatabase.com/lookup.cfm?searchtype=Video&amp;find=</A>&quot;
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		return gutils.trim(self.page, &quot;Search Results for&quot;, &quot;	&lt;/tr&gt;&quot;)
++
++	def get_searches(self):
++		elements = string.split(self.page, '\t\t\t\t\t\t&lt;a HREF=&quot;/video.cfm?videoid=')
++		if len(elements) &gt; 1:
++			elements[0] = ''
++			for element in elements:
++				if element &lt;&gt; '':
++					self.ids.append(gutils.before(element, '&quot;'))
++					title = gutils.trim(element, &quot;&lt;U&gt;&quot;, &quot;&lt;/U&gt;&quot;)
++					if title == '':
++						title = gutils.strip_tags(gutils.trim(element, '&gt;', '&lt;/a&gt;'))
++					self.titles.append(title)
++		else:
++			videoid = gutils.trim(self.page, 'VideoID&quot; VALUE=&quot;', '&quot;&gt;')
++			if videoid &lt;&gt; '':
++				self.ids.append(videoid)
++				self.titles.append(gutils.trim(self.page, '&lt;h2&gt;', '&lt;/h2&gt;'))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000268.html">[Griffith-svn] r748 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000270.html">[Griffith-svn] r750 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#269">[ date ]</a>
+              <a href="thread.html#269">[ thread ]</a>
+              <a href="subject.html#269">[ subject ]</a>
+              <a href="author.html#269">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

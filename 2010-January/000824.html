@@ -1,0 +1,727 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1357 - trunk/lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1357%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C201001032033.o03KX6X0028774%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000823.html">
+   <LINK REL="Next"  HREF="000825.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1357 - trunk/lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1357%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C201001032033.o03KX6X0028774%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1357 - trunk/lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  3 21:33:06 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000823.html">[Griffith-svn] r1356 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000825.html">[Griffith-svn] r1358 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#824">[ date ]</a>
+              <a href="thread.html#824">[ thread ]</a>
+              <a href="subject.html#824">[ subject ]</a>
+              <a href="author.html#824">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-01-03 21:32:50 +0100 (Sun, 03 Jan 2010)
+New Revision: 1357
+
+Modified:
+   trunk/lib/plugins/imp/AMC.py
+   trunk/lib/plugins/imp/AllMyMovies.py
+   trunk/lib/plugins/imp/BESTheMovieLibrary.py
+   trunk/lib/plugins/imp/DVDProfiler.py
+   trunk/lib/plugins/imp/FoxMovieManager.py
+   trunk/lib/plugins/imp/GCstar.py
+   trunk/lib/plugins/imp/MovieTrack.py
+   trunk/lib/plugins/imp/MyDVDs.py
+   trunk/lib/plugins/imp/PersonalVideoDatabase.py
+   trunk/lib/plugins/imp/TheMovieLibrary.py
+   trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+   trunk/lib/plugins/imp/eXtremeMovieManager.py
+Log:
+pep8ify (import plugins)
+
+Modified: trunk/lib/plugins/imp/AMC.py
+===================================================================
+--- trunk/lib/plugins/imp/AMC.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/AMC.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -90,6 +90,7 @@
+ # LFFNR             4
+ # PictureData       LFFNR
+ 
++
+ class ImportPlugin(IP):
+     description  = _('Ant Movie Catalog (version 3.5)')
+     author       = 'Michael Jahn'
+@@ -111,7 +112,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -191,7 +192,7 @@
+                 details['poster'] = posterdata
+             elif posterfilename and len(posterfilename) &gt; 4:
+                 details['poster'] = posterfilename
+-            
++
+             if details['title'] == None:
+                 details['title'] = details['o_title']
+             if details['o_title'] == None:
+@@ -235,7 +236,7 @@
+             version = 3.3
+         elif header == self.fileHeader31:
+             version = 3.1
+-        return version;
++        return version
+ 
+     def seekfield(self, ifile):
+         lenStr = ifile.read(4)
+@@ -279,4 +280,4 @@
+         lenTuple = struct.unpack('i', lenStr)
+         if lenTuple[0]:
+             field = ifile.read(lenTuple[0])
+-        return field
+\ No newline at end of file
++        return field
+
+Modified: trunk/lib/plugins/imp/AllMyMovies.py
+===================================================================
+--- trunk/lib/plugins/imp/AllMyMovies.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/AllMyMovies.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -33,6 +33,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('All My Movies 5.7')
+     author       = 'Michael Jahn'
+@@ -50,7 +51,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -83,11 +84,11 @@
+                 'SELECT MovieID, barcode, comments, description, length, mediacount, MediaTypeName, \
+                         mpaa, Name, originaltitle, rating, seen, studio, url, year, Trailer \
+                  FROM movies LEFT OUTER JOIN MediaType ON movies.MediaTypeID=MediaType.MediaTypeID;')
+-        
++
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+             return None
+-        
++
+         details = {}
+         try:
+             movieID = currentrow[0]
+@@ -140,7 +141,7 @@
+                         cast = cast + '\n' + currentrow[0]
+                     currentrow = curs.fetchone()
+                 details['cast'] = cast
+-            
++
+             curs.execute('SELECT Countries.Name \
+                           FROM Countries INNER JOIN CountryLink ON Countries.CountryID=CountryLink.CountryID \
+                           WHERE CountryLink.MovieID=' + str(movieID))
+@@ -152,7 +153,7 @@
+                     country = country + ', ' + currentrow[0]
+                     currentrow = curs.fetchone()
+                 details['country'] = country
+-            
++
+             curs.execute('SELECT Actors.Name \
+                           FROM Actors INNER JOIN DirectorLink ON Actors.ActorID=DirectorLink.ActorID \
+                           WHERE DirectorLink.MovieID=' + str(movieID))
+@@ -164,7 +165,7 @@
+                     director = director + ', ' + currentrow[0]
+                     currentrow = curs.fetchone()
+                 details['director'] = director
+-            
++
+             curs.execute('SELECT Genres.Name \
+                           FROM Genres INNER JOIN GenresLink ON Genres.GenreID=GenresLink.GenreID \
+                           WHERE GenresLink.MovieID=' + str(movieID))
+@@ -176,14 +177,14 @@
+                     genre = genre + ', ' + currentrow[0]
+                     currentrow = curs.fetchone()
+                 details['genre'] = genre
+-            
++
+             curs.execute('SELECT images.image \
+                           FROM images \
+                           WHERE cover=-1 AND images.MovieID=' + str(movieID))
+             currentrow = curs.fetchone()
+             if currentrow:
+                 details['poster'] = currentrow[0]
+-            
++
+             curs.close()
+         except Exception, e:
+             log.exception('')
+@@ -219,5 +220,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('AllMyMovies Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/BESTheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/BESTheMovieLibrary.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/BESTheMovieLibrary.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -33,6 +33,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('Barrett Enterprise Software The Movie Library 1.9.x')
+     author       = 'Michael Jahn'
+@@ -50,7 +51,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -83,11 +84,11 @@
+             self.cursor.execute( \
+                 'SELECT Title, Category, Rating, Rated, Actor1, Actor2, Description, MediaType \
+                  FROM Main')
+-        
++
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+             return None
+-        
++
+         details = {}
+         try:
+             if currentrow[0]:
+@@ -112,7 +113,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        
++
+         return details
+ 
+     def clear(self):
+@@ -143,5 +144,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('BES The Movie Library Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/DVDProfiler.py
+===================================================================
+--- trunk/lib/plugins/imp/DVDProfiler.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/DVDProfiler.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -29,6 +29,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('DVD Profiler (version 3.x)')
+     author       = 'Michael Jahn'
+@@ -47,7 +48,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -115,12 +116,12 @@
+                     elif node.nodeName == 'Overview' and len(node.childNodes) &gt; 0:
+                         details['plot'] = node.childNodes[0].data.strip()
+                     elif node.nodeName == 'Rating' and len(node.childNodes) &gt; 0:
+-                        if details.has_key('classification') and details['classification']:
++                        if 'classification' in details and details['classification']:
+                             details['classification'] = node.childNodes[0].data.strip() + '-' + details['classification']
+                         else:
+                             details['classification'] = node.childNodes[0].data.strip()
+                     elif node.nodeName == 'RatingAge' and len(node.childNodes) &gt; 0:
+-                        if details.has_key('classification') and details['classification']:
++                        if 'classification' in details and details['classification']:
+                             details['classification'] = details['classification'] + '-' + node.childNodes[0].data.strip()
+                         else:
+                             details['classification'] = node.childNodes[0].data.strip()
+@@ -301,7 +302,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        self.itemindex = self.itemindex +  1
++        self.itemindex = self.itemindex + 1
+         return details
+ 
+     def clear(self):
+@@ -339,5 +340,4 @@
+             log.error(str(e))
+             self.filedom.unlink()
+             self.filedom = None
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/FoxMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/FoxMovieManager.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/FoxMovieManager.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -33,6 +33,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('Fox Movie Manager 1.4')
+     author       = 'Michael Jahn'
+@@ -50,7 +51,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -86,11 +87,11 @@
+                         fldPicPath, fldWatched, fldUserRating, fldRating, fldMedia, \
+                         fldMoviePath, fldTrailerPath \
+                  FROM tblMovie')
+-        
++
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+             return None
+-        
++
+         details = {}
+         try:
+             details['number'] = currentrow[0]
+@@ -158,7 +159,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        
++
+         return details
+ 
+     def clear(self):
+@@ -189,5 +190,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('Fox Movie Manager Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/GCstar.py
+===================================================================
+--- trunk/lib/plugins/imp/GCstar.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/GCstar.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -30,6 +30,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('GCstar (version 1.4.x)')
+     author       = 'Michael Jahn'
+@@ -48,7 +49,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -82,11 +83,11 @@
+             return None
+         if len(self.items) &lt;= self.itemindex:
+             return None
+-        
++
+         details = {}
+         try:
+             item = self.items[self.itemindex]
+-            
++
+             details['title']          = item.getAttribute('title')
+             details['o_title']        = item.getAttribute('original')
+             details['year']           = item.getAttribute('date')
+@@ -159,7 +160,7 @@
+         except Exception, e:
+             log.error(str(e))
+             details = None
+-        self.itemindex = self.itemindex +  1
++        self.itemindex = self.itemindex + 1
+         return details
+ 
+     def clear(self):
+@@ -188,5 +189,4 @@
+             log.error(str(e))
+             self.filedom.unlink()
+             self.filedom = None
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/MovieTrack.py
+===================================================================
+--- trunk/lib/plugins/imp/MovieTrack.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/MovieTrack.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -29,6 +29,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('MovieTrack (version 3.4x)')
+     author       = 'Michael Jahn'
+@@ -46,7 +47,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -63,7 +64,7 @@
+     def count_movies(self):
+         &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
+         count = 0
+-        fileforcount= open(self.filename)
++        fileforcount = open(self.filename)
+         try:
+             for line in fileforcount:
+                 count = count + 1
+@@ -120,7 +121,7 @@
+                 details['notes'] = unicode(fields[10])  # Comments
+             movieid = fields[11]                        # AGN
+             #details[''] = fields[12]   # UGN
+-            
++
+             # try to get some more details from imdb-file
+             try:
+                 if self.imdbfilename:
+@@ -167,13 +168,13 @@
+                 log.exception('')
+             finally:
+                 openedimdb.close()
+-            
++
+         except EOFError:
+             details = None
+         except Exception, e:
+             log.exception('')
+             details = None
+-        
++
+         return details
+ 
+     def clear(self):
+@@ -203,5 +204,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('MovieTrack Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/MyDVDs.py
+===================================================================
+--- trunk/lib/plugins/imp/MyDVDs.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/MyDVDs.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -33,6 +33,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('MyDVDs 1.6x')
+     author       = 'Michael Jahn'
+@@ -50,7 +51,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -83,11 +84,11 @@
+                 'SELECT id, title, year, rating, stars, director, synop, \
+                         cover, runtime, genre, notes, trailer, star5 \
+                  FROM dvd;')
+-        
++
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+             return None
+-        
++
+         details = {}
+         try:
+             if currentrow[1]:
+@@ -122,7 +123,6 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        #print details
+         return details
+ 
+     def clear(self):
+@@ -153,5 +153,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('MyDVDs Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/PersonalVideoDatabase.py
+===================================================================
+--- trunk/lib/plugins/imp/PersonalVideoDatabase.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/PersonalVideoDatabase.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -29,6 +29,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('Personal Video Database (version 0.9.9.x)')
+     author       = 'Michael Jahn'
+@@ -47,7 +48,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -159,7 +160,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        self.itemindex = self.itemindex +  1
++        self.itemindex = self.itemindex + 1
+         return details
+ 
+     def clear(self):
+@@ -188,5 +189,4 @@
+             self.filedom.unlink()
+             self.filedom = None
+         log.info('Personal Video Database Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/TheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/TheMovieLibrary.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/TheMovieLibrary.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -33,6 +33,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('WenSoftware The Movie Library 1.4.x')
+     author       = 'Michael Jahn'
+@@ -50,7 +51,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -86,11 +87,11 @@
+                         Length, Director, Writer, Photographer, Plot, \
+                         FrontCover, Seen, Comment, Actor, Trailer, Color, Rating \
+                  FROM Movie')
+-        
++
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+             return None
+-        
++
+         details = {}
+         try:
+             if currentrow[1]:
+@@ -164,7 +165,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        
++
+         return details
+ 
+     def clear(self):
+@@ -195,5 +196,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('The Movie Library Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+===================================================================
+--- trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -32,6 +32,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('wintoolz Filmdatenbank (version 1.0.0.x)')
+     author       = 'Michael Jahn'
+@@ -49,7 +50,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -83,11 +84,11 @@
+                  Mediendatei, BewertungHandlung, BewertungDarsteller, BewertungMusik,\
+                  BewertungEmotionen, BewertungSpecialEffects, GesehenZahl, Farbdarstellung \
+                  FROM Main')
+-        
++
+         currentrow = self.cursor.fetchone()
+         if not currentrow:
+             return None
+-        
++
+         details = {}
+         try:
+             if currentrow[0]:
+@@ -157,7 +158,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        
++
+         return details
+ 
+     def clear(self):
+@@ -180,5 +181,4 @@
+         except Exception, e:
+             log.error(str(e))
+         log.info('wintoolz Filmdatenbank Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+Modified: trunk/lib/plugins/imp/eXtremeMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/eXtremeMovieManager.py	2010-01-02 20:21:28 UTC (rev 1356)
++++ trunk/lib/plugins/imp/eXtremeMovieManager.py	2010-01-03 20:32:50 UTC (rev 1357)
+@@ -29,6 +29,7 @@
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ class ImportPlugin(IP):
+     description  = _('eXtreme Movie Manager (version 6.x / 7.x)')
+     author       = 'Michael Jahn'
+@@ -47,7 +48,7 @@
+             return False
+         self.edit = False
+         return True
+-    
++
+     def set_source(self, name):
+         IP.set_source(self, name)
+         self.filename = name
+@@ -176,7 +177,7 @@
+                         except:
+                             pass
+                     elif node.nodeName == 'Media' and len(node.childNodes) &gt; 0:
+-                        details['vcodec_id'] = node.childNodes[0].data
++                        details['medium_id'] = node.childNodes[0].data
+                     elif node.nodeName == 'Color' and len(node.childNodes) &gt; 0:
+                         if node.childNodes[0].data == 'False':
+                             details['color'] = 2
+@@ -187,7 +188,7 @@
+         except Exception, e:
+             log.exception('')
+             details = None
+-        self.itemindex = self.itemindex +  1
++        self.itemindex = self.itemindex + 1
+         return details
+ 
+     def clear(self):
+@@ -225,5 +226,4 @@
+             self.filedom.unlink()
+             self.filedom = None
+         log.info('eXtreme Movie Manager Import: Found file version %s' % version)
+-        return version;
+-
++        return version
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000823.html">[Griffith-svn] r1356 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000825.html">[Griffith-svn] r1358 - trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#824">[ date ]</a>
+              <a href="thread.html#824">[ thread ]</a>
+              <a href="subject.html#824">[ subject ]</a>
+              <a href="author.html#824">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

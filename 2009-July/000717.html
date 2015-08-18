@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1247 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1247%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200907052250.n65MoxJQ008124%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000716.html">
+   <LINK REL="Next"  HREF="000718.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1247 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1247%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200907052250.n65MoxJQ008124%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1247 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  6 00:50:59 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000716.html">[Griffith-svn] r1246 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000718.html">[Griffith-svn] r1248 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#717">[ date ]</a>
+              <a href="thread.html#717">[ thread ]</a>
+              <a href="subject.html#717">[ subject ]</a>
+              <a href="author.html#717">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-06 00:50:57 +0200 (Mon, 06 Jul 2009)
+New Revision: 1247
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/db.py
+   trunk/lib/main_treeview.py
+   trunk/lib/sql.py
+Log:
+Loan details and history added to the movie db model
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-07-05 21:54:09 UTC (rev 1246)
++++ trunk/ChangeLog	2009-07-05 22:50:57 UTC (rev 1247)
+@@ -11,6 +11,7 @@
+ 	* Remove ilike from search criteria
+ 	* Update current value of sequence after restoring data from backup in
+ 	  PostgreSQL
++	* Loan details and history added to the movie db model
+ 
+ 2009-07-04  Piotr O&#380;arowski
+ 	* Version changed to 0.10-beta3+svn
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-07-05 21:54:09 UTC (rev 1246)
++++ trunk/lib/db.py	2009-07-05 22:50:57 UTC (rev 1247)
+@@ -28,7 +28,7 @@
+ import re
+ import string
+ 
+-from sqlalchemy import MetaData, Table, Column, ForeignKey, func, select, and_
++from sqlalchemy import MetaData, Table, Column, ForeignKey, func, select, and_, or_
+ from sqlalchemy.orm import mapper, relation, deferred, validates, column_property
+ from sqlalchemy.types import Boolean, Unicode, Text, Integer, SmallInteger, Date, Binary, PickleType
+ 
+@@ -86,13 +86,15 @@
+         return unicode(str(value).translate(allchars, delchars))
+ 
+ class Poster(object):
++    @validates('md5sum')
++    def _check_md5sum_length(self, key, value):
++        if len(value) != 32:
++            raise ValueError('md5sum has wrong size')
++
+     def __init__(self, md5sum=None, data=None):
+         if md5sum and data:
+-            if len(md5sum) == 32:
+-                self.md5sum = md5sum
+-                self.data = data
+-            else:
+-                log.error('md5sum has wrong size')
++            self.md5sum = md5sum
++            self.data = data
+ 
+     def __repr__(self):
+         return &quot;&lt;Poster:%s&gt;&quot; % self.md5sum
+@@ -372,7 +374,15 @@
+     'tags'      : relation(Tag, secondary=movie_tag_table,
+                            primaryjoin=movies_table.c.movie_id==movie_tag_table.c.movie_id,
+                            secondaryjoin=movie_tag_table.c.tag_id==tags_table.c.tag_id),
+-    'languages' : relation(MovieLang, cascade='all, delete-orphan')})
++    'languages' : relation(MovieLang, cascade='all, delete-orphan'),
++    'loan_details' : relation(Loan, uselist=False, primaryjoin=and_(loans_table.c.return_date==None,
++                                                              or_(loans_table.c.collection_id==movies_table.c.collection_id,
++                                                                  loans_table.c.volume_id==movies_table.c.volume_id,
++                                                                  loans_table.c.movie_id==movies_table.c.movie_id))),
++    'loan_history' : relation(Loan, primaryjoin=or_(loans_table.c.collection_id==movies_table.c.collection_id,
++                                                    loans_table.c.volume_id==movies_table.c.volume_id,
++                                                    loans_table.c.movie_id==movies_table.c.movie_id))
++    })
+ mapper(Poster, posters_table, properties={
+     'movies': relation(Movie),
+     'data'  : deferred(posters_table.c.data)
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2009-07-05 21:54:09 UTC (rev 1246)
++++ trunk/lib/main_treeview.py	2009-07-05 22:50:57 UTC (rev 1247)
+@@ -261,15 +261,13 @@
+         w['email_reminder_button'].set_sensitive(True)
+         w['return_button'].set_sensitive(True)
+         
+-        data_loan = sql.get_loan_info(self.db, collection_id=item['collection_id'], volume_id=item['volume_id'], movie_id=item['movie_id'])
+-        if data_loan is None:
++        if getattr(item, 'loan_details', None) is None:
+             log.warning(&quot;movie has no loan data, changing 'loaned' flag to False (movie_id: %s)&quot;, item['movie_id'])
+             item.loaned = False
+         else:
+-            data_person = self.db.session.query(db.Person.name, db.Person.email).filter_by(person_id=data_loan.person.person_id).first()
+-            self.person_name = data_person.name
+-            self.person_email = data_person.email
+-            self.loan_date = str(data_loan.date)
++            self.person_name = item.loan_details.person.name
++            self.person_email = item.loan_details.person.email
++            self.loan_date = str(item.loan_details.date)
+             w['loan_info'].set_use_markup(False)
+             w['loan_info'].set_label(_(&quot;This movie has been loaned to %s on %s&quot;) % (self.person_name, self.loan_date[:10]))
+     if 'loaned' in item and not item['loaned']: # &quot;loaned&quot; status can be changed above, so don't use &quot;else:&quot; in this line
+@@ -286,9 +284,8 @@
+ 
+     # loan history    
+     self.loans_treemodel.clear()
+-    if 'collection_id' in item or 'volume_id' in item or 'movie_id' in item:
+-        loans = sql.get_loan_history(self.db, collection_id=item['collection_id'], volume_id=item['volume_id'], movie_id=item['movie_id'])
+-        for loan in loans:
++    if getattr(item, 'loan_history', None) is not None:
++        for loan in item.loan_history:
+             myiter = self.loans_treemodel.append(None)
+             self.loans_treemodel.set_value(myiter, 0,'%s' % str(loan.date)[:10])
+             if loan.return_date and  loan.return_date != '':
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-07-05 21:54:09 UTC (rev 1246)
++++ trunk/lib/sql.py	2009-07-05 22:50:57 UTC (rev 1247)
+@@ -341,56 +341,4 @@
+         return False
+     return True
+ 
+-def get_loan_info(gsql, movie_id, volume_id=None, collection_id=None):
+-    &quot;&quot;&quot;Returns current collection/volume/movie loan data&quot;&quot;&quot;
+-
+-    movie = gsql.session.query(db.Movie).filter_by(movie_id=movie_id).first()
+-    if movie is None:
+-        return False
+-
+-    # fix or add volume/collection data:
+-    if movie.collection_id is not None:
+-        collection_id = movie.collection_id
+-    if movie.volume_id is not None:
+-        volume_id = movie.volume_id
+-
+-    if collection_id &gt; 0 and volume_id &gt; 0:
+-        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
+-                                                              or_(db.Loan.collection_id==collection_id,
+-                                                                  db.Loan.volume_id==volume_id,
+-                                                                  db.Loan.movie_id==movie_id))).first()
+-    elif collection_id &gt; 0:
+-        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
+-                                                              or_(db.Loan.collection_id==collection_id,
+-                                                                  db.Loan.movie_id==movie_id))
+-                                                        ).first()
+-    elif volume_id &gt; 0:
+-        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
+-                                                              or_(db.Loan.volume_id==volume_id,
+-                                                                  db.Loan.movie_id==movie_id),
+-                                                        )).first()
+-    else:
+-        return gsql.session.query(db.Loan).filter(db.Loan.movie_id==movie_id).filter(db.Loan.return_date==None).first()
+-
+-def get_loan_history(gsql, movie_id, volume_id=None, collection_id=None):
+-    &quot;&quot;&quot;Returns collection/volume/movie loan history&quot;&quot;&quot;
+-
+-    if collection_id &gt; 0 and volume_id &gt; 0:
+-        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date!=None,
+-                                                          or_(db.Loan.collection_id==collection_id,
+-                                                              db.Loan.volume_id==volume_id,
+-                                                              db.Loan.movie_id==movie_id)
+-                                                    )).all()
+-    elif collection_id &gt; 0:
+-        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date!=None,
+-                                                              or_(db.Loan.collection_id==collection_id,
+-                                                                  db.Loan.movie_id==movie_id))
+-                                                        ).all()
+-    elif volume_id &gt; 0:
+-        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date!=None,
+-                                                              or_(db.Loan.volume_id==volume_id,
+-                                                                  db.Loan.movie_id==movie_id),
+-                                                        )).all()
+-    else:
+-        return gsql.session.query(db.Loan).filter(db.Loan.movie_id==movie_id).filter(db.Loan.return_date!=None).all()
+ #}}}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000716.html">[Griffith-svn] r1246 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000718.html">[Griffith-svn] r1248 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#717">[ date ]</a>
+              <a href="thread.html#717">[ thread ]</a>
+              <a href="subject.html#717">[ subject ]</a>
+              <a href="author.html#717">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

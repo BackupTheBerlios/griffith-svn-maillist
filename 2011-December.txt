@@ -1,0 +1,2069 @@
+From mikej06 at mail.berlios.de  Thu Dec  1 22:20:52 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu,  1 Dec 2011 22:20:52 +0100
+Subject: [Griffith-svn] r1598 - in trunk: . lib/plugins/extensions
+Message-ID: <20111201212052.E2B8B480F4B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-12-01 22:20:52 +0100 (Thu, 01 Dec 2011)
+New Revision: 1598
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/extensions/amazon.py
+Log:
+[#885914] Amazon Plugin in Griffith doesn't work
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-10-04 18:41:24 UTC (rev 1597)
++++ trunk/ChangeLog	2011-12-01 21:20:52 UTC (rev 1598)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-12-01  Michael Jahn
++	* [#885914] Amazon Plugin in Griffith doesn't work
++
+ 2011-09-14  Michael Jahn
+ 	* [#815421] add ipython 0.11 compatibilty (thanks to Julian Taylor)
+ 
+
+Modified: trunk/lib/plugins/extensions/amazon.py
+===================================================================
+--- trunk/lib/plugins/extensions/amazon.py	2011-10-04 18:41:24 UTC (rev 1597)
++++ trunk/lib/plugins/extensions/amazon.py	2011-12-01 21:20:52 UTC (rev 1598)
+@@ -240,6 +240,7 @@
+         params = dict(
+             Service='AWSECommerceService',
+             AWSAccessKeyId=license_key,
++            AssociateTag=associate,
+             Operation=search_type,
+             ResponseGroup=type,
+             IdType=searchfield,
+@@ -250,6 +251,7 @@
+         params = dict(
+             Service='AWSECommerceService',
+             AWSAccessKeyId=license_key,
++            AssociateTag=associate,
+             Operation=search_type,
+             ResponseGroup=type,
+             Sort='titlerank')
+
+
+
+From mikej06 at mail.berlios.de  Fri Dec  2 20:52:03 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  2 Dec 2011 20:52:03 +0100
+Subject: [Griffith-svn] r1599 - in trunk: . lib lib/plugins/movie
+Message-ID: <20111202195203.887EB482569@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-12-02 20:52:02 +0100 (Fri, 02 Dec 2011)
+New Revision: 1599
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllRovi.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+   trunk/lib/test_movieplugins.py
+Log:
+* [#888347] FilmAffinity plugin doesn't work
+* Zelluloid plugin updated
+* movie plugin test data updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/ChangeLog	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2011-12-02  Michael Jahn
++	* [#888347] FilmAffinity plugin doesn't work
++
+ 2011-12-01  Michael Jahn
+ 	* [#885914] Amazon Plugin in Griffith doesn't work
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllRovi.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -195,7 +195,7 @@
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+             'classification'      : False,
+-            'studio'              : 'Chartoff Winkler Productions, MGM, Revolution Studios, Columbia Pictures',
++            'studio'              : 'Columbia Pictures, MGM, Revolution Studios, Chartoff Winkler Productions',
+             'o_site'              : False,
+             'site'                : 'http://www.allrovi.com/movies/movie/rocky-balboa-v337682',
+             'trailer'             : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -398,9 +398,9 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 21, 21 ],
+-        'Arahan'               : [  7,  7 ],
+-        'Ein gl??ckliches Jahr' : [  3,  3 ]
++        'Rocky Balboa' : [  22,  22 ],
++        'Arahan'       : [   9,   9 ],
++        'Gl??ck'        : [ 100, 100 ]
+     }
+ 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -214,7 +214,7 @@
+     #
+     test_configuration = {
+         'Cliffhanger' : [ 1, 1 ],
+-        'Rocky' : [ 37, 37 ]
++        'Rocky' : [ 38, 38 ]
+     }
+ 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -51,8 +51,8 @@
+             self.image_url = 'http://' + gutils.before(self.page[tmp.start():], '"')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, u'<b>T?TULO ORIGINAL</b></td>', '</b></td>')
+-        self.o_title = gutils.after(self.o_title, '<b>')
++        self.o_title = gutils.trim(self.page, u'<th>T&Iacute;TULO ORIGINAL</th>', '</strong></td>')
++        self.o_title = gutils.after(self.o_title, '<strong>')
+         self.o_title = re.sub('[ ]+', ' ', self.o_title)
+         self.o_title = re.sub('([(]Serie de TV[)]|[(]TV[)]|[(]TV Series[)])', '', self.o_title)
+ 
+@@ -62,36 +62,32 @@
+         self.title = re.sub('([(]Serie de TV[)]|[(]TV[)]|[(]TV Series[)])', '', self.title)
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page,'<b>DIRECTOR</b></td>', '</td>')
++        self.director = gutils.trim(self.page,'<th>DIRECTOR</th>', '</td>')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, u'<b>SINOPSIS</b>', '</tr>')
++        self.plot = gutils.trim(self.page, '<th>SINOPSIS</th>', '</td>')
+         self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+         self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, u'<b>A?O</b></td>', '</td>')
++        self.year = gutils.trim(self.page, '<th>A&Ntilde;O</th>', '</td>')
+         self.year = gutils.clean(self.year)
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, u'<b>DURACI?N</b></td>', ' min.</td>')
+-        if self.runtime == '':
+-            self.runtime = gutils.trim(self.page, '<b>DURACI&Oacute;N</b></td>', ' min.</td>')
++        self.runtime = gutils.trim(self.page, '<th>DURACI&Oacute;N</th>', ' min.')
+         self.runtime = gutils.after(self.runtime[-10:], '<td>')
+ 
+     def get_genre(self):
+         self.genre = ''
+-        tmp = gutils.trim(self.page, u'<b>G?NERO</b>', '<b>SINOPSIS</b>')
+-        if tmp == '':
+-            tmp = gutils.trim(self.page, '<b>G&Eacute;NERO</b>', '<b>SINOPSIS</b>')
+-        tmp = gutils.after(tmp, '<td valign="top">')
++        tmp = gutils.trim(self.page, '<th>G&Eacute;NERO</th>', '</tr>')
++        tmp = gutils.after(tmp, '<td>')
+         if tmp:
+             self.genre = gutils.clean(string.replace(tmp, ' | ', '. '))
+             self.genre = re.sub('[.][ \t]+', '. ', self.genre)
+ 
+     def get_cast(self):
+         self.cast = ''
+-        self.cast = gutils.trim(self.page, '<b>REPARTO</b></td>', '</td>')
++        self.cast = gutils.trim(self.page, '<th>REPARTO</th>', '</td>')
+         self.cast = re.sub('</a>,[ ]*', '\n', self.cast)
+         self.cast = string.strip(gutils.strip_tags(self.cast))
+         self.cast = re.sub('[ ]+', ' ', self.cast)
+@@ -101,11 +97,11 @@
+         self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '<b>PRODUCTORA</b></td>', '</td>')
+-        self.studio = gutils.after(self.studio, '<td  >')
++        self.studio = gutils.trim(self.page, '<th>PRODUCTORA</th>', '</td>')
++        self.studio = gutils.after(self.studio, '<td>')
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.trim(self.page, '<b>WEB OFICIAL</b></td>', '</a>')
++        self.o_site = gutils.trim(self.page, '<th>WEB OFICIAL</th>', '</a>')
+         self.o_site = gutils.after(self.o_site, '">')
+ 
+     def get_site(self):
+@@ -115,7 +111,7 @@
+         self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, u'<b>PA?S</b></td>', '</td>')
++        self.country = gutils.trim(self.page, '<b>PA&Iacute;S</th>', '</td>')
+         tmp = gutils.trim(self.country, 'alt="', '"')
+         if tmp == '':
+             self.country = gutils.trim(self.country, 'title="', '"')
+@@ -123,19 +119,15 @@
+             self.country = tmp
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, '<tr><td align="center" style="color:#990000; font-size:22px; font-weight: bold;">', '</td></tr>')
++        self.rating = gutils.trim(self.page, '<div style="margin: 4px 0; color:#990000; font-size:22px; font-weight: bold;">', '</div>')
+         if self.rating:
+             self.rating = str(round(float(gutils.clean(string.replace(self.rating, ',', '.')))))
+ 
+     def get_cameraman(self):
+-        self.cameraman = gutils.trim(self.page, u'<b>FOTOGRAF?A</b></td>', u'</td>')
+-        if self.cameraman == '':
+-            self.cameraman = gutils.trim(self.page, u'<b>FOTOGRAF&Iacute;A</b></td>', u'</td>')
++        self.cameraman = gutils.trim(self.page, '<th>FOTOGRAF&Iacute;A</th>','</td>')
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.trim(self.page, u'<b>GUI?N</b></td>', u'</td>')
+-        if self.screenplay == '':
+-            self.screenplay = gutils.trim(self.page, u'<b>GUI&Oacute;N</b></td>', u'</td>')
++        self.screenplay = gutils.trim(self.page, '<th>GUI&Oacute;N</th>', '</td>')
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 
+@@ -156,17 +148,17 @@
+         return self.page
+ 
+     def sub_search(self, parent_window):
+-        moviepage = gutils.trim(self.page, u'Resultados por t?tulo</span>', '<br>')
++        moviepage = gutils.trim(self.page, u'Resultados por t?tulo</span>', '<div id="bpanel">')
+         nextpage = self.get_nextpage_url()
+         while nextpage:
+             self.url = nextpage
+             self.open_search(parent_window)
+-            moviepage = moviepage + gutils.trim(self.page, u'Resultados por t?tulo</span>', '<br>')
++            moviepage = moviepage + gutils.trim(self.page, u'Resultados por t?tulo</span>', '<div id="bpanel">')
+             nextpage = self.get_nextpage_url()
+         self.page = moviepage
+ 
+     def get_nextpage_url(self):
+-        match = re.search('(siguientes >>|siguientes &gt;&gt;)', self.page)
++        match = re.search('(siguientes >|siguientes &gt;)', self.page)
+         if match:
+             start = string.rfind(self.page, '<a href="', 0, match.start())
+             if start >= 0:
+@@ -174,6 +166,8 @@
+         return None
+ 
+     def get_searches(self):
++        if not self.page:
++            return
+         if len(self.page) < 20:    # immidietly redirection to movie page
+             self.number_results = 1
+             self.ids.append(self.page)
+@@ -185,9 +179,12 @@
+                 for index in range(0, len(elements) - 1, 1):
+                     element = elements[index]
+                     nextelement = elements[index + 1]
+-                    self.ids.append(gutils.trim(element, '<b><a href="/es/film', '.html'))
+-                    title = gutils.after(element, '<b><a href="/es/film')
+-                    self.titles.append(gutils.strip_tags(gutils.convert_entities(gutils.after(title, '>'))) + ' ' + string.strip(gutils.before(nextelement, '<')))
++                    id = gutils.trim(element, '<b><a href="/es/film', '.html')
++                    if id:
++                        self.ids.append(id)
++                        title = gutils.clean(gutils.after(element, '<b><a href="/es/film')).replace("\n", "")
++                        title = gutils.strip_tags(gutils.convert_entities(gutils.after(title, '>'))) + ' ' + string.strip(gutils.before(nextelement, '<'))
++                        self.titles.append(title)
+ 
+ #
+ # Plugin Test
+@@ -198,8 +195,8 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 16, 16 ],
+-        'Darkness' : [56, 56 ]
++        'Rocky' : [ 17, 17 ],
++        'Darkness' : [59, 59 ]
+     }
+ 
+ class PluginTest:
+@@ -218,13 +215,14 @@
+             'plot'                : True,
+             'cast'                : 'Sylvester Stallone\n\
+ Burt Young\n\
+-Tony Burton\n\
++Antonio Tarver\n\
++Geraldine Hughes\n\
+ Milo Ventimiglia\n\
++Tony Burton\n\
+ James Francis Kelly III\n\
+ Talia Shire\n\
+ Angela Boyd\n\
+-Antonio Tarver\n\
+-Geraldine Hughes\n\
++A.J. Benza\n\
+ Mike Tyson',
+             'country'             : 'Estados Unidos',
+             'genre'               : u'Acci?n. Drama. Deporte. Boxeo. Secuela',
+@@ -258,7 +256,8 @@
+ Claudia Otero\n\
+ Jordi Dauder\n\
+ Emilio Gavira\n\
+-Miriam Raya',
++Miriam Raya\n\
++Jan Cornet',
+             'country'             : u'Espa?a',
+             'genre'               : u'Drama. Enfermedad. Religi?n. Basado en hechos reales',
+             'classification'      : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -365,7 +365,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 9, 9 ],
+-        'Arahan'               : [ 9, 9 ],
++        'Arahan'               : [ 10, 10 ],
+         'Ein gl??ckliches Jahr' : [ 4, 4 ]
+     }
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -249,6 +249,6 @@
+ De Uitdager',
+             'runtime'           : 119,
+             'image'             : True,
+-            'rating'            : 6
++            'rating'            : 7
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -178,26 +178,25 @@
+ Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+ Geraldine Hughes' + _(' as ') + 'Marie\n\
+ James Francis Kelly III' + _(' as ') + 'Steps\n\
+-Tony Burton\n\
++Tony Burton' + _(' as ') + 'Duke\n\
+ A.J. Benza\n\
+ Henry G. Sanders' + _(' as ') + 'Martin\n\
+ Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
+-Pedro Lovell\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
+ Ana Gerena\n\
+ Angela Boyd\n\
+ Louis Giansante\n\
+ Maureen Schilling\n\
+ Carter Mitchell\n\
+ Vinod Kumar\n\
+-Tobias Segal\n\
++Tobias Segal' + _(' as ') + 'Robert\'s Friend\n\
+ Tim Carr' + _(' as ') + 'Robert\'s Friend \n\
+-Paul Dion Monte' + _(' as ') + 'Robert\'s Friend \n\
++Paul Dion Monte' + _(' as ') + 'Robert\'s Friend\n\
+ Kevin King Templeton\n\
+ Robert Michael Kelly\n\
+-Don Sherman\n\
++Don Sherman' + _(' as ') + 'Andy\n\
+ Nick Baker\n\
+ Rick Buchborn\n\
+-Stu Nahan\n\
+ Gary Compton\n\
+ Jody Giambelluca\n\
+ Frank Stallone als Frank Stallone Jr.' + _(' as ') + 'Dinner Patron \n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -91,6 +91,7 @@
+ 
+     def get_cast(self):
+         self.cast = gutils.trim(self.detail_page, 'alt="Besetzung"', '<img')
++        self.cast = self.cast.replace('&nbsp;', '')
+         self.cast = self.cast.replace('<a href=', '--flip--' + '<a href=')
+         self.cast = self.cast.replace('</td></tr>', '\n')
+         self.cast = gutils.strip_tags(self.cast)
+@@ -99,7 +100,7 @@
+         self.cast = ''
+         for element in elements:
+             elements2 = element.split("--flip--")
+-            if len(elements2) > 1:
++            if len(elements2) > 1 and elements2[1]:
+                 self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
+             else:
+                 self.cast += element + '\n'
+@@ -138,8 +139,9 @@
+                 delimiter = ', '
+ 
+     def get_rating(self):
+-        self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '</TABLE>'))
++        self.rating = gutils.strip_tags(gutils.regextrim(self.page, '<b>Besucher</b>[ ]*[(][0-9]+[)]', '</div>'))
+         self.rating = self.rating.replace('%', '')
++        self.rating = self.rating.replace(':', '')
+         self.rating = self.rating.replace('&nbsp;', '')
+         self.rating = self.rating.replace('\n', '')
+         try:
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2011-12-01 21:20:52 UTC (rev 1598)
++++ trunk/lib/test_movieplugins.py	2011-12-02 19:52:02 UTC (rev 1599)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2009
++# Copyright (c) 2006-2011
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -41,6 +41,7 @@
+ #
+ 
+ import gettext
++gettext.install('griffith', unicode=1)
+ import sys
+ import initialize
+ import gutils
+
+
+
+From mikej06 at mail.berlios.de  Fri Dec  2 21:30:27 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  2 Dec 2011 21:30:27 +0100
+Subject: [Griffith-svn] r1600 - in trunk: . lib
+Message-ID: <20111202203028.00C434815BF@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-12-02 21:30:27 +0100 (Fri, 02 Dec 2011)
+New Revision: 1600
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/initialize.py
+Log:
+[#897774] removal of the first added subtitle format is not possible
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-02 19:52:02 UTC (rev 1599)
++++ trunk/ChangeLog	2011-12-02 20:30:27 UTC (rev 1600)
+@@ -7,6 +7,7 @@
+ 
+ 2011-12-02  Michael Jahn
+ 	* [#888347] FilmAffinity plugin doesn't work
++	* [#897774] removal of the first added subtitle format is not possible
+ 
+ 2011-12-01  Michael Jahn
+ 	* [#885914] Amazon Plugin in Griffith doesn't work
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-12-02 19:52:02 UTC (rev 1599)
++++ trunk/griffith	2011-12-02 20:30:27 UTC (rev 1600)
+@@ -625,7 +625,7 @@
+     def on_lang_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['lang_name'].get_active()
+-        if active > 0:
++        if active >= 0:
+             lang_id = self.languages_ids[active]
+             lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
+             if lang and len(lang.movielangs)==0:
+@@ -644,22 +644,20 @@
+ 
+     def on_lang_rename_clicked(self, widget):
+         try:
+-            active = self.lang_name_active
++            lang_id = self.languages_ids[self.lang_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        lang_id = self.languages_ids[active]
+-        if lang_id > 0:
+-            lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
+-            if lang:
+-                lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
+-                try:
+-                    session.commit()
+-                except Exception, e:
+-                    session.rollback()
+-                    log.warn("Cannot rename language: %s", e.message)
+-                else:
+-                    initialize.language_combos(self)
++        lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
++        if lang:
++            lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
++            try:
++                session.commit()
++            except Exception, e:
++                session.rollback()
++                log.warn("Cannot rename language: %s", e.message)
++            else:
++                initialize.language_combos(self)
+ 
+     def on_lang_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['lang_name'].get_active()
+@@ -744,7 +742,7 @@
+     def on_acodec_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['acodec_name'].get_active()
+-        if active > 0:
++        if active >= 0:
+             acodec_id = self.acodecs_ids[active]
+             acodec = session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+             if acodec and len(acodec.movielangs) == 0:
+@@ -763,11 +761,10 @@
+ 
+     def on_acodec_rename_clicked(self, widget):
+         try:
+-            active = self.acodec_name_active
++            acodec_id = self.acodecs_ids[self.acodec_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        acodec_id = self.acodecs_ids[active]
+         acodec = session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+         if acodec:
+             acodec.name = self.widgets['preferences']['acodec_name'].get_active_text().decode('utf-8')
+@@ -802,7 +799,7 @@
+     def on_achannel_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['achannel_name'].get_active()
+-        if active > 0:
++        if active >= 0:
+             achannel_id = self.achannels_ids[active]
+             achannel = session.query(db.AChannel).filter_by(achannel_id=achannel_id).first()
+             if achannel and len(achannel.movielangs)==0:
+@@ -821,11 +818,10 @@
+ 
+     def on_achannel_rename_clicked(self, widget):
+         try:
+-            active = self.achannel_name_active
++            achannel_id = self.achannels_ids[self.achannel_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        achannel_id = self.achannels_ids[active]
+         achannel = session.query(db.AChannel).filter_by(achannel_id=achannel_id).first()
+         if achannel is not None:
+             achannel.name = self.widgets['preferences']['achannel_name'].get_active_text().decode('utf-8')
+@@ -860,7 +856,7 @@
+     def on_subformat_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['subformat_name'].get_active()
+-        if active > 0:
++        if active >= 0:
+             subformat_id = self.subformats_ids[active]
+             subformat = session.query(db.SubFormat).filter_by(subformat_id=subformat_id).first()
+             if subformat and len(subformat.movielangs)==0:
+@@ -879,11 +875,10 @@
+ 
+     def on_subformat_rename_clicked(self, widget):
+         try:
+-            active = self.subformat_name_active
++            subformat_id = self.subformats_ids[self.subformat_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        subformat_id = self.subformats_ids[active]
+         subformat = session.query(db.SubFormat).filter_by(subformat_id=subformat_id).first()
+         if subformat is not None:
+             subformat.name = self.widgets['preferences']['subformat_name'].get_active_text().decode('utf-8')
+@@ -909,7 +904,7 @@
+     def on_medium_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['medium_name'].get_active()
+-        if active > 0:
++        if active >= 0:
+             medium_id = self.media_ids[active]
+             medium = session.query(db.Medium).filter_by(medium_id=medium_id).first()
+             if medium and len(medium.movies)==0:
+@@ -928,11 +923,10 @@
+ 
+     def on_medium_rename_clicked(self, widget):
+         try:
+-            active = self.medium_name_active
++            medium_id = self.media_ids[self.medium_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        medium_id = self.media_ids[active]
+         medium = session.query(db.Medium).filter_by(medium_id=medium_id).first()
+         if medium:
+             medium.name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
+@@ -977,11 +971,10 @@
+ 
+     def on_vcodec_rename_clicked(self, widget):
+         try:
+-            active = self.vcodec_name_active
++            vcodec_id = self.vcodecs_ids[self.vcodec_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        vcodec_id = self.vcodecs_ids[active]
+         vcodec = session.query(db.VCodec).filter_by(vcodec_id=vcodec_id).first()
+         if vcodec:
+             vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-12-02 19:52:02 UTC (rev 1599)
++++ trunk/lib/initialize.py	2011-12-02 20:30:27 UTC (rev 1600)
+@@ -1010,7 +1010,7 @@
+     self.lang['lang'].clear()
+     self.widgets['preferences']['lang_name'].insert_text(0, '')
+     for i, lang in enumerate(self.db.session.query(db.Lang.lang_id, db.Lang.name).all()):
+-        self.languages_ids[i] = lang.lang_id
++        self.languages_ids[i + 1] = lang.lang_id
+         self.widgets['preferences']['lang_name'].insert_text(i + 1, lang.name)
+         # add movie languages treeview
+         self.lang['lang'].append([lang.lang_id, lang.name])
+@@ -1025,7 +1025,7 @@
+     self.lang['acodec'].clear()
+     self.widgets['preferences']['acodec_name'].insert_text(0, '')
+     for i, acodec in enumerate(self.db.session.query(db.ACodec.acodec_id, db.ACodec.name).all()):
+-        self.acodecs_ids[i] = acodec.acodec_id
++        self.acodecs_ids[i + 1] = acodec.acodec_id
+         self.widgets['preferences']['acodec_name'].insert_text(i + 1, acodec.name)
+         # add movie languages treeview
+         self.lang['acodec'].append([acodec.acodec_id, acodec.name])
+@@ -1040,7 +1040,7 @@
+     self.lang['achannel'].clear()
+     self.widgets['preferences']['achannel_name'].insert_text(0, '')
+     for i, achannel in enumerate(self.db.session.query(db.AChannel.achannel_id, db.AChannel.name).all()):
+-        self.achannels_ids[i] = achannel.achannel_id
++        self.achannels_ids[i + 1] = achannel.achannel_id
+         self.widgets['preferences']['achannel_name'].insert_text(i + 1, achannel.name)
+         # add movie languages treeview
+         self.lang['achannel'].append([achannel.achannel_id, achannel.name])
+@@ -1055,7 +1055,7 @@
+     self.lang['subformat'].clear()
+     self.widgets['preferences']['subformat_name'].insert_text(0, '')
+     for i, subformat in enumerate(self.db.session.query(db.SubFormat.subformat_id, db.SubFormat.name).all()):
+-        self.subformats_ids[i] = subformat.subformat_id
++        self.subformats_ids[i + 1] = subformat.subformat_id
+         self.widgets['preferences']['subformat_name'].insert_text(i + 1, subformat.name)
+         # add movie languages treeview
+         self.lang['subformat'].append([subformat.subformat_id, subformat.name])
+
+
+
+From mikej06 at mail.berlios.de  Mon Dec 12 21:07:03 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 12 Dec 2011 21:07:03 +0100
+Subject: [Griffith-svn] r1601 - trunk/lib
+Message-ID: <20111212200704.1911A482980@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-12-12 21:07:03 +0100 (Mon, 12 Dec 2011)
+New Revision: 1601
+
+Modified:
+   trunk/lib/quick_filter.py
+Log:
+added screenplay, genre, studio, classification, country to quick filter "any" selection
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2011-12-02 20:30:27 UTC (rev 1600)
++++ trunk/lib/quick_filter.py	2011-12-12 20:07:03 UTC (rev 1601)
+@@ -42,7 +42,7 @@
+             statement.append_whereclause(db.tables.movies.c[criteria]==text)
+         elif criteria == 'any':
+             crits = [ ]
+-            for crit in ( 'director', 'title', 'o_title', 'cameraman', 'cast', 'year' ):
++            for crit in ( 'director', 'title', 'o_title', 'cameraman', 'cast', 'year', 'screenplay', 'genre', 'studio', 'classification', 'country' ):
+                 crits.append(db.tables.movies.c[crit].like('%'+text+'%'))
+             statement.append_whereclause(or_(*crits))
+         else:
+
+
+
+From piotrek at mail.berlios.de  Sun Dec 18 20:11:55 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun, 18 Dec 2011 20:11:55 +0100
+Subject: [Griffith-svn] r1602 - in trunk: . lib/plugins/movie
+Message-ID: <20111218191155.EF0B348290B@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-12-18 20:11:55 +0100 (Sun, 18 Dec 2011)
+New Revision: 1602
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+Log:
+Filmweb movie plugin updated (thanks to mariusz2806)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-12 20:07:03 UTC (rev 1601)
++++ trunk/ChangeLog	2011-12-18 19:11:55 UTC (rev 1602)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-12-18  Piotr O?arowski
++	* Filmweb movie plugin updated (thanks to mariusz2806)
++
+ 2011-12-02  Michael Jahn
+ 	* [#888347] FilmAffinity plugin doesn't work
+ 	* [#897774] removal of the first added subtitle format is not possible
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2011-12-12 20:07:03 UTC (rev 1601)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2011-12-18 19:11:55 UTC (rev 1602)
+@@ -1,8 +1,8 @@
+-# -*- coding: utf-8 -*-
++?# -*- coding: utf-8 -*-
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Piotr O?arowski
++# Copyright (c) 2005-2011 Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -21,17 +21,20 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie, string
++import gutils
++import movie
+ 
+ plugin_name = 'Filmweb'
+ plugin_description = 'Web pe?en film?w'
+-plugin_url = 'www.filmweb.pl'
++plugin_url = 'filmweb.pl'
++plugin_url_other = 'm.filmweb.pl'
+ plugin_server = '193.200.227.13'
+ plugin_language = _('Polish')
+-plugin_author = 'Piotr O?arowski, Bartosz Kurczewsk, Mariusz Szczepanek'
++plugin_author = 'Piotr O?arowski, Bartosz Kurczewski, Mariusz Szczepanek'
+ plugin_author_email = '<mariusz2806 at gmail.com>'
+-plugin_version = '1.21'
++plugin_version = '1.28'
+ 
++
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+         self.movie_id = 'filmweb'
+@@ -39,79 +42,98 @@
+         self.encode = 'utf-8'
+ 
+     def get_image(self):
+-        if string.find(self.page, '<div class="posterLightbox">') > -1:
+-            self.image_url = gutils.trim(self.page, '<div class="posterLightbox">', '</div>')
++        if self.page.find('<div class=posterLightbox>') > -1:
++            self.image_url = gutils.trim(self.page, '<div class=posterLightbox>', '</div>')
+             self.image_url = gutils.trim(self.image_url, 'href="', '" ')
+         else:
+             self.image_url = ''
+ 
+     def get_o_title(self):
+-        self.url = string.replace(self.url, plugin_server, plugin_url)
++        self.url = self.url.replace(plugin_server, plugin_url)
+         self.o_title = gutils.trim(self.page, '<title>', '</title>')
+-        if string.find(self.o_title, '/') > -1:
++        if self.o_title.find('/') > -1:
+             self.o_title = gutils.trim(self.o_title, '/', '(')
+-        if string.find(self.o_title, '(') > -1:
++        if self.o_title.find('(') > -1:
+             self.o_title = gutils.before(self.o_title, '(')
+ 
+     def get_title(self):
+-        self.url = string.replace(self.url, plugin_server, plugin_url)
++        self.url = self.url.replace(plugin_server, plugin_url)
+         self.title = gutils.trim(self.page, '<title>', '</title>')
+-        if string.find(self.title, '(') > -1:
++        if self.title.find('(') > -1:
+             self.title = gutils.before(self.title, '(')
+-        if string.find(self.title, '/') > -1:
++        if self.title.find('/') > -1:
+             self.title = gutils.before(self.title, '/')
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page, "re?yseria:", '</tr>')
+         self.director = gutils.after(self.director, '</th>')
+-        self.director = string.replace(self.director, "(wi?cej...)", '')
+-        self.director = string.replace(self.director, '  ', '\t')
+-        self.director = string.replace(self.director, "\t ", '')
+-        self.director = string.replace(self.director, "\t", '')
+-        self.director = string.replace(self.director, ',', ', ')
++        self.director = self.director.replace("(wi?cej...)", '')
++        self.director = self.director.replace('  ', '\t')
++        self.director = self.director.replace("\t ", '')
++        self.director = self.director.replace("\t", '')
++        self.director = self.director.replace(',', ', ')
+         self.director = gutils.strip_tags(self.director)
+ 
+     def get_screenplay(self):
+-        self.screenplay = gutils.trim(self.page,"scenariusz:", '</tr>')
++        self.screenplay = gutils.trim(self.page, "scenariusz:", '</tr>')
+         self.screenplay = gutils.after(self.screenplay, '</th>')
+-        self.screenplay = string.replace(self.screenplay, "(wi?cej...)", '')
+-        self.screenplay = string.replace(self.screenplay, '  ', '\t')
+-        self.screenplay = string.replace(self.screenplay, "\t ", '')
+-        self.screenplay = string.replace(self.screenplay, "\t", '')
+-        self.screenplay = string.replace(self.screenplay, ',', ', ')
++        self.screenplay = self.screenplay.replace("(wi?cej...)", '')
++        self.screenplay = self.screenplay.replace('  ', '\t')
++        self.screenplay = self.screenplay.replace("\t ", '')
++        self.screenplay = self.screenplay.replace("\t", '')
++        self.screenplay = self.screenplay.replace(',', ', ')
+         self.screenplay = gutils.strip_tags(self.screenplay)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, '<span class="filmDescrBg">', '</span>')
+-        self.plot = string.replace(self.plot, '  ', ' ')
++        self.plot = gutils.trim(self.page, '<span class=filmDescrBg property="v:summary">', '</span>')
++        self.plot = self.plot.replace('  ', ' ')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '<span id="filmYear" class="filmYear">', '</span>')
++        self.year = gutils.trim(self.page, '<span id=filmYear class=filmYear>', '</span>')
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, '<div class="time">', '<')
++        self.runtime = gutils.trim(self.page, "czas trwania:", '</tr>')
++        self.runtime = gutils.after(self.runtime, '<td>')
++        self.runtime = gutils.before(self.runtime, '</td>')
++        self.runtime = self.runtime.replace(' ', '')
++        if not self.runtime:
++            return
++        str_m = ''
++        str_h = ''
++        if self.runtime.find('godz.') > -1:
++            str_h = gutils.before(self.runtime, 'godz.')
++            self.runtime = gutils.after(self.runtime, 'godz.')
++        if self.runtime.find('min.') > -1:
++            str_m = gutils.before(self.runtime, 'min.')
++        val_runtime = 0
++        if str_h:
++            val_runtime = 60 * int(float(str_h))
++        if str_m:
++            val_runtime += int(float(str_m))
++        self.runtime = val_runtime
+ 
+     def get_genre(self):
+         self.genre = gutils.trim(self.page, "gatunek:", '</tr>')
+-        self.genre = string.replace(self.genre, "\t", '')
+-        self.genre = string.replace(self.genre, "\n", '')
+-        self.genre = string.replace(self.genre, '  ', '')
+-        self.genre = string.replace(self.genre, ',', ', ')
++        self.genre = self.genre.replace("\t", '')
++        self.genre = self.genre.replace("\n", '')
++        self.genre = self.genre.replace('  ', '')
++        self.genre = self.genre.replace(',', ', ')
+ 
+     def get_cast(self):
+         self.cast = gutils.trim(self.page, '<div class="castListWrapper cl">', '<div class="additional-info comBox">')
+         url = gutils.after(self.cast, '</ul>')
+-        url = gutils.trim(url, 'href="','"')
++        url = gutils.trim(url, 'href="', '"')
+         self.cast = gutils.before(self.cast, '</ul>')
+-        self.cast = string.replace(self.cast, chr(13), '')
+-        self.cast = string.replace(self.cast, chr(10), '')
+-        self.cast = string.replace(self.cast, "  ", '\t')
+-        self.cast = string.replace(self.cast, "\t ", '')
+-        self.cast = string.replace(self.cast, '\t', '')
+-        self.cast = string.replace(self.cast, " (", '(')
+-        self.cast = string.replace(self.cast, '(', " (")
+-        self.cast = string.replace(self.cast, '<div>', _(" as "))
+-        self.cast = string.replace(self.cast, '</li>', "\n")
++        self.cast = self.cast.replace(chr(13), '')
++        self.cast = self.cast.replace(chr(10), '')
++        self.cast = self.cast.replace("  ", '\t')
++        self.cast = self.cast.replace("\t ", '')
++        self.cast = self.cast.replace('\t', '')
++        self.cast = self.cast.replace(" (", '(')
++        self.cast = self.cast.replace('(', " (")
++        self.cast = self.cast.replace('<div>', _(" as "))
++        self.cast = self.cast.replace('</li>', "\n")
++        self.cast = self.cast.replace('</span> ', '')
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -129,68 +151,75 @@
+         self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, "produkcja:", '</tr>')
+-        self.country = string.replace(self.country, '  ', '')
+-        self.country = string.replace(self.country, "\t", '')
++        self.country = gutils.trim(self.page, '<dt>kraj', '</dd>')
++        self.country = self.country.replace('  ', '')
++        self.country = self.country.replace("e:", '')
++        self.country = self.country.replace(":", '')
++        self.country = self.country.replace("\t", '')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, '<div class="rates">', '</div>')
+-        self.rating = gutils.trim(self.rating, '<span class="average">', '</span>')
++        self.rating = gutils.trim(self.page, '<div class=rates>', '</div>')
++        self.rating = gutils.trim(self.rating, '<span property="v:average">', '</span>')
+         if self.rating != '':
+-            self.rating = string.replace(self.rating, ' ', '')
+-            self.rating = string.replace(self.rating, ',', '.')
+-            self.rating = str(float(string.strip(self.rating)))
++            self.rating = self.rating.replace(' ', '')
++            self.rating = self.rating.replace(',', '.')
++            self.rating = str(float(self.rating.strip()))
+ 
+     def get_notes(self):
+         self.notes = ''
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+-        self.encode='utf-8'
+-        self.original_url_search = 'http://' + plugin_server + '/search?alias=film&q='
+-        self.translated_url_search = 'http://' + plugin_server + '/search?alias=film&q='
++        self.encode = 'utf-8'
++        self.original_url_search = 'http://' + plugin_url_other + '/search/film?q='
++        self.translated_url_search = 'http://' + plugin_url_other + '/search/film?q='
+ 
+     def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+-        pos = string.find(self.page, '<div class="stdBar">')
+-        if pos == -1: # movie page
++        pos = self.page.find('Filmy (')
++        if pos == -1:  # movie page
+             self.page = None
+-        else: # search results
+-            items = gutils.trim(self.page[pos:], '(', ')')
++        else:  # search results
++            items = gutils.trim(self.page, 'Filmy (', ')')
+             if items == '0':
+                 self.page = False
+             else:
+-                self.page = gutils.before(self.page[pos:], '</ul>')
+-                self.page = gutils.after(self.page, '<li ')
++                self.page = gutils.after(self.page[pos:], '<ul id=searchFixCheck>')
++                self.page = gutils.before(self.page, '</ul>')
+         return self.page
+ 
+     def get_searches(self):
+-        if self.page is None: # movie page
++        if self.page is None:  # movie page
+             self.ids.append(self.url)
+             self.titles.append(gutils.convert_entities(self.title))
+-        elif self.page is False: # no movie found
++        elif self.page is False:  # no movie found
+             self.number_results = 0
+-        else: # multiple matches
+-            elements = string.split(self.page, '<li ')
++        else:  # multiple matches
++            elements = self.page.split('<li ')
+             self.number_results = elements[-1]
+-            if (elements[0] <> ''):
++            if elements != '':
+                 for element in elements:
+-                    element = gutils.after(element, '<a href="')
+-                    self.ids.append('http://' + plugin_server + gutils.before(element, '"'))
+-                    element_title = gutils.trim(element, 'class="searchResultTitle"', '</a>')
+-                    element_title = gutils.after(element_title, '">')
+-                    element_title = string.replace(element_title, "\t", '')
+-                    element = gutils.after(element, 'class="searchResultDetails"')
++                    if (element == ''):
++                        continue
++                    element = gutils.after(element, 'href="')
++                    self.ids.append('http://' + plugin_url_other + gutils.before(element, '"'))
++                    element_title = gutils.trim(element, '">', '</a>')
++                    element_title = element_title.replace('\t', '')
++                    element = gutils.after(element, 'class=searchResultDetails')
+                     element_year = gutils.trim(element, '>', '|')
+-                    element_year = string.replace(element_year, " ", '')
++                    element_year = element_year.replace(" ", '')
+                     element_year = gutils.strip_tags(element_year)
+-                    element_country = gutils.trim(element, '">', '</a>')
+-                    element = string.strip(element_title)
+-                    if (element_year <> ''):
+-                        element = element + ' (' + string.strip(element_year) + ')'
+-                    if (element_country <> ''):
+-                        element = element + ' - ' + string.strip(element_country)
++                    element_country = ''
++                    pos_country = element.find('countryIds')
++                    if pos_country != -1:
++                        element_country = gutils.trim(element[pos_country:], '">', '</a>')
++                    element = element_title.strip()
++                    if element_year:
++                        element += ' (' + element_year.strip() + ')'
++                    if element_country:
++                        element += ' - ' + element_country.strip()
+                     element = gutils.convert_entities(element)
+                     element = gutils.strip_tags(element)
+                     self.titles.append(element)
+
+
+
+From piotrek at mail.berlios.de  Sun Dec 18 21:46:19 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun, 18 Dec 2011 21:46:19 +0100
+Subject: [Griffith-svn] r1604 - trunk
+Message-ID: <20111218204619.B04FD48290B@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-12-18 21:46:19 +0100 (Sun, 18 Dec 2011)
+New Revision: 1604
+
+Modified:
+   trunk/ChangeLog
+Log:
+s/    /\t/
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-18 19:43:30 UTC (rev 1603)
++++ trunk/ChangeLog	2011-12-18 20:46:19 UTC (rev 1604)
+@@ -5,6 +5,8 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++---- 0.13 ----
++
+ 2011-12-18  Piotr O?arowski
+ 	* Filmweb movie plugin updated (thanks to mariusz2806)
+ 
+@@ -91,12 +93,12 @@
+ 	* small fixes for CineMovies and HKMDB
+ 
+ 2011-04-27  Filippo Valsorda
+-    * New Interfilmes plugin by Elencarlos Soares
++	* New Interfilmes plugin by Elencarlos Soares
+ 
+ 2011-04-22  Filippo Valsorda
+-    * New CSFD plugin by Kamil Hanus
+-    * Minor fixes in IMDB-it and MyMoviesIt plugins
+-    * Fixed a typo in it.po
++	* New CSFD plugin by Kamil Hanus
++	* Minor fixes in IMDB-it and MyMoviesIt plugins
++	* Fixed a typo in it.po
+ 
+ 2011-03-20  Piotr O?arowski
+ 	* "spellchekcer" typo fixed (thanks to Olivier BOURSIN)
+@@ -127,9 +129,9 @@
+ 	* Fixed about dialog on macosx
+ 
+ 2011-02-05  Ivo Nunes
+-    * Fixed and re-enabled Mac OS X UI Cocoa menu integration
+-    * Mac OS X UI Cocoa menu integration temporarily disabled due to being broken - using native GTK
+-    * IMDB-pt plugin added
++	* Fixed and re-enabled Mac OS X UI Cocoa menu integration
++	* Mac OS X UI Cocoa menu integration temporarily disabled due to being broken - using native GTK
++	* IMDB-pt plugin added
+ 
+ 2011-02-03  Vasco Nunes
+ 	* MoviePTGate plugin updated
+@@ -153,8 +155,8 @@
+ 2011-01-19  Michael Jahn
+ 	* [#700704] Incorrect dialog size for posters
+ 	* [#493148] The Save button in the preferences window does not work well
+-    * open of the homepage from the about dialog fixed
+-    * enabling persons without email address
++	* open of the homepage from the about dialog fixed
++	* enabling persons without email address
+ 
+ 2011-01-17  Michael Jahn
+ 	* [#703728] FilmAffinity: incomplete list of results
+@@ -235,7 +237,7 @@
+ 	* workaround for [#574370] freeze when i select existing mysql database
+ 
+ 2010-08-29  Piotr O?arowski
+-    * Show deprecation warnings only in debug mode
++	* Show deprecation warnings only in debug mode
+ 
+ 2010-08-26  Michael Jahn
+ 	* small backup optimizations
+@@ -2338,7 +2340,7 @@
+ 	* hardcoded library locations fixed.
+ 	* added main treeview flag on loaned films.
+ 	* [Bug #] After droping old database and creating a new one, new movie
+-	  don't get ID=1 but incremented old highest value. Fixed.    
++	  don't get ID=1 but incremented old highest value. Fixed.
+ 
+ 2005-06-20  Vasco Nunes
+ 	* true plugin system implemented.
+
+
+
+From piotrek at mail.berlios.de  Sun Dec 18 23:35:25 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun, 18 Dec 2011 23:35:25 +0100
+Subject: [Griffith-svn] r1605 - in trunk: . lib/plugins/export
+	lib/plugins/imp lib/plugins/movie
+Message-ID: <20111218223525.F389E48290B@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-12-18 23:35:25 +0100 (Sun, 18 Dec 2011)
+New Revision: 1605
+
+Modified:
+   trunk/lib/plugins/export/PluginExportAMC.py
+   trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py
+   trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py
+   trunk/lib/plugins/export/PluginExportGCstar.py
+   trunk/lib/plugins/imp/AMC.py
+   trunk/lib/plugins/imp/AllMyMovies.py
+   trunk/lib/plugins/imp/BESTheMovieLibrary.py
+   trunk/lib/plugins/imp/DVDProfiler.py
+   trunk/lib/plugins/imp/FoxMovieManager.py
+   trunk/lib/plugins/imp/GCstar.py
+   trunk/lib/plugins/imp/GriffithXML.py
+   trunk/lib/plugins/imp/MovieTrack.py
+   trunk/lib/plugins/imp/MyDVDs.py
+   trunk/lib/plugins/imp/PersonalVideoDatabase.py
+   trunk/lib/plugins/imp/TheMovieLibrary.py
+   trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+   trunk/lib/plugins/imp/eXtremeMovieManager.py
+   trunk/lib/plugins/movie/PluginMovieAllRovi.py
+   trunk/lib/plugins/movie/PluginMovieHKMDB.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+   trunk/winsetup.py
+Log:
+replace berlios.de email with griffith.cc one
+
+
+Modified: trunk/lib/plugins/export/PluginExportAMC.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportAMC.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/export/PluginExportAMC.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -29,7 +29,7 @@
+     plugin_name         = "Ant Movie Catalog Database XML Export"
+     plugin_description  = _("Full Ant Movie Catalog database xml export plugin")
+     plugin_author       = "Michael Jahn"
+-    plugin_author_email = "griffith-private at lists.berlios.de"
++    plugin_author_email = "griffith at griffith.cc"
+     plugin_version      = "1.0"
+ 
+     def __init__(self, database, locations, parent_window, search_conditions, config):
+
+Modified: trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV2.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -28,7 +28,7 @@
+     plugin_name         = "DVD Profiler XML Export"
+     plugin_description  = _("Full DVD Profiler XML Export V2 plugin")
+     plugin_author       = "Michael Jahn"
+-    plugin_author_email = "griffith-private at lists.berlios.de"
++    plugin_author_email = "griffith at griffith.cc"
+     plugin_version      = "1.0"
+ 
+     def __init__(self, database, locations, parent_window, search_conditions, config):
+
+Modified: trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/export/PluginExportDVDProfilerXMLExportV3.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -28,7 +28,7 @@
+     plugin_name         = "DVD Profiler XML Export"
+     plugin_description  = _("Full DVD Profiler XML Export V3 plugin")
+     plugin_author       = "Michael Jahn"
+-    plugin_author_email = "griffith-private at lists.berlios.de"
++    plugin_author_email = "griffith at griffith.cc"
+     plugin_version      = "1.0"
+ 
+     def __init__(self, database, locations, parent_window, search_conditions, config):
+
+Modified: trunk/lib/plugins/export/PluginExportGCstar.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportGCstar.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/export/PluginExportGCstar.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -29,7 +29,7 @@
+     plugin_name         = "GCstar Database Export"
+     plugin_description  = _("Full GCstar database export plugin")
+     plugin_author       = "Michael Jahn"
+-    plugin_author_email = "griffith-private at lists.berlios.de"
++    plugin_author_email = "griffith at griffith.cc"
+     plugin_version      = "1.0"
+ 
+     def __init__(self, database, locations, parent_window, search_conditions, config):
+
+Modified: trunk/lib/plugins/imp/AMC.py
+===================================================================
+--- trunk/lib/plugins/imp/AMC.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/AMC.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -94,7 +94,7 @@
+ class ImportPlugin(IP):
+     description  = 'Ant Movie Catalog (v3.5)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.1'
+     file_filters = '*.[aA][mM][cC]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/AllMyMovies.py
+===================================================================
+--- trunk/lib/plugins/imp/AllMyMovies.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/AllMyMovies.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -37,7 +37,7 @@
+ class ImportPlugin(IP):
+     description  = 'All My Movies (v5.7)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[aA][mM][mM]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/BESTheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/BESTheMovieLibrary.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/BESTheMovieLibrary.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -37,7 +37,7 @@
+ class ImportPlugin(IP):
+     description  = 'Barrett Enterprise Software The Movie Library (v1.9.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[mM][dD][bB]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/DVDProfiler.py
+===================================================================
+--- trunk/lib/plugins/imp/DVDProfiler.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/DVDProfiler.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -33,7 +33,7 @@
+ class ImportPlugin(IP):
+     description  = 'DVD Profiler (v3.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[xX][mM][lL]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/FoxMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/FoxMovieManager.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/FoxMovieManager.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -37,7 +37,7 @@
+ class ImportPlugin(IP):
+     description  = 'Fox Movie Manager (v1.4)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[mM][dD][bB]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/GCstar.py
+===================================================================
+--- trunk/lib/plugins/imp/GCstar.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/GCstar.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -34,7 +34,7 @@
+ class ImportPlugin(IP):
+     description  = 'GCstar (v1.4.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[gG][cC][sS]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/GriffithXML.py
+===================================================================
+--- trunk/lib/plugins/imp/GriffithXML.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/GriffithXML.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -33,7 +33,7 @@
+ class ImportPlugin(IP):
+     description  = 'Griffith XML'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[xX][mM][lL]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/MovieTrack.py
+===================================================================
+--- trunk/lib/plugins/imp/MovieTrack.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/MovieTrack.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -33,7 +33,7 @@
+ class ImportPlugin(IP):
+     description  = 'MovieTrack (v3.4x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[dD][aA][tT]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/MyDVDs.py
+===================================================================
+--- trunk/lib/plugins/imp/MyDVDs.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/MyDVDs.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -37,7 +37,7 @@
+ class ImportPlugin(IP):
+     description  = 'MyDVDs (v1.6x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[mM][dD][bB]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/PersonalVideoDatabase.py
+===================================================================
+--- trunk/lib/plugins/imp/PersonalVideoDatabase.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/PersonalVideoDatabase.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -33,7 +33,7 @@
+ class ImportPlugin(IP):
+     description  = 'Personal Video Database (v0.9.9.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[xX][mM][lL]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/TheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/TheMovieLibrary.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/TheMovieLibrary.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -37,7 +37,7 @@
+ class ImportPlugin(IP):
+     description  = 'WenSoftware The Movie Library (v1.4.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[dD][mM][vV]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+===================================================================
+--- trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -36,7 +36,7 @@
+ class ImportPlugin(IP):
+     description  = 'wintoolz Filmdatenbank (v1.0.0.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[dD][bB]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/imp/eXtremeMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/eXtremeMovieManager.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/imp/eXtremeMovieManager.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -33,7 +33,7 @@
+ class ImportPlugin(IP):
+     description  = 'eXtreme Movie Manager (v6.x / 7.x)'
+     author       = 'Michael Jahn'
+-    email        = 'griffith-private at lists.berlios.de'
++    email        = 'griffith at griffith.cc'
+     version      = '1.0'
+     file_filters = '*.[xX][mM][lL]'
+     mime_types   = None
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllRovi.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -30,7 +30,7 @@
+ plugin_url          = "www.allrovi.com"
+ plugin_language     = _("English")
+ plugin_author       = "Michael Jahn"
+-plugin_author_email = "griffith-private at lists.berlios.de"
++plugin_author_email = "griffith at griffith.cc"
+ plugin_version      = "2.0"
+ 
+ class Plugin(movie.Movie):
+
+Modified: trunk/lib/plugins/movie/PluginMovieHKMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieHKMDB.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/movie/PluginMovieHKMDB.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -31,7 +31,7 @@
+ plugin_url          = 'www.hkmdb.com'
+ plugin_language     = _('English')
+ plugin_author       = 'Michael Jahn'
+-plugin_author_email = 'griffith-private at lists.berlios.de'
++plugin_author_email = 'griffith at griffith.cc'
+ plugin_version      = '1.0'
+ 
+ class Plugin(movie.Movie):
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -29,7 +29,7 @@
+ plugin_url          = 'www.imdb.com'
+ plugin_language     = _('English')
+ plugin_author       = 'Vasco Nunes, Piotr O?arowski'
+-plugin_author_email = 'griffith-private at lists.berlios.de'
++plugin_author_email = 'griffith at griffith.cc'
+ plugin_version      = '1.12'
+ 
+ class Plugin(movie.Movie):
+
+Modified: trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -31,7 +31,7 @@
+ plugin_url          = 'www.moviemeter.nl'
+ plugin_language     = _('Dutch')
+ plugin_author       = 'Michael Jahn'
+-plugin_author_email = 'griffith-private at lists.berlios.de'
++plugin_author_email = 'griffith at griffith.cc'
+ plugin_version      = '1.0'
+ # API key created for Griffith
+ moviemeter_api_key  = '6h70thfmkwhq55hst69gnr65ckbaqu6h'
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2011-12-18 20:46:19 UTC (rev 1604)
++++ trunk/winsetup.py	2011-12-18 22:35:25 UTC (rev 1605)
+@@ -56,7 +56,7 @@
+     version="0.12.1",
+     description='Griffith - A film manager',
+     author='Vasco Nunes/Piotr Ozarowski',
+-    author_email='griffith-private at lists.berlios.de',
++    author_email='griffith at griffith.cc',
+     url='http://www.griffith.cc/',
+     license='GPL',
+     windows=[
+
+
+
+From piotrek at mail.berlios.de  Sun Dec 18 23:35:46 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun, 18 Dec 2011 23:35:46 +0100
+Subject: [Griffith-svn] r1606 - in trunk: . debian lib
+Message-ID: <20111218223546.E40E24828FC@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-12-18 23:35:46 +0100 (Sun, 18 Dec 2011)
+New Revision: 1606
+
+Modified:
+   trunk/NEWS
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/lib/version.py
+Log:
+version changed to 0.13
+
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2011-12-18 22:35:25 UTC (rev 1605)
++++ trunk/NEWS	2011-12-18 22:35:46 UTC (rev 1606)
+@@ -1,3 +1,12 @@
++Griffith 0.13
++=============
++* New movie plugins: AllRovi, IMDB-pt, Interfilmes
++* Most movie plugins updated, 
++  - AniDB plugin requires lxml module now (new 4rd party dependency)
++* New extensions: Database Cleanup and Maintenance
++* MacOSX integration improved
++* Many bug fixes
++
+ Griffith 0.12
+ =============
+ * New import plugins:
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2011-12-18 22:35:25 UTC (rev 1605)
++++ trunk/debian/changelog	2011-12-18 22:35:46 UTC (rev 1606)
+@@ -1,3 +1,10 @@
++griffith (0.13-1) unstable; urgency=low
++
++  * New upstream release
++  * VCS-* fields removed (berlios will be shutdown)
++
++ -- Piotr O?arowski <piotr at debian.org>  Sun, 18 Dec 2011 21:15:25 +0100
++
+ griffith (0.12.1-2) unstable; urgency=low
+ 
+   * cherry-pick SQLAlchemy 0.7 compatibility from SVN repo
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2011-12-18 22:35:25 UTC (rev 1605)
++++ trunk/debian/control	2011-12-18 22:35:46 UTC (rev 1606)
+@@ -6,8 +6,6 @@
+ Build-Depends-Indep: python (>= 2.6.3-3), docbook2x
+ Standards-Version: 3.9.2
+ X-Python-Version: >= 2.5
+-Vcs-Svn: svn://svn.berlios.de/griffith/trunk/
+-Vcs-Browser: http://svn.berlios.de/wsvn/griffith/trunk/
+ Homepage: http://www.griffith.cc/
+ 
+ Package: griffith
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2011-12-18 22:35:25 UTC (rev 1605)
++++ trunk/lib/version.py	2011-12-18 22:35:46 UTC (rev 1606)
+@@ -22,8 +22,8 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname = 'Griffith'
+-pversion = '0.12.1'
+-pauthor = 'Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>'
+-pyear = '2005-2010'
++pversion = '0.13'
++pauthor = 'Vasco Nunes, Piotr O?arowski <griffith at griffith.cc>'
++pyear = '2005-2012'
+ pwebsite = 'http://www.griffith.cc/'
+ pdescription = _('Griffith is a film collection manager.')
+
+
+
+From piotrek at mail.berlios.de  Mon Dec 19 00:18:36 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Mon, 19 Dec 2011 00:18:36 +0100
+Subject: [Griffith-svn] r1608 - trunk
+Message-ID: <20111218231836.8405E4828FC@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-12-19 00:18:36 +0100 (Mon, 19 Dec 2011)
+New Revision: 1608
+
+Modified:
+   trunk/NEWS
+Log:
+typo fixed
+
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2011-12-18 23:18:19 UTC (rev 1607)
++++ trunk/NEWS	2011-12-18 23:18:36 UTC (rev 1608)
+@@ -2,7 +2,7 @@
+ =============
+ * New movie plugins: AllRovi, IMDB-pt, Interfilmes
+ * Most movie plugins updated, 
+-  - AniDB plugin requires lxml module now (new 4rd party dependency)
++  - AniDB plugin requires lxml module now (new 3rd party dependency)
+ * New extensions: Database Cleanup and Maintenance
+ * MacOSX integration improved
+ * Many bug fixes
+
+
+
+From mikej06 at mail.berlios.de  Mon Dec 19 23:10:50 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 19 Dec 2011 23:10:50 +0100
+Subject: [Griffith-svn] r1609 - trunk
+Message-ID: <20111219221051.0D9BE48291A@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-12-19 23:10:50 +0100 (Mon, 19 Dec 2011)
+New Revision: 1609
+
+Modified:
+   trunk/README
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+   trunk/winsetup.py
+Log:
+windows setup 0.13 post fixes
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2011-12-18 23:18:36 UTC (rev 1608)
++++ trunk/README	2011-12-19 22:10:50 UTC (rev 1609)
+@@ -1,4 +1,4 @@
+-Griffith 0.12.1 README
++Griffith 0.13.0 README
+ ======================
+ 
+ This document was last updated on Thu Jun 10 2009.
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2011-12-18 23:18:36 UTC (rev 1608)
++++ trunk/winpackage.iss	2011-12-19 22:10:50 UTC (rev 1609)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.12.1
++AppVerName=Griffith 0.13.0
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://www.griffith.cc/
+ AppSupportURL=http://www.griffith.cc/
+@@ -14,7 +14,7 @@
+ LicenseFile=COPYING
+ InfoAfterFile=README
+ OutputDir=installer
+-OutputBaseFilename=griffith-0.12.1-win32.1
++OutputBaseFilename=griffith-0.13-win32
+ SetupIconFile=images\griffith.ico
+ UninstallDisplayIcon={app}\griffith.exe
+ Compression=lzma
+@@ -23,8 +23,8 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr O?arowski
+ DisableStartupPrompt=false
+-AppVersion=0.12.1
+-VersionInfoVersion=0.12.1
++AppVersion=0.13.0
++VersionInfoVersion=0.13.0
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -66,7 +66,7 @@
+ Source: dist\lib\*;    DestDir: {app}\lib;    Flags: ignoreversion
+ ; use recursion, no components
+ Source: dist\lib\db\*;           DestDir: {app}\lib\db;           Flags: ignoreversion recursesubdirs createallsubdirs
+-Source: dist\lib\gettext\*;      DestDir: {app}\lib\gettext;      Flags: ignoreversion recursesubdirs createallsubdirs
++;Source: dist\lib\gettext\*;      DestDir: {app}\lib\gettext;      Flags: ignoreversion recursesubdirs createallsubdirs
+ Source: dist\lib\glade3\*;       DestDir: {app}\lib\glade3;       Flags: ignoreversion recursesubdirs createallsubdirs
+ ;Source: dist\lib\glib-2.0\*;     DestDir: {app}\lib\glib-2.0;     Flags: ignoreversion recursesubdirs createallsubdirs
+ Source: dist\lib\gtk-2.0\*;      DestDir: {app}\lib\gtk-2.0;      Flags: ignoreversion recursesubdirs createallsubdirs
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2011-12-18 23:18:36 UTC (rev 1608)
++++ trunk/winsetup.bat	2011-12-19 22:10:50 UTC (rev 1609)
+@@ -52,6 +52,8 @@
+ if not "%ERRORLEVEL%" == "0" (pause)
+ xcopy "%GTKDIR%\bin\jpeg62.dll"   "%GRIFFITHDIR%\dist\" /s /e
+ if not "%ERRORLEVEL%" == "0" (pause)
++xcopy "%GTKDIR%\bin\libxml2-2.dll"   "%GRIFFITHDIR%\dist\" /s /e
++if not "%ERRORLEVEL%" == "0" (pause)
+ 
+ copy "%GRIFFITHDIR%\AUTHORS"     "%GRIFFITHDIR%\dist\"
+ copy "%GRIFFITHDIR%\COPYING"     "%GRIFFITHDIR%\dist\"
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2011-12-18 23:18:36 UTC (rev 1608)
++++ trunk/winsetup.py	2011-12-19 22:10:50 UTC (rev 1609)
+@@ -45,7 +45,7 @@
+ 
+ opts = {
+     "py2exe": {
+-        "includes": "pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,sqlalchemy.sql.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*,ConfigParser,gtk.glade,xmlrpclib,gio",
++        "includes": "pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,sqlalchemy.sql.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,reportlab.pdfbase.*,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*,ConfigParser,gtk.glade,xmlrpclib,gio,lxml.*",
+         "optimize": 2,
+         "dist_dir": "dist",
+     }
+
+
+
+From piotrek at mail.berlios.de  Mon Dec 26 18:06:48 2011
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Mon, 26 Dec 2011 18:06:48 +0100
+Subject: [Griffith-svn] r1610 - in trunk: . lib
+Message-ID: <20111226170648.5A2994812B5@sheep.berlios.de>
+
+Author: piotrek
+Date: 2011-12-26 18:06:48 +0100 (Mon, 26 Dec 2011)
+New Revision: 1610
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/backup.py
+Log:
+Restoring database from backup fixed
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-19 22:10:50 UTC (rev 1609)
++++ trunk/ChangeLog	2011-12-26 17:06:48 UTC (rev 1610)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-12-26  Piotr O?arowski
++	* Restoring database from backup fixed
++
+ ---- 0.13 ----
+ 
+ 2011-12-18  Piotr O?arowski
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2011-12-19 22:10:50 UTC (rev 1609)
++++ trunk/lib/backup.py	2011-12-26 17:06:48 UTC (rev 1610)
+@@ -200,7 +200,7 @@
+     * SQLite3 *.db file
+     """
+     # let user select a backup file
+-    filename = gutils.file_chooser(_("Restore Griffith backup"), \
++    filename, path = gutils.file_chooser(_("Restore Griffith backup"), \
+                 action=gtk.FILE_CHOOSER_ACTION_OPEN, backup=True, \
+                 buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+     if not filename:
+
+
+
+From mikej06 at mail.berlios.de  Tue Dec 27 20:22:24 2011
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 27 Dec 2011 20:22:24 +0100
+Subject: [Griffith-svn] r1611 - in trunk: . lib/plugins/export
+Message-ID: <20111227192225.1A920481315@sheep.berlios.de>
+
+Author: mikej06
+Date: 2011-12-27 20:22:24 +0100 (Tue, 27 Dec 2011)
+New Revision: 1611
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+better error handling for PDF export plugin
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-26 17:06:48 UTC (rev 1610)
++++ trunk/ChangeLog	2011-12-27 19:22:24 UTC (rev 1611)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2011-12-27  Michael Jahn
++	* better error handling for PDF export plugin
++
+ 2011-12-26  Piotr O?arowski
+ 	* Restoring database from backup fixed
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2011-12-26 17:06:48 UTC (rev 1610)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2011-12-27 19:22:24 UTC (rev 1611)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2010 Vasco Nunes
++# Copyright (c) 2005-2011 Vasco Nunes
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -42,7 +42,10 @@
+ import gutils
+ import version
+ from plugins.export import Base
++import logging
+ 
++log = logging.getLogger("Griffith")
++
+ class ExportPlugin(Base):
+     name = "PDF"
+     description = _("PDF export plugin")
+@@ -79,124 +82,128 @@
+                     overwrite = False
+ 
+             if overwrite == True or overwrite is None:
+-                # filename encoding
+-                defaultLang, defaultEnc = getdefaultlocale()
+-                if defaultEnc is None:
+-                    defaultEnc = 'UTF-8'
+-                c = SimpleDocTemplate(pdffilename.encode(defaultEnc), \
+-                    author = 'Griffith', \
+-                    title = _('List of films').encode('utf-8'), \
+-                    subject = _('List of films').encode('utf-8'))
+-                # data encoding
+-                #if defaultEncoding == 'WinAnsiEncoding':
+-                #    defaultEnc = 'cp1252'
+-                #else:
+-                defaultEnc = 'utf-8'
++                try:
++                    # filename encoding
++                    defaultLang, defaultEnc = getdefaultlocale()
++                    if defaultEnc is None:
++                        defaultEnc = 'UTF-8'
++                    c = SimpleDocTemplate(pdffilename.encode(defaultEnc), \
++                        author = 'Griffith', \
++                        title = _('List of films').encode('utf-8'), \
++                        subject = _('List of films').encode('utf-8'))
++                    # data encoding
++                    #if defaultEncoding == 'WinAnsiEncoding':
++                    #    defaultEnc = 'cp1252'
++                    #else:
++                    defaultEnc = 'utf-8'
+ 
+-                pdf_elements = self.config.get('pdf_elements', 'image,director,genre,cast').split(',')
++                    pdf_elements = self.config.get('pdf_elements', 'image,director,genre,cast').split(',')
+ 
+-                self.create_styles()
+-                style = self.styles["Normal"]
+-                Story = [Spacer(1,2*inch)]
++                    self.create_styles()
++                    style = self.styles["Normal"]
++                    Story = [Spacer(1,2*inch)]
+ 
+-                # select sort column - FIXME
+-                sort_column_name = self.config.get('sortby', 'number', section='mainlist')
+-                sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
+-                do_grouping = True
+-                for i in sort_column_name.split(','):
+-                    if i != 'title' and i != 'o_title':
+-                        do_grouping = False
++                    # select sort column - FIXME
++                    sort_column_name = self.config.get('sortby', 'number', section='mainlist')
++                    sort_reverse = self.config.get('sortby_reverse', False, section='mainlist')
++                    do_grouping = True
++                    for i in sort_column_name.split(','):
++                        if i != 'title' and i != 'o_title':
++                            do_grouping = False
+ 
+-                # build the query
+-                query = self.get_query()
+-                movies = query.execute().fetchall()
++                    # build the query
++                    query = self.get_query()
++                    movies = query.execute().fetchall()
+ 
+-                # define some custom stylesheetfont
+-                total = len(movies)
+-                p = Paragraph(saxutils.escape((_("List of films")).encode('utf-8')), self.styles["Heading1"] )
+-                Story.append(p)
+-                Story.append(Paragraph(" ",style))
+-                p = Paragraph(saxutils.escape((_("Total Movies: %s") % str(total)).encode('utf-8')), self.styles["Heading3"])
+-                Story.append(p)
+-                Story.append(Paragraph(" ",style))
+-                # output movies
+-                first_letter = ''
+-                for movie in movies:
+-                    number = movie.number
+-                    if movie.o_title:
+-                        original_title = movie.o_title.encode(defaultEnc)
+-                    else:
+-                        original_title = ''
+-                    if movie.title:
+-                        title = movie.title.encode(defaultEnc)
+-                    else:
+-                        title = ''
+-                    grouping_title = movie.title
+-                    if grouping_title is None:
+-                        grouping_title = u'None'
+-                    if movie.director:
+-                        director = ' - ' + movie.director.encode(defaultEnc)
+-                    else:
+-                        director = ""
+-                    # group by first letter
+-                    # use movie.title/grouping_title for grouping because of encoding problems !!!
+-                    if do_grouping and grouping_title[0] != first_letter:
+-                        if grouping_title[0] in '0123456789':
+-                            # Group Numbers
+-                            if first_letter != '0-9':
+-                                first_letter = '0-9'
++                    # define some custom stylesheetfont
++                    total = len(movies)
++                    p = Paragraph(saxutils.escape((_("List of films")).encode('utf-8')), self.styles["Heading1"] )
++                    Story.append(p)
++                    Story.append(Paragraph(" ",style))
++                    p = Paragraph(saxutils.escape((_("Total Movies: %s") % str(total)).encode('utf-8')), self.styles["Heading3"])
++                    Story.append(p)
++                    Story.append(Paragraph(" ",style))
++                    # output movies
++                    first_letter = ''
++                    for movie in movies:
++                        number = movie.number
++                        if movie.o_title:
++                            original_title = movie.o_title.encode(defaultEnc)
++                        else:
++                            original_title = ''
++                        if movie.title:
++                            title = movie.title.encode(defaultEnc)
++                        else:
++                            title = ''
++                        grouping_title = movie.title
++                        if grouping_title is None:
++                            grouping_title = u'None'
++                        if movie.director:
++                            director = ' - ' + movie.director.encode(defaultEnc)
++                        else:
++                            director = ""
++                        # group by first letter
++                        # use movie.title/grouping_title for grouping because of encoding problems !!!
++                        if do_grouping and grouping_title[0] != first_letter:
++                            if grouping_title[0] in '0123456789':
++                                # Group Numbers
++                                if first_letter != '0-9':
++                                    first_letter = '0-9'
++                                    paragraph_text = saxutils.escape(first_letter)
++                                    p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
++                                    Story.append(p)
++                            else:
++                                first_letter = grouping_title[0]
+                                 paragraph_text = saxutils.escape(first_letter)
+                                 p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
+                                 Story.append(p)
+-                        else:
+-                            first_letter = grouping_title[0]
+-                            paragraph_text = saxutils.escape(first_letter)
+-                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading2'])
++                        # add movie title
++                        paragraph_text = '<b>'+ saxutils.escape(title) + '</b>' + \
++                            saxutils.escape(' (' + original_title + ') | ' + str(number))
++                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading3'])
++                        if 'image' in pdf_elements:
++                            image_filename = None
++                            if movie.poster_md5:
++                                image_filename = gutils.get_image_fname(movie.poster_md5, self.db, 'm')
++                            if image_filename:
++                                p = ParagraphAndImage(p, Image(image_filename, width = 30, height = 40), side = 'left')
++                                # wrap call needed because of a bug in reportlab flowables.py - ParagraphAndImage::split(self,availWidth, availHeight)
++                                # AttributeError: ParagraphAndImage instance has no attribute 'wI'
++                                p.wrap(30, 40)
++                        Story.append(p)
++                        if 'year' in pdf_elements and movie.year:
++                            paragraph_text = '<b>' + _('Year') + ': </b>' + saxutils.escape(str(movie.year))
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                             Story.append(p)
+-                    # add movie title
+-                    paragraph_text = '<b>'+ saxutils.escape(title) + '</b>' + \
+-                        saxutils.escape(' (' + original_title + ') | ' + str(number))
+-                    p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Heading3'])
+-                    if 'image' in pdf_elements:
+-                        image_filename = None
+-                        if movie.poster_md5:
+-                            image_filename = gutils.get_image_fname(movie.poster_md5, self.db, 'm')
+-                        if image_filename:
+-                            p = ParagraphAndImage(p, Image(image_filename, width = 30, height = 40), side = 'left')
+-                            # wrap call needed because of a bug in reportlab flowables.py - ParagraphAndImage::split(self,availWidth, availHeight)
+-                            # AttributeError: ParagraphAndImage instance has no attribute 'wI'
+-                            p.wrap(30, 40)
+-                    Story.append(p)
+-                    if 'year' in pdf_elements and movie.year:
+-                        paragraph_text = '<b>' + _('Year') + ': </b>' + saxutils.escape(str(movie.year))
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                    if 'runtime' in pdf_elements and movie.runtime:
+-                        paragraph_text = '<b>' + _('Runtime') + ': </b>' + saxutils.escape(str(movie.runtime))
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                    if 'genre' in pdf_elements and movie.genre:
+-                        paragraph_text = '<b>' + _('Genre') + ': </b>' + saxutils.escape(movie.genre.encode(defaultEnc))
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                    if 'director' in pdf_elements and movie.director:
+-                        paragraph_text = '<i><b>' + _('Director') + ': </b>' + saxutils.escape(movie.director.encode(defaultEnc)) + '</i>'
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                    if 'cast' in pdf_elements and movie.cast:
+-                        paragraph_text = '<i><b>' + _('Cast') + ': </b>' + saxutils.escape('; '.join(movie.cast.encode(defaultEnc).split("\n")[0:2])) + '</i>'
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                    if 'plot' in pdf_elements and movie.plot:
+-                        paragraph_text = '<i><b>' + _('Plot') + ': </b>' + saxutils.escape(movie.plot.encode(defaultEnc)) + '</i>'
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                    if 'notes' in pdf_elements and movie.notes:
+-                        paragraph_text = '<i><b>' + _('Notes') + ': </b>' + saxutils.escape(movie.notes.encode(defaultEnc)) + '</i>'
+-                        p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+-                        Story.append(p)
+-                c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+-                gutils.info(_('PDF has been created.'), self.parent_window)
++                        if 'runtime' in pdf_elements and movie.runtime:
++                            paragraph_text = '<b>' + _('Runtime') + ': </b>' + saxutils.escape(str(movie.runtime))
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                            Story.append(p)
++                        if 'genre' in pdf_elements and movie.genre:
++                            paragraph_text = '<b>' + _('Genre') + ': </b>' + saxutils.escape(movie.genre.encode(defaultEnc))
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                            Story.append(p)
++                        if 'director' in pdf_elements and movie.director:
++                            paragraph_text = '<i><b>' + _('Director') + ': </b>' + saxutils.escape(movie.director.encode(defaultEnc)) + '</i>'
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                            Story.append(p)
++                        if 'cast' in pdf_elements and movie.cast:
++                            paragraph_text = '<i><b>' + _('Cast') + ': </b>' + saxutils.escape('; '.join(movie.cast.encode(defaultEnc).split("\n")[0:2])) + '</i>'
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                            Story.append(p)
++                        if 'plot' in pdf_elements and movie.plot:
++                            paragraph_text = '<i><b>' + _('Plot') + ': </b>' + saxutils.escape(movie.plot.encode(defaultEnc)) + '</i>'
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                            Story.append(p)
++                        if 'notes' in pdf_elements and movie.notes:
++                            paragraph_text = '<i><b>' + _('Notes') + ': </b>' + saxutils.escape(movie.notes.encode(defaultEnc)) + '</i>'
++                            p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
++                            Story.append(p)
++                    c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
++                    gutils.info(_('PDF has been created.'), self.parent_window)
++                except Exception, e:
++                    log.exception('')
++                    gutils.error(str(e))
+ 
+     def create_styles(self):
+         self.styles = getSampleStyleSheet()
+@@ -206,18 +213,23 @@
+             fontfilename = self.config.get('font', '')
+             (fontfilenamebase, fontfilenameextension) = os.path.splitext(fontfilename)
+ 
+-            pdfmetrics.registerFont(TTFont(self.fontName, fontfilename))
+-            addMapping(self.fontName, 0, 0, self.fontName)
+-            # build font family if available to support <b> and <i>
+-            if os.path.isfile(fontfilenamebase + 'bd' + fontfilenameextension):
+-                pdfmetrics.registerFont(TTFont(self.fontName + '-bold', fontfilenamebase + 'bd' + fontfilenameextension))
+-                addMapping(self.fontName, 1, 0, self.fontName + '-bold')
+-            if os.path.isfile(fontfilenamebase + 'bi' + fontfilenameextension):
+-                pdfmetrics.registerFont(TTFont(self.fontName + '-bolditalic', fontfilenamebase + 'bi' + fontfilenameextension))
+-                addMapping(self.fontName, 1, 1, self.fontName + '-bolditalic')
+-            if os.path.isfile(fontfilenamebase + 'i' + fontfilenameextension):
+-                pdfmetrics.registerFont(TTFont(self.fontName + '-italic', fontfilenamebase + 'i' + fontfilenameextension))
+-                addMapping(self.fontName, 0, 1, self.fontName + '-italic')
++            try:
++                pdfmetrics.registerFont(TTFont(self.fontName, fontfilename))
++            except:
++                log.exception('')
++                self.fontName = "Helvetica"
++            else:
++                addMapping(self.fontName, 0, 0, self.fontName)
++                # build font family if available to support <b> and <i>
++                if os.path.isfile(fontfilenamebase + 'bd' + fontfilenameextension):
++                    pdfmetrics.registerFont(TTFont(self.fontName + '-bold', fontfilenamebase + 'bd' + fontfilenameextension))
++                    addMapping(self.fontName, 1, 0, self.fontName + '-bold')
++                if os.path.isfile(fontfilenamebase + 'bi' + fontfilenameextension):
++                    pdfmetrics.registerFont(TTFont(self.fontName + '-bolditalic', fontfilenamebase + 'bi' + fontfilenameextension))
++                    addMapping(self.fontName, 1, 1, self.fontName + '-bolditalic')
++                if os.path.isfile(fontfilenamebase + 'i' + fontfilenameextension):
++                    pdfmetrics.registerFont(TTFont(self.fontName + '-italic', fontfilenamebase + 'i' + fontfilenameextension))
++                    addMapping(self.fontName, 0, 1, self.fontName + '-italic')
+         else:
+             self.fontName = "Helvetica"
+ 
+
+
+

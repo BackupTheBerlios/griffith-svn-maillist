@@ -1,0 +1,1034 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1329 - in trunk: . lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1329%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C200912121351.nBCDpdhW032247%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000796.html">
+   <LINK REL="Next"  HREF="000798.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1329 - in trunk: . lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1329%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C200912121351.nBCDpdhW032247%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1329 - in trunk: . lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 12 14:51:39 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000796.html">[Griffith-svn] r1328 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000798.html">[Griffith-svn] r1330 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#797">[ date ]</a>
+              <a href="thread.html#797">[ thread ]</a>
+              <a href="subject.html#797">[ subject ]</a>
+              <a href="author.html#797">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-12 14:51:22 +0100 (Sat, 12 Dec 2009)
+New Revision: 1329
+
+Added:
+   trunk/lib/plugins/imp/BESTheMovieLibrary.py
+   trunk/lib/plugins/imp/FoxMovieManager.py
+   trunk/lib/plugins/imp/MyDVDs.py
+   trunk/lib/plugins/imp/TheMovieLibrary.py
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/plugins/imp/AMC.py
+   trunk/lib/plugins/imp/DVDProfiler.py
+   trunk/lib/plugins/imp/GCstar.py
+   trunk/lib/plugins/imp/PersonalVideoDatabase.py
+   trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+   trunk/lib/plugins/imp/__init__.py
+   trunk/lib/plugins/imp/eXtremeMovieManager.py
+Log:
+* new import plugins: BES The Movie Library, Fox Movie Manager, MyDVDs, The Movie Library
+  (all MS Access / Jet DB based)
+* cleanup import sections of other import plugins
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/ChangeLog	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -5,6 +5,11 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-12-12  Michael Jahn
++	* new import plugins: BES The Movie Library, Fox Movie Manager, MyDVDs, The Movie Library
++	  (all MS Access / Jet DB based)
++	* cleanup import sections of other import plugins
++
+ 2009-12-08  Michael Jahn
+ 	* [#486258] no refresh when a filter is active
+ 	* [#418911] It doesn't import cover art from FilmAffinity
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/NEWS	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -2,8 +2,16 @@
+ =============
+ * Griffith extensions feature added. You can add your own extensions in
+   ~/.griffith/lib/extensions
+-* New import plugins: GCstar, DVD Profiler, eXtreme Movie Manager, Personal Video Database,
+-  wintoolz Filmdatenbank
++* New import plugins:
++   - Barret Enterprise Software The Movie Library
++   - DVD Profiler
++   - eXtreme Movie Manager
++   - Fox Movie Manager
++   - GCstar
++   - MyDVDs
++   - Personal Video Database
++   - The Movie Library
++   - wintoolz Filmdatenbank
+ 
+ 
+ Griffith 0.10.1
+
+Modified: trunk/lib/plugins/imp/AMC.py
+===================================================================
+--- trunk/lib/plugins/imp/AMC.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/AMC.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -23,10 +23,10 @@
+ 
+ from plugins.imp import ImportPlugin as IP
+ import os
+-import sys
+ import gutils
+ import string
+ import struct
++
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+
+Added: trunk/lib/plugins/imp/BESTheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/BESTheMovieLibrary.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/BESTheMovieLibrary.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -0,0 +1,147 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import gutils
++import string
++
++try:
++    import pyodbc
++except ImportError:
++    pass
++
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++class ImportPlugin(IP):
++    description  = _('Barrett Enterprise Software The Movie Library 1.9.x')
++    author       = 'Michael Jahn'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++    version      = '1.0'
++    file_filters = '*.[mM][dD][bB]'
++    mime_types   = None
++
++    fileversion  = None
++    connection   = None
++    cursor       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.connection:
++            try:
++                curs = self.connection.cursor()
++                curs.execute('SELECT COUNT(*) FROM Main')
++                count = curs.fetchone()[0]
++                curs.close()
++            except:
++                log.exception('')
++        else:
++            log.error('BES The Movie Library Import: No connection object.')
++        log.info('BES The Movie Library Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.cursor:
++            self.cursor = self.connection.cursor()
++            self.cursor.execute( \
++                'SELECT Title, Category, Rating, Rated, Actor1, Actor2, Description, MediaType \
++                 FROM Main')
++        
++        currentrow = self.cursor.fetchone()
++        if not currentrow:
++            return None
++        
++        details = {}
++        try:
++            if currentrow[0]:
++                details['title'] = unicode(currentrow[0])
++            if currentrow[1]:
++                details['genre'] = unicode(currentrow[1])
++            if currentrow[2]:
++                details['rating'] = 2 * len(str(currentrow[2]))
++            if currentrow[3]:
++                details['classification'] = unicode(currentrow[3])
++            cast = ''
++            if currentrow[4]:
++                cast = currentrow[4]
++            if currentrow[5]:
++                cast = cast + '\n' + currentrow[5]
++            details['cast'] = cast
++            if currentrow[6]:
++                details['plot'] = currentrow[6]
++            if currentrow[7]:
++                # setting medium_id to string mediumname; mapping is done in base class
++                details['medium_id'] = currentrow[7]
++        except Exception, e:
++            log.exception('')
++            details = None
++        
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.cursor:
++            self.cursor.close()
++            self.cursor = None
++        if self.connection:
++            self.connection.close()
++            self.connection = None
++        self.fileversion = None
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            log.debug('Connecting with: DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            self.connection = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            curs = self.connection.cursor()
++            tablerow = curs.tables(table='Main').fetchone()
++            if tablerow:
++                version = 1.0
++            curs.close()
++        except Exception, e:
++            log.error(str(e))
++        log.info('BES The Movie Library Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/BESTheMovieLibrary.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/plugins/imp/DVDProfiler.py
+===================================================================
+--- trunk/lib/plugins/imp/DVDProfiler.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/DVDProfiler.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -22,13 +22,10 @@
+ # GNU General Public License, version 2 or later
+ 
+ from plugins.imp import ImportPlugin as IP
+-import os
+-import sys
+ import gutils
+ import string
+-import struct
+-import db
+ from xml.dom import minidom, Node
++
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+
+Added: trunk/lib/plugins/imp/FoxMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/FoxMovieManager.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/FoxMovieManager.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -0,0 +1,193 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import gutils
++import string
++
++try:
++    import pyodbc
++except ImportError:
++    pass
++
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++class ImportPlugin(IP):
++    description  = _('Fox Movie Manager 1.4')
++    author       = 'Michael Jahn'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++    version      = '1.0'
++    file_filters = '*.[mM][dD][bB]'
++    mime_types   = None
++
++    fileversion  = None
++    connection   = None
++    cursor       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.connection:
++            try:
++                curs = self.connection.cursor()
++                curs.execute('SELECT COUNT(*) FROM tblMovie')
++                count = curs.fetchone()[0]
++                curs.close()
++            except:
++                log.exception('')
++        else:
++            log.error('Fox Movie Manager Import: No connection object.')
++        log.info('Fox Movie Manager Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.cursor:
++            self.cursor = self.connection.cursor()
++            self.cursor.execute( \
++                'SELECT fldIDtitle, fldTitle, fldSynopsis, fldActors, fldWriters, \
++                        fldDirectors, fldStudio, fldYear, fldLength, fldDisks, \
++                        fldPicPath, fldWatched, fldUserRating, fldRating, fldMedia, \
++                        fldMoviePath, fldTrailerPath \
++                 FROM tblMovie')
++        
++        currentrow = self.cursor.fetchone()
++        if not currentrow:
++            return None
++        
++        details = {}
++        try:
++            details['number'] = currentrow[0]
++            if currentrow[1]:
++                details['title'] = currentrow[1]
++            if currentrow[2]:
++                details['plot'] = currentrow[2]
++            if currentrow[3]:
++                cast = ''
++                actors = currentrow[3].split(';')
++                for actor in actors:
++                    if actor:
++                        actorandrole = actor.split('@')
++                        if len(actorandrole) &gt; 1 and actorandrole[1]:
++                            cast = cast + actorandrole[0] + _(' as ') + actorandrole[1] + '\n'
++                        else:
++                            cast = cast + actorandrole[0] + '\n'
++                details['cast'] = cast
++            if currentrow[4]:
++                details['screenplay'] = string.replace(currentrow[4], ';', ', ')
++            if currentrow[5]:
++                details['director'] = string.replace(currentrow[5], ';', ', ')
++            if currentrow[6]:
++                details['studio'] = currentrow[6]
++            if currentrow[7]:
++                details['year'] = currentrow[7]
++            if currentrow[8]:
++                details['runtime'] = currentrow[8]
++            if currentrow[9]:
++                details['media_num'] = currentrow[9]
++            if currentrow[10]:
++                details['poster'] = currentrow[10]
++            if currentrow[11]:
++                details['seen'] = currentrow[11]
++            if currentrow[12]:
++                if currentrow[12] &gt; 10:
++                    try:
++                        details['rating'] = round(currentrow[12] / 10.0, 0)
++                    except:
++                        pass
++                else:
++                    details['rating'] = currentrow[12]
++            if currentrow[13]:
++                details['classification'] = currentrow[13]
++            if currentrow[14]:
++                # setting medium_id to string mediumname; mapping is done in base class
++                details['medium_id'] = currentrow[14]
++            if currentrow[15]:
++                details['trailer'] = currentrow[15]
++            elif currentrow[16]:
++                details['trailer'] = currentrow[16]
++            # looking for the genres
++            cursgenre = self.connection.cursor()
++            cursgenre.execute('SELECT fldGenre \
++                FROM tblGenreTypes INNER JOIN tblGenre ON tblGenreTypes.fldIDgenre = tblGenre.fldGenreID \
++                WHERE tblGenre.fldTitleID=' + str(currentrow[0]) + ';')
++            currentrow = cursgenre.fetchone()
++            if currentrow:
++                genres = ''
++                while currentrow:
++                    genres = genres + currentrow[0] + ', '
++                    currentrow = cursgenre.fetchone()
++                details['genre'] = genres[:-2]
++            cursgenre.close()
++        except Exception, e:
++            log.exception('')
++            details = None
++        
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.cursor:
++            self.cursor.close()
++            self.cursor = None
++        if self.connection:
++            self.connection.close()
++            self.connection = None
++        self.fileversion = None
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            log.debug('Connecting with: DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            self.connection = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            curs = self.connection.cursor()
++            tablerow = curs.tables(table='tblMovie').fetchone()
++            if tablerow:
++                version = 1.0
++            curs.close()
++        except Exception, e:
++            log.error(str(e))
++        log.info('Fox Movie Manager Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/FoxMovieManager.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/plugins/imp/GCstar.py
+===================================================================
+--- trunk/lib/plugins/imp/GCstar.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/GCstar.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -23,11 +23,10 @@
+ 
+ from plugins.imp import ImportPlugin as IP
+ import os
+-import sys
+ import gutils
+ import string
+-import struct
+ from xml.dom import minidom
++
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+
+Added: trunk/lib/plugins/imp/MyDVDs.py
+===================================================================
+--- trunk/lib/plugins/imp/MyDVDs.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/MyDVDs.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -0,0 +1,157 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import gutils
++import string
++
++try:
++    import pyodbc
++except ImportError:
++    pass
++
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++class ImportPlugin(IP):
++    description  = _('MyDVDs 1.6x')
++    author       = 'Michael Jahn'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++    version      = '1.0'
++    file_filters = '*.[mM][dD][bB]'
++    mime_types   = None
++
++    fileversion  = None
++    connection   = None
++    cursor       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.connection:
++            try:
++                curs = self.connection.cursor()
++                curs.execute('SELECT COUNT(*) FROM dvd')
++                count = curs.fetchone()[0]
++            except:
++                log.exception('')
++        else:
++            log.error('MyDVDs Import: No connection object.')
++        log.info('MyDVDs Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.cursor:
++            self.cursor = self.connection.cursor()
++            self.cursor.execute( \
++                'SELECT id, title, year, rating, stars, director, synop, \
++                        cover, runtime, genre, notes, trailer, star5 \
++                 FROM dvd;')
++        
++        currentrow = self.cursor.fetchone()
++        if not currentrow:
++            return None
++        
++        details = {}
++        try:
++            if currentrow[1]:
++                details['title'] = currentrow[1]
++            if currentrow[2]:
++                details['year'] = currentrow[2]
++            if currentrow[3]:
++                details['classification'] = currentrow[3]
++            if currentrow[4]:
++                details['cast'] = currentrow[4]
++            if currentrow[5]:
++                details['director'] = currentrow[5]
++            if currentrow[6]:
++                details['plot'] = currentrow[6]
++            if currentrow[7]:
++                details['poster'] = currentrow[7]
++            if currentrow[8]:
++                details['runtime'] = gutils.digits_only(currentrow[8])
++            if currentrow[9]:
++                genre = string.replace(currentrow[9], '~', ', ')
++                if len(genre) &gt; 2:
++                    details['genre'] = genre[2:]
++            if currentrow[10]:
++                details['notes'] = currentrow[10]
++            if currentrow[11]:
++                details['trailer'] = currentrow[11]
++            if currentrow[12]:
++                try:
++                    details['rating'] = 2 * int(currentrow[12])
++                except:
++                    pass
++        except Exception, e:
++            log.exception('')
++            details = None
++        #print details
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.cursor:
++            self.cursor.close()
++            self.cursor = None
++        if self.connection:
++            self.connection.close()
++            self.connection = None
++        self.fileversion = None
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            log.debug('Connecting with: DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            self.connection = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            curs = self.connection.cursor()
++            tablerow = curs.tables(table='dvd').fetchone()
++            if tablerow:
++                version = 1.0
++            curs.close()
++        except Exception, e:
++            log.error(str(e))
++        log.info('MyDVDs Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/MyDVDs.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/plugins/imp/PersonalVideoDatabase.py
+===================================================================
+--- trunk/lib/plugins/imp/PersonalVideoDatabase.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/PersonalVideoDatabase.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -22,13 +22,10 @@
+ # GNU General Public License, version 2 or later
+ 
+ from plugins.imp import ImportPlugin as IP
+-import os
+-import sys
+ import gutils
+ import string
+-import struct
+-import db
+ from xml.dom import minidom, Node
++
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+
+Added: trunk/lib/plugins/imp/TheMovieLibrary.py
+===================================================================
+--- trunk/lib/plugins/imp/TheMovieLibrary.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/TheMovieLibrary.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -0,0 +1,199 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from plugins.imp import ImportPlugin as IP
++import gutils
++import string
++
++try:
++    import pyodbc
++except ImportError:
++    pass
++
++import logging
++log = logging.getLogger(&quot;Griffith&quot;)
++
++class ImportPlugin(IP):
++    description  = _('WenSoftware The Movie Library 1.4.x')
++    author       = 'Michael Jahn'
++    email        = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>'
++    version      = '1.0'
++    file_filters = '*.[dD][mM][vV]'
++    mime_types   = None
++
++    fileversion  = None
++    connection   = None
++    cursor       = None
++
++    def initialize(self):
++        if not IP.initialize(self):
++            return False
++        self.edit = False
++        return True
++    
++    def set_source(self, name):
++        IP.set_source(self, name)
++        self.filename = name
++        self.fileversion = self.read_fileversion()
++        if self.fileversion == None:
++            gutils.error(self, _('The format of the file is not supported.'))
++            return False
++        return True
++
++    def count_movies(self):
++        &quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
++        count = 0
++        if self.connection:
++            try:
++                curs = self.connection.cursor()
++                curs.execute('SELECT COUNT(*) FROM Movie')
++                count = curs.fetchone()[0]
++                curs.close()
++            except:
++                log.exception('')
++        else:
++            log.error('The Movie Library Import: No connection object.')
++        log.info('The Movie Library Import: %s movies for import' % count)
++        return count
++
++    def get_movie_details(self):
++        &quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
++        if not self.cursor:
++            self.cursor = self.connection.cursor()
++            self.cursor.execute( \
++                'SELECT MovieID, Title, Format, Genre, Subgenre, Year, \
++                        UPC, Country, Studio, AudienceRating, URL, Region, \
++                        Length, Director, Writer, Photographer, Plot, \
++                        FrontCover, Seen, Comment, Actor, Trailer, Color, Rating \
++                 FROM Movie')
++        
++        currentrow = self.cursor.fetchone()
++        if not currentrow:
++            return None
++        
++        details = {}
++        try:
++            if currentrow[1]:
++                details['title'] = currentrow[1]
++            if currentrow[2]:
++                # setting medium_id to string mediumname; mapping is done in base class
++                details['medium_id'] = currentrow[2]
++            if currentrow[3]:
++                details['genre'] = currentrow[3]
++            if currentrow[4]:
++                details['genre'] = details['genre'] + ', ' + currentrow[4]
++            if currentrow[5]:
++                details['year'] = currentrow[5]
++            if currentrow[6]:
++                details['barcode'] = currentrow[6]
++            if currentrow[7]:
++                details['country'] = currentrow[7]
++            if currentrow[8]:
++                details['studio'] = currentrow[8]
++            if currentrow[9]:
++                details['classification'] = currentrow[9]
++            if currentrow[10]:
++                details['site'] = currentrow[10]
++            if currentrow[11]:
++                region = string.replace(currentrow[11], 'Region ', '')
++                try:
++                    details['region'] = int(region)
++                except:
++                    pass
++            if currentrow[12]:
++                details['runtime'] = currentrow[12]
++            if currentrow[13]:
++                details['director'] = currentrow[13]
++            if currentrow[14]:
++                details['screenplay'] = currentrow[14]
++            if currentrow[15]:
++                details['cameraman'] = currentrow[15]
++            if currentrow[16]:
++                details['plot'] = currentrow[16]
++            if currentrow[17]:
++                # TODO: fetching poster from www if an url is given?
++                if not currentrow[17][0:4] == 'http':
++                    details['image'] = currentrow[17]
++            if currentrow[18]:
++                details['seen'] = currentrow[18]
++            if currentrow[19]:
++                details['notes'] = currentrow[19]
++            if currentrow[20]:
++                cast = ''
++                actors = currentrow[20].split('	')
++                for actor in actors:
++                    actorandrole = actor.split('|')
++                    if len(actorandrole) &gt; 1 and actorandrole[1]:
++                        cast = cast + actorandrole[0] + _(' as ') + actorandrole[1] + '\n'
++                    else:
++                        cast = cast + actorandrole[0] + '\n'
++                details['cast'] = cast
++            if currentrow[21]:
++                trailers = currentrow[21].split('	')
++                if len(trailers) &gt; 0:
++                    nameandurl = trailers[0].split('|')
++                    if len(nameandurl) &gt; 1 and nameandurl[1]:
++                        details['trailer'] = nameandurl[1]
++            if currentrow[22]:
++                if currentrow[22] == 0:
++                    details['color'] = 1
++                elif currentrow[22] == 1:
++                    details['color'] = 2
++            if currentrow[23]:
++                details['rating'] = currentrow[23]
++        except Exception, e:
++            log.exception('')
++            details = None
++        
++        return details
++
++    def clear(self):
++        &quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
++        IP.clear(self)
++        if self.cursor:
++            self.cursor.close()
++            self.cursor = None
++        if self.connection:
++            self.connection.close()
++            self.connection = None
++        self.fileversion = None
++
++    def destroy(self):
++        &quot;&quot;&quot;close all resources&quot;&quot;&quot;
++        IP.destroy(self)
++
++    def read_fileversion(self):
++        version = None
++        try:
++            log.debug('Connecting with: DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            self.connection = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ=%s' % string.replace(self.filename, '\\', '\\\\'))
++            curs = self.connection.cursor()
++            tablerow = curs.tables(table='Movie').fetchone()
++            if tablerow:
++                version = 1.0
++            curs.close()
++        except Exception, e:
++            log.error(str(e))
++        log.info('The Movie Library Import: Found file version %s' % version)
++        return version;
++
+
+
+Property changes on: trunk/lib/plugins/imp/TheMovieLibrary.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/lib/plugins/imp/WintoolzFilmdatenbank.py
+===================================================================
+--- trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/WintoolzFilmdatenbank.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -22,11 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ from plugins.imp import ImportPlugin as IP
+-import os
+-import sys
+ import gutils
+-import string
+-import db
+ 
+ try:
+     import sqlite3
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/__init__.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -26,6 +26,7 @@
+ import os.path
+ import time
+ import gc
++import struct
+ from tempfile import mkstemp
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+@@ -256,23 +257,24 @@
+                                         pass
+                             # adding poster
+                             if poster:
+-                                # check for JPEG/PNG header otherwise it should be a filename 
+-                                if len(poster) &gt; 4 and \
+-                                    ((ord(poster[0]) == 0xFF and ord(poster[1]) == 0xD8 and ord(poster[2]) == 0xFF and ord(poster[3]) == 0xE0) or
+-                                     (ord(poster[0]) == 0x89 and ord(poster[1]) == 0x50 and ord(poster[2]) == 0x4E and ord(poster[3]) == 0x47)):
+-                                    # make a temporary file
+-                                    try:
+-                                        posterfilefd, posterfilename = mkstemp('.img')
++                                if len(poster) &gt; 4:
++                                    # check for JPEG/PNG header otherwise it should be a filename 
++                                    header = struct.unpack_from('4s', poster)[0]
++                                    if header == '\xff\xd8\xff\xe0' or \
++                                       header == '\x89\x50\x4e\x47':
++                                        # make a temporary file
+                                         try:
+-                                            os.write(posterfilefd, poster)
++                                            posterfilefd, posterfilename = mkstemp('.img')
++                                            try:
++                                                os.write(posterfilefd, poster)
++                                            finally:
++                                                os.close(posterfilefd)
++                                            edit.update_image(self.parent, number, posterfilename)
+                                         finally:
+-                                            os.close(posterfilefd)
+-                                        edit.update_image(self.parent, number, posterfilename)
+-                                    finally:
+-                                        if os.path.isfile(posterfilename):
+-                                            os.remove(posterfilename)
+-                                else:
+-                                    edit.update_image(self.parent, number, poster)
++                                            if os.path.isfile(posterfilename):
++                                                os.remove(posterfilename)
++                                    else:
++                                        edit.update_image(self.parent, number, poster)
+                         except Exception, e:
+                             log.exception(&quot;movie details are not unique, skipping&quot;)
+                         numbers.add(number)
+
+Modified: trunk/lib/plugins/imp/eXtremeMovieManager.py
+===================================================================
+--- trunk/lib/plugins/imp/eXtremeMovieManager.py	2009-12-08 20:59:31 UTC (rev 1328)
++++ trunk/lib/plugins/imp/eXtremeMovieManager.py	2009-12-12 13:51:22 UTC (rev 1329)
+@@ -23,12 +23,9 @@
+ 
+ from plugins.imp import ImportPlugin as IP
+ import os
+-import sys
+ import gutils
+-import string
+-import struct
+-import db
+ from xml.dom import minidom, Node
++
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000796.html">[Griffith-svn] r1328 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000798.html">[Griffith-svn] r1330 - in trunk: . lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#797">[ date ]</a>
+              <a href="thread.html#797">[ thread ]</a>
+              <a href="subject.html#797">[ subject ]</a>
+              <a href="author.html#797">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

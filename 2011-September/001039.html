@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1580 - in trunk: . lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1580%20-%20in%20trunk%3A%20.%20lib/plugins/extensions&In-Reply-To=%3C20110901210220.6470B4811D9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001038.html">
+   <LINK REL="Next"  HREF="001040.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1580 - in trunk: . lib/plugins/extensions</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1580%20-%20in%20trunk%3A%20.%20lib/plugins/extensions&In-Reply-To=%3C20110901210220.6470B4811D9%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1580 - in trunk: . lib/plugins/extensions">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep  1 23:02:20 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001038.html">[Griffith-svn] r1579 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001040.html">[Griffith-svn] r1581 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1039">[ date ]</a>
+              <a href="thread.html#1039">[ thread ]</a>
+              <a href="subject.html#1039">[ subject ]</a>
+              <a href="author.html#1039">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-09-01 23:02:19 +0200 (Thu, 01 Sep 2011)
+New Revision: 1580
+
+Added:
+   trunk/lib/plugins/extensions/ge_sqlitemaintenance.py
+Modified:
+   trunk/ChangeLog
+Log:
+added database maintenance extension
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-09-01 20:03:35 UTC (rev 1579)
++++ trunk/ChangeLog	2011-09-01 21:02:19 UTC (rev 1580)
+@@ -7,6 +7,7 @@
+ 
+ 2011-09-01  Michael Jahn
+ 	* updated Allocine plugin, switch to JSON api
++	* added database maintenance extension
+ 
+ 2011-08-30  Michael Jahn
+ 	* updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
+
+Added: trunk/lib/plugins/extensions/ge_sqlitemaintenance.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_sqlitemaintenance.py	                        (rev 0)
++++ trunk/lib/plugins/extensions/ge_sqlitemaintenance.py	2011-09-01 21:02:19 UTC (rev 1580)
+@@ -0,0 +1,82 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright &#169; 2011
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import os
++import logging
++import gutils
++from sqlalchemy.sql import delete, exists, and_, not_
++from db.tables import movies as movies_table
++from db.tables import posters as posters_table
++
++from plugins.extensions import GriffithExtensionBase as Base
++
++log = logging.getLogger('Griffith')
++
++class GriffithExtension(Base):
++    name = 'Database Cleanup and Maintenance'
++    description = _('Removes unused posters, executes the VACUUM command and corrects a wrong page size if possible (SQLite)')
++    author = 'Michael Jahn'
++    email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mike at griffith.cc</A>'
++    version = 0.1
++    api = 1
++    enabled = False
++
++    toolbar_icon = 'gtk-goto-bottom'
++
++    def toolbar_icon_clicked(self, widget, movie):
++        #
++        # remove unused posters
++        #
++        session = self.db.Session()
++        delete_posters = delete(posters_table)
++        delete_posters = delete_posters.where(not_(exists([movies_table.c.movie_id], and_(posters_table.c.md5sum==movies_table.c.poster_md5)).correlate(posters_table)))
++        log.debug(delete_posters)
++        session.execute(delete_posters)
++        session.commit()
++        #
++        # compressing sqlite databases
++        #
++        if self.app.config.get('type', 'sqlite', section='database') == 'sqlite':
++            databasefilename = &quot;%s.db&quot; % os.path.join(self.app.locations['home'], self.app.config.get('name', section='database'))
++            pagesize = gutils.get_filesystem_pagesize(databasefilename)
++
++            # works since sqlite 3.5.8
++            # python 2.5 doesn't include 3.x but perhaps in future versions
++            # another way is the installation of pysqlite2 with 2.5.6/2.6.0 or higher
++            try:
++                from pysqlite2 import dbapi2 as sqlite3
++
++                con = sqlite3.connect(databasefilename)
++                try:
++                    con.isolation_level = None
++                    cur = con.cursor()
++                    cur.execute('PRAGMA page_size=' + str(pagesize))
++                    cur.execute('VACUUM;')
++                finally:
++                    con.close()
++            except:
++                log.error('fallback to default driver')
++                self.app.db.engine.execute('PRAGMA page_size=' + str(pagesize))
++                self.app.db.engine.execute('VACUUM;')
++        gutils.info(_(&quot;Finished&quot;))
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001038.html">[Griffith-svn] r1579 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001040.html">[Griffith-svn] r1581 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1039">[ date ]</a>
+              <a href="thread.html#1039">[ thread ]</a>
+              <a href="subject.html#1039">[ subject ]</a>
+              <a href="author.html#1039">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

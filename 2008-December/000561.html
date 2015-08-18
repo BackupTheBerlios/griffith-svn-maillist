@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1086 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1086%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200812161942.mBGJgC5r012556%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000560.html">
+   <LINK REL="Next"  HREF="000562.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1086 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1086%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200812161942.mBGJgC5r012556%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1086 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec 16 20:42:12 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000560.html">[Griffith-svn] r1085 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000562.html">[Griffith-svn] r1087 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#561">[ date ]</a>
+              <a href="thread.html#561">[ thread ]</a>
+              <a href="subject.html#561">[ subject ]</a>
+              <a href="author.html#561">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-12-16 20:42:10 +0100 (Tue, 16 Dec 2008)
+New Revision: 1086
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/gconsole.py
+   trunk/lib/movie.py
+Log:
+Reload movie plugin each time search is performed (in --debug mode only, this should ease writing plugins)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-12-09 00:07:39 UTC (rev 1085)
++++ trunk/ChangeLog	2008-12-16 19:42:10 UTC (rev 1086)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-12-16  Piotr O&#380;arowski
++	* Reload movie plugin each time search is performed (in --debug mode only, this should ease writing plugins)
++
+ 2008-12-07  Piotr O&#380;arowski
+ 	* update_image(): update the md5 *after* all other queries (so that UPDATE will not be invoked)
+ 
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-12-09 00:07:39 UTC (rev 1085)
++++ trunk/griffith	2008-12-16 19:42:10 UTC (rev 1086)
+@@ -72,6 +72,7 @@
+ class Griffith(object):
+     &quot;&quot;&quot;The main application class&quot;&quot;&quot;
+ 
++    debug_mode = False
+     Image = gtk.Image()
+     founded_results_id = None
+     initialized = False
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-12-09 00:07:39 UTC (rev 1085)
++++ trunk/lib/add.py	2008-12-16 19:42:10 UTC (rev 1086)
+@@ -282,6 +282,10 @@
+         self.active_plugin = option
+         plugin_name = 'PluginMovie%s' % option
+         plugin = __import__(plugin_name)
++        if self.debug_mode:
++            log.debug('reloading %s', plugin_name)
++            import sys
++            reload(sys.modules[plugin_name])
+         self.search_movie = plugin.SearchPlugin()
+         self.search_movie.config = self.config
+         if o_title:
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2008-12-09 00:07:39 UTC (rev 1085)
++++ trunk/lib/gconsole.py	2008-12-16 19:42:10 UTC (rev 1086)
+@@ -94,6 +94,8 @@
+             if o in ('-C', '--clean'):
+                 gutils.clean_posters_dir(self)
+                 sys.exit()
++            elif o in ('-D', '--debug'):
++                self.debug_mode = True
+             elif o in ('-s', '--sort'):
+                 sort = a
+             elif o in ('-o', '--original_title'):
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2008-12-09 00:07:39 UTC (rev 1085)
++++ trunk/lib/movie.py	2008-12-16 19:42:10 UTC (rev 1086)
+@@ -34,7 +34,7 @@
+ log = logging.getLogger(&quot;Griffith&quot;)
+ import gutils
+ 
+-class Movie:
++class Movie(object):
+     cast = None
+     classification = None
+     country = None
+@@ -185,8 +185,7 @@
+ 
+     def parse_movie(self):
+         try:
+-            from copy import deepcopy
+-            fields = deepcopy(self.fields_to_fetch)
++            fields = list(self.fields_to_fetch) # make a copy
+ 
+             self.initialize()
+ 
+@@ -241,11 +240,11 @@
+             # close the progress dialog which was opened in get_movie
+             self.progress.hide()
+ 
+-class SearchMovie:
++class SearchMovie(object):
+     page = None
+     number_results = None
+-    titles = [&quot;&quot;]
+-    ids = [&quot;&quot;]
++    titles = []
++    ids = []
+     url = None
+     encode = 'utf-8'
+     original_url_search = None
+@@ -258,7 +257,7 @@
+     def __init__(self):
+         pass
+ 
+-    def search_movies(self,parent_window):
++    def search_movies(self, parent_window):
+         try:
+             #
+             # initialize the progress dialog once for the following search process
+@@ -281,7 +280,7 @@
+             self.url = self.url % self.title
+             self.url = string.replace(self.url, ' ', '%20')
+         else:
+-            self.url = string.replace(self.url+self.title,' ','%20')
++            self.url = string.replace(self.url+self.title, ' ', '%20')
+         try:
+             url = self.url.encode(self.encode)
+         except UnicodeEncodeError:
+@@ -292,16 +291,20 @@
+         while retriever.isAlive():
+             self.progress.pulse()
+             if self.progress.status:
+-                retriever.suspend()
++                retriever.join()
+             while gtk.events_pending():
+                 gtk.main_iteration()
+         try:
+-            ifile = file(retriever.html[0], &quot;rb&quot;)
+-            self.page = ifile.read()
+-            self.page = self.page.decode(self.encode)
++            if retriever.html:
++                ifile = file(retriever.html[0], 'rb')
++                self.page = ifile.read()
++                self.page = self.page.decode(self.encode, 'replace')
++            else:
++                return False
+         except IOError:
+             pass
+         urlcleanup()
++        return True
+ 
+ class Retriever(threading.Thread):
+     def __init__(self, URL, parent_window, progress, destination=None):
+@@ -313,6 +316,7 @@
+         self._stopevent = threading.Event()
+         self._sleepperiod = 1.0
+         threading.Thread.__init__(self, name=&quot;Retriever&quot;)
++
+     def run(self):
+         try:
+             self.html = urlretrieve(self.URL, self.destination, self.hook)
+@@ -323,7 +327,8 @@
+             self.progress.dialog.hide()
+             gutils.urllib_error(_(&quot;Connection error&quot;), self.parent_window)
+             self.suspend()
+-    def hook(self,count, blockSize, totalSize):
++
++    def hook(self, count, blockSize, totalSize):
+         if totalSize ==-1:
+             pass
+         else:
+@@ -332,7 +337,7 @@
+             except:
+                 downloaded_percentage = 100
+             if count != 0:
+-                downloaded_kbyte = int(count * blockSize/1024.0)
++                downloaded_percentagenloaded_kbyte = int(count * blockSize/1024.0)
+                 filesize_kbyte = int(totalSize/1024.0)
+ 
+ #
+@@ -366,20 +371,25 @@
+         self.button.connect(&quot;clicked&quot;, self.callback)
+         self.dialog.vbox.pack_start(self.button, False, False)
+         self.dialog.show_all()
++
+     def callback(self, widget):
+         self.dialog.hide()
+         self.status = True
++
+     def pulse(self):
+         self.progress.pulse()
+         time.sleep(0.01)
++
+     def close(self):
+         self.dialog.destroy()
++
+     def hide(self):
+         self.dialog.hide()
++
+     def set_data(self, parent_window, title, message, showit):
+         #self.dialog.set_parent(parent_window)
+         self.dialog.set_title(title)
+         self.label.set_markup(message)
+-        if showit == True:
++        if showit is True:
+             self.dialog.show()
+ # vim: fdm=marker
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000560.html">[Griffith-svn] r1085 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000562.html">[Griffith-svn] r1087 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#561">[ date ]</a>
+              <a href="thread.html#561">[ thread ]</a>
+              <a href="subject.html#561">[ subject ]</a>
+              <a href="author.html#561">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

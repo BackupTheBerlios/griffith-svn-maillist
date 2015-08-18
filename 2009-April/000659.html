@@ -1,0 +1,1377 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1187%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib%0A%09trunk/lib/plugins/movie&In-Reply-To=%3C200904152038.n3FKcVGc023334%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000658.html">
+   <LINK REL="Next"  HREF="000660.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1187%20-%20branches/0.9.x%20branches/0.9.x/lib%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib%0A%09trunk/lib/plugins/movie&In-Reply-To=%3C200904152038.n3FKcVGc023334%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1187 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 15 22:38:31 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000658.html">[Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000660.html">[Griffith-svn] r1188 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#659">[ date ]</a>
+              <a href="thread.html#659">[ thread ]</a>
+              <a href="subject.html#659">[ subject ]</a>
+              <a href="author.html#659">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-15 22:37:42 +0200 (Wed, 15 Apr 2009)
+New Revision: 1187
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieCineteka.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+   branches/0.9.x/lib/test_movieplugins.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/lib/plugins/movie/PluginMovieCineteka.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/test_movieplugins.py
+Log:
+* added data for automated tests of the IMDB plugin
+* added data for automated tests of the CineMovies plugin
+* updated CineMovies plugin
+* updated Cineteka plugin
+* updated FilmDb plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/ChangeLog	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -5,6 +5,13 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-04-15  Michael Jahn
++	* added data for automated tests of the IMDB plugin
++	* added data for automated tests of the CineMovies plugin
++	* updated CineMovies plugin
++	* updated Cineteka plugin
++	* updated FilmDb plugin
++	
+ 2009-04-08  Michael Jahn
+ 	* added AllMovie plugin
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -83,7 +83,7 @@
+ 		self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
+ 		self.cast = gutils.clean(self.cast)
+ 		self.cast = re.sub('\n[ \t]+', '\n', self.cast)
+-		self.cast = re.sub('[.]+', _(' as '), self.cast)
++		self.cast = re.sub('[.][.]+', _(' as '), self.cast)
+ 		self.cast = re.sub(_(' as ') + '(\n|$)', '\n', self.cast)
+ 		self.cast = self.cast.encode(self.encode)
+ 
+@@ -109,7 +109,7 @@
+ 		self.country = self.country.encode(self.encode)
+ 
+ 	def get_rating(self):
+-		self.rating = gutils.clean(gutils.trim(self.page, '&lt;DIV id=scoree&gt;', '&lt;/DIV&gt;')).encode(self.encode)
++		self.rating = gutils.clean(gutils.trim(self.page, '&lt;div id=scoree&gt;', '&lt;/div&gt;')).encode(self.encode)
+ 
+ 
+ class SearchPlugin(movie.SearchMovie):
+@@ -138,3 +138,59 @@
+ 				self.titles.append(title + ' (' + year + ')')
+ 		else:
+ 			self.number_results = 0
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa' : [ 2, 2 ],
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'6065' : { 
++			'title'               : 'Rocky Balboa',
++			'o_title'             : 'Rocky VI',
++			'director'            : 'Sylvester Stallone',
++			'plot'                : True,
++			'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason &quot;The Line&quot;Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian\n\
++Lou DiBella' + _(' as ') + 'Lui-m&#195;&#170;me\n\
++Mike Tyson' + _(' as ') + 'Lui-m&#195;&#170;me\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Lahmard J. Tate' + _(' as ') + 'X-Cell',
++			'country'             : 'USA',
++ 			'genre'               : 'Drame',
++			'classification'      : False,
++			'studio'              : 'Twentieth Century Fox France',
++			'o_site'              : '<A HREF="http://www.sonypictures.com/movies/rocky/">http://www.sonypictures.com/movies/rocky/</A>',
++			'site'                : '<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=6065">http://www.cinemovies.fr/fiche_film.php?IDfilm=6065</A>',
++			'trailer'             : False,
++			'year'                : 2007,
++			'notes'               : False,
++			'runtime'             : 105,
++			'image'               : True,
++			'rating'              : 6
++		},
++	}
+\ No newline at end of file
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCineteka.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCineteka.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -1,8 +1,8 @@
+ # -*- coding: UTF-8 -*-
+ 
+-__revision__ = '$Id: PluginMovie7arte.py 478 2006-12-05 21:14:51Z piotrek $'
++__revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr Ozarowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr Ozarowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -23,85 +23,92 @@
+ 
+ import gutils
+ import movie
+-import string
++import string, re
+ 
+-plugin_name = &quot;Cineteka&quot;
+-plugin_description = &quot;O seu Clube de Video Online&quot;
+-plugin_url = &quot;cineteka.com&quot;
+-plugin_language = _(&quot;Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
++plugin_name         = &quot;Cineteka&quot;
++plugin_description  = &quot;O seu Clube de Video Online&quot;
++plugin_url          = &quot;cineteka.com&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_version      = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
+ 	&quot;&quot;&quot;A movie plugin object&quot;&quot;&quot;
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode   = 'iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=">http://www.cineteka.com/index.php?op=Movie&amp;id=</A>&quot; + str(self.movie_id)
++		self.url      = &quot;<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=">http://www.cineteka.com/index.php?op=Movie&amp;id=</A>&quot; + str(self.movie_id)
+ 
++	def initialize(self):
++		self.page_unicode = self.page.decode(self.encode)
++
+ 	def get_image(self):
+ 		&quot;&quot;&quot;Finds the film's poster image&quot;&quot;&quot;
+ 		self.image_url = &quot;<A HREF="http://www.cineteka.com/img/filmes/">http://www.cineteka.com/img/filmes/</A>&quot; + str(self.movie_id) + &quot;_big.jpg&quot;
+ 
+ 	def get_o_title(self):
+ 		&quot;&quot;&quot;Finds the film's original title&quot;&quot;&quot;
+-		self.o_title = string.capwords(gutils.trim(self.page, &quot;&quot;&quot;&lt;nobr&gt;&lt;span class=&quot;txt11&quot;&gt;(&quot;&quot;&quot;, &quot;)&quot;))
++		self.o_title = gutils.trim(self.page, '&lt;nobr&gt;&lt;span class=&quot;txt11&quot;&gt;(', ')')
+ 
+ 	def get_title(self):
+ 		&quot;&quot;&quot;Finds the film's local title.
+ 		Probably the original title translation&quot;&quot;&quot;
+-		self.title = string.capwords(gutils.trim(self.page, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/b&gt;&quot;))
++		self.title = gutils.trim(self.page, '&lt;td class=&quot;movieT&quot;&gt;&lt;b&gt;', '&lt;/b&gt;')
+ 
+ 	def get_director(self):
+ 		&quot;&quot;&quot;Finds the film's director&quot;&quot;&quot;
+-		self.director = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;div&gt;&lt;b&gt;Realiza&#195;&#167;&#195;&#163;o:&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/div&gt;&quot;))
+-		self.director = string.replace(self.director,&quot;&lt;br&gt;&quot;, &quot;, &quot;)
++		self.director = gutils.strip_tags(gutils.trim(self.page_unicode, u'&lt;div&gt;&lt;b&gt;Realiza&#195;&#167;&#195;&#163;o:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;')).encode(self.encode)
++		self.director = string.replace(self.director, '&lt;br&gt;', ', ')
+ 		self.director = gutils.strip_tags(self.director)
+ 
+ 	def get_plot(self):
+ 		&quot;&quot;&quot;Finds the film's plot&quot;&quot;&quot;
+-		self.plot = gutils.trim(self.page, &quot;&quot;&quot;&lt;div class=&quot;txt-normal&quot; style=&quot;margin-top: 10px;&quot;&gt;&quot;&quot;&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;)
++		self.plot = gutils.trim(self.page, '&lt;div class=&quot;txt-normal&quot; style=&quot;margin-top: 10px;&quot;&gt;', '&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;')
++		self.plot = self.plot.replace('\x93', '&quot;')
++		self.plot = self.plot.replace('\x94', '&quot;')
++		self.plot = self.plot.replace('\x96', '-')
+ 
+ 	def get_year(self):
+ 		&quot;&quot;&quot;Finds the film's year&quot;&quot;&quot;
+-		self.year = gutils.trim(self.page, &quot;&lt;b&gt;Ano:&lt;/b&gt; &quot;, &quot;&lt;/div&gt;&quot;)
++		self.year = gutils.trim(self.page, '&lt;b&gt;Ano:&lt;/b&gt; ', '&lt;/div&gt;')
+ 
+ 	def get_runtime(self):
+ 		&quot;&quot;&quot;Finds the film's running time&quot;&quot;&quot;
+-		self.runtime = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Dura&#195;&#167;&#195;&#163;o:&lt;/b&gt; &quot;, &quot; min.&lt;/td&gt;&quot;)
++		self.runtime = gutils.trim(self.page_unicode, u'&lt;td&gt;&lt;b&gt;Dura&#195;&#167;&#195;&#163;o:&lt;/b&gt; ', u' min.&lt;/td&gt;').encode(self.encode)
+ 
+ 	def get_genre(self):
+ 		&quot;&quot;&quot;Finds the film's genre&quot;&quot;&quot;
+-		self.genre = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;b&gt;G&#195;&#169;nero:&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/div&gt;&quot;))
+-		self.genre = string.replace(self.genre,&quot;&lt;br&gt;&quot;, &quot;, &quot;)
++		self.genre = gutils.trim(self.page_unicode, u'&lt;b&gt;G&#195;&#169;nero:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;').encode(self.encode)
++		self.genre = string.replace(self.genre, '&lt;br&gt;', ', ')
+ 		self.genre = gutils.strip_tags(self.genre)
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;b&gt;Elenco:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;))
+-		self.cast = string.replace(self.cast, &quot;, &quot;, &quot;&quot;)
+-		self.cast = string.replace(self.cast, &quot;\t&quot;, &quot;&quot;)
+-		self.cast = string.replace(self.cast, &quot;\n &quot;, &quot;\n&quot;)
++		self.cast = gutils.trim(self.page, '&lt;b&gt;Elenco:&lt;/b&gt;', '&lt;/td&gt;')
++		self.cast = string.replace(self.cast, '&lt;br&gt;', '\n')
++		self.cast = string.replace(self.cast, ', ', '')
++		self.cast = string.replace(self.cast, '\t', '')
++		self.cast = string.replace(self.cast, '\n ', '\n')
++		self.cast = gutils.clean(self.cast)
++		self.cast = re.sub('[ \t]*[\n]+[ \t]*' , '\n', self.cast)
+ 
+ 	def get_classification(self):
+ 		&quot;&quot;&quot;Find the film's classification&quot;&quot;&quot;
+-		self.classification = gutils.trim(self.page, &quot;&lt;b&gt;Idade:&lt;/b&gt; &quot;, &quot;&lt;/div&gt;&quot;)
++		self.classification = gutils.trim(self.page, '&lt;b&gt;Idade:&lt;/b&gt; ', '&lt;/div&gt;')
+ 
+ 	def get_studio(self):
+ 		&quot;&quot;&quot;Find the studio&quot;&quot;&quot;
+-		self.studio = &quot;&quot;
++		self.studio = ''
+ 
+ 	def get_o_site(self):
+ 		&quot;&quot;&quot;Find the film's oficial site&quot;&quot;&quot;
+-		self.o_site = gutils.trim(self.page, \
+-			&quot;&lt;a class=\&quot;button\&quot; href=\&quot;&quot;, \
+-			&quot; title=\&quot;Consultar t&#195;&#173;tulo no Internet Movie Data Base\&quot;&quot;)
++		self.o_site = gutils.trim(self.page_unicode, \
++				u'&lt;a class=&quot;button&quot; href=&quot;', \
++				u'&quot; title=&quot;Consultar t&#195;&#173;tulo no Internet Movie Data Base&quot;').encode(self.encode)
+ 
+ 	def get_site(self):
+ 		&quot;&quot;&quot;Find the film's imdb details page&quot;&quot;&quot;
+-		self.site = gutils.trim(self.page, \
+-			&quot;&lt;/td&gt;&lt;td&gt;&lt;a class=\&quot;button\&quot; href=\&quot;&quot;, \
+-			&quot;&quot;&quot;&quot; title=&quot;Consultar t&#195;&#131;&#194;&#173;tulo&quot;&quot;&quot;)
++		self.site = self.url
+ 
+ 	def get_trailer(self):
+ 		&quot;&quot;&quot;Find the film's trailer page or location&quot;&quot;&quot;
+@@ -109,43 +116,91 @@
+ 
+ 	def get_country(self):
+ 		&quot;&quot;&quot;Find the film's country&quot;&quot;&quot;
+-		self.country = gutils.trim(self.page, &quot;&lt;b&gt;Pa&#195;&#173;s:&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/div&gt;&quot;)
+-		self.country = string.replace(self.country,&quot;&lt;br&gt;&quot;, &quot;, &quot;)
++		self.country = gutils.trim(self.page_unicode, u'&lt;b&gt;Pa&#195;&#173;s:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;').encode(self.encode)
++		self.country = string.replace(self.country, '&lt;br&gt;', ', ')
+ 		self.country = gutils.strip_tags(self.country)
+ 
+ 	def get_rating(self):
+ 		&quot;&quot;&quot;Find the film's rating. From 0 to 10.
+ 		Convert if needed when assigning.&quot;&quot;&quot;
+-		self.rating = 0
++		self.rating = gutils.clean(gutils.trim(self.page, 'IMDB: ', '&lt;/span&gt;'))
++		try:
++			self.rating = round(float(self.rating), 0)
++		except Exception, e:
++			self.rating = 0
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	&quot;&quot;&quot;A movie search object&quot;&quot;&quot;
+ 	def __init__(self):
+-		self.original_url_search = &quot;<A HREF="http://www.cineteka.com/index.php?op=MovieSearch&amp;s=">http://www.cineteka.com/index.php?op=MovieSearch&amp;s=</A>&quot;
++		self.original_url_search   = &quot;<A HREF="http://www.cineteka.com/index.php?op=MovieSearch&amp;s=">http://www.cineteka.com/index.php?op=MovieSearch&amp;s=</A>&quot;
+ 		self.translated_url_search = self.original_url_search
+-		self.encode='iso-8859-1'
++		self.encode                = 'iso-8859-1'
+ 
+ 	def search(self, parent_window):
+ 		&quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
+ 		self.open_search(parent_window)
+-		self.sub_search()
++		self.page = gutils.trim(self.page, 'tulo(s): ', '&lt;div class=&quot;menuright&quot;&gt;')
+ 		return self.page
+ 
+-	def sub_search(self):
+-		&quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
+-		self.page = gutils.trim(self.page, \
+-			&quot;&quot;&quot;o:&lt;/div&gt;&quot;&quot;&quot;, &quot;&quot;&quot;&lt;div style=&quot;margin-top: 10px; text-align: center;&quot;&gt;&lt;/div&gt;&quot;&quot;&quot;)
+-
+ 	def get_searches(self):
+ 		&quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
+-		elements = string.split(self.page, &quot;&lt;/a&gt;]&lt;/td&gt;&quot;)
+-		self.number_results = elements[-1]
++		elements = re.split('index[.]php[?]op=Movie&amp;id=([0-9]+)&quot;&gt;', self.page)
+ 
+-		if (elements[0]&lt;&gt;''):
+-			for element in elements:
+-				self.ids.append(gutils.trim(element, &quot;?op=Movie&amp;id=&quot;, &quot;\&quot;&quot;))
+-				self.titles.append(gutils.strip_tags(gutils.convert_entities \
+-					(gutils.trim(element, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/span&gt;&lt;/nobr&gt;&lt;/td&gt;&quot;))))
+-		else:
+-			self.number_results = 0
++		for index in range(2, len(elements), 2):
++			id = elements[index - 1]
++			title = gutils.before(elements[index], '&lt;')
++			self.ids.append(id)
++			self.titles.append(gutils.strip_tags(gutils.convert_entities(title)))
+ 
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa' : [ 1, 1 ],
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'002551' : { 
++			'title'               : 'Rocky Balboa',
++			'o_title'             : 'Rocky Balboa',
++			'director'            : 'Sylvester Stallone',
++			'plot'                : True,
++			'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Antonio Tarver\n\
++Geraldine Hughes\n\
++Milo Ventimiglia\n\
++Tony Burton\n\
++A.J. Benza\n\
++James Francis Kelly III\n\
++Talia Shire\n\
++Lou DiBella\n\
++Mike Tyson\n\
++Henry G. Sanders',
++			'country'             : 'EUA',
++			'genre'               : 'Ac&#195;&#167;&#195;&#163;o, Desporto, Drama',
++			'classification'      : 'M/12',
++			'studio'              : False,
++			'o_site'              : '<A HREF="http://www.imdb.com/title/tt0479143/">http://www.imdb.com/title/tt0479143/</A>',
++			'site'                : '<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=002551">http://www.cineteka.com/index.php?op=Movie&amp;id=002551</A>',
++			'trailer'             : False,
++			'year'                : 2006,
++			'notes'               : False,
++			'runtime'             : 102,
++			'image'               : True,
++			'rating'              : 8
++		},
++	}
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -43,7 +43,7 @@
+ 		tmp = gutils.trim(self.page, 'plakat.php?', '\'')
+ 		if tmp:
+ 			page_image = self.open_page(url='<A HREF="http://www.filmdb.de/plakat.php?">http://www.filmdb.de/plakat.php?</A>' + tmp)
+-			tmp = gutils.trim(self.page, '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>', '&quot;')
++			tmp = gutils.trim(self.page, 'bilder.filmdb.de', '\'')
+ 			if tmp:
+ 				self.image_url = '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>' + tmp
+ 
+@@ -194,8 +194,8 @@
+ 			'cast'                : 'Dolph Lundgren\n\
+ Sylvester Stallone\n\
+ Carl Weathers\n\
++Mike Tyson\n\
+ Burt Young\n\
+-Mike Tyson\n\
+ Talia Shire\n\
+ Burgess Meredith\n\
+ Tony Burton\n\
+@@ -209,45 +209,45 @@
+ Robert Michael Kelly\n\
+ LeRoy Neiman\n\
+ Stu Nahan\n\
++Tobias Segal\n\
+ Skip Bayless\n\
+ Gunnar Peterson\n\
+-Tobias Segal\n\
+ Marc Ratner\n\
+ Henry G. Sanders\n\
++Rick Buchborn\n\
++Ricky Cavazos\n\
++Charles Johnson\n\
+ Angela Boyd\n\
+ Ana Gerena\n\
+-Ricky Cavazos\n\
+-Rick Buchborn\n\
+ Fran Pultro\n\
++Tim Carr\n\
+ Joe Cortez\n\
+-Charles Johnson\n\
+ Jody Giambelluca\n\
++Carter Mitchell\n\
++A.J. Benza\n\
+ Yahya\n\
+-Tim Carr\n\
++Maureen Schilling\n\
++James Binns\n\
+ Jack Lazzarado\n\
+-Carter Mitchell\n\
+ Barney Fitzpatrick\n\
+-Maureen Schilling\n\
+-James Binns\n\
+ Antonio Tarver\n\
+-A.J. Benza\n\
++Nick Baker\n\
++Jim Lampley\n\
+ Matt Frack\n\
+ Louis Giansante\n\
+ Kevin King Templeton\n\
++Paul Dion Monte\n\
++Dana Jacobson\n\
++Brian Kenny\n\
+ Woody Paige\n\
+ Pedro Lovell\n\
+-Nick Baker\n\
+-Brian Kenny\n\
+-Paul Dion Monte\n\
+-Jim Lampley\n\
+-Dana Jacobson\n\
++Larry Merchant\n\
+ Bert Randolph Sugar\n\
+ Bernard Fern&#195;&#161;ndez\n\
+-Larry Merchant\n\
++Vinod Kumar\n\
+ Anthony Lato Jr.\n\
+ Max Kellerman\n\
+ Lou DiBella\n\
+-Vinod Kumar\n\
+ Johnnie Hobbs Jr.\n\
+ Jay Crawford\n\
+ Gary Compton\n\
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB-de.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -354,8 +354,7 @@
+ Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (Sprechrolle)\n\
+-Gary Compton' + _(' as ') + 'Sicherheitsbediensteter\n\
+-&#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
++Gary Compton' + _(' as ') + 'Sicherheitsbediensteter &#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
+ Michael Ahl' + _(' as ') + 'Restaurant patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+@@ -388,8 +387,8 @@
+ 			'rating'			: 8
+ 		},
+ 		'0069815' : { 
+-			'title' 			: 'Ein Gl&#195;&#188;ckliches Jahr',
+-			'o_title' 			: 'Bonne ann&#195;&#169;e, La',
++			'title'				: 'Ein gl&#195;&#188;ckliches Jahr',
++			'o_title'			: 'La bonne ann&#195;&#169;e',
+ 			'director'			: 'Claude Lelouch',
+ 			'plot' 				: True,
+ 			'cast'				: 'Lino Ventura' + _(' as ') + 'Simon\n\
+@@ -412,10 +411,9 @@
+ Joseph Rythmann\n\
+ Georges Staquet\n\
+ Jacques Villedieu\n\
+-Harry Walter\n\
+-&#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
++Harry Walter &#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
+ Anouk Aim&#195;&#169;e' + _(' as ') + 'Une femme (Archivmaterial) (nicht im Abspann)\n\
+-Elie Chouraqui' + _(' as ') + '(nicht im Abspann)\n\
++Elie Chouraqui' + _(' as ') + ' (nicht im Abspann)\n\
+ R&#195;&#169;my Julienne' + _(' as ') + 'Chauffeur de taxi (nicht im Abspann)\n\
+ Jean-Louis Trintignant' + _(' as ') + 'Un homme (Archivmaterial) (nicht im Abspann)',
+ 			'country'			: 'Frankreich | Italien',
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -238,3 +238,101 @@
+ 					tmp  = gutils.clean(match[0][1])
+ 					self.ids.append(match[0][0])
+ 					self.titles.append(tmp)
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++	#
++	test_configuration = {
++		'Rocky Balboa'         : [ 16, 16 ],
++		'Ein gl&#195;&#188;ckliches Jahr' : [ 21, 21 ]
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'0138097' : { 
++			'title'             : 'Shakespeare in Love',
++			'o_title'           : 'Shakespeare in Love',
++			'director'          : 'John Madden',
++			'plot'              : True,
++			'cast'              : 'Geoffrey Rush' + _(' as ') + 'Philip Henslowe\n\
++Tom Wilkinson' + _(' as ') + 'Hugh Fennyman\n\
++Steven O\'Donnell' + _(' as ') + 'Lambert\n\
++Tim McMullan' + _(' as ') + 'Frees\n\
++Joseph Fiennes' + _(' as ') + 'Will Shakespeare\n\
++Steven Beard' + _(' as ') + 'Makepeace - the Preacher\n\
++Antony Sher' + _(' as ') + 'Dr. Moth\n\
++Patrick Barlow' + _(' as ') + 'Will Kempe\n\
++Martin Clunes' + _(' as ') + 'Richard Burbage\n\
++Sandra Reinton' + _(' as ') + 'Rosaline\n\
++Simon Callow' + _(' as ') + 'Tilney - Master of the Revels\n\
++Judi Dench' + _(' as ') + 'Queen Elizabeth\n\
++Bridget McConnell' + _(' as ') + 'Lady in Waiting\n\
++Georgie Glen' + _(' as ') + 'Lady in Waiting\n\
++Nicholas Boulton' + _(' as ') + 'Henry Condell\n\
++Gwyneth Paltrow' + _(' as ') + 'Viola De Lesseps\n\
++Imelda Staunton' + _(' as ') + 'Nurse\n\
++Colin Firth' + _(' as ') + 'Lord Wessex\n\
++Desmond McNamara' + _(' as ') + 'Crier\n\
++Barnaby Kay' + _(' as ') + 'Nol\n\
++Jim Carter' + _(' as ') + 'Ralph Bashford\n\
++Paul Bigley' + _(' as ') + 'Peter - the Stage Manager\n\
++Jason Round' + _(' as ') + 'Actor in Tavern\n\
++Rupert Farley' + _(' as ') + 'Barman\n\
++Adam Barker' + _(' as ') + 'First Auditionee\n\
++Joe Roberts' + _(' as ') + 'John Webster\n\
++Harry Gostelow' + _(' as ') + 'Second Auditionee\n\
++Alan Cody' + _(' as ') + 'Third Auditionee\n\
++Mark Williams' + _(' as ') + 'Wabash\n\
++David Curtiz' + _(' as ') + 'John Hemmings\n\
++Gregor Truter' + _(' as ') + 'James Hemmings\n\
++Simon Day' + _(' as ') + 'First Boatman\n\
++Jill Baker' + _(' as ') + 'Lady De Lesseps\n\
++Amber Glossop' + _(' as ') + 'Scullery Maid\n\
++Robin Davies' + _(' as ') + 'Master Plum\n\
++Hywel Simons' + _(' as ') + 'Servant\n\
++Nicholas Le Prevost' + _(' as ') + 'Sir Robert De Lesseps\n\
++Ben Affleck' + _(' as ') + 'Ned Alleyn\n\
++Timothy Kightley' + _(' as ') + 'Edward Pope\n\
++Mark Saban' + _(' as ') + 'Augustine Philips\n\
++Bob Barrett' + _(' as ') + 'George Bryan\n\
++Roger Morlidge' + _(' as ') + 'James Armitage\n\
++Daniel Brocklebank' + _(' as ') + 'Sam Gosse\n\
++Roger Frost' + _(' as ') + 'Second Boatman\n\
++Rebecca Charles' + _(' as ') + 'Chambermaid\n\
++Richard Gold' + _(' as ') + 'Lord in Waiting\n\
++Rachel Clarke' + _(' as ') + 'First Whore\n\
++Lucy Speed' + _(' as ') + 'Second Whore\n\
++Patricia Potter' + _(' as ') + 'Third Whore\n\
++John Ramm' + _(' as ') + 'Makepeace\'s Neighbor\n\
++Martin Neely' + _(' as ') + 'Paris / Lady Montague (as Martin Neeley)\n\
++The Choir of St. George\'s School in Windsor' + _(' as ') + 'Choir (as The Choir of St. George\'s School, Windsor) rest of cast listed alphabetically:\n\
++Jason Canning' + _(' as ') + 'Nobleman (uncredited)\n\
++Rupert Everett' + _(' as ') + 'Christopher Marlowe (uncredited)',
++			'country'           : 'USA | UK',
++			'genre'             : 'Comedy | Drama | Romance',
++			'classification'    : 'R',
++			'studio'            : 'Universal Pictures',
++			'o_site'            : False,
++			'site'              : '<A HREF="http://www.imdb.com/title/tt0138097">http://www.imdb.com/title/tt0138097</A>',
++			'trailer'           : '<A HREF="http://www.imdb.com/title/tt0138097/trailers">http://www.imdb.com/title/tt0138097/trailers</A>',
++			'year'              : 1998,
++			'notes'             : _('Language') + ': English\n'\
+++ _('Audio') + ': Dolby Digital\n'\
+++ _('Color') + ': Color\n\
++Tagline: ...A Comedy About the Greatest Love Story Almost Never Told...',
++			'runtime'           : 123,
++			'image'             : True,
++			'rating'            : 7
++		},
++	}
+
+Modified: branches/0.9.x/lib/test_movieplugins.py
+===================================================================
+--- branches/0.9.x/lib/test_movieplugins.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ branches/0.9.x/lib/test_movieplugins.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -63,10 +63,14 @@
+ #
+ class PluginTester:
+ 	test_plugins = [
++		'PluginMovieAllMovie',
+ 		'PluginMovieAmazon',
+ 		'PluginMovieCinematografo',
++		'PluginMovieCineteka',
++		'PluginMovieDVDEmpire',
+ 		'PluginMovieFilmDb',
+ 		'PluginMovieFilmeVonAZ',
++		'PluginMovieIMDB',
+ 		'PluginMovieIMDB-de',
+ 		'PluginMovieKinoDe',
+ 		'PluginMovieOFDb',
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/ChangeLog	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -5,6 +5,13 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-04-15  Michael Jahn
++	* added data for automated tests of the IMDB plugin
++	* added data for automated tests of the CineMovies plugin
++	* updated CineMovies plugin
++	* updated Cineteka plugin
++	* updated FilmDb plugin
++	
+ 2009-04-08  Michael Jahn
+ 	* added AllMovie plugin
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -76,7 +76,7 @@
+         self.cast = self.cast.replace('&lt;/tr&gt;', '\n')
+         self.cast = gutils.clean(self.cast)
+         self.cast = re.sub('\n[ \t]+', '\n', self.cast)
+-        self.cast = re.sub('[.]+', _(' as '), self.cast)
++        self.cast = re.sub('[.][.]+', _(' as '), self.cast)
+         self.cast = re.sub(_(' as ') + '(\n|$)', '\n', self.cast)
+ 
+     def get_classification(self):
+@@ -98,9 +98,12 @@
+         self.country = gutils.trim(self.page, 'Pays :', '&lt;/tr&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.clean(gutils.trim(self.page, '&lt;DIV id=scoree&gt;', '&lt;/DIV&gt;'))
++        self.rating = gutils.clean(gutils.trim(self.page, '&lt;div id=scoree&gt;', '&lt;/div&gt;'))
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de&lt;/b&gt; :', '&lt;/a&gt;'))
+ 
++
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode                = 'iso-8859-1'
+@@ -128,3 +131,62 @@
+                 self.titles.append(title + ' (' + year + ')')
+         else:
+             self.number_results = 0
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 2, 2 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '6065' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky VI',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason &quot;The Line&quot;Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian\n\
++Lou DiBella' + _(' as ') + 'Lui-m&#195;&#170;me\n\
++Mike Tyson' + _(' as ') + 'Lui-m&#195;&#170;me\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Lahmard J. Tate' + _(' as ') + 'X-Cell',
++            'country'             : 'USA',
++            'genre'               : 'Drame',
++            'classification'      : False,
++            'studio'              : 'Twentieth Century Fox France',
++            'o_site'              : '<A HREF="http://www.sonypictures.com/movies/rocky/">http://www.sonypictures.com/movies/rocky/</A>',
++            'site'                : '<A HREF="http://www.cinemovies.fr/fiche_film.php?IDfilm=6065">http://www.cinemovies.fr/fiche_film.php?IDfilm=6065</A>',
++            'trailer'             : False,
++            'year'                : 2007,
++            'notes'               : False,
++            'runtime'             : 105,
++            'image'               : True,
++            'rating'              : 6,
++            'cameraman'           : False,
++            'screenplay'          : 'Sylvester Stallone',
++            'barcode'             : False
++        },
++    }
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineteka.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/lib/plugins/movie/PluginMovieCineteka.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -1,8 +1,8 @@
+ # -*- coding: UTF-8 -*-
+ 
+-__revision__ = '$Id: PluginMovie7arte.py 478 2006-12-05 21:14:51Z piotrek $'
++__revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes, Piotr Ozarowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr Ozarowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -23,22 +23,22 @@
+ 
+ import gutils
+ import movie
+-import string
++import string, re
+ 
+-plugin_name = &quot;Cineteka&quot;
+-plugin_description = &quot;O seu Clube de Video Online&quot;
+-plugin_url = &quot;cineteka.com&quot;
+-plugin_language = _(&quot;Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
++plugin_name         = &quot;Cineteka&quot;
++plugin_description  = &quot;O seu Clube de Video Online&quot;
++plugin_url          = &quot;cineteka.com&quot;
++plugin_language     = _(&quot;Portuguese&quot;)
++plugin_author       = &quot;Vasco Nunes&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_version      = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
+     &quot;&quot;&quot;A movie plugin object&quot;&quot;&quot;
+     def __init__(self, id):
+-        self.encode='iso-8859-1'
++        self.encode   = 'iso-8859-1'
+         self.movie_id = id
+-        self.url = &quot;<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=">http://www.cineteka.com/index.php?op=Movie&amp;id=</A>&quot; + str(self.movie_id)
++        self.url      = &quot;<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=">http://www.cineteka.com/index.php?op=Movie&amp;id=</A>&quot; + str(self.movie_id)
+ 
+     def get_image(self):
+         &quot;&quot;&quot;Finds the film's poster image&quot;&quot;&quot;
+@@ -46,62 +46,66 @@
+ 
+     def get_o_title(self):
+         &quot;&quot;&quot;Finds the film's original title&quot;&quot;&quot;
+-        self.o_title = string.capwords(gutils.trim(self.page, &quot;&quot;&quot;&lt;nobr&gt;&lt;span class=&quot;txt11&quot;&gt;(&quot;&quot;&quot;, &quot;)&quot;))
++        self.o_title = gutils.trim(self.page, u'&lt;nobr&gt;&lt;span class=&quot;txt11&quot;&gt;(', u')')
+ 
+     def get_title(self):
+         &quot;&quot;&quot;Finds the film's local title.
+         Probably the original title translation&quot;&quot;&quot;
+-        self.title = string.capwords(gutils.trim(self.page, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/b&gt;&quot;))
++        self.title = gutils.trim(self.page, u'&lt;td class=&quot;movieT&quot;&gt;&lt;b&gt;', u'&lt;/b&gt;')
+ 
+     def get_director(self):
+         &quot;&quot;&quot;Finds the film's director&quot;&quot;&quot;
+-        self.director = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;div&gt;&lt;b&gt;Realiza&#231;&#227;o:&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/div&gt;&quot;))
+-        self.director = string.replace(self.director,&quot;&lt;br&gt;&quot;, &quot;, &quot;)
++        self.director = gutils.strip_tags(gutils.trim(self.page, u'&lt;div&gt;&lt;b&gt;Realiza&#195;&#167;&#195;&#163;o:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;'))
++        self.director = string.replace(self.director, u'&lt;br&gt;', u', ')
+         self.director = gutils.strip_tags(self.director)
+ 
+     def get_plot(self):
+         &quot;&quot;&quot;Finds the film's plot&quot;&quot;&quot;
+-        self.plot = gutils.trim(self.page, &quot;&quot;&quot;&lt;div class=&quot;txt-normal&quot; style=&quot;margin-top: 10px;&quot;&gt;&quot;&quot;&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;)
++        self.plot = gutils.trim(self.page, u'&lt;div class=&quot;txt-normal&quot; style=&quot;margin-top: 10px;&quot;&gt;', u'&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;')
++        self.plot = self.plot.replace(u'\x93', u'&quot;')
++        self.plot = self.plot.replace(u'\x94', u'&quot;')
++        self.plot = self.plot.replace(u'\x96', u'-')
+ 
+     def get_year(self):
+         &quot;&quot;&quot;Finds the film's year&quot;&quot;&quot;
+-        self.year = gutils.trim(self.page, &quot;&lt;b&gt;Ano:&lt;/b&gt; &quot;, &quot;&lt;/div&gt;&quot;)
++        self.year = gutils.trim(self.page, u'&lt;b&gt;Ano:&lt;/b&gt; ', u'&lt;/div&gt;')
+ 
+     def get_runtime(self):
+         &quot;&quot;&quot;Finds the film's running time&quot;&quot;&quot;
+-        self.runtime = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Dura&#231;&#227;o:&lt;/b&gt; &quot;, &quot; min.&lt;/td&gt;&quot;)
++        self.runtime = gutils.trim(self.page, u'&lt;td&gt;&lt;b&gt;Dura&#195;&#167;&#195;&#163;o:&lt;/b&gt; ', u' min.&lt;/td&gt;')
+ 
+     def get_genre(self):
+         &quot;&quot;&quot;Finds the film's genre&quot;&quot;&quot;
+-        self.genre = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;b&gt;G&#233;nero:&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/div&gt;&quot;))
+-        self.genre = string.replace(self.genre,&quot;&lt;br&gt;&quot;, &quot;, &quot;)
++        self.genre = gutils.trim(self.page, u'&lt;b&gt;G&#195;&#169;nero:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;')
++        self.genre = string.replace(self.genre, u'&lt;br&gt;', u', ')
+         self.genre = gutils.strip_tags(self.genre)
+ 
+     def get_cast(self):
+-        self.cast = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;b&gt;Elenco:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;))
+-        self.cast = string.replace(self.cast, &quot;, &quot;, &quot;&quot;)
+-        self.cast = string.replace(self.cast, &quot;\t&quot;, &quot;&quot;)
+-        self.cast = string.replace(self.cast, &quot;\n &quot;, &quot;\n&quot;)
++        self.cast = gutils.trim(self.page, u'&lt;b&gt;Elenco:&lt;/b&gt;', u'&lt;/td&gt;')
++        self.cast = string.replace(self.cast, u'&lt;br&gt;', u'\n')
++        self.cast = string.replace(self.cast, u', ', u'')
++        self.cast = string.replace(self.cast, u'\t', u'')
++        self.cast = string.replace(self.cast, u'\n ', u'\n')
++        self.cast = gutils.clean(self.cast)
++        self.cast = re.sub('[ \t]*[\n]+[ \t]*' , '\n', self.cast)
+ 
+     def get_classification(self):
+         &quot;&quot;&quot;Find the film's classification&quot;&quot;&quot;
+-        self.classification = gutils.trim(self.page, &quot;&lt;b&gt;Idade:&lt;/b&gt; &quot;, &quot;&lt;/div&gt;&quot;)
++        self.classification = gutils.trim(self.page, u'&lt;b&gt;Idade:&lt;/b&gt; ', u'&lt;/div&gt;')
+ 
+     def get_studio(self):
+         &quot;&quot;&quot;Find the studio&quot;&quot;&quot;
+-        self.studio = &quot;&quot;
++        self.studio = ''
+ 
+     def get_o_site(self):
+         &quot;&quot;&quot;Find the film's oficial site&quot;&quot;&quot;
+         self.o_site = gutils.trim(self.page, \
+-            &quot;&lt;a class=\&quot;button\&quot; href=\&quot;&quot;, \
+-            &quot; title=\&quot;Consultar t&#237;tulo no Internet Movie Data Base\&quot;&quot;)
++            u'&lt;a class=&quot;button&quot; href=&quot;', \
++            u'&quot; title=&quot;Consultar t&#195;&#173;tulo no Internet Movie Data Base&quot;')
+ 
+     def get_site(self):
+         &quot;&quot;&quot;Find the film's imdb details page&quot;&quot;&quot;
+-        self.site = gutils.trim(self.page, \
+-            &quot;&lt;/td&gt;&lt;td&gt;&lt;a class=\&quot;button\&quot; href=\&quot;&quot;, \
+-            &quot;&quot;&quot;&quot; title=&quot;Consultar t&#195;&#173;tulo&quot;&quot;&quot;)
++        self.site = self.url
+ 
+     def get_trailer(self):
+         &quot;&quot;&quot;Find the film's trailer page or location&quot;&quot;&quot;
+@@ -109,44 +113,100 @@
+ 
+     def get_country(self):
+         &quot;&quot;&quot;Find the film's country&quot;&quot;&quot;
+-        self.country = gutils.trim(self.page, &quot;&lt;b&gt;Pa&#237;s:&lt;/b&gt;&lt;br&gt;&quot;, &quot;&lt;/div&gt;&quot;)
+-        self.country = string.replace(self.country,&quot;&lt;br&gt;&quot;, &quot;, &quot;)
++        self.country = gutils.trim(self.page, u'&lt;b&gt;Pa&#195;&#173;s:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;')
++        self.country = string.replace(self.country, u'&lt;br&gt;', u', ')
+         self.country = gutils.strip_tags(self.country)
+ 
+     def get_rating(self):
+         &quot;&quot;&quot;Find the film's rating. From 0 to 10.
+         Convert if needed when assigning.&quot;&quot;&quot;
+-        self.rating = 0
++        self.rating = gutils.clean(gutils.trim(self.page, u'IMDB: ', u'&lt;/span&gt;'))
++        try:
++            self.rating = round(float(self.rating), 0)
++        except Exception, e:
++            self.rating = 0
+ 
++    def get_screenplay(self):
++        self.screenplay = gutils.strip_tags(gutils.trim(self.page, u'&lt;b&gt;Argumento:&lt;/b&gt;&lt;br&gt;', u'&lt;/div&gt;'))
++        self.screenplay = string.replace(self.screenplay, u'&lt;br&gt;', u', ')
++        self.screenplay = gutils.strip_tags(self.screenplay)
++
+ class SearchPlugin(movie.SearchMovie):
+     &quot;&quot;&quot;A movie search object&quot;&quot;&quot;
+     def __init__(self):
+-        self.original_url_search = &quot;<A HREF="http://www.cineteka.com/index.php?op=MovieSearch&amp;s=">http://www.cineteka.com/index.php?op=MovieSearch&amp;s=</A>&quot;
++        self.original_url_search   = &quot;<A HREF="http://www.cineteka.com/index.php?op=MovieSearch&amp;s=">http://www.cineteka.com/index.php?op=MovieSearch&amp;s=</A>&quot;
+         self.translated_url_search = self.original_url_search
+-        self.encode='iso-8859-1'
++        self.encode                = 'iso-8859-1'
+ 
+     def search(self, parent_window):
+         &quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
+         if not self.open_search(parent_window):
+             return None
+-        self.sub_search()
++        self.page = gutils.trim(self.page, 'tulo(s): ', '&lt;div class=&quot;menuright&quot;&gt;')
+         return self.page
+ 
+-    def sub_search(self):
+-        &quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
+-        self.page = gutils.trim(self.page, \
+-            &quot;&quot;&quot;o:&lt;/div&gt;&quot;&quot;&quot;, &quot;&quot;&quot;&lt;div style=&quot;margin-top: 10px; text-align: center;&quot;&gt;&lt;/div&gt;&quot;&quot;&quot;)
+-
+     def get_searches(self):
+         &quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
+-        elements = string.split(self.page, &quot;&lt;/a&gt;]&lt;/td&gt;&quot;)
+-        self.number_results = elements[-1]
++        elements = re.split('index[.]php[?]op=Movie&amp;id=([0-9]+)&quot;&gt;', self.page)
++        
++        for index in range(2, len(elements), 2):
++            id = elements[index - 1]
++            title = gutils.before(elements[index], '&lt;')
++            self.ids.append(id)
++            self.titles.append(gutils.strip_tags(gutils.convert_entities(title)))
+ 
+-        if (elements[0]&lt;&gt;''):
+-            for element in elements:
+-                self.ids.append(gutils.trim(element, &quot;?op=Movie&amp;id=&quot;, &quot;\&quot;&quot;))
+-                self.titles.append(gutils.strip_tags(gutils.convert_entities \
+-                    (gutils.trim(element, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/span&gt;&lt;/nobr&gt;&lt;/td&gt;&quot;))))
+-        else:
+-            self.number_results = 0
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 1, 1 ],
++    }
+ 
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '002551' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone\n\
++Burt Young\n\
++Antonio Tarver\n\
++Geraldine Hughes\n\
++Milo Ventimiglia\n\
++Tony Burton\n\
++A.J. Benza\n\
++James Francis Kelly III\n\
++Talia Shire\n\
++Lou DiBella\n\
++Mike Tyson\n\
++Henry G. Sanders',
++            'country'             : 'EUA',
++            'genre'               : 'Ac&#195;&#167;&#195;&#163;o, Desporto, Drama',
++            'classification'      : 'M/12',
++            'studio'              : False,
++            'o_site'              : '<A HREF="http://www.imdb.com/title/tt0479143/">http://www.imdb.com/title/tt0479143/</A>',
++            'site'                : '<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=002551">http://www.cineteka.com/index.php?op=Movie&amp;id=002551</A>',
++            'trailer'             : False,
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 102,
++            'image'               : True,
++            'rating'              : 8,
++            'cameraman'           : False,
++            'screenplay'          : 'Sylvester Stallone',
++            'barcode'             : False
++        },
++    }
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;'
+-plugin_version      = '1.0'
++plugin_version      = '1.1'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -40,10 +40,10 @@
+         self.url      = &quot;<A HREF="http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=">http://www.filmdb.de/filmanzeige.php?alle=1&amp;filmid=</A>&quot; + self.movie_id
+ 
+     def get_image(self):
+-        tmp = gutils.trim(self.page, 'plakat.php?', '\'')
++        tmp = gutils.regextrim(self.page, 'plakat.php?', '[&quot;\']')
+         if tmp:
+             page_image = self.open_page(url='<A HREF="http://www.filmdb.de/plakat.php?">http://www.filmdb.de/plakat.php?</A>' + tmp)
+-            tmp = gutils.trim(self.page, '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>', '&quot;')
++            tmp = gutils.regextrim(self.page, 'bilder.filmdb.de', '[&quot;\']')
+             if tmp:
+                 self.image_url = '<A HREF="http://bilder.filmdb.de">http://bilder.filmdb.de</A>' + tmp
+ 
+@@ -195,8 +195,8 @@
+             'cast'                : 'Dolph Lundgren\n\
+ Sylvester Stallone\n\
+ Carl Weathers\n\
++Mike Tyson\n\
+ Burt Young\n\
+-Mike Tyson\n\
+ Talia Shire\n\
+ Burgess Meredith\n\
+ Tony Burton\n\
+@@ -210,45 +210,45 @@
+ Robert Michael Kelly\n\
+ LeRoy Neiman\n\
+ Stu Nahan\n\
++Tobias Segal\n\
+ Skip Bayless\n\
+ Gunnar Peterson\n\
+-Tobias Segal\n\
+ Marc Ratner\n\
+ Henry G. Sanders\n\
++Rick Buchborn\n\
++Ricky Cavazos\n\
++Charles Johnson\n\
+ Angela Boyd\n\
+ Ana Gerena\n\
+-Ricky Cavazos\n\
+-Rick Buchborn\n\
+ Fran Pultro\n\
++Tim Carr\n\
+ Joe Cortez\n\
+-Charles Johnson\n\
+ Jody Giambelluca\n\
++Carter Mitchell\n\
++A.J. Benza\n\
+ Yahya\n\
+-Tim Carr\n\
++Maureen Schilling\n\
++James Binns\n\
+ Jack Lazzarado\n\
+-Carter Mitchell\n\
+ Barney Fitzpatrick\n\
+-Maureen Schilling\n\
+-James Binns\n\
+ Antonio Tarver\n\
+-A.J. Benza\n\
++Nick Baker\n\
++Jim Lampley\n\
+ Matt Frack\n\
+ Louis Giansante\n\
+ Kevin King Templeton\n\
++Paul Dion Monte\n\
++Dana Jacobson\n\
++Brian Kenny\n\
+ Woody Paige\n\
+ Pedro Lovell\n\
+-Nick Baker\n\
+-Brian Kenny\n\
+-Paul Dion Monte\n\
+-Jim Lampley\n\
+-Dana Jacobson\n\
++Larry Merchant\n\
+ Bert Randolph Sugar\n\
+ Bernard Fern&#195;&#161;ndez\n\
+-Larry Merchant\n\
++Vinod Kumar\n\
+ Anthony Lato Jr.\n\
+ Max Kellerman\n\
+ Lou DiBella\n\
+-Vinod Kumar\n\
+ Johnnie Hobbs Jr.\n\
+ Jay Crawford\n\
+ Gary Compton\n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -338,8 +338,7 @@
+ Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (Sprechrolle)\n\
+-Gary Compton' + _(' as ') + 'Sicherheitsbediensteter\n\
+-&#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
++Gary Compton' + _(' as ') + 'Sicherheitsbediensteter &#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
+ Michael Ahl' + _(' as ') + 'Restaurant patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+@@ -372,8 +371,8 @@
+             'rating'            : 8
+         },
+         '0069815' : { 
+-            'title'             : 'Ein Gl&#195;&#188;ckliches Jahr',
+-            'o_title'           : 'Bonne ann&#195;&#169;e, La',
++            'title'             : 'Ein gl&#195;&#188;ckliches Jahr',
++            'o_title'           : 'La bonne ann&#195;&#169;e',
+             'director'          : 'Claude Lelouch',
+             'plot'              : True,
+             'cast'              : 'Lino Ventura' + _(' as ') + 'Simon\n\
+@@ -396,10 +395,9 @@
+ Joseph Rythmann\n\
+ Georges Staquet\n\
+ Jacques Villedieu\n\
+-Harry Walter\n\
+-&#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
++Harry Walter &#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
+ Anouk Aim&#195;&#169;e' + _(' as ') + 'Une femme (Archivmaterial) (nicht im Abspann)\n\
+-Elie Chouraqui' + _(' as ') + '(nicht im Abspann)\n\
++Elie Chouraqui' + _(' as ') + ' (nicht im Abspann)\n\
+ R&#195;&#169;my Julienne' + _(' as ') + 'Chauffeur de taxi (nicht im Abspann)\n\
+ Jean-Louis Trintignant' + _(' as ') + 'Un homme (Archivmaterial) (nicht im Abspann)',
+             'country'            : 'Frankreich | Italien',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -171,6 +171,8 @@
+         result = pattern.search(self.page)
+         if result:
+             self.screenplay = result.groups()[0]
++            self.screenplay = self.screenplay.replace(' (written by)', '')
++            self.screenplay = self.screenplay.replace(' and&lt;', '&lt;')
+             self.screenplay = self.screenplay.replace('&lt;br/&gt;', ', ')
+ 
+     def get_cameraman(self):
+@@ -237,3 +239,104 @@
+                     tmp = gutils.clean(match[0][1])
+                     self.ids.append(match[0][0])
+                     self.titles.append(tmp)
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa'         : [ 16, 16 ],
++        'Ein gl&#195;&#188;ckliches Jahr' : [ 21, 21 ]
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '0138097' : { 
++            'title'             : 'Shakespeare in Love',
++            'o_title'           : 'Shakespeare in Love',
++            'director'          : 'John Madden',
++            'plot'              : True,
++            'cast'              : 'Geoffrey Rush' + _(' as ') + 'Philip Henslowe\n\
++Tom Wilkinson' + _(' as ') + 'Hugh Fennyman\n\
++Steven O\'Donnell' + _(' as ') + 'Lambert\n\
++Tim McMullan' + _(' as ') + 'Frees\n\
++Joseph Fiennes' + _(' as ') + 'Will Shakespeare\n\
++Steven Beard' + _(' as ') + 'Makepeace - the Preacher\n\
++Antony Sher' + _(' as ') + 'Dr. Moth\n\
++Patrick Barlow' + _(' as ') + 'Will Kempe\n\
++Martin Clunes' + _(' as ') + 'Richard Burbage\n\
++Sandra Reinton' + _(' as ') + 'Rosaline\n\
++Simon Callow' + _(' as ') + 'Tilney - Master of the Revels\n\
++Judi Dench' + _(' as ') + 'Queen Elizabeth\n\
++Bridget McConnell' + _(' as ') + 'Lady in Waiting\n\
++Georgie Glen' + _(' as ') + 'Lady in Waiting\n\
++Nicholas Boulton' + _(' as ') + 'Henry Condell\n\
++Gwyneth Paltrow' + _(' as ') + 'Viola De Lesseps\n\
++Imelda Staunton' + _(' as ') + 'Nurse\n\
++Colin Firth' + _(' as ') + 'Lord Wessex\n\
++Desmond McNamara' + _(' as ') + 'Crier\n\
++Barnaby Kay' + _(' as ') + 'Nol\n\
++Jim Carter' + _(' as ') + 'Ralph Bashford\n\
++Paul Bigley' + _(' as ') + 'Peter - the Stage Manager\n\
++Jason Round' + _(' as ') + 'Actor in Tavern\n\
++Rupert Farley' + _(' as ') + 'Barman\n\
++Adam Barker' + _(' as ') + 'First Auditionee\n\
++Joe Roberts' + _(' as ') + 'John Webster\n\
++Harry Gostelow' + _(' as ') + 'Second Auditionee\n\
++Alan Cody' + _(' as ') + 'Third Auditionee\n\
++Mark Williams' + _(' as ') + 'Wabash\n\
++David Curtiz' + _(' as ') + 'John Hemmings\n\
++Gregor Truter' + _(' as ') + 'James Hemmings\n\
++Simon Day' + _(' as ') + 'First Boatman\n\
++Jill Baker' + _(' as ') + 'Lady De Lesseps\n\
++Amber Glossop' + _(' as ') + 'Scullery Maid\n\
++Robin Davies' + _(' as ') + 'Master Plum\n\
++Hywel Simons' + _(' as ') + 'Servant\n\
++Nicholas Le Prevost' + _(' as ') + 'Sir Robert De Lesseps\n\
++Ben Affleck' + _(' as ') + 'Ned Alleyn\n\
++Timothy Kightley' + _(' as ') + 'Edward Pope\n\
++Mark Saban' + _(' as ') + 'Augustine Philips\n\
++Bob Barrett' + _(' as ') + 'George Bryan\n\
++Roger Morlidge' + _(' as ') + 'James Armitage\n\
++Daniel Brocklebank' + _(' as ') + 'Sam Gosse\n\
++Roger Frost' + _(' as ') + 'Second Boatman\n\
++Rebecca Charles' + _(' as ') + 'Chambermaid\n\
++Richard Gold' + _(' as ') + 'Lord in Waiting\n\
++Rachel Clarke' + _(' as ') + 'First Whore\n\
++Lucy Speed' + _(' as ') + 'Second Whore\n\
++Patricia Potter' + _(' as ') + 'Third Whore\n\
++John Ramm' + _(' as ') + 'Makepeace\'s Neighbor\n\
++Martin Neely' + _(' as ') + 'Paris / Lady Montague (as Martin Neeley)\n\
++The Choir of St. George\'s School in Windsor' + _(' as ') + 'Choir (as The Choir of St. George\'s School, Windsor) rest of cast listed alphabetically:\n\
++Jason Canning' + _(' as ') + 'Nobleman (uncredited)\n\
++Rupert Everett' + _(' as ') + 'Christopher Marlowe (uncredited)',
++            'country'           : 'USA | UK',
++            'genre'             : 'Comedy | Drama | Romance',
++            'classification'    : 'R',
++            'studio'            : 'Universal Pictures',
++            'o_site'            : False,
++            'site'              : '<A HREF="http://www.imdb.com/title/tt0138097">http://www.imdb.com/title/tt0138097</A>',
++            'trailer'           : '<A HREF="http://www.imdb.com/title/tt0138097/trailers">http://www.imdb.com/title/tt0138097/trailers</A>',
++            'year'              : 1998,
++            'notes'             : _('Language') + ': English\n'\
+++ _('Audio') + ': Dolby Digital\n'\
+++ _('Color') + ': Color\n\
++Tagline: ...A Comedy About the Greatest Love Story Almost Never Told...',
++            'runtime'           : 123,
++            'image'             : True,
++            'rating'            : 7,
++            'screenplay'        : 'Marc Norman, Tom Stoppard',
++            'cameraman'         : False,
++            'barcode'           : False
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2009-04-11 20:09:31 UTC (rev 1186)
++++ trunk/lib/test_movieplugins.py	2009-04-15 20:37:42 UTC (rev 1187)
+@@ -67,10 +67,15 @@
+ #
+ class PluginTester:
+     test_plugins = [
++        'PluginMovieAllMovie',
+         'PluginMovieAmazon',
+         'PluginMovieCinematografo',
++        'PluginMovieCineMovies',
++        'PluginMovieCineteka',
++        'PluginMovieDVDEmpire',
+         'PluginMovieFilmDb',
+         'PluginMovieFilmeVonAZ',
++        'PluginMovieIMDB',
+         'PluginMovieIMDB-de',
+         'PluginMovieKinoDe',
+         'PluginMovieOFDb',
+@@ -101,22 +106,23 @@
+                 logFile.write('\n')
+             logFile.write('\n\n')
+             result = False
+-        # plugin.original_url_search
+-        plugin.url = plugin.original_url_search
+-        if plugin.remove_accents:
+-            plugin.title = gutils.remove_accents(title, 'utf-8')
+-        else:
+-            plugin.title = title
+-        plugin.search_movies(None)
+-        plugin.get_searches()
+-        if not len(plugin.ids) - 1 == cntTranslated:    # first entry is always '' (???)
+-            print &quot;Title (Original): %s - expected: %d - found: %d&quot; % (title, cntTranslated, len(plugin.ids) - 1)
+-            logFile.write(&quot;Title (Original): %s - expected: %d - found: %d\n\n&quot; % (title, cntTranslated, len(plugin.ids) - 1))
+-            for titleFound in plugin.titles:
+-                logFile.write(titleFound)
+-                logFile.write('\n')
+-            logFile.write('\n\n')
+-            result = False
++        # plugin.original_url_search if it is different to plugin.translated_url_search
++        if plugin.original_url_search &lt;&gt; plugin.translated_url_search:
++            plugin.url = plugin.original_url_search
++            if plugin.remove_accents:
++                plugin.title = gutils.remove_accents(title, 'utf-8')
++            else:
++                plugin.title = title
++            plugin.search_movies(None)
++            plugin.get_searches()
++            if not len(plugin.ids) - 1 == cntTranslated:    # first entry is always '' (???)
++                print &quot;Title (Original): %s - expected: %d - found: %d&quot; % (title, cntTranslated, len(plugin.ids) - 1)
++                logFile.write(&quot;Title (Original): %s - expected: %d - found: %d\n\n&quot; % (title, cntTranslated, len(plugin.ids) - 1))
++                for titleFound in plugin.titles:
++                    logFile.write(titleFound)
++                    logFile.write('\n')
++                logFile.write('\n\n')
++                result = False
+         return result
+ 
+     #
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000658.html">[Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000660.html">[Griffith-svn] r1188 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#659">[ date ]</a>
+              <a href="thread.html#659">[ thread ]</a>
+              <a href="subject.html#659">[ subject ]</a>
+              <a href="author.html#659">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

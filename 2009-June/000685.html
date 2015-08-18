@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1214 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1214%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200906102239.n5AMdV8V032098%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000684.html">
+   <LINK REL="Next"  HREF="000686.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1214 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1214%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200906102239.n5AMdV8V032098%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1214 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 11 00:39:31 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000684.html">[Griffith-svn] r1213 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000686.html">[Griffith-svn] r1215 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#685">[ date ]</a>
+              <a href="thread.html#685">[ thread ]</a>
+              <a href="subject.html#685">[ subject ]</a>
+              <a href="author.html#685">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-11 00:39:30 +0200 (Thu, 11 Jun 2009)
+New Revision: 1214
+
+Modified:
+   trunk/griffith
+   trunk/lib/backup.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/preferences.py
+   trunk/lib/sql.py
+Log:
+remove &quot;locations&quot; parameter from GriffithSQL's constructor
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-06-10 22:21:47 UTC (rev 1213)
++++ trunk/griffith	2009-06-10 22:39:30 UTC (rev 1214)
+@@ -104,7 +104,7 @@
+         
+         # create/connect db
+         from sql import GriffithSQL
+-        self.db = GriffithSQL(config, self.locations['home'], self.locations)
++        self.db = GriffithSQL(config, self.locations['home'])
+ 
+         # let's check any console arguments to parse
+         gconsole.check_args_with_db(self)
+@@ -1364,7 +1364,7 @@
+                         self.config.set('file', 'griffith.db', section='database')
+                 # create/connect db
+                 log.debug('creating new ones...')
+-                self.db = GriffithSQL(self.config, self.griffith_dir, self.locations)
++                self.db = GriffithSQL(self.config, self.griffith_dir)
+                 self.clear_details()
+                 self.total = 0
+                 self.count_statusbar()
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-06-10 22:21:47 UTC (rev 1213)
++++ trunk/lib/backup.py	2009-06-10 22:39:30 UTC (rev 1214)
+@@ -232,7 +232,7 @@
+                 log.info(&quot;MERGE: Can't convert database, aborting.&quot;)
+                 return False
+         else:
+-            tmp_db = sql.GriffithSQL(tmp_config, tmp_dir, locations, fallback=False)
++            tmp_db = sql.GriffithSQL(tmp_config, tmp_dir, fallback=False)
+ 
+         if merge:
+             merge_db(tmp_db, self.db)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-06-10 22:21:47 UTC (rev 1213)
++++ trunk/lib/dbupgrade.py	2009-06-10 22:39:30 UTC (rev 1214)
+@@ -154,7 +154,7 @@
+                 return False
+         
+         log.info('... saving posters in database')
+-        posters_dir = get_old_posters_location(locations['home'], config, clean_config=True)
++        posters_dir = get_old_posters_location(self.data_dir, config, clean_config=True)
+         updated = {}
+         movies_table = db.metadata.tables['movies']
+         for movie in self.session.query(db.Movie.image).all():
+@@ -329,7 +329,7 @@
+     config.set('region', 0, section='defaults')
+     config.set('vcodec', 0, section='defaults')
+     locations['posters'] = os.path.join(locations['home'], 'posters')
+-    new_db = GriffithSQL(config, locations['home'], locations)
++    new_db = GriffithSQL(config, locations['home'], fallback=False)
+ 
+     # collections
+     collection_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2009-06-10 22:21:47 UTC (rev 1213)
++++ trunk/lib/preferences.py	2009-06-10 22:39:30 UTC (rev 1214)
+@@ -442,12 +442,12 @@
+         if c.has_key('posters'):
+             c['posters'] = None # force update
+         try:
+-            self.db = sql.GriffithSQL(c, self.locations['home'], self.locations, fallback=True)
++            self.db = sql.GriffithSQL(c, self.locations['home'], fallback=True)
+         except InvalidRequestError, e:
+-            log.error(str(e))
++            log.error(e)
+             c.set('type', 'sqlite', section='database')
+             w['db_type'].set_active(0)
+-            self.db = sql.GriffithSQL(c, self.locations['home'], self.locations)
++            self.db = sql.GriffithSQL(c, self.locations['home'])
+ 
+         log.info(&quot;New database Engine: %s&quot; % self.db.session.bind.engine.name)
+         
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-06-10 22:21:47 UTC (rev 1213)
++++ trunk/lib/sql.py	2009-06-10 22:39:30 UTC (rev 1214)
+@@ -42,7 +42,7 @@
+     version = 4 # database format version, increase after changing data structures
+     DEFAULT_PORTS = dict(postgres=5432, mysql=3306, mssql=1433)
+ 
+-    def __init__(self, config, griffith_dir, locations, fallback=True):
++    def __init__(self, config, griffith_dir, fallback=True):
+         #mapper = Session.mapper
+         self.config = config
+         self.data_dir = griffith_dir
+@@ -136,7 +136,7 @@
+             v = int(v.value)
+         if v &lt; self.version:
+             from dbupgrade import upgrade_database
+-            if not upgrade_database(self, v, locations, config):
++            if not upgrade_database(self, v, config):
+                 raise Exception('cannot upgrade database')
+         elif v &gt; self.version:
+             log.error(&quot;database version mismatch (detected:%s; current:%s)&quot;, v, self.version)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000684.html">[Griffith-svn] r1213 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000686.html">[Griffith-svn] r1215 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#685">[ date ]</a>
+              <a href="thread.html#685">[ thread ]</a>
+              <a href="subject.html#685">[ subject ]</a>
+              <a href="author.html#685">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

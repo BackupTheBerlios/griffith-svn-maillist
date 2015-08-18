@@ -1,0 +1,1439 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1011 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1011%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200810192136.m9JLaI3O023642%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000490.html">
+   <LINK REL="Next"  HREF="000492.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1011 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1011%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200810192136.m9JLaI3O023642%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1011 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 19 23:36:18 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000490.html">[Griffith-svn] r1010 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000492.html">[Griffith-svn] r1012 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#491">[ date ]</a>
+              <a href="thread.html#491">[ thread ]</a>
+              <a href="subject.html#491">[ subject ]</a>
+              <a href="author.html#491">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-10-19 23:36:17 +0200 (Sun, 19 Oct 2008)
+New Revision: 1011
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/add.py
+   trunk/lib/db.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/widgets.py
+Log:
+Screenplay/cameraman/aspect ratio added to main window
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/ChangeLog	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -7,6 +7,7 @@
+ 
+ 2008-10-19  Piotr O&#380;arowski
+ 	* Add more filter movie rules to the search window
++	* Screenplay and cameraman added to main/add windows
+ 
+ 2008-10-18  Piotr O&#380;arowski
+ 	* Speed up import movies function
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/glade/griffith.glade	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -970,16 +970,16 @@
+                           &lt;widget class=&quot;GtkTable&quot; id=&quot;table3&quot;&gt;
+                             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                             &lt;property name=&quot;border_width&quot;&gt;5&lt;/property&gt;
+-                            &lt;property name=&quot;n_rows&quot;&gt;11&lt;/property&gt;
++                            &lt;property name=&quot;n_rows&quot;&gt;10&lt;/property&gt;
+                             &lt;property name=&quot;n_columns&quot;&gt;3&lt;/property&gt;
+                             &lt;property name=&quot;column_spacing&quot;&gt;5&lt;/property&gt;
+                             &lt;property name=&quot;row_spacing&quot;&gt;2&lt;/property&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_director&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_ratio&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;director&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;16:9&lt;/property&gt;
+                                 &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+@@ -987,41 +987,35 @@
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_vcodec&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label19&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;video codec&lt;/property&gt;
+-                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
++                                &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_condition&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label17&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;condition&lt;/property&gt;
+-                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Aspect ratio&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+                                 &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
+                                 &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+@@ -1029,11 +1023,11 @@
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_medium&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_cameraman&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;2 x medium&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;cameraman&lt;/property&gt;
+                                 &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+@@ -1041,18 +1035,18 @@
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;8&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;9&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_layers&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_screenplay&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;layers&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;screenplay&lt;/property&gt;
+                                 &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+@@ -1060,76 +1054,57 @@
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;7&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;8&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_region&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;Color2&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;region&lt;/property&gt;
+-                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Cameraman&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_color&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;Color1&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;color&lt;/property&gt;
+-                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Screenplay&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_classification&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label27&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;classification&lt;/property&gt;
+-                                &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Country&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_studio&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_genre&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;studio&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;genre&lt;/property&gt;
+                                 &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+@@ -1137,37 +1112,31 @@
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_genre&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label29&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;genre&lt;/property&gt;
+-                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Genre&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_country&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_studio&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;country&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;studio&lt;/property&gt;
+                                 &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+@@ -1175,72 +1144,71 @@
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label290&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label34&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
+-                                &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Studio&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label196&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_classification&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Video codec&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;classification&lt;/property&gt;
++                                &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label110&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label33&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Condition&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Classification&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label38&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_color&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Medium&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;color&lt;/property&gt;
++                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;8&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;9&lt;/property&gt;
+-                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                              &lt;/packing&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label109&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;DVD layers&lt;/property&gt;
+-                              &lt;/widget&gt;
+-                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+                                 &lt;property name=&quot;top_attach&quot;&gt;7&lt;/property&gt;
+                                 &lt;property name=&quot;bottom_attach&quot;&gt;8&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+@@ -1248,77 +1216,47 @@
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label108&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;DVD region&lt;/property&gt;
+-                              &lt;/widget&gt;
+-                              &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
+-                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                              &lt;/packing&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+                               &lt;widget class=&quot;GtkLabel&quot; id=&quot;Color&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+                                 &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Color&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;7&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;8&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label33&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_director&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Classification&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;director&lt;/property&gt;
++                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+-                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label34&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_country&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Studio&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;country&lt;/property&gt;
++                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
+-                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                              &lt;/packing&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label29&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Genre&lt;/property&gt;
+-                              &lt;/widget&gt;
+-                              &lt;packing&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
+-                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                              &lt;/packing&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label27&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Country&lt;/property&gt;
+-                              &lt;/widget&gt;
+-                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
+                                 &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
+                                 &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+@@ -1326,44 +1264,26 @@
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label22&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label290&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Director&lt;/property&gt;
+-                              &lt;/widget&gt;
+-                              &lt;packing&gt;
+-                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                              &lt;/packing&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label289&quot;&gt;
+-                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+                                 &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
+                                 &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+                                 &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label288&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label22&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
+-                                &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Director&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+-                                &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-                                &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                                &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
+-                                &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
+                                 &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+@@ -1496,6 +1416,38 @@
+                                 &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                               &lt;/packing&gt;
+                             &lt;/child&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;label196&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Video codec&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;8&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;9&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_vcodec&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                                &lt;property name=&quot;label&quot;&gt;video codec&lt;/property&gt;
++                                &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;8&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;9&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
+                           &lt;/widget&gt;
+                           &lt;packing&gt;
+                             &lt;property name=&quot;position&quot;&gt;3&lt;/property&gt;
+@@ -2265,6 +2217,215 @@
+                         &lt;property name=&quot;tab_fill&quot;&gt;False&lt;/property&gt;
+                       &lt;/packing&gt;
+                     &lt;/child&gt;
++                    &lt;child&gt;
++                      &lt;widget class=&quot;GtkTable&quot; id=&quot;table2&quot;&gt;
++                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;border_width&quot;&gt;4&lt;/property&gt;
++                        &lt;property name=&quot;n_rows&quot;&gt;4&lt;/property&gt;
++                        &lt;property name=&quot;n_columns&quot;&gt;3&lt;/property&gt;
++                        &lt;property name=&quot;column_spacing&quot;&gt;5&lt;/property&gt;
++                        &lt;property name=&quot;row_spacing&quot;&gt;2&lt;/property&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label48&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
++                            &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label14&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
++                            &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label13&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
++                            &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label8&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;&lt;b&gt;:&lt;/b&gt;&lt;/property&gt;
++                            &lt;property name=&quot;use_markup&quot;&gt;True&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_medium&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;2 x medium&lt;/property&gt;
++                            &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label38&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Medium&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label108&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;DVD region&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_region&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;region&lt;/property&gt;
++                            &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label109&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;DVD layers&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_layers&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;layers&lt;/property&gt;
++                            &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;label110&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Condition&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                        &lt;child&gt;
++                          &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_condition&quot;&gt;
++                            &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                            &lt;property name=&quot;label&quot;&gt;condition&lt;/property&gt;
++                            &lt;property name=&quot;wrap&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;selectable&quot;&gt;True&lt;/property&gt;
++                            &lt;property name=&quot;ellipsize&quot;&gt;PANGO_ELLIPSIZE_END&lt;/property&gt;
++                          &lt;/widget&gt;
++                          &lt;packing&gt;
++                            &lt;property name=&quot;left_attach&quot;&gt;2&lt;/property&gt;
++                            &lt;property name=&quot;right_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                            &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
++                            &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                            &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                          &lt;/packing&gt;
++                        &lt;/child&gt;
++                      &lt;/widget&gt;
++                      &lt;packing&gt;
++                        &lt;property name=&quot;position&quot;&gt;7&lt;/property&gt;
++                      &lt;/packing&gt;
++                    &lt;/child&gt;
++                    &lt;child&gt;
++                      &lt;widget class=&quot;GtkLabel&quot; id=&quot;label6&quot;&gt;
++                        &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                        &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Medium&lt;/property&gt;
++                      &lt;/widget&gt;
++                      &lt;packing&gt;
++                        &lt;property name=&quot;type&quot;&gt;tab&lt;/property&gt;
++                        &lt;property name=&quot;position&quot;&gt;7&lt;/property&gt;
++                        &lt;property name=&quot;tab_fill&quot;&gt;False&lt;/property&gt;
++                      &lt;/packing&gt;
++                    &lt;/child&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+                     &lt;property name=&quot;position&quot;&gt;1&lt;/property&gt;
+@@ -5977,12 +6138,12 @@
+               &lt;widget class=&quot;GtkTable&quot; id=&quot;table_a_details&quot;&gt;
+                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                 &lt;property name=&quot;border_width&quot;&gt;6&lt;/property&gt;
+-                &lt;property name=&quot;n_rows&quot;&gt;11&lt;/property&gt;
++                &lt;property name=&quot;n_rows&quot;&gt;13&lt;/property&gt;
+                 &lt;property name=&quot;n_columns&quot;&gt;2&lt;/property&gt;
+                 &lt;property name=&quot;column_spacing&quot;&gt;2&lt;/property&gt;
+                 &lt;property name=&quot;row_spacing&quot;&gt;2&lt;/property&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_trailer&quot;&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_cameraman&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+@@ -5990,53 +6151,93 @@
+                   &lt;packing&gt;
+                     &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+                     &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+                     &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label53&quot;&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_screenplay&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label15&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Trailer&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Cameraman&lt;/property&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+                     &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                     &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_imdb&quot;&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label7&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Screenplay&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label42&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Director&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_country&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+                     &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+                     &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
+                     &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label52&quot;&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label44&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Site&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Country&lt;/property&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
+                     &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                     &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_site&quot;&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_genre&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+@@ -6044,16 +6245,70 @@
+                   &lt;packing&gt;
+                     &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+                     &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label46&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Genre&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_classification&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;7&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;8&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label49&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Classification&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;7&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;8&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_studio&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+                     &lt;property name=&quot;top_attach&quot;&gt;8&lt;/property&gt;
+                     &lt;property name=&quot;bottom_attach&quot;&gt;9&lt;/property&gt;
+                     &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label51&quot;&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label50&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Official site&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Studio&lt;/property&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+                     &lt;property name=&quot;top_attach&quot;&gt;8&lt;/property&gt;
+@@ -6063,19 +6318,100 @@
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkHSeparator&quot; id=&quot;hseparator7&quot;&gt;
++                  &lt;widget class=&quot;GtkHSeparator&quot; id=&quot;hseparator1&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                   &lt;/widget&gt;
+                   &lt;packing&gt;
+                     &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;7&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;8&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;10&lt;/property&gt;
+                     &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                     &lt;property name=&quot;y_options&quot;&gt;GTK_FILL&lt;/property&gt;
+                     &lt;property name=&quot;y_padding&quot;&gt;4&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+                 &lt;child&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_site&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label51&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Official site&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;10&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;11&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_imdb&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;11&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;12&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label52&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Site&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;11&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;12&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_trailer&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
++                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;12&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;13&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
++                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label53&quot;&gt;
++                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
++                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Trailer&lt;/property&gt;
++                  &lt;/widget&gt;
++                  &lt;packing&gt;
++                    &lt;property name=&quot;top_attach&quot;&gt;12&lt;/property&gt;
++                    &lt;property name=&quot;bottom_attach&quot;&gt;13&lt;/property&gt;
++                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                  &lt;/packing&gt;
++                &lt;/child&gt;
++                &lt;child&gt;
+                   &lt;widget class=&quot;GtkHBox&quot; id=&quot;hbox65&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;child&gt;
+@@ -6222,127 +6558,6 @@
+                     &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+                   &lt;/packing&gt;
+                 &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_country&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_genre&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_classification&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkEntry&quot; id=&quot;am_studio&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;invisible_char&quot;&gt;*&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;left_attach&quot;&gt;1&lt;/property&gt;
+-                    &lt;property name=&quot;right_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label42&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Director&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;2&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;3&lt;/property&gt;
+-                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label44&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Country&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;3&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;4&lt;/property&gt;
+-                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label46&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Genre&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;4&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;5&lt;/property&gt;
+-                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label49&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Classification&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;5&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label50&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Studio&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                  &lt;packing&gt;
+-                    &lt;property name=&quot;top_attach&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;bottom_attach&quot;&gt;7&lt;/property&gt;
+-                    &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
+-                    &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
+-                  &lt;/packing&gt;
+-                &lt;/child&gt;
+               &lt;/widget&gt;
+               &lt;packing&gt;
+                 &lt;property name=&quot;position&quot;&gt;1&lt;/property&gt;
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/lib/add.py	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -330,6 +330,7 @@
+     plot_buffer  = w['plot'].get_buffer()
+     
+     t_movies = {
++        'cameraman'      : w['cameraman'].get_text().decode('utf-8'),
+         'classification' : w['classification'].get_text().decode('utf-8'),
+         'color'          : w['color'].get_active(),
+         'cond'           : w['condition'].get_active(),
+@@ -345,6 +346,7 @@
+         'rating'         : w['rating_slider'].get_value(),
+         'region'         : w['region'].get_active(),
+         'runtime'        : w['runtime'].get_text().decode('utf-8'),
++        'screenplay'     : w['screenplay'].get_text().decode('utf-8'),
+         'site'           : w['site'].get_text().decode('utf-8'),
+         'studio'         : w['studio'].get_text().decode('utf-8'),
+         'title'          : w['title'].get_text().decode('utf-8'),
+@@ -447,6 +449,14 @@
+         w['runtime'].set_value( gutils.digits_only(item['runtime']))
+     else:
+         w['runtime'].set_value(0)
++    if 'cameraman' in item and item['cameraman']:
++        w['cameraman'].set_text(item['cameraman'])
++    else:
++        w['cameraman'].set_text('')
++    if 'screenplay' in item and item['screenplay']:
++        w['screenplay'].set_text(item['screenplay'])
++    else:
++        w['screenplay'].set_text('')
+     if 'country' in item and item['country']:
+         w['country'].set_text(item['country'])
+     else:
+@@ -475,10 +485,6 @@
+         w['trailer'].set_text(item['trailer'])
+     else:
+         w['trailer'].set_text('')
+-    if 'title' in item and item['title']:
+-        w['title'].set_text(item['title'])
+-    else:
+-        w['title'].set_text('')
+     if 'genre' in item and item['genre']:
+         w['genre'].set_text(item['genre'])
+     else:
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/lib/db.py	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -334,8 +334,8 @@
+     'movies': relation(Movie, backref='collection')})
+ mapper(Medium, media_table, properties={
+     'movies': relation(Movie, backref='medium')})
+-mapper(Ratio, media_table, properties={
+-    'movies': relation(Movie, backref='ratios')})
++mapper(Ratio, ratios_table, properties={
++    'movies': relation(Movie, backref='ratio')})
+ mapper(VCodec, vcodecs_table, properties={
+     'movies': relation(Movie, backref='vcodec')})
+ mapper(Person, people_table, properties = {
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/lib/initialize.py	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -461,7 +461,7 @@
+     fields_to_import = ( 'number','title', 'o_title', 'director', 'year', 'runtime', 'country',
+         'seen', 'rating', 'genre', 'studio', 'plot', 'cast', 'notes', 'classification',
+         'site', 'o_site', 'trailer', 'medium_id', 'media_num', 'vcodec_id', 'color', 'cond',
+-        'layers', 'region', 'collection_id', 'volume_id', 'image')
++        'layers', 'region', 'collection_id', 'volume_id', 'image', 'ratio_id')
+ 
+     # glade
+     glade_file = gtk.glade.XML(os.path.join(self.locations['glade'], 'import.glade'))
+@@ -626,6 +626,7 @@
+         'o_site'         : _('Official site'),
+         'o_title'        : _('Original Title'),
+         'plot'           : _('Plot'),
++        'ratio'          : _('Aspect ratio'),
+         'rating'         : _('Rating'),
+         'region'         : _('Region'),
+         'runtime'        : _('Runtime'),
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/lib/main_treeview.py	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -89,6 +89,14 @@
+         w['runtime'].set_text(str(int(item['runtime'])))
+     else:
+         w['runtime'].set_text('x')
++    if 'cameraman' in item and item['cameraman']:
++        w['cameraman'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item['cameraman']))
++    else:
++        w['cameraman'].set_text('')
++    if 'screenplay' in item and item['screenplay']:
++        w['screenplay'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item['screenplay']))
++    else:
++        w['screenplay'].set_text('')
+     if 'cast' in item and item['cast']:
+         w['cast'].set_text(str(item['cast']))
+     else:
+@@ -189,6 +197,13 @@
+             w['vcodec'].set_text('')
+     else:
+         w['vcodec'].set_text('')
++    if 'ratio_id' in item:
++        if item.ratio is not None:
++            w['ratio'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item.ratio.name))
++        else:
++            w['ratio'].set_text('')
++    else:
++        w['ratio'].set_text('')
+ 
+     # poster
+     if 'poster_md5' in item and item['poster_md5']:
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-10-19 20:50:41 UTC (rev 1010)
++++ trunk/lib/widgets.py	2008-10-19 21:36:17 UTC (rev 1011)
+@@ -45,6 +45,7 @@
+     self.widgets['movie'] = {#{{{
+         'cast'                   : get('m_cast'),
+         'classification'         : get('m_classification'),
++        'cameraman'              : get('m_cameraman'),
+         'collection'             : get('m_collection'),
+         'color'                  : get('m_color'),
+         'condition'              : get('m_condition'),
+@@ -63,9 +64,11 @@
+         'plot'                   : get('m_plot'),
+         'region'                 : get('m_region'),
+         'runtime'                : get('m_runtime'),
++        'screenplay'             : get('m_screenplay'),
+         'seen_icon'              : get('m_seen_icon'),
+         'site'                   : get('m_site'),
+         'studio'                 : get('m_studio'),
++        'ratio'                  : get('m_ratio'),
+         'tags'                   : get('m_tags'),
+         'title'                  : get('m_title'),
+         'trailer'                : get('m_trailer'),
+@@ -93,6 +96,7 @@
+         'window'           : get('add_movie'),
+         'notebook'         : get('notebook_add'),
+         'classification'   : get('am_classification'),
++        'cameraman'        : get('am_cameraman'),
+         'collection'       : get('am_collection_combo'),
+         'color'            : get('am_color'),
+         'condition'        : get('am_condition'),
+@@ -112,10 +116,12 @@
+         'plot'             : get('am_plot'),
+         'plugin_desc'      : get('am_plugin_desc'),
+         'plugin_image'     : get('am_plugin_image'),
++        #'ratio'            : get('am_ratio'), # TODO
+         'region'           : get('am_region'),
+         'runtime'          : get('am_runtime'),
+         'seen'             : get('am_seen'),
+         'o_site'           : get('am_site'),
++        'screenplay'       : get('am_screenplay'),
+         'source'           : get('am_source'),
+         'studio'           : get('am_studio'),
+         'tag_vbox'         : get('am_tag_vbox'),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000490.html">[Griffith-svn] r1010 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000492.html">[Griffith-svn] r1012 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#491">[ date ]</a>
+              <a href="thread.html#491">[ thread ]</a>
+              <a href="subject.html#491">[ subject ]</a>
+              <a href="author.html#491">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

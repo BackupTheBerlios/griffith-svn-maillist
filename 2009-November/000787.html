@@ -1,0 +1,478 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1319 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1319%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200911102210.nAAMAXDN021333%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000786.html">
+   <LINK REL="Next"  HREF="000788.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1319 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1319%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200911102210.nAAMAXDN021333%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1319 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 10 23:10:33 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000786.html">[Griffith-svn] r1318 - in trunk: . lib/plugins/extensions	lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000788.html">[Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#787">[ date ]</a>
+              <a href="thread.html#787">[ thread ]</a>
+              <a href="subject.html#787">[ subject ]</a>
+              <a href="author.html#787">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-11-10 23:10:14 +0100 (Tue, 10 Nov 2009)
+New Revision: 1319
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+* updated movie plugins Allocine and FilmAffinity
+* updated some movie test data
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/ChangeLog	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-11-10  Michael Jahn
++	* updated movie plugins Allocine and FilmAffinity
++
+ 2009-11-06  Michael Jahn
+ 	* Personal Video Database import plugin added
+ 	* fixed amazon binding (generation of signed urls added but
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -37,15 +37,16 @@
+     def __init__(self, id):
+         self.movie_id = id
+         self.url      = &quot;<A HREF="http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html">http://www.allocine.fr/film/fichefilm_gen_cfilm=%s.html</A>&quot; % str(self.movie_id)
+-        self.encode   = 'iso-8859-1'
++        self.encode   = 'utf-8'
+ 
+     def initialize(self):
+         self.page_cast = self.open_page(self.parent_window, url = &quot;<A HREF="http://www.allocine.fr/film/casting_gen_cfilm=%s.html">http://www.allocine.fr/film/casting_gen_cfilm=%s.html</A>&quot; % str(self.movie_id))
+ 
+     def get_image(self):
+-        urls = re.split('&lt;img[ \t]+src=[\'&quot;]', gutils.trim(self.page, '&lt;/h1&gt;', '&lt;/h2&gt;'))
++        urls = re.split('&lt;img[ \t]+src=[\'&quot;]', gutils.trim(self.page, '&lt;div class=&quot;poster&quot;&gt;', '&lt;/div&gt;'))
+         for url in urls[1:]:
+             url = gutils.before(url, '&quot;')
++            url = gutils.before(url, '\'')
+             if string.find(url, '.jpg') &gt;= 0:
+                 self.image_url = url
+                 break
+@@ -54,38 +55,38 @@
+         self.o_title = &quot;&quot;
+         self.o_title = gutils.trim(self.page,&quot;Titre original : &lt;i&gt;&quot;,&quot;&lt;/i&gt;&quot;)
+         if (self.o_title==''):
+-            self.o_title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#195;&#169;', '')
++            self.o_title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#195;&#169;', ''))
+ 
+     def get_title(self):
+-        self.title = string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#195;&#169;', '')
++        self.title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'), u' - AlloCin&#195;&#169;', ''))
+ 
+     def get_director(self):
+-        self.director = gutils.trim(self.page, u'R&#195;&#169;alis&#195;&#169; par ', '&lt;/a&gt;&lt;/h3&gt;')
++        self.director = gutils.trim(self.page, u'R&#195;&#169;alis&#195;&#169; par ', '&lt;/a&gt;')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, 'Synopsis', '&lt;/h4&gt;&lt;/div&gt;')
++        self.plot = gutils.trim(self.page, 'Synopsis : ', '&lt;/div&gt;')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, u'Ann&#195;&#169;e de production : ', '&lt;')
++        self.year = gutils.clean(gutils.trim(self.page, u'Ann&#195;&#169;e de production : ', '&lt;/a&gt;'))
+ 
+     def get_runtime(self):
+-        self.runtime = &quot;&quot;
+-        self.runtime = gutils.trim(self.page, u'&gt;Dur&#195;&#169;e : ', 'min')
++        self.runtime = gutils.clean(gutils.trim(self.page, u'Dur&#195;&#169;e :', 'min'))
+         if self.runtime:
+             self.runtime = str (int(gutils.before(self.runtime,&quot;h&quot;))*60 + int(gutils.after(self.runtime,&quot;h&quot;)))
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, 'Genre : ', '&lt;h3')
++        self.genre = gutils.trim(self.page, 'Genre : ', '&lt;/a')
+         self.genre = gutils.strip_tags(self.genre)
+ 
+     def get_cast(self):
+         self.cast = &quot;&quot;
+-        casts = gutils.trim(self.page_cast, 'Acteurs', '&lt;/table&gt;')
+-        parts = string.split(casts, '&lt;td ')
+-        for index in range(1, len(parts) - 1, 3):
+-            character = gutils.after(parts[index + 1], '&gt;')
+-            actor = gutils.after(parts[index + 2], '&gt;')
+-            self.cast = self.cast + gutils.clean(actor) + _(' as ') + gutils.clean(character) + '\n'
++        casts = gutils.trim(self.page_cast, 'Acteurs, r&#195;&#180;les, personnages', '&lt;h2&gt;')
++        parts = string.split(casts, 'href=&quot;/personne/fichepersonne_gen_cpersonne=')
++        for index in range(1, len(parts), 1):
++            character = gutils.clean(gutils.trim(parts[index], 'R&#195;&#180;le :', '&lt;'))
++            actor = gutils.clean(gutils.trim(parts[index], '&gt;', '&lt;'))
++            if actor:
++                self.cast = self.cast + actor + _(' as ') + character + '\n'
+ 
+     def get_classification(self):
+         self.classification = &quot;&quot;
+@@ -103,13 +104,16 @@
+         self.trailer = &quot;<A HREF="http://www.allocine.fr/film/video_gen_cfilm=%s.html">http://www.allocine.fr/film/video_gen_cfilm=%s.html</A>&quot; % self.movie_id
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '&gt;Film ', '.&nbsp;&lt;')
++        self.country = gutils.trim(self.page, 'Long-m&#195;&#169;trage', '&lt;/a&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, 'Spectateurs&lt;/a&gt;', '&lt;/tr&gt;')
+-        self.rating = gutils.trim(self.rating, 'etoile_', '&quot;')
++        self.rating = gutils.trim(self.page, 'Spectateurs&lt;/a&gt;', 'src=')
++        self.rating = gutils.trim(self.rating, 'class=&quot;stareval n', ' ')
+         if self.rating:
+-            self.rating = str(round(float(int(self.rating)*2.25)))
++            try:
++                self.rating = str(round(float(int(self.rating)*.225)))
++            except:
++                self.rating = 0
+ 
+     def get_screenplay(self):
+         self.screenplay = gutils.clean(gutils.trim(self.page_cast, u'Sc&#195;&#169;nariste', '&lt;/tr&gt;'))
+@@ -120,9 +124,9 @@
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+-        self.original_url_search   = &quot;<A HREF="http://www.allocine.fr/recherche/?rub=1&amp;motcle=">http://www.allocine.fr/recherche/?rub=1&amp;motcle=</A>&quot;
+-        self.translated_url_search = &quot;<A HREF="http://www.allocine.fr/recherche/?rub=1&amp;motcle=">http://www.allocine.fr/recherche/?rub=1&amp;motcle=</A>&quot;
+-        self.encode                = 'iso-8859-1'
++        self.original_url_search   = &quot;<A HREF="http://www.allocine.fr/recherche/?q=">http://www.allocine.fr/recherche/?q=</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://www.allocine.fr/recherche/?q=">http://www.allocine.fr/recherche/?q=</A>&quot;
++        self.encode                = 'utf-8'
+ 
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+@@ -131,20 +135,21 @@
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.trim(self.page, 'Recherche : &lt;b&gt;', '&lt;/table&gt;&lt;script');
++        self.page = gutils.trim(self.page, 'r&#195;&#169;sultats trouv&#195;&#169;s', '&lt;div class=&quot;spacer&quot;')
+ 
+     def get_searches(self):
+-        elements = string.split(self.page, '&lt;h4&gt;&lt;a href=&quot;/film/fichefilm_gen_cfilm=')
++        elements = string.split(self.page, '&lt;a href=\'/film/fichefilm_gen_cfilm=')
+         if (elements[0]&lt;&gt;''):
+             for index in range(1, len(elements), 1):
+                 element = elements[index]
+-                self.ids.append(gutils.before(element, '.'))
+-                title = gutils.strip_tags(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;')))
+-                year = gutils.clean(gutils.trim(element, '&lt;/h4&gt;', '&lt;/h4&gt;'))
+-                if year:
+-                    self.titles.append(title + ' (' + year + ')')
+-                else:
+-                    self.titles.append(title)
++                title = gutils.clean(gutils.convert_entities(gutils.trim(element, '&gt;', '&lt;/a&gt;')))
++                year = gutils.clean(gutils.trim(element, '&lt;span class=&quot;fs11&quot;&gt;', '&lt;br'))
++                if title:
++                    self.ids.append(gutils.before(element, '.'))
++                    if year:
++                        self.titles.append(title + ' (' + year + ')')
++                    else:
++                        self.titles.append(title)
+ 
+ #
+ # Plugin Test
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -169,7 +169,7 @@
+     test_configuration = {
+         'Rocky'      : [ 12, 12 ],
+         'per&#195;&#178;'       : [  6,  6 ],
+-        'il ritorno' : [ 96, 96 ]
++        'il ritorno' : [ 97, 97 ]
+     }
+ 
+ class PluginTest:
+@@ -187,68 +187,66 @@
+             'director'          : 'Sylvester Stallone',
+             'plot'              : True,
+             'cast'              : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
+-Burt Young' + _(' as ') + 'Paulie\n\
+-Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
+-Geraldine Hughes' + _(' as ') + 'Marie\n\
++Burt Young' + _(' as ') + 'Pauliev\n\
+ Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
+-James Francis Kelly III' + _(' as ') + 'Steps\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+ Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian (imagens de arquivo)\n\
++Lou DiBella' + _(' as ') + 'Lou DiBella\n\
++Mike Tyson (1)' + _(' as ') + 'Mike Tyson\n\
+ Henry G. Sanders' + _(' as ') + 'Martin\n\
+-Tim Carr' + _(' as ') + 'Buddy\n\
+-James Binns' + _(' as ') + 'Procuratore\n\
+-Rick Collum' + _(' as ') + 'Impiegato nell\'ufficio\n\
+-Michael Ahl' + _(' as ') + 'Proprietario del ristorante\n\
+-Nancy de Zutter' + _(' as ') + 'Proprietaria del ristorante\n\
+-Peter Defeo' + _(' as ') + 'Venditore\n\
+-Angela Boyd' + _(' as ') + 'Ragazza ubriaca al banco del bar\n\
+-Ron Borges' + _(' as ') + 'Reporter\n\
+-A.J. Benza' + _(' as ') + 'L.C. Luco\n\
+-Frank Bednarz' + _(' as ') + 'Tifoso al bordo del ring\n\
+-Marvin Beck' + _(' as ') + 'Uomo d\'affari nel pub irlandese\n\
+-Frank Hansen' + _(' as ') + 'Proprietario del bar\n\
+-Tony Devon' + _(' as ') + 'Vicino di casa\n\
+-Michael Buffer' + _(' as ') + 'Se stesso',
+-            'country'           : 'USA',
+-            'genre'             : 'drammatico, sportivo',
+-            'classification'    : False,
+-            'studio'            : '20th Century Fox Italia, Dvd E Blu-ray: 20th Century Fox Home Entertainment',
+-            'o_site'            : False,
+-            'site'              : '<A HREF="http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=47931">http://www.cinematografo.it/bancadati/consultazione/schedafilm.jsp?completa=si&amp;codice=47931</A>',
+-            'trailer'           : False,
+-            'year'              : 2006,
+-            'notes'             : False,
+-            'runtime'           : 102,
+-            'image'             : True,
+-            'rating'            : False
+-        },
+-        '3996' : { 
+-            'title'             : 'Amor non ho, per&#195;&#178;... per&#195;&#178;...',
+-            'o_title'           : 'Amor non ho, per&#195;&#178;... per&#195;&#178;...',
+-            'director'          : 'Giorgio Bianchi',
+-            'plot'              : True,
+-            'cast'              : 'Renato Rascel' + _(' as ') + 'Teodoro\n\
+-Gina Lollobrigida' + _(' as ') + 'Gina\n\
+-Luigi Pavese' + _(' as ') + 'Antonio Scutipizzo\n\
+-Aroldo Tieri' + _(' as ') + 'Giuliano\n\
+-Carlo Ninchi' + _(' as ') + 'Maurizio\n\
+-Kiki Urbani' + _(' as ') + 'Kiki, la ballerina\n\
+-Adriana Danieli' + _(' as ') + 'Olga\n\
+-Strelsa Brown' + _(' as ') + 'Mabel\n\
+-Virgilio Riento' + _(' as ') + 'Il contadino\n\
+-Gabriele Tinti' + _(' as ') + '(Gastone Tinti) Un componente dell\'orchestra\n\
+-Guglielmo Barnab&#195;&#178;' + _(' as ') + '\n\
+-Giuseppe De Martino' + _(' as ') + '\n\
+-Raimondo Vianello' + _(' as ') + '(Riccardo Vianello) \n\
+-Maria Carla Vittone' + _(' as ') + '\n\
+-Marco Tulli' + _(' as ') + '\n\
+-Giuseppe Ricagno' + _(' as ') + '\n\
+-Luciano Rebeggiani' + _(' as ') + '\n\
+-Kurt Lary' + _(' as ') + '\n\
+-Giovanni Lesa' + _(' as ') + '\n\
+-Riccardo Ferri' + _(' as ') + '\n\
+-Pia De Doses' + _(' as ') + '\n\
+-Guido Barbarisi' + _(' as ') + '\n\
+-Galeazzo Benti as',
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Ana Gerena' + _(' as ') + 'Isabel\n\
++Angela Boyd' + _(' as ') + 'Angie\n\
++Louis Giansante' + _(' as ') + 'Bandido do bar\n\
++Maureen Schilling' + _(' as ') + 'Bartender do Lucky\n\
++Lahmard Tate&#194;&#185;' + _(' as ') + 'X-Cell\n\
++Woodrow W. Paige&#194;&#185;' + _(' as ') + 'Comentarista da ESPN\n\
++Skip Bayless' + _(' as ') + 'Comentarista da ESPN\n\
++Jay Crawford' + _(' as ') + 'Comentarista da ESPN\n\
++Brian Kenny' + _(' as ') + 'Apresentador da ESPN\n\
++Dana Jacobson' + _(' as ') + 'Apresentador da ESPN\n\
++Chuck Johnson&#194;&#185;' + _(' as ') + 'Apresentador da ESPN\n\
++James Binns' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Johnnie Hobbs Jr.' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Barney Fitzpatrick' + _(' as ') + 'Comiss&#195;&#161;rio\n\
++Jim Lampley' + _(' as ') + 'Comentarista da HBO\n\
++Larry Merchant' + _(' as ') + 'Comentarista da HBO\n\
++Max Kellerman' + _(' as ') + 'Comentarista da HBO\n\
++LeRoy Neiman' + _(' as ') + 'LeRoy Neiman\n\
++Bert Randolph Sugar' + _(' as ') + 'Rep&#195;&#179;rter da Ring Magazine\n\
++Bernard Fern&#195;&#161;ndez' + _(' as ') + 'Articulista da Boxing Association of America\n\
++Gunnar Peterson' + _(' as ') + 'Treinador de levantamento de peso\n\
++Yahya' + _(' as ') + 'Oponente de Dixon\n\
++Marc Ratner (1)' + _(' as ') + 'Oficial de luta\n\
++Anthony Lato Jr.' + _(' as ') + 'Inspetor de Rocky\n\
++Jack Lazzarado' + _(' as ') + 'Inspetor de Dixon\n\
++Michael Buffer' + _(' as ') + 'Anunciador de luta\n\
++Joe Cortez' + _(' as ') + '&#195;&#129;rbitro\n\
++Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
++Vinod Kumar (1)' + _(' as ') + 'Ravi\n\
++Fran Pultro' + _(' as ') + 'Pai no restaurante\n\
++Frank Stallone Jr.&#194;&#185;' + _(' as ') + 'Cliente do restaurante\n\
++Jody Giambelluca' + _(' as ') + 'Cliente do restaurante\n\
++Tobias Segal' + _(' as ') + 'Amigo de Robert\n\
++Tim Carr' + _(' as ') + 'Amigo de Robert\n\
++Matt Frack' + _(' as ') + 'Amigo de Robert\n\
++Paul Dion Monte' + _(' as ') + 'Amigo de Robert\n\
++Kevin King Templeton' + _(' as ') + 'Amigo de Robert\n\
++Robert Michael Kelly' + _(' as ') + 'Senhor Tomilson\n\
++Rick Buchborn' + _(' as ') + 'F&#195;&#163; de Rocky\n\
++Nick Baker' + _(' as ') + 'Bartender do pub irland&#195;&#170;s\n\
++Don Sherman' + _(' as ') + 'Andy\n\
++Stu Nahan' + _(' as ') + 'Comentarista da luta pelo computador\n\
++Gary Compton' + _(' as ') + 'Seguran&#195;&#167;a\n\
++Ricky Cavazos' + _(' as ') + 'Espectador da luta (n&#195;&#163;o creditado)\n\
++Dolph Lundgren' + _(' as ') + 'Capit&#195;&#163;o Ivan Drago (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Burgess Meredith' + _(' as ') + 'Mickey (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Mr. T' + _(' as ') + 'Clubber Lang (imagens de arquivo) (n&#195;&#163;o creditado)\n\
++Carl Weathers' + _(' as ') + 'Apollo Creed (imagens de arquivo) (n&#195;&#163;o creditado)',
+             'country'           : 'ITALIA',
+             'genre'             : 'commedia',
+             'classification'    : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -51,7 +51,7 @@
+             self.image_url = '<A HREF="http://">http://</A>' + gutils.before(self.page[tmp:], '&quot;')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;b&gt;TITULO ORIGINAL&lt;/b&gt;&lt;/td&gt;', '&lt;/b&gt;&lt;/td&gt;')
++        self.o_title = gutils.trim(self.page, u'&lt;b&gt;T&#205;TULO ORIGINAL&lt;/b&gt;&lt;/td&gt;', '&lt;/b&gt;&lt;/td&gt;')
+         self.o_title = gutils.after(self.o_title, '&lt;b&gt;')
+         self.o_title = re.sub('[ ]+', ' ', self.o_title)
+ 
+@@ -185,7 +185,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 9, 9 ],
++        'Rocky' : [ 10, 10 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -341,8 +341,10 @@
+ Gary Compton' + _(' as ') + 'Sicherheitsbediensteter &#195;&#188;brige Besetzung in alphabetischer Reihenfolge:\n\
+ Michael Ahl' + _(' as ') + 'Restaurant patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
++Lacy Bevis' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Tim Brooks' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Ricky Cavazos' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
++Rennie Cowan' + _(' as ') + 'Boxing spectator (nicht im Abspann)\n\
+ Deon Derrico' + _(' as ') + 'High roller at limo (nicht im Abspann)\n\
+ Ruben Fischman' + _(' as ') + 'High-Roller in Las Vegas (nicht im Abspann)\n\
+ David Gere' + _(' as ') + 'Patron at Adrian\'s (nicht im Abspann)\n\
+@@ -360,9 +362,9 @@
+ Jackie Sereni' + _(' as ') + 'Girl on Steps (nicht im Abspann)\n\
+ Keyon Smith' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Frank Traynor' + _(' as ') + 'Rechtsanwalt (nicht im Abspann)\n\
+-Kim Villanova' + _(' as ') + 'Business woman (nicht im Abspann)',
++Kimberly Villanova' + _(' as ') + 'Business woman (nicht im Abspann)',
+             'country'           : 'USA',
+-            'genre'             : 'Action | Drama | Sport',
++            'genre'             : 'Drama | Sport',
+             'classification'    : False,
+             'studio'            : 'Metro-Goldwyn-Mayer (MGM)',
+             'o_site'            : False,
+@@ -419,6 +421,6 @@
+ + _('Color') + ': Farbe (Eastmancolor)',
+             'runtime'            : 90,
+             'image'              : True,
+-            'rating'             : 7
++            'rating'             : 8
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -255,7 +255,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 17, 17 ],
+-        'Ein gl&#195;&#188;ckliches Jahr' : [ 23, 23 ]
++        'Ein gl&#195;&#188;ckliches Jahr' : [ 24, 24 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -292,7 +292,7 @@
+     test_configuration = {
+         'Rocky Balboa'         : [ 8, 8 ],
+         'Arahan'               : [ 6, 6 ],
+-        'Ein gl&#195;&#188;ckliches Jahr' : [ 3, 3 ]
++        'Ein gl&#195;&#188;ckliches Jahr' : [ 4, 4 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-11-06 22:06:46 UTC (rev 1318)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-11-10 22:10:14 UTC (rev 1319)
+@@ -248,8 +248,8 @@
+             'director'            : 'Claude Lelouch',
+             'plot'                 : False,
+             'cast'                : 'Lino Ventura' + _(' as ') + 'Simon \n\
+-Fran&#195;&#167;oise Fabian\n\
+-Charles G&#195;&#169;rard\n\
++Fran&#195;&#167;oise Fabian' + _(' as ') + 'Fran&#195;&#167;oise\n\
++Charles G&#195;&#169;rard' + _(' as ') + 'Charlot\n\
+ Andr&#195;&#169; Falcon' + _(' as ') + 'Le bijoutier\n\
+ Mireille Mathieu\n\
+ Lilo\n\
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000786.html">[Griffith-svn] r1318 - in trunk: . lib/plugins/extensions	lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000788.html">[Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#787">[ date ]</a>
+              <a href="thread.html#787">[ thread ]</a>
+              <a href="subject.html#787">[ subject ]</a>
+              <a href="author.html#787">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

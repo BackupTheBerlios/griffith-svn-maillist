@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1534 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1534%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110210203843.9F900481396%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000993.html">
+   <LINK REL="Next"  HREF="000995.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1534 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1534%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110210203843.9F900481396%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1534 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb 10 21:38:43 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000993.html">[Griffith-svn] r1533 - in trunk: . lib lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000995.html">[Griffith-svn] r1535 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#994">[ date ]</a>
+              <a href="thread.html#994">[ thread ]</a>
+              <a href="subject.html#994">[ subject ]</a>
+              <a href="author.html#994">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-02-10 21:38:43 +0100 (Thu, 10 Feb 2011)
+New Revision: 1534
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/sql.py
+Log:
+[#716176] 0.12.1 No postgres support on Windows
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-02-08 21:04:38 UTC (rev 1533)
++++ trunk/ChangeLog	2011-02-10 20:38:43 UTC (rev 1534)
+@@ -4,10 +4,12 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+-2011-02-07  Ivo Nunes
+-	* Changed the way Mac OS X creates a new database so that it doesn't open external applications
+ 
++2011-02-10  Michael Jahn
++	* [#716176] 0.12.1 No postgres support on Windows
++
+ 2011-02-07  Ivo Nunes
++	* Changed the way Mac OS X creates a new database so that it doesn't open external applications
+ 	* Fixed exporting under Mac OS X
+ 
+ 2011-02-06  Ivo Nunes
+@@ -16,17 +18,10 @@
+ 2011-02-05  Vasco Nunes
+ 	* [#703576] no automatic refresh after get back a dvd
+ 	* Sync mac menubar when menu checkMenuItems are changed
+-	
+-2011-02-05  Ivo Nunes
+-    * Updated IMDb-pt plugin
+-
+-2011-02-05  Vasco Nunes
+ 	* Fixed about dialog on macosx
+ 
+ 2011-02-05  Ivo Nunes
+     * Fixed and re-enabled Mac OS X UI Cocoa menu integration
+-
+-2011-02-05  Ivo Nunes
+     * Mac OS X UI Cocoa menu integration temporarily disabled due to being broken - using native GTK
+     * IMDB-pt plugin added
+ 
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2011-02-08 21:04:38 UTC (rev 1533)
++++ trunk/lib/sql.py	2011-02-10 20:38:43 UTC (rev 1534)
+@@ -78,7 +78,13 @@
+                 dbinitializingsql = 'PRAGMA page_size=' + str(get_filesystem_pagesize(sqlitefile))
+             url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % sqlitefile
+         elif config.get('type', section='database') == 'postgres':
+-            url = &quot;<A HREF="postgres://%(user">postgres://%(user</A>)s:%(passwd)s@%(host)s:%(port)d/%(name)s&quot; % conn_params
++            # sqlalchemy version check because postgres dialect is renamed in sqlalchemy&gt;=0.6 from postgres to postgresql
++            from sqlalchemy import __version__ as sqlalchemyversion
++            if map(int, sqlalchemyversion[:3].split('.')) &lt; [0, 6]:
++                url = &quot;postgres&quot;
++            else:
++                url = &quot;postgresql&quot;
++            url = url + &quot;://%(user)s:%(passwd)s@%(host)s:%(port)d/%(name)s&quot; % conn_params
+         elif config.get('type', section='database') == 'mysql':
+             conn_params['engine_kwargs']['convert_unicode'] = True
+             conn_params['engine_kwargs']['pool_recycle'] = int(config.get('pool_recycle', 3600, section='database'))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000993.html">[Griffith-svn] r1533 - in trunk: . lib lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000995.html">[Griffith-svn] r1535 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#994">[ date ]</a>
+              <a href="thread.html#994">[ thread ]</a>
+              <a href="subject.html#994">[ subject ]</a>
+              <a href="author.html#994">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

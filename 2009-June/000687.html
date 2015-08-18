@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1216 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1216%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200906111412.n5BECoB6025843%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000686.html">
+   <LINK REL="Next"  HREF="000688.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1216 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1216%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200906111412.n5BECoB6025843%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1216 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 11 16:12:50 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000686.html">[Griffith-svn] r1215 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000688.html">[Griffith-svn] r1217 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#687">[ date ]</a>
+              <a href="thread.html#687">[ thread ]</a>
+              <a href="subject.html#687">[ subject ]</a>
+              <a href="author.html#687">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-06-11 16:12:49 +0200 (Thu, 11 Jun 2009)
+New Revision: 1216
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/advfilter.py
+Log:
+Don't try to open advfilter window if it's already opened
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-06-10 23:18:04 UTC (rev 1215)
++++ trunk/ChangeLog	2009-06-11 14:12:49 UTC (rev 1216)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-06-11  Piotr O&#380;arowski
++	* Don't try to open advfilter window if it's already opened
++
+ 2009-06-10  Piotr O&#380;arowski
+ 	* Restoring from backup finally works with external databases
+ 	* Don't save full paths in backups
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2009-06-10 23:18:04 UTC (rev 1215)
++++ trunk/lib/advfilter.py	2009-06-11 14:12:49 UTC (rev 1216)
+@@ -75,12 +75,16 @@
+ # widgets -----------------------------------------------------{{{
+ 
+ def show_window(self):
++    if getattr(self, '_advfilter_window_is_open', False):
++        log.debug('advfilter window already opened')
++        return False
+     initialize(self.widgets['advfilter'], self.db, self.field_names)
+ 
+     if getattr(self, '_search_conditions', None):
+         set_conditions(self.widgets['advfilter'], self._search_conditions, self.field_names)
+ 
+     self.widgets['advfilter']['window'].show()
++    self._advfilter_window_is_open = True
+ 
+     return True
+ 
+@@ -102,6 +106,8 @@
+     
+     from initialize import fill_advfilter_combo
+     fill_advfilter_combo(self)
++    
++    del self._advfilter_window_is_open
+ 
+     return True
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000686.html">[Griffith-svn] r1215 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000688.html">[Griffith-svn] r1217 - in trunk: . glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#687">[ date ]</a>
+              <a href="thread.html#687">[ thread ]</a>
+              <a href="subject.html#687">[ subject ]</a>
+              <a href="author.html#687">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

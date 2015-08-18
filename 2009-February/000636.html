@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1164 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1164%20-%20trunk/lib&In-Reply-To=%3C200902112209.n1BM9dDx001813%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000635.html">
+   <LINK REL="Next"  HREF="000637.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1164 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1164%20-%20trunk/lib&In-Reply-To=%3C200902112209.n1BM9dDx001813%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1164 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 11 23:09:39 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000635.html">[Griffith-svn] r1163 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000637.html">[Griffith-svn] r1165 - in trunk/lib: . plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#636">[ date ]</a>
+              <a href="thread.html#636">[ thread ]</a>
+              <a href="subject.html#636">[ subject ]</a>
+              <a href="author.html#636">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-02-11 23:09:38 +0100 (Wed, 11 Feb 2009)
+New Revision: 1164
+
+Modified:
+   trunk/lib/backup.py
+   trunk/lib/quick_filter.py
+Log:
+no need to create extra metadata, create new engine only
+
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-02-11 21:57:02 UTC (rev 1163)
++++ trunk/lib/backup.py	2009-02-11 22:09:38 UTC (rev 1164)
+@@ -70,7 +70,7 @@
+                 from tempfile import mkdtemp
+                 from shutil import rmtree
+                 from StringIO import StringIO
+-                from sqlalchemy import MetaData
++                from sqlalchemy import create_engine
+                 import copy
+                 import db
+ 
+@@ -83,9 +83,8 @@
+                 mzip.write(tmp_config._file)
+ 
+                 tmp_file = os.path.join(tmp_dir, 'griffith.db')
+-                tmp_metadata = MetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
+-                tmp_metadata.tables = db.metadata.tables
+-                tmp_metadata.create_all()
++                tmp_engine = create_engine(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
++                db.metadata.create_all(bind=tmp_engine)
+ 
+                 # SQLite doesn't care about foreign keys much so we can just copy the data
+                 for table in db.metadata.sorted_tables:
+@@ -93,12 +92,12 @@
+                         continue # see below
+                     data = table.select(bind=self.db.session.bind).execute().fetchall()
+                     if data:
+-                        tmp_metadata.tables[table.name].insert(bind=tmp_metadata.bind).execute(data)
++                        table.insert(bind=tmp_engine).execute(data)
+                 
+                 # posters
+                 data = db.tables['posters'].select(bind=self.db.session.bind).execute().fetchall()
+                 for i in data:
+-                    db.tables['posters'].insert(bind=tmp_metadata.bind).execute(md5sum=i[0], data=StringIO(i[1]).read())
++                    db.tables['posters'].insert(bind=tmp_engine).execute(md5sum=i[0], data=StringIO(i[1]).read())
+ 
+                 mzip.write(tmp_file)
+                 rmtree(tmp_dir)
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2009-02-11 21:57:02 UTC (rev 1163)
++++ trunk/lib/quick_filter.py	2009-02-11 22:09:38 UTC (rev 1164)
+@@ -26,7 +26,7 @@
+ 
+ def change_filter(self):
+     x = 0
+-    text = gutils.gescape(self.widgets['filter']['text'].get_text())
++    text = gutils.gescape(self.widgets['filter']['text'].get_text().decode('utf-8'))
+     
+     from sqlalchemy import select
+     from sqlalchemy.orm.util import class_mapper, object_mapper
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000635.html">[Griffith-svn] r1163 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000637.html">[Griffith-svn] r1165 - in trunk/lib: . plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#636">[ date ]</a>
+              <a href="thread.html#636">[ thread ]</a>
+              <a href="subject.html#636">[ subject ]</a>
+              <a href="author.html#636">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

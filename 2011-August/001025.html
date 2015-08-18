@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1566 - in trunk/debian: . source
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1566%20-%20in%20trunk/debian%3A%20.%20source&In-Reply-To=%3C20110802190457.A4A954833B3%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001024.html">
+   <LINK REL="Next"  HREF="001026.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1566 - in trunk/debian: . source</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1566%20-%20in%20trunk/debian%3A%20.%20source&In-Reply-To=%3C20110802190457.A4A954833B3%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1566 - in trunk/debian: . source">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug  2 21:04:57 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001024.html">[Griffith-svn] r1565 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="001026.html">[Griffith-svn] r1567 - trunk/debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1025">[ date ]</a>
+              <a href="thread.html#1025">[ thread ]</a>
+              <a href="subject.html#1025">[ subject ]</a>
+              <a href="author.html#1025">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2011-08-02 21:04:57 +0200 (Tue, 02 Aug 2011)
+New Revision: 1566
+
+Added:
+   trunk/debian/source/
+   trunk/debian/source/format
+Removed:
+   trunk/debian/preinst
+Modified:
+   trunk/debian/changelog
+   trunk/debian/control
+   trunk/debian/rules
+Log:
+Debian packaging:
+* VCS-* fields updated
+* preinst script removed (no need to clean after pycentral anymore)
+* Switch from dh_pysupport to dh_python2
+* Source format changed to 3.0 (quilt)
+* Bump Standards-Version to 3.9.2 (no changes needed)
+
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/changelog	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -1,3 +1,15 @@
++griffith (0.12.1-2) unstable; urgency=low
++
++  * cherry-pick SQLAlchemy 0.7 compatibility from SVN repo
++  * movie plugins updated to latest SVN version
++  * VCS-* fields updated
++  * preinst script removed (no need to clean after pycentral anymore)
++  * Switch from dh_pysupport to dh_python2
++  * Source format changed to 3.0 (quilt)
++  * Bump Standards-Version to 3.9.2 (no changes needed)
++
++ -- Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;  Tue, 02 Aug 2011 20:42:17 +0200
++
+ griffith (0.12.1-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/control	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -3,11 +3,11 @@
+ Priority: optional
+ Maintainer: Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;
+ Build-Depends: debhelper (&gt;= 5)
+-Build-Depends-Indep: python (&gt;= 2.3.5-11), python-support (&gt;= 0.6.4), docbook2x
+-Standards-Version: 3.9.1
++Build-Depends-Indep: python (&gt;= 2.6.3-3), docbook2x
++Standards-Version: 3.9.2
+ XS-Python-Version: &gt;=2.5
+-Vcs-Svn: <A HREF="svn://svn.berlios.de/griffith/trunk/debian">svn://svn.berlios.de/griffith/trunk/debian</A>
+-Vcs-Browser: <A HREF="http://svn.berlios.de/wsvn/griffith/debian/?sc=1">http://svn.berlios.de/wsvn/griffith/debian/?sc=1</A>
++Vcs-Svn: <A HREF="svn://svn.berlios.de/griffith/trunk/">svn://svn.berlios.de/griffith/trunk/</A>
++Vcs-Browser: <A HREF="http://svn.berlios.de/wsvn/griffith/trunk/">http://svn.berlios.de/wsvn/griffith/trunk/</A>
+ Homepage: <A HREF="http://www.griffith.cc/">http://www.griffith.cc/</A>
+ 
+ Package: griffith
+
+Deleted: trunk/debian/preinst
+===================================================================
+--- trunk/debian/preinst	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/preinst	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -1,15 +0,0 @@
+-#!/bin/sh
+-# TODO: remove this file after releasing Squeeze
+-set -e
+-if [ &quot;$1&quot; = upgrade ]
+-then
+-   if dpkg --compare-versions &quot;$2&quot; lt 0.9.10-1 ||
+-     (dpkg --compare-versions &quot;$2&quot; gt 0.10~ &amp;&amp; 
+-      dpkg --compare-versions &quot;$2&quot; lt 0.10~beta3-1~)
+-   then
+-	pycentral pkgremove griffith || true
+-	rm -rf /usr/share/griffith/lib
+-   fi
+-fi
+-
+-#DEBHELPER#
+
+Modified: trunk/debian/rules
+===================================================================
+--- trunk/debian/rules	2011-08-01 21:04:43 UTC (rev 1565)
++++ trunk/debian/rules	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -25,7 +25,7 @@
+ 	dh_link usr/share/griffith/lib/griffith /usr/bin/griffith
+ 	dh_compress -i
+ 	dh_fixperms -i
+-	dh_pysupport -i
++	dh_python2 -i
+ 	dh_installdeb -i
+ 	dh_gencontrol -i
+ 	dh_md5sums -i
+
+Added: trunk/debian/source/format
+===================================================================
+--- trunk/debian/source/format	                        (rev 0)
++++ trunk/debian/source/format	2011-08-02 19:04:57 UTC (rev 1566)
+@@ -0,0 +1 @@
++3.0 (quilt)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001024.html">[Griffith-svn] r1565 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="001026.html">[Griffith-svn] r1567 - trunk/debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1025">[ date ]</a>
+              <a href="thread.html#1025">[ thread ]</a>
+              <a href="subject.html#1025">[ subject ]</a>
+              <a href="author.html#1025">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

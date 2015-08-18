@@ -1,0 +1,301 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r867 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r867%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200709061758.l86HwRo3017574%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000371.html">
+   <LINK REL="Next"  HREF="000373.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r867 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r867%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200709061758.l86HwRo3017574%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r867 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep  6 19:58:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000371.html">[Griffith-svn] r866 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000373.html">[Griffith-svn] r868 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#372">[ date ]</a>
+              <a href="thread.html#372">[ thread ]</a>
+              <a href="subject.html#372">[ subject ]</a>
+              <a href="author.html#372">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-09-06 19:58:10 +0200 (Thu, 06 Sep 2007)
+New Revision: 867
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/test_movieplugins.py
+Log:
+OFDb plugin updated and test cases added
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-09-06 17:55:21 UTC (rev 866)
++++ trunk/ChangeLog	2007-09-06 17:58:10 UTC (rev 867)
+@@ -11,7 +11,7 @@
+ 	* use deflate for backup if available
+ 	* added auto-test feature for movie plugins (only used by developers; execute
+ 	  test_movieplugins.py directly)
+-	* FilmeVonAZ plugin updated
++	* FilmeVonAZ and OFDb plugin updated
+ 	* fixed saving media and vcodec defaults in preferences dialog
+ 
+ 2007-09-03  Vasco Nunes
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-09-06 17:55:21 UTC (rev 866)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-09-06 17:58:10 UTC (rev 867)
+@@ -1,3 +1,7 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
+ # Written by Christian Sagmueller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">christian at sagmueller.net</A>&gt;
+ # based on PluginMovieIMDB.py, Copyright (c) 2005 Vasco Nunes
+ # You may use and distribute this software under the terms of the
+@@ -67,7 +71,7 @@
+ 	def get_cast(self):
+ 		self.cast = ''
+ 		cast_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s">http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s</A>&quot; % str(self.movie_id) )
+-		self.cast = gutils.trim(cast_page, 'Darsteller&lt;/i&gt;', '&lt;i&gt;')
++		self.cast = gutils.trim(cast_page, 'Darsteller&lt;/i&gt;', '&lt;/table&gt;')
+ 		self.cast = string.replace(self.cast, 'class=&quot;Daten&quot;&gt;', '&gt;\n')
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
+ 		self.cast = string.replace(self.cast, '... ', _(' as '))
+@@ -123,3 +127,177 @@
+ 					self.ids.append(elementid)
+ 					self.titles.append(gutils.trim(element,&quot;&gt;&quot;,&quot;&lt;/a&gt;&quot;))
+ 
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; expected result count }
++	#
++	test_configuration = {
++		'Rocky Balboa'			: 1,
++		'Arahan'				: 3,
++		'Ein gl&#252;ckliches Jahr'	: 1
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -&gt; dict { arribute -&gt; value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'103013' : { 
++			'title' 			: 'Rocky Balboa',
++			'o_title' 			: 'Rocky Balboa',
++			'director'			: 'Sylvester Stallone',
++			'plot' 				: True,
++			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
++Geraldine Hughes\n\
++James Francis Kelly III\n\
++Tony Burton\n\
++A.J. Benza\n\
++Henry G. Sanders\n\
++Antonio Tarver\n\
++Pedro Lovell\n\
++Ana Gerena\n\
++Angela Boyd\n\
++Louis Giansante\n\
++Maureen Schilling\n\
++Carter Mitchell\n\
++Vinod Kumar\n\
++Tobias Segal\n\
++Tim Carr\n\
++Paul Dion Monte\n\
++Kevin King Templeton\n\
++Robert Michael Kelly\n\
++Don Sherman\n\
++Nick Baker\n\
++Rick Buchborn\n\
++Stu Nahan\n\
++Gary Compton\n\
++Jody Giambelluca\n\
++Frank Stallone\n\
++Fran Pultro\n\
++Michael Buffer\n\
++Jack Lazzarado\n\
++Marc Ratner\n\
++Anthony Lato Jr.\n\
++Yahya\n\
++Gunnar Peterson\n\
++Bernard Fern&#225;ndez\n\
++Bert Randolph Sugar\n\
++Jim Lampley\n\
++Larry Merchant\n\
++Max Kellerman\n\
++James Binns\n\
++Johnnie Hobbs Jr.\n\
++Barney Fitzpatrick\n\
++Brian Kenny\n\
++Dana Jacobson\n\
++Skip Bayless\n\
++Charles Johnson\n\
++Matt Frack\n\
++Woody Paige\n\
++Jay Crawford\n\
++Lahmard J. Tate\n\
++LeRoy Neiman\n\
++Mike Tyson' + _(' as ') + 'Himself\n\
++Lou DiBella\n\
++Joe Cortez\n\
++Ricky Cavazos',
++			'country'			: 'USA',
++			'genre'				: 'Action, Drama, Sportfilm',
++			'classification'	: False,
++			'studio'			: 'Metro-Goldwyn-Mayer (MGM)',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=103013">http://www.ofdb.de/view.php?page=film&amp;fid=103013</A>',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 102,
++			'image'				: True,
++			'rating'			: 8
++		},
++		'22489' : { 
++			'title' 			: 'Gl&#252;ckliches Jahr, Ein',
++			'o_title' 			: 'Bonne ann&#233;e, La',
++			'director'			: 'Claude Lelouch',
++			'plot' 				: False,
++			'cast'				: 'Lino Ventura\n\
++Fran&#231;oise Fabian\n\
++Charles G&#233;rard\n\
++Andr&#233; Falcon\n\
++Mireille Mathieu\n\
++Lilo\n\
++Claude Mann\n\
++Fr&#233;d&#233;ric de Pasquale\n\
++G&#233;rard Sire\n\
++Silvano Tranquilli\n\
++Andr&#233; Barello\n\
++Michel Bertay\n\
++Norman de la Chesnaye\n\
++Pierre Edeline\n\
++Pierre Pontiche\n\
++Michou\n\
++Bettina Rheims\n\
++Joseph Rythmann\n\
++Georges Staquet\n\
++Jacques Villedieu\n\
++Harry Walter\n\
++Elie Chouraqui',
++			'country'			: 'Frankreich',
++			'genre'				: 'Kom&#246;die, Krimi',
++			'classification'	: False,
++			'studio'			: 'Les Films 13',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=22489">http://www.ofdb.de/view.php?page=film&amp;fid=22489</A>',
++			'trailer'			: False,
++			'year'				: 1973,
++			'notes'				: False,
++			'runtime'			: 90,
++			'image'				: True,
++			'rating'			: 7
++		},
++		'54088' : { 
++			'title' 			: 'Arahan',
++			'o_title' 			: 'Arahan jangpung daejakjeon',
++			'director'			: 'Ryoo Seung-wan',
++			'plot' 				: True,
++			'cast'				: 'Ryoo Seung-beom\n\
++Yoon So-yi' + _(' as ') + 'Wi-jin\n\
++Ahn Sung-kee' + _(' as ') + 'Ja-woon\n\
++Jung Doo-hong' + _(' as ') + 'Heuk-Woon\n\
++Yun Ju-sang\n\
++Kim Ji-yeong\n\
++Baek Chan-gi\n\
++Kim Jae-man\n\
++Lee Dae-yeon\n\
++Kim Dong-ju\n\
++Kim Su-hyeon\n\
++Geum Dong-hyeon\n\
++Lee Jae-goo\n\
++Ahn Kil-kang\n\
++Bong Tae-gyu\n\
++Im Ha-ryong\n\
++Yoon Do-hyeon\n\
++Lee Choon-yeon',
++			'country'			: 'S&#252;dkorea',
++			'genre'				: 'Action, Fantasy, Kom&#246;die',
++			'classification'	: '16',
++			'studio'			: 'Fun and Happiness',
++			'o_site'			: False,
++			'site'				: '<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=54088">http://www.ofdb.de/view.php?page=film&amp;fid=54088</A>',
++			'trailer'			: False,
++			'year'				: 2004,
++			'notes'				: False,
++			'runtime'			: 114,
++			'image'				: True,
++			'rating'			: 7
++		}
++	}
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2007-09-06 17:55:21 UTC (rev 866)
++++ trunk/lib/test_movieplugins.py	2007-09-06 17:58:10 UTC (rev 867)
+@@ -60,7 +60,8 @@
+ class PluginTester:
+ 	test_plugins = [
+ 		'PluginMovieKinoDe',
+-		'PluginMovieFilmeVonAZ'
++		'PluginMovieFilmeVonAZ',
++		'PluginMovieOFDb'
+ 	]
+ 
+ 	#
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000371.html">[Griffith-svn] r866 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000373.html">[Griffith-svn] r868 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#372">[ date ]</a>
+              <a href="thread.html#372">[ thread ]</a>
+              <a href="subject.html#372">[ subject ]</a>
+              <a href="author.html#372">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

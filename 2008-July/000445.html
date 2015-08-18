@@ -1,0 +1,251 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r957 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r957%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200807172047.m6HKlxMh029665%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000444.html">
+   <LINK REL="Next"  HREF="000446.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r957 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r957%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200807172047.m6HKlxMh029665%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r957 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 17 22:47:59 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000444.html">[Griffith-svn] r956 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000446.html">[Griffith-svn] r958 - branches/0.9.x branches/0.9.x/glade	branches/0.9.x/lib trunk trunk/glade trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#445">[ date ]</a>
+              <a href="thread.html#445">[ thread ]</a>
+              <a href="subject.html#445">[ subject ]</a>
+              <a href="author.html#445">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-07-17 22:47:37 +0200 (Thu, 17 Jul 2008)
+New Revision: 957
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+updated OFDb plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-07-13 21:23:54 UTC (rev 956)
++++ branches/0.9.x/ChangeLog	2008-07-17 20:47:37 UTC (rev 957)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-07-17  Michael Jahn
++	* updated OFDb plugin
++
+ 2008-07-13  Michael Jahn
+ 	* updated DVDEmpire plugin
+ 	* [#236598] scroll bar in filter &quot;by volume&quot; appears
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-07-13 21:23:54 UTC (rev 956)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-07-17 20:47:37 UTC (rev 957)
+@@ -46,7 +46,7 @@
+ 		self.title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;Regie: &quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
++		self.director = gutils.trim(self.page,&quot;Regie:&quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+ 	def get_plot(self):
+ 		storyid = self.regextrim(self.page, '&lt;a href=&quot;plot/', '(&quot;&gt;|[&amp;])')
+@@ -55,12 +55,12 @@
+ 		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,&quot;Erscheinungsjahr: &quot;,&quot;&lt;/a&gt;&quot;)
++		self.year = gutils.trim(self.page,&quot;Erscheinungsjahr:&quot;,&quot;&lt;/a&gt;&quot;)
+ 		self.year = gutils.strip_tags(self.year)
+ 
+ 	def get_runtime(self):
+ 		# from imdb
+-		self.runtime = gutils.trim(self.imdb_page, '&lt;h5&gt;L&auml;nge:&lt;/h5&gt;', ' min')
++		self.runtime = gutils.trim(self.imdb_page, '&lt;h5&gt;L&auml;nge:&lt;/h5&gt;', ' Min')
+ 
+ 	def get_genre(self):
+ 		self.genre = gutils.trim(self.page,&quot;Genre(s):&quot;,&quot;&lt;/table&gt;&quot;)
+@@ -101,7 +101,7 @@
+ 		self.trailer = &quot;&quot;
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,&quot;Herstellungsland: &quot;,&quot;&lt;/a&gt;&quot;)
++		self.country = gutils.trim(self.page,&quot;Herstellungsland:&quot;,&quot;&lt;/a&gt;&quot;)
+ 
+ 	def get_rating(self):
+ 		self.rating = gutils.trim(self.page,&quot;&lt;br&gt;Note: &quot;,&quot;&nbsp;&quot;)
+@@ -142,7 +142,7 @@
+ 		if (elements[0]&lt;&gt;''):
+ 			for element in elements:
+ 				elementid = gutils.trim(element,'&lt;a href=&quot;','&quot;')
+-				if not elementid is None:
++				if not elementid is None and not elementid == '':
+ 					self.ids.append(elementid)
+ 					elementname = gutils.clean(element)
+ 					p1 = string.find(elementname, '&gt;')
+@@ -162,7 +162,7 @@
+ 	test_configuration = {
+ 		'Rocky Balboa'			: 1,
+ 		'Arahan'				: 3,
+-		'Ein gl&#252;ckliches Jahr'	: 1
++		'gl&#252;ckliches'			: 2
+ 	}
+ 
+ class PluginTest:
+@@ -286,7 +286,7 @@
+ 			'notes'				: False,
+ 			'runtime'			: 90,
+ 			'image'				: True,
+-			'rating'			: 7
++			'rating'			: 6
+ 		},
+ 		'film/54088,Arahan' : { 
+ 			'title' 			: 'Arahan',
+@@ -294,7 +294,7 @@
+ 			'director'			: 'Ryoo Seung-wan',
+ 			'plot' 				: True,
+ 			'cast'				: 'Ryoo Seung-beom\n\
+-Yoon So-yi' + _(' as ') + 'Wi-jin\n\
++Yoon Soy' + _(' as ') + 'Wi-jin\n\
+ Ahn Sung-kee' + _(' as ') + 'Ja-woon\n\
+ Jung Doo-hong' + _(' as ') + 'Heuk-Woon\n\
+ Yun Ju-sang\n\
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-07-13 21:23:54 UTC (rev 956)
++++ trunk/ChangeLog	2008-07-17 20:47:37 UTC (rev 957)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-07-17  Michael Jahn
++	* updated OFDb plugin
++
+ 2008-07-13  Michael Jahn
+ 	* updated DVDEmpire plugin
+ 	* [#236598] scroll bar in filter &quot;by volume&quot; appears
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-07-13 21:23:54 UTC (rev 956)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-07-17 20:47:37 UTC (rev 957)
+@@ -46,7 +46,7 @@
+ 		self.title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;Regie: &quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
++		self.director = gutils.trim(self.page,&quot;Regie:&quot;,&quot;&lt;/a&gt;&lt;br&gt;&quot;)
+ 
+ 	def get_plot(self):
+ 		storyid = self.regextrim(self.page, '&lt;a href=&quot;plot/', '(&quot;&gt;|[&amp;])')
+@@ -55,12 +55,12 @@
+ 		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+ 	def get_year(self):
+-		self.year = gutils.trim(self.page,&quot;Erscheinungsjahr: &quot;,&quot;&lt;/a&gt;&quot;)
++		self.year = gutils.trim(self.page,&quot;Erscheinungsjahr:&quot;,&quot;&lt;/a&gt;&quot;)
+ 		self.year = gutils.strip_tags(self.year)
+ 
+ 	def get_runtime(self):
+ 		# from imdb
+-		self.runtime = gutils.trim(self.imdb_page, '&lt;h5&gt;L&auml;nge:&lt;/h5&gt;', ' min')
++		self.runtime = gutils.trim(self.imdb_page, '&lt;h5&gt;L&auml;nge:&lt;/h5&gt;', ' Min')
+ 
+ 	def get_genre(self):
+ 		self.genre = gutils.trim(self.page,&quot;Genre(s):&quot;,&quot;&lt;/table&gt;&quot;)
+@@ -101,7 +101,7 @@
+ 		self.trailer = &quot;&quot;
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page,&quot;Herstellungsland: &quot;,&quot;&lt;/a&gt;&quot;)
++		self.country = gutils.trim(self.page,&quot;Herstellungsland:&quot;,&quot;&lt;/a&gt;&quot;)
+ 
+ 	def get_rating(self):
+ 		self.rating = gutils.trim(self.page,&quot;&lt;br&gt;Note: &quot;,&quot;&nbsp;&quot;)
+@@ -142,7 +142,7 @@
+ 		if (elements[0]&lt;&gt;''):
+ 			for element in elements:
+ 				elementid = gutils.trim(element,'&lt;a href=&quot;','&quot;')
+-				if not elementid is None:
++				if not elementid is None and not elementid == '':
+ 					self.ids.append(elementid)
+ 					elementname = gutils.clean(element)
+ 					p1 = string.find(elementname, '&gt;')
+@@ -162,7 +162,7 @@
+ 	test_configuration = {
+ 		'Rocky Balboa'			: 1,
+ 		'Arahan'				: 3,
+-		'Ein gl&#252;ckliches Jahr'	: 1
++		'gl&#252;ckliches'			: 2
+ 	}
+ 
+ class PluginTest:
+@@ -286,7 +286,7 @@
+ 			'notes'				: False,
+ 			'runtime'			: 90,
+ 			'image'				: True,
+-			'rating'			: 7
++			'rating'			: 6
+ 		},
+ 		'film/54088,Arahan' : { 
+ 			'title' 			: 'Arahan',
+@@ -294,7 +294,7 @@
+ 			'director'			: 'Ryoo Seung-wan',
+ 			'plot' 				: True,
+ 			'cast'				: 'Ryoo Seung-beom\n\
+-Yoon So-yi' + _(' as ') + 'Wi-jin\n\
++Yoon Soy' + _(' as ') + 'Wi-jin\n\
+ Ahn Sung-kee' + _(' as ') + 'Ja-woon\n\
+ Jung Doo-hong' + _(' as ') + 'Heuk-Woon\n\
+ Yun Ju-sang\n\
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000444.html">[Griffith-svn] r956 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000446.html">[Griffith-svn] r958 - branches/0.9.x branches/0.9.x/glade	branches/0.9.x/lib trunk trunk/glade trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#445">[ date ]</a>
+              <a href="thread.html#445">[ thread ]</a>
+              <a href="subject.html#445">[ subject ]</a>
+              <a href="author.html#445">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,1539 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1392 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1392%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C201001092245.o09MjI1b020290%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000857.html">
+   <LINK REL="Next"  HREF="000859.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1392 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1392%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C201001092245.o09MjI1b020290%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1392 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  9 23:45:18 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000857.html">[Griffith-svn] r1391 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000859.html">[Griffith-svn] r1394 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#858">[ date ]</a>
+              <a href="thread.html#858">[ thread ]</a>
+              <a href="subject.html#858">[ subject ]</a>
+              <a href="author.html#858">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2010-01-09 23:45:16 +0100 (Sat, 09 Jan 2010)
+New Revision: 1392
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/lib/dbupgrade.py
+   trunk/lib/gutils.py
+   trunk/lib/main_treeview.py
+   trunk/lib/movie.py
+   trunk/lib/widgets.py
+Log:
+* Replace &quot;Aspect ratio&quot; field with &quot;Resolution&quot; (aspect ratio is hidden for now)
+* pep8ify few more files
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/ChangeLog	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -6,6 +6,8 @@
+ 
+ 
+ 2010-01-09  Piotr O&#380;arowski
++	* Replace &quot;Aspect ratio&quot; field with &quot;Resolution&quot; (aspect ratio is hidden
++	  for now)
+ 	* MyMoviesIt movie plugin updated (thanks to FiloSottile)
+ 
+ 2010-01-06  Piotr O&#380;arowski
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/glade/griffith.glade	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -934,7 +934,7 @@
+                             &lt;property name=&quot;column_spacing&quot;&gt;5&lt;/property&gt;
+                             &lt;property name=&quot;row_spacing&quot;&gt;2&lt;/property&gt;
+                             &lt;child&gt;
+-                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_ratio&quot;&gt;
++                              &lt;widget class=&quot;GtkLabel&quot; id=&quot;m_resolution&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+@@ -972,7 +972,7 @@
+                               &lt;widget class=&quot;GtkLabel&quot; id=&quot;label17&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;xalign&quot;&gt;0&lt;/property&gt;
+-                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Aspect ratio&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Resolution&lt;/property&gt;
+                               &lt;/widget&gt;
+                               &lt;packing&gt;
+                                 &lt;property name=&quot;top_attach&quot;&gt;9&lt;/property&gt;
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/lib/dbupgrade.py	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -32,6 +32,7 @@
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
++
+ @gutils.popup_message(_('Upgrading database...'))
+ def upgrade_database(self, version, config):
+     &quot;&quot;&quot;Create new db or update existing one to current format&quot;&quot;&quot;
+@@ -57,6 +58,7 @@
+         db.tables.media.insert(bind=b).execute(name=u'HD DVD')
+         db.tables.media.insert(bind=b).execute(name=u'Blu-ray')
+         db.tables.ratios.insert(bind=b).execute(name=u'16:9')
++        db.tables.ratios.insert(bind=b).execute(name=u'16:10')
+         db.tables.ratios.insert(bind=b).execute(name=u'4:3')
+         db.tables.acodecs.insert(bind=b).execute(name=u'AC-3 Dolby audio')
+         db.tables.acodecs.insert(bind=b).execute(name=u'OGG')
+@@ -142,9 +144,9 @@
+         log.info('... adding new columns')
+         # common SQL statements
+         queries = {'poster_md5': 'ALTER TABLE movies ADD poster_md5 VARCHAR(32) NULL REFERENCES posters(md5sum);',
+-                   'ratio_id'  : 'ALTER TABLE movies ADD ratio_id INTEGER NULL REFERENCES ratios(ratio_id);',
++                   'ratio_id': 'ALTER TABLE movies ADD ratio_id INTEGER NULL REFERENCES ratios(ratio_id);',
+                    'screenplay': 'ALTER TABLE movies ADD screenplay VARCHAR(256) NULL;',
+-                   'cameraman' : 'ALTER TABLE movies ADD cameraman VARCHAR(256) NULL;'}
++                   'cameraman': 'ALTER TABLE movies ADD cameraman VARCHAR(256) NULL;'}
+         # if needed some db specific SQL statements
+         if e_type == 'mysql':
+             pass
+@@ -156,7 +158,7 @@
+             except Exception, e:
+                 log.error(&quot;Cannot add '%s' column: %s&quot;, key, e)
+                 return False
+-        
++
+         log.info('... saving posters in database')
+         posters_dir = get_old_posters_location(self.data_dir, config, clean_config=True)
+         updated = {}
+@@ -166,13 +168,13 @@
+             if poster_file_name in updated:
+                 continue
+             if os.path.isfile(poster_file_name):
+-                poster_md5  = gutils.md5sum(file(poster_file_name, 'rb'))
++                poster_md5 = gutils.md5sum(file(poster_file_name, 'rb'))
+                 poster = self.session.query(db.Poster).filter_by(md5sum=poster_md5).first()
+                 if not poster:
+                     poster = db.Poster(md5sum=poster_md5, data=file(poster_file_name, 'rb').read())
+                     self.session.add(poster)
+ 
+-                update_query = movies_table.update(movies_table.c.image==movie.image, {'poster_md5': poster_md5, 'image': None}, bind=b)
++                update_query = movies_table.update(movies_table.c.image == movie.image, {'poster_md5': poster_md5, 'image': None}, bind=b)
+ 
+                 try:
+                     # yeah, we're commiting inside the loop,
+@@ -190,7 +192,7 @@
+                         log.warn(&quot;cannot remove %s&quot;, poster_file_name)
+             else:
+                 log.warn(&quot;file not found: %s)&quot;, movie.image)
+-                update_query = movies_table.update(movies_table.c.image==movie.image, {'image': None}, bind=b)
++                update_query = movies_table.update(movies_table.c.image == movie.image, {'image': None}, bind=b)
+                 update_query.execute()
+                 updated[poster_file_name] = True
+         del updated
+@@ -203,7 +205,7 @@
+     if version == 3:    # fix changes between v3 and v4
+         version += 1
+         log.info(&quot;Upgrading database to version %d...&quot;, version)
+-        
++
+         log.info('... adding new columns')
+         # common SQL statements
+         queries = {'barcode': 'ALTER TABLE movies ADD barcode VARCHAR(32) NULL;',
+@@ -221,11 +223,11 @@
+         db_version.value = unicode(version)
+         self.session.add(db_version)
+         self.session.commit()
+-    
++
+     if version == 4:    # fix changes between v4 and v5
+         version += 1
+         log.info(&quot;Upgrading database to version %d...&quot;, version)
+-        
++
+         log.info('... deleting old filters')
+         # new format, filters were introduced in -beta so we'll free to delete them without warning
+         query = 'DELETE FROM filters;'
+@@ -243,6 +245,7 @@
+ # for Griffith &lt;= 0.6.2 compatibility
+ # ---------------------------------------------------
+ 
++
+ def convert_from_old_db(config, source_file, destination_file, locations):    #{{{
+     &quot;&quot;&quot;
+     convert .gri database into .bd one
+@@ -336,8 +339,8 @@
+     old_cursor.execute(&quot;DELETE FROM collections WHERE name = ''&quot;)
+     old_cursor.execute(&quot;DELETE FROM collections WHERE name = 'None'&quot;)
+     old_cursor.execute(&quot;DELETE FROM languages WHERE name = ''&quot;)
+-    
+-    config.set('type','sqlite', section='database')
++
++    config.set('type', 'sqlite', section='database')
+     config.set('file', 'griffith.db', section='database')
+     config['posters'] = 'posters'
+     config.set('color', 0, section='defaults')
+@@ -350,7 +353,7 @@
+     new_db = GriffithSQL(config, locations['home'], fallback=False)
+ 
+     # collections
+-    collection_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
++    collection_mapper = {'': None, u'': None, 0: None, '0': None, -1: None, '-1': None}
+     old_cursor.execute(&quot;SELECT id, name FROM collections;&quot;) # loaned status will be set later - buggy databases :-(
+     for i in old_cursor.fetchall():
+         o = db.Collection(name=i[1])
+@@ -361,9 +364,9 @@
+             log.error(e)
+             continue
+         collection_mapper[i[0]] = o.collection_id
+-    
++
+     # volumes
+-    volume_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
++    volume_mapper = {'': None, u'': None, 0: None, '0': None, -1: None, '-1': None}
+     old_cursor.execute(&quot;SELECT id, name FROM volumes;&quot;) # loaned status will be set later - buggy databases :-(
+     for i in old_cursor.fetchall():
+         o = db.Volume(name=i[1])
+@@ -387,9 +390,9 @@
+             log.error(e)
+             continue
+         person_mapper[i[0]] = o.person_id
+-    
++
+     # languages
+-    language_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
++    language_mapper = {'': None, u'': None, 0: None, '0': None, -1: None, '-1': None}
+     old_cursor.execute(&quot;SELECT id, name FROM languages;&quot;)
+     for i in old_cursor.fetchall():
+         o = new_db.session.query(db.Lang).filter_by(name=i[1]).first()
+@@ -406,7 +409,7 @@
+             language_mapper[i[0]] = o.lang_id
+ 
+     # media
+-    medium_mapper = {'':None, u'':None, 0:None, '0':None, -1:None, '-1':None}
++    medium_mapper = {'': None, u'': None, 0: None, '0': None, -1: None, '-1': None}
+     old_cursor.execute(&quot;SELECT id, name FROM media;&quot;)
+     for i in old_cursor.fetchall():
+         o = new_db.session.query(db.Medium).filter_by(name=i[1]).first()
+@@ -421,7 +424,7 @@
+                 log.error(e)
+                 continue
+             medium_mapper[i[0]] = o.medium_id
+-    
++
+     # tags
+     tag_mapper = {}
+     old_cursor.execute(&quot;SELECT id, name FROM tags;&quot;)
+@@ -438,7 +441,7 @@
+                 log.error(e)
+                 continue
+             tag_mapper[i[0]] = o.tag_id
+-    
++
+     # movies
+     movie_mapper = {}
+     old_cursor.execute(&quot;&quot;&quot;
+@@ -450,9 +453,9 @@
+     for i in old_cursor.fetchall():
+         o = db.Movie()
+         o.number = digits_only(i[6])
+-        if volume_mapper.has_key(i[1]):
++        if i[1] in volume_mapper:
+             o.volume_id = volume_mapper[i[1]]
+-        if collection_mapper.has_key(i[2]):
++        if i[2] in collection_mapper:
+             o.collection_id = collection_mapper[i[2]]
+         o.o_title = i[3][:255]
+         o.title = i[4][:255]
+@@ -471,7 +474,7 @@
+         o.trailer = i[18][:255]
+         o.rating = digits_only(i[19])
+         #o.loaned = bool(i[20]) # updated later
+-        if medium_mapper.has_key(int(i[21])):
++        if int(i[21]) in medium_mapper:
+             o.medium_id = medium_mapper[int(i[21])]
+         o.media_num = digits_only(i[22])
+         o.notes = i[23]
+@@ -480,7 +483,7 @@
+         o.cond = digits_only(i[26], 5)
+         o.color = digits_only(i[27], 3)
+         o.layers = digits_only(i[28], 4)
+-        
++
+         try:
+             new_db.session.add(o)
+             new_db.session.commit()
+@@ -503,7 +506,7 @@
+             except Exception, e:
+                 log.error(e)
+                 continue
+-    
++
+     # movie lang
+     old_cursor.execute(&quot;SELECT movie_id, lang_id, type FROM movie_lang WHERE movie_id IN (SELECT id FROM movies);&quot;)
+     for i in old_cursor.fetchall():
+@@ -538,9 +541,9 @@
+                 log.error(e)
+                 continue
+         if int(i[1]) == 0:
+-            if vol is not None and len(vol.movies)&gt;0:
++            if vol is not None and len(vol.movies) &gt; 0:
+                 m = vol.movies[0]
+-            elif col is not None and len(col.movies)&gt;0:
++            elif col is not None and len(col.movies) &gt; 0:
+                 m = col.movies[0]
+             else:
+                 log.warn(&quot;Cannot find associated movie for this loan (%s)&quot; % i)
+@@ -551,7 +554,7 @@
+             except Exception, e:
+                 log.error(e)
+                 continue
+-        
++
+         l = db.Loan()
+         l.person_id = person_mapper[i[0]]
+         l.date = str(i[4])[:10]
+@@ -560,7 +563,7 @@
+             l.return_date = None
+         else:
+             l.return_date = str(i[5])[:10]
+-        
++
+         # update volume / collection status
+         if int(i[2]) &gt; 0:
+             l.volume_id = volume_mapper[i[2]]
+@@ -572,7 +575,7 @@
+             if not_returned:
+                 col.loaned = True
+                 col.save()
+-        l.save();
++        l.save()
+         m.loans.append(l)
+         try:
+             new_db.session.add(m)
+@@ -584,6 +587,7 @@
+     return new_db
+ #}}}
+ 
++
+ def get_old_posters_location(home_dir, config, clean_config=False):
+     if config.get('posters', None) is not None:
+         dirname = config.get('posters')
+@@ -599,4 +603,3 @@
+         config.remove_option('posters')
+         config.save()
+     return os.path.join(home_dir, dirname)
+-
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/lib/gutils.py	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -222,11 +222,6 @@
+     return text
+ 
+ 
+-def save_pixmap(self, pixmap, filename):
+-    &quot;&quot;&quot;XXX: deprecated&quot;&quot;&quot;
+-    pixmap.save(filename, 'jpeg', {'quality': '70'})
+-
+-
+ def clean(text):
+     t = strip_tags(text)
+     t = string.replace(t, '&nbsp;', ' ')
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/lib/main_treeview.py	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -96,8 +96,7 @@
+         w['year'].set_text(str(item['year']))
+     else:
+         w['year'].set_text('')
+-    if False: # FIXME: add a field in main window
+-    #if 'resolution' in item and item['resolution']:
++    if 'resolution' in item and item['resolution']:
+         if self.config.get('use_resolution_alias', True):
+             w['resolution'].set_text(item['resolution'])
+         elif 'height' in item and item['height'] and 'width' in item and item['width']:
+@@ -105,7 +104,7 @@
+         else: # failback to 'resolution'
+             w['resolution'].set_text(item['resolution'])
+     else:
+-        #w['resolution'].set_text('') # FIXME: add a field in main window
++        w['resolution'].set_text('')
+         pass
+     if 'runtime' in item and item['runtime']:
+         w['runtime'].set_text(str(int(item['runtime'])))
+@@ -219,13 +218,14 @@
+             w['vcodec'].set_text('')
+     else:
+         w['vcodec'].set_text('')
+-    if 'ratio_id' in item:
+-        if item.ratio is not None:
+-            w['ratio'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item.ratio.name))
+-        else:
+-            w['ratio'].set_text('')
+-    else:
+-        w['ratio'].set_text('')
++    # TODO: add widgets in main and edit windows
++    #if 'ratio_id' in item:
++    #    if item.ratio is not None:
++    #        w['ratio'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % gutils.html_encode(item.ratio.name))
++    #    else:
++    #        w['ratio'].set_text('')
++    #else:
++    #    w['ratio'].set_text('')
+ 
+     # poster
+     if 'poster_md5' in item and item['poster_md5']:
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/lib/movie.py	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -21,19 +21,20 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-from urllib import *
++import logging
++import os
++import string
+ import sys
+-import string
+-import gtk
+-import os
+-import os.path
++import tempfile
+ import threading
+ import time
+-import tempfile
+-import logging
+-log = logging.getLogger(&quot;Griffith&quot;)
++from urllib import *
++import gtk
+ import gutils
+ 
++log = logging.getLogger(&quot;Griffith&quot;)
++
++
+ class Movie(object):
+     cast = None
+     classification = None
+@@ -57,7 +58,7 @@
+     cameraman = None
+     resolution = None
+     barcode = None
+-    
++
+     movie_id = None
+     debug = False
+     locations = None
+@@ -72,59 +73,81 @@
+     encode = 'iso-8859-1'
+     fields_to_fetch = []
+     progress = None
+-    
++
+     # functions that plugin should implement: {{{
+     def initialize(self):
+         pass
++
+     def get_barcode(self):
+         pass
++
+     def get_cameraman(self):
+         pass
++
+     def get_cast(self):
+         pass
++
+     def get_classification(self):
+         pass
++
+     def get_country(self):
+         pass
++
+     def get_director(self):
+         pass
++
+     def get_genre(self):
+         pass
++
+     def get_image(self):
+         pass
++
+     def get_notes(self):
+         pass
++
+     def get_o_site(self):
+         pass
++
+     def get_o_title(self):
+         pass
++
+     def get_plot(self):
+         pass
++
+     def get_rating(self):
+         pass
++
+     def get_resolution(self):
+         pass
++
+     def get_runtime(self):
+         pass
++
+     def get_screenplay(self):
+         pass
++
+     def get_site(self):
+         pass
++
+     def get_studio(self):
+         pass
++
+     def get_title(self):
+         pass
++
+     def get_trailer(self):
+         pass
++
+     def get_year(self):
+         pass
+     #}}}
+ 
+     def __getitem__(self, key):
+-        return getattr(self,key)
++        return getattr(self, key)
++
+     def __setitem__(self, key, value):
+-        setattr(self,key,value)
+-    
++        setattr(self, key, value)
++
+     def get_movie(self, parent_window=None):
+         try:
+             #
+@@ -133,7 +156,7 @@
+             if self.progress is None:
+                 self.progress = Progress(parent_window)
+             self.progress.set_data(parent_window, _(&quot;Fetching data&quot;), _(&quot;Wait a moment&quot;), True)
+-            #            
++            #
+             # get the page
+             #
+             if not self.open_page(parent_window):
+@@ -209,7 +232,7 @@
+             except:
+                 self.image = &quot;&quot;
+                 try:
+-                    os.remove(&quot;%s.jpg&quot; % tmp_dest )
++                    os.remove(&quot;%s.jpg&quot; % tmp_dest)
+                 except:
+                     log.info(&quot;Can't remove %s file&quot; % tmp_dest)
+         else:
+@@ -261,7 +284,7 @@
+                 self[i] = gutils.clean(self[i])
+                 if not isinstance(self[i], unicode):
+                     self[i] = gutils.gdecode(self[i], self.encode)
+-        
++
+             if 'o_title' in self.fields_to_fetch and self.o_title is not None:
+                 if self.o_title[:4] == u'The ':
+                     self.o_title = self.o_title[4:] + u', The'
+@@ -272,6 +295,7 @@
+             # close the progress dialog which was opened in get_movie
+             self.progress.hide()
+ 
++
+ class SearchMovie(object):
+     page = None
+     number_results = None
+@@ -297,7 +321,7 @@
+             if self.progress is None:
+                 self.progress = Progress(parent_window)
+             self.progress.set_data(parent_window, _(&quot;Searching&quot;), _(&quot;Wait a moment&quot;), True)
+-            #            
++            #
+             # call the plugin specific search method
+             #
+             return self.search(parent_window)
+@@ -305,14 +329,14 @@
+             # dont forget to hide the progress dialog
+             self.progress.hide()
+ 
+-    def open_search(self,parent_window):
++    def open_search(self, parent_window):
+         self.titles = [&quot;&quot;]
+         self.ids = [&quot;&quot;]
+         if self.url.find('%s') &gt; 0:
+             self.url = self.url % self.title
+             self.url = string.replace(self.url, ' ', '%20')
+         else:
+-            self.url = string.replace(self.url+self.title, ' ', '%20')
++            self.url = string.replace(self.url + self.title, ' ', '%20')
+         try:
+             url = self.url.encode(self.encode)
+         except UnicodeEncodeError:
+@@ -344,7 +368,9 @@
+         urlcleanup()
+         return True
+ 
++
+ class Retriever(threading.Thread):
++
+     def __init__(self, URL, parent_window, progress, destination=None):
+         self.URL = URL
+         self.html = None
+@@ -367,16 +393,16 @@
+             self.join()
+ 
+     def hook(self, count, blockSize, totalSize):
+-        if totalSize ==-1:
++        if totalSize == -1:
+             pass
+         else:
+             try:
+-                downloaded_percentage = min((count*blockSize*100)/totalSize, 100)
++                downloaded_percentage = min((count * blockSize * 100) / totalSize, 100)
+             except:
+                 downloaded_percentage = 100
+             if count != 0:
+-                downloaded_kbyte = int(count * blockSize/1024.0)
+-                filesize_kbyte = int(totalSize/1024.0)
++                downloaded_kbyte = int(count * blockSize / 1024.0)
++                filesize_kbyte = int(totalSize / 1024.0)
+ 
+ #
+ # use own derived URLopener class because we need to set a correct User-Agent
+@@ -384,15 +410,19 @@
+ # which not all sites accepting. (zelluloid.de for example)
+ #
+ _uaurlopener = None
++
++
+ def urlretrieve(url, filename=None, reporthook=None, data=None):
+     global _uaurlopener
+     if not _uaurlopener:
+         _uaurlopener = UAFancyURLopener()
+     return _uaurlopener.retrieve(url, filename, reporthook, data)
+ 
++
+ class UAFancyURLopener(FancyURLopener):
+     # use Firefox 3.0 User-Agent string from Windows XP
+     version = 'Mozilla/5.0 (Windows; U; Windows NT 6.0) Gecko/2008052906 Firefox/3.0'
++
+     def __init__(self, *args, **kwargs):
+         FancyURLopener.__init__(self, *args, **kwargs)
+         # additional HTTP headers to work around the html file compression which
+@@ -400,8 +430,10 @@
+         self.addheaders.append(('Cache-Control', 'no-cache'))
+         self.addheaders.append(('Pragma', 'no-cache'))
+ 
++
+ class Progress:
+-    def __init__(self, window, title = '', message = ''):
++
++    def __init__(self, window, title='', message=''):
+         self.status = False
+         self.dialog = gtk.Dialog(title, window, gtk.DIALOG_MODAL, ())
+         self.dialog.set_urgency_hint(False)
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2010-01-09 21:54:24 UTC (rev 1391)
++++ trunk/lib/widgets.py	2010-01-09 22:45:16 UTC (rev 1392)
+@@ -25,6 +25,7 @@
+ import gtk
+ import advfilter
+ 
++
+ def define_widgets(self, gladefile):
+     get = lambda x: gladefile.get_widget(x)
+     self.widgets = {}
+@@ -41,108 +42,109 @@
+ 
+ 
+     self.widgets['movie'] = {#{{{
+-        'cast'                   : get('m_cast'),
+-        'classification'         : get('m_classification'),
+-        'cameraman'              : get('m_cameraman'),
+-        'collection'             : get('m_collection'),
+-        'color'                  : get('m_color'),
+-        'condition'              : get('m_condition'),
+-        'country'                : get('m_country'),
+-        'director'               : get('m_director'),
+-        'genre'                  : get('m_genre'),
+-        'imdb'                   : get('m_imdb'),
+-        'layers'                 : get('m_layers'),
+-        'loan_info'              : get('loan_information'),
+-        'medium'                 : get('m_medium'),
+-        'notes'                  : get('m_notes'),
+-        'number'                 : get('m_number'),
+-        'o_title'                : get('m_o_title'),
+-        'picture'                : get('m_picture_image'),
+-        'picture_button'         : get('m_picture'),
+-        'plot'                   : get('m_plot'),
+-        'region'                 : get('m_region'),
+-        'runtime'                : get('m_runtime'),
+-        'screenplay'             : get('m_screenplay'),
+-        'seen_icon'              : get('m_seen_icon'),
+-        'site'                   : get('m_site'),
+-        'studio'                 : get('m_studio'),
+-        'ratio'                  : get('m_ratio'),
+-        'tags'                   : get('m_tags'),
+-        'title'                  : get('m_title'),
+-        'trailer'                : get('m_trailer'),
+-        'vcodec'                 : get('m_vcodec'),
+-        'volume'                 : get('m_volume'),
+-        'year'                   : get('m_year'),
+-        'audio_vbox'             : get('m_audio_vbox'),
+-        'subtitle_vbox'          : get('m_subtitle_vbox'),
+-        'show_collection_button' : get('m_show_collection_button'),
+-        'show_volume_button'     : get('m_show_volume_button'),
+-        'go_o_site_button'       : get('go_o_site'),
+-        'go_site_button'         : get('go_site'),
+-        'go_trailer_button'      : get('go_trailer'),
+-        'return_button'          : get('return_button'),
+-        'loan_button'            : get('loan_button'),
+-        'loan_history'           : get('loan_history'),
+-        'loan_to'                : get('loan_to'),
+-        'email_reminder_button'  : get('b_email_reminder'),
+-        'image_rating'           : get('m_image_rating'),
++        'cast': get('m_cast'),
++        'classification': get('m_classification'),
++        'cameraman': get('m_cameraman'),
++        'collection': get('m_collection'),
++        'color': get('m_color'),
++        'condition': get('m_condition'),
++        'country': get('m_country'),
++        'director': get('m_director'),
++        'genre': get('m_genre'),
++        'imdb': get('m_imdb'),
++        'layers': get('m_layers'),
++        'loan_info': get('loan_information'),
++        'medium': get('m_medium'),
++        'notes': get('m_notes'),
++        'number': get('m_number'),
++        'o_title': get('m_o_title'),
++        'picture': get('m_picture_image'),
++        'picture_button': get('m_picture'),
++        'plot': get('m_plot'),
++        'region': get('m_region'),
++        'resolution': get('m_resolution'),
++        'runtime': get('m_runtime'),
++        'screenplay': get('m_screenplay'),
++        'seen_icon': get('m_seen_icon'),
++        'site': get('m_site'),
++        'studio': get('m_studio'),
++        'ratio': get('m_ratio'),
++        'tags': get('m_tags'),
++        'title': get('m_title'),
++        'trailer': get('m_trailer'),
++        'vcodec': get('m_vcodec'),
++        'volume': get('m_volume'),
++        'year': get('m_year'),
++        'audio_vbox': get('m_audio_vbox'),
++        'subtitle_vbox': get('m_subtitle_vbox'),
++        'show_collection_button': get('m_show_collection_button'),
++        'show_volume_button': get('m_show_volume_button'),
++        'go_o_site_button': get('go_o_site'),
++        'go_site_button': get('go_site'),
++        'go_trailer_button': get('go_trailer'),
++        'return_button': get('return_button'),
++        'loan_button': get('loan_button'),
++        'loan_history': get('loan_history'),
++        'loan_to': get('loan_to'),
++        'email_reminder_button': get('b_email_reminder'),
++        'image_rating': get('m_image_rating'),
+     }
+     get('m_seen_icon_eventbox').connect('button_press_event', self.on_m_seen_icon_button_press_event)
+     #}}}
+ 
+     self.widgets['add'] = {#{{{
+-        'window'           : get('add_movie'),
+-        'notebook'         : get('notebook_add'),
+-        'barcode'          : get('am_barcode'),
+-        'classification'   : get('am_classification'),
+-        'cameraman'        : get('am_cameraman'),
+-        'collection'       : get('am_collection_combo'),
+-        'color'            : get('am_color'),
+-        'condition'        : get('am_condition'),
+-        'country'          : get('am_country'),
+-        'director'         : get('am_director'),
+-        'discs'            : get('am_discs'),
+-        'genre'            : get('am_genre'),
+-        'site'             : get('am_imdb'),
+-        'layers'           : get('am_layers'),
+-        'media'            : get('am_media'),
+-        'medium_vbox'      : get('am_medium_vbox'),
+-        'number'           : get('am_number'),
+-        'notes'            : get('am_obs'),
+-        'o_title'          : get('am_original_title'),
+-        'picture'          : get('am_image'),
+-        'image'            : get('am_hide_image_name'),
+-        'plot'             : get('am_plot'),
+-        'plugin_desc'      : get('am_plugin_desc'),
+-        'plugin_image'     : get('am_plugin_image'),
+-        #'ratio'            : get('am_ratio'), # TODO
+-        'region'           : get('am_region'),
+-        'resolution'       : get('am_resolution'),
+-        'runtime'          : get('am_runtime'),
+-        'seen'             : get('am_seen'),
+-        'o_site'           : get('am_site'),
+-        'screenplay'       : get('am_screenplay'),
+-        'source'           : get('am_source'),
+-        'studio'           : get('am_studio'),
+-        'tag_vbox'         : get('am_tag_vbox'),
+-        'title'            : get('am_title'),
+-        'trailer'          : get('am_trailer'),
+-        'vcodec'           : get('am_vcodec'),
+-        'volume'           : get('am_volume_combo'),
+-        'cast'             : get('am_with'),
+-        'year'             : get('am_year'),
+-        'image_rating'     : get('image_add_rating'),
+-        'rating_slider'    : get('rating_scale_add'),
+-        'lang_menu'        : get('lang_menu'),
+-        'lang_treeview'    : get('lang_treeview'),
+-        'b_get_from_web'   : get('get_from_web'),
+-        'c_web_source'     : get('combo_source'), # c_web_source
+-        'delete_poster'    : get('t_delete_poster'),
+-        'add_button'       : get('am_add_button'),
+-        'add_close_button' : get('am_add_close_button'),
+-        'clear_button'     : get('am_clear_button'),
+-        'save_button'      : get('am_save_button'),
+-        'cb_only_empty'    : get('am_cb_only_empty'),
++        'window': get('add_movie'),
++        'notebook': get('notebook_add'),
++        'barcode': get('am_barcode'),
++        'classification': get('am_classification'),
++        'cameraman': get('am_cameraman'),
++        'collection': get('am_collection_combo'),
++        'color': get('am_color'),
++        'condition': get('am_condition'),
++        'country': get('am_country'),
++        'director': get('am_director'),
++        'discs': get('am_discs'),
++        'genre': get('am_genre'),
++        'site': get('am_imdb'),
++        'layers': get('am_layers'),
++        'media': get('am_media'),
++        'medium_vbox': get('am_medium_vbox'),
++        'number': get('am_number'),
++        'notes': get('am_obs'),
++        'o_title': get('am_original_title'),
++        'picture': get('am_image'),
++        'image': get('am_hide_image_name'),
++        'plot': get('am_plot'),
++        'plugin_desc': get('am_plugin_desc'),
++        'plugin_image': get('am_plugin_image'),
++        #'ratio': get('am_ratio'), # TODO
++        'region': get('am_region'),
++        'resolution': get('am_resolution'),
++        'runtime': get('am_runtime'),
++        'seen': get('am_seen'),
++        'o_site': get('am_site'),
++        'screenplay': get('am_screenplay'),
++        'source': get('am_source'),
++        'studio': get('am_studio'),
++        'tag_vbox': get('am_tag_vbox'),
++        'title': get('am_title'),
++        'trailer': get('am_trailer'),
++        'vcodec': get('am_vcodec'),
++        'volume': get('am_volume_combo'),
++        'cast': get('am_with'),
++        'year': get('am_year'),
++        'image_rating': get('image_add_rating'),
++        'rating_slider': get('rating_scale_add'),
++        'lang_menu': get('lang_menu'),
++        'lang_treeview': get('lang_treeview'),
++        'b_get_from_web': get('get_from_web'),
++        'c_web_source': get('combo_source'), # c_web_source
++        'delete_poster': get('t_delete_poster'),
++        'add_button': get('am_add_button'),
++        'add_close_button': get('am_add_close_button'),
++        'clear_button': get('am_clear_button'),
++        'save_button': get('am_save_button'),
++        'cb_only_empty': get('am_cb_only_empty'),
+     }
+     self.widgets['add']['window'].connect('delete_event', self.on_delete_event_am)
+     self.widgets['add']['lang_treeview'].connect('button_press_event', self.on_lang_treeview_button_press_event)
+@@ -153,105 +155,105 @@
+     #}}}
+ 
+     self.widgets['advfilter'] = {#{{{
+-        'window'           : get('w_advfilter'),
+-        'advfilter_vbox'   : get('advfilter_rules_vbox'),
+-        'rb_seen'          : get('af_rb_seen'),
+-        'rb_seen_only'     : get('af_rb_seen_only'),
+-        'rb_seen_only_n'   : get('af_rb_seen_only_n'),
+-        'rb_loaned'        : get('af_rb_loaned'),
+-        'rb_loaned_only'   : get('af_rb_loaned_only'),
+-        'rb_loaned_only_n' : get('af_rb_loaned_only_n'),
+-        'tags_vbox'        : get('af_tags_vbox'),
+-        'volumes_vbox'     : get('af_volumes_vbox'),
+-        'collections_vbox' : get('af_collections_vbox'),
+-        'loans_vbox'       : get('af_loans_vbox'),
+-        'dynamic_vbox'     : get('af_dynamic_vbox'),
+-        'add_button'       : get('af_add_button'),
+-        'tags_frame'       : get('af_frame_tags'),
+-        'volumes_frame'    : get('af_frame_volumes'),
++        'window': get('w_advfilter'),
++        'advfilter_vbox': get('advfilter_rules_vbox'),
++        'rb_seen': get('af_rb_seen'),
++        'rb_seen_only': get('af_rb_seen_only'),
++        'rb_seen_only_n': get('af_rb_seen_only_n'),
++        'rb_loaned': get('af_rb_loaned'),
++        'rb_loaned_only': get('af_rb_loaned_only'),
++        'rb_loaned_only_n': get('af_rb_loaned_only_n'),
++        'tags_vbox': get('af_tags_vbox'),
++        'volumes_vbox': get('af_volumes_vbox'),
++        'collections_vbox': get('af_collections_vbox'),
++        'loans_vbox': get('af_loans_vbox'),
++        'dynamic_vbox': get('af_dynamic_vbox'),
++        'add_button': get('af_add_button'),
++        'tags_frame': get('af_frame_tags'),
++        'volumes_frame': get('af_frame_volumes'),
+         'collections_frame': get('af_frame_collections'),
+-        'loans_frame'      : get('af_frame_loans'),
+-        'cb_name'          : get('af_cbe_name'),
+-        'name'             : get('af_cbe_name_entry'),
++        'loans_frame': get('af_frame_loans'),
++        'cb_name': get('af_cbe_name'),
++        'name': get('af_cbe_name_entry'),
+     }
+     self.widgets['advfilter']['window'].connect('delete_event', self.hide_advfilter_window)
+     self.widgets['advfilter']['window'].set_transient_for(self.widgets['window'])
+     #}}}
+ 
+     self.widgets['preferences'] = {#{{{
+-        'window'            : get('w_preferences'),
+-        'notebook'          : get('p_notebook'),
+-        'treeview'          : get('p_treeview'),
+-        'color'             : get('p_color'),
+-        'condition'         : get('p_condition'),
+-        'db_details'        : get('p_db_details'),
+-        'db_host'           : get('p_db_host'),
+-        'db_name'           : get('p_db_name'),
+-        'db_passwd'         : get('p_db_passwd'),
+-        'db_port'           : get('p_db_port'),
+-        'db_type'           : get('p_db_type'),
+-        'db_user'           : get('p_db_user'),
+-        'epdf_reader'       : get('pdf_reader_entry'),
+-        'font'              : get('p_font'),
+-        'layers'            : get('p_layers'),
+-        'media'             : get('p_media'),
+-        'region'            : get('p_region'),
+-        's_classification'  : get('p_s_classification'),
+-        's_country'         : get('p_s_country'),
+-        's_director'        : get('p_s_director'),
+-        's_genre'           : get('p_s_genre'),
+-        's_image'           : get('p_s_image'),
+-        's_notes'           : get('p_s_notes'),
+-        's_o_site'          : get('p_s_o_site'),
+-        's_o_title'         : get('p_s_o_title'),
+-        's_plot'            : get('p_s_plot'),
+-        's_rating'          : get('p_s_rating'),
+-        's_runtime'         : get('p_s_runtime'),
+-        's_site'            : get('p_s_site'),
+-        's_studio'          : get('p_s_studio'),
+-        's_title'           : get('p_s_title'),
+-        's_trailer'         : get('p_s_trailer'),
+-        's_cast'            : get('p_s_cast'),
+-        's_year'            : get('p_s_year'),
+-        's_screenplay'      : get('p_s_screenplay'),
+-        's_cameraman'       : get('p_s_cameraman'),
+-        's_resolution'      : get('p_s_resolution'),
+-        's_barcode'         : get('p_s_barcode'),
+-        's_limit'           : get('p_sp_s_limit'),
+-        'vcodec'            : get('p_vcodec'),
+-        'view_image'        : get('view_image'),
+-        'view_number'       : get('view_number'),
+-        'view_o_title'      : get('view_otitle'),
+-        'view_title'        : get('view_title'),
+-        'view_director'     : get('view_director'),
+-        'view_genre'        : get('view_genre'),
+-        'view_seen'         : get('view_seen'),
+-        'view_year'         : get('view_year'),
+-        'view_runtime'      : get('view_runtime'),
+-        'view_rating'       : get('view_rating'),
+-        'rating_image'      : get('rating_image'),
+-        'spellchecker'      : get('spellchecker_pref'),
+-        'spell_notes'       : get('spell_notes'),
+-        'spell_plot'        : get('spell_plot'),
+-        'spell_lang'        : get('spell_lang'),
+-        'vbox_spellchecker' : get('vbox_spellchecker'),
+-        'default_plugin'    : get('default_plugin'),
+-        'mail_smtp_server'  : get('mail_smtp_server'),
+-        'mail_use_auth'     : get('mail_use_auth'),
+-        'mail_username'     : get('mail_username'),
+-        'mail_password'     : get('mail_password'),
+-        'mail_email'        : get('mail_email'),
+-        'mail_smtp_port'    : get('mail_smtp_port'),
+-        'mail_use_tls'      : get('mail_use_tls'),
+-        'lang_name'         : get('lang_name_combo'),
+-        'tag_name'          : get('tag_name_combo'),
+-        'acodec_name'       : get('acodec_name_combo'),
+-        'achannel_name'     : get('achannel_name_combo'),
+-        'subformat_name'    : get('subformat_name_combo'),
+-        'medium_name'       : get('medium_name_combo'),
+-        'vcodec_name'       : get('vcodec_name_combo'),
+-        'sortby'            : get('p_sortby'),
+-        'sortby_reverse'    : get('p_sortby_reverse'),
++        'window': get('w_preferences'),
++        'notebook': get('p_notebook'),
++        'treeview': get('p_treeview'),
++        'color': get('p_color'),
++        'condition': get('p_condition'),
++        'db_details': get('p_db_details'),
++        'db_host': get('p_db_host'),
++        'db_name': get('p_db_name'),
++        'db_passwd': get('p_db_passwd'),
++        'db_port': get('p_db_port'),
++        'db_type': get('p_db_type'),
++        'db_user': get('p_db_user'),
++        'epdf_reader': get('pdf_reader_entry'),
++        'font': get('p_font'),
++        'layers': get('p_layers'),
++        'media': get('p_media'),
++        'region': get('p_region'),
++        's_classification': get('p_s_classification'),
++        's_country': get('p_s_country'),
++        's_director': get('p_s_director'),
++        's_genre': get('p_s_genre'),
++        's_image': get('p_s_image'),
++        's_notes': get('p_s_notes'),
++        's_o_site': get('p_s_o_site'),
++        's_o_title': get('p_s_o_title'),
++        's_plot': get('p_s_plot'),
++        's_rating': get('p_s_rating'),
++        's_runtime': get('p_s_runtime'),
++        's_site': get('p_s_site'),
++        's_studio': get('p_s_studio'),
++        's_title': get('p_s_title'),
++        's_trailer': get('p_s_trailer'),
++        's_cast': get('p_s_cast'),
++        's_year': get('p_s_year'),
++        's_screenplay': get('p_s_screenplay'),
++        's_cameraman': get('p_s_cameraman'),
++        's_resolution': get('p_s_resolution'),
++        's_barcode': get('p_s_barcode'),
++        's_limit': get('p_sp_s_limit'),
++        'vcodec': get('p_vcodec'),
++        'view_image': get('view_image'),
++        'view_number': get('view_number'),
++        'view_o_title': get('view_otitle'),
++        'view_title': get('view_title'),
++        'view_director': get('view_director'),
++        'view_genre': get('view_genre'),
++        'view_seen': get('view_seen'),
++        'view_year': get('view_year'),
++        'view_runtime': get('view_runtime'),
++        'view_rating': get('view_rating'),
++        'rating_image': get('rating_image'),
++        'spellchecker': get('spellchecker_pref'),
++        'spell_notes': get('spell_notes'),
++        'spell_plot': get('spell_plot'),
++        'spell_lang': get('spell_lang'),
++        'vbox_spellchecker': get('vbox_spellchecker'),
++        'default_plugin': get('default_plugin'),
++        'mail_smtp_server': get('mail_smtp_server'),
++        'mail_use_auth': get('mail_use_auth'),
++        'mail_username': get('mail_username'),
++        'mail_password': get('mail_password'),
++        'mail_email': get('mail_email'),
++        'mail_smtp_port': get('mail_smtp_port'),
++        'mail_use_tls': get('mail_use_tls'),
++        'lang_name': get('lang_name_combo'),
++        'tag_name': get('tag_name_combo'),
++        'acodec_name': get('acodec_name_combo'),
++        'achannel_name': get('achannel_name_combo'),
++        'subformat_name': get('subformat_name_combo'),
++        'medium_name': get('medium_name_combo'),
++        'vcodec_name': get('vcodec_name_combo'),
++        'sortby': get('p_sortby'),
++        'sortby_reverse': get('p_sortby_reverse'),
+     }
+     self.widgets['preferences']['treeview'].connect('button_press_event', self.on_p_tree_button_press_event)
+     self.widgets['preferences']['window'].connect('delete_event', self.on_delete_event_p)
+@@ -260,10 +262,10 @@
+     #}}}
+ 
+     self.widgets['results'] = {#{{{
+-        'window':   get('results'),
++        'window': get('results'),
+         'treeview': get('results_treeview'),
+-        'select':   get('results_select'),
+-        'cancel':   get('results_cancel'),
++        'select': get('results_select'),
++        'cancel': get('results_cancel'),
+     }
+     self.widgets['results']['window'].connect('delete_event', self.on_results_window_close)
+     self.widgets['results']['window'].set_transient_for(self.widgets['add']['window'])
+@@ -277,13 +279,13 @@
+ 
+     self.widgets['print_cover'] = {#{{{
+         # TODO: merge these two windows
+-        'window_simple'           : get('w_print_cover_simple'),
+-        'window_image'            : get('w_print_cover_image'),
+-        'cs_size'                 : get('cover_simple_size'),
+-        'cs_include_movie_number' : get('cover_simple_include_movie_number'),
+-        'cs_include_poster'       : get('cover_simple_include_poster'),
+-        'ci_size'                 : get('cover_image_size'),
+-        'ci_number'               : get('cover_image_number'),
++        'window_simple': get('w_print_cover_simple'),
++        'window_image': get('w_print_cover_image'),
++        'cs_size': get('cover_simple_size'),
++        'cs_include_movie_number': get('cover_simple_include_movie_number'),
++        'cs_include_poster': get('cover_simple_include_poster'),
++        'ci_size': get('cover_image_size'),
++        'ci_number': get('cover_image_number'),
+     }
+     self.widgets['print_cover']['window_simple'].connect('delete_event', self.on_delete_event_pcs)
+     self.widgets['print_cover']['window_image'].connect('delete_event', self.on_delete_event_pci)
+@@ -292,8 +294,8 @@
+     #}}}
+ 
+     self.widgets['people'] = {#{{{
+-        'window':    get('w_people'),
+-        'treeview':    get('p_treeview'),
++        'window': get('w_people'),
++        'treeview': get('p_treeview'),
+     }
+     self.widgets['people']['window'].connect('delete_event', self.on_delete_event_wp)
+     self.widgets['people']['window'].set_transient_for(self.widgets['window'])
+@@ -301,15 +303,15 @@
+ 
+     self.widgets['person'] = {#{{{
+         # TODO: merge these two windows
+-        'window'   : get('w_add_person'),
+-        'e_window' : get('w_edit_person'),
+-        'name'     : get('ap_name'),
+-        'email'    : get('ap_email'),
+-        'phone'    : get('ap_phone'),
+-        'e_name'   : get('ep_name'),
+-        'e_email'  : get('ep_email'),
+-        'e_phone'  : get('ep_phone'),
+-        'e_id'     : get('ep_id'),
++        'window': get('w_add_person'),
++        'e_window': get('w_edit_person'),
++        'name': get('ap_name'),
++        'email': get('ap_email'),
++        'phone': get('ap_phone'),
++        'e_name': get('ep_name'),
++        'e_email': get('ep_email'),
++        'e_phone': get('ep_phone'),
++        'e_id': get('ep_id'),
+     }
+     self.widgets['person']['window'].connect('delete_event', self.on_delete_event_ap)
+     self.widgets['person']['e_window'].connect('delete_event', self.on_delete_event_ep)
+@@ -318,31 +320,31 @@
+     #}}}
+ 
+     self.widgets['filter'] = {#{{{
+-        'text'       : get('filter_txt'),
+-        'criteria'   : get('filter_criteria'),
+-        'collection' : get('f_col'),
+-        'advfilter'  : get('f_advfilter'),
++        'text': get('filter_txt'),
++        'criteria': get('filter_criteria'),
++        'collection': get('f_col'),
++        'advfilter': get('f_advfilter'),
+     }#}}}
+ 
+     self.widgets['menu'] = {#{{{
+-        'fullscreen'      : get('menu_fullscreen'),
+-        'toolbar'         : get('menu_toolbar'),
+-        'ext_toolbar'     : get('menu_ext_toolbar'),
+-        'export'          : get('export_menu'),
+-        'import'          : get('import_menu'),
+-        'not_seen_movies' : get('seen_movies'),
+-        'loaned_movies'   : get('loaned_movies'),
+-        'all_movies'      : get('all_movies'),
+-        'loan'            : get('loan1'),
+-        'email'           : get('return1'),
+-        'return'          : get('e-mail_reminder1'),
++        'fullscreen': get('menu_fullscreen'),
++        'toolbar': get('menu_toolbar'),
++        'ext_toolbar': get('menu_ext_toolbar'),
++        'export': get('export_menu'),
++        'import': get('import_menu'),
++        'not_seen_movies': get('seen_movies'),
++        'loaned_movies': get('loaned_movies'),
++        'all_movies': get('all_movies'),
++        'loan': get('loan1'),
++        'email': get('return1'),
++        'return': get('e-mail_reminder1'),
+     }#}}}
+ 
+     self.widgets['popups'] = {#{{{
+-        'main'   : get('popup'),
+-        'loan'   : get('popup_loan'),
+-        'return' : get('popup_return'),
+-        'email'  : get('popup_email'),
++        'main': get('popup'),
++        'loan': get('popup_loan'),
++        'return': get('popup_return'),
++        'email': get('popup_email'),
+     }#}}}
+     self.widgets['extensions'] = {
+         'toolbar': get('ext_toolbar'),
+@@ -350,13 +352,13 @@
+         'preferences_vbox': get('p_extensions_vbox'),
+     }
+ 
+-    self.widgets['w_loan_to']     = get('w_loan_to')
++    self.widgets['w_loan_to'] = get('w_loan_to')
+     self.widgets['w_loan_to'].connect('delete_event', self.on_delete_event_lt)
+ 
+     self.widgets['poster_window'] = get('poster_window')
+     self.widgets['poster_window'].connect('delete_event', self.on_delete_event_pw)
+     self.widgets['poster_window'].set_transient_for(self.widgets['window'])
+-    self.widgets['big_poster']    = get('big_poster')
++    self.widgets['big_poster'] = get('big_poster')
+ 
+     #add some tooltips
+     self.widgets['tooltips'] = gtk.Tooltips()
+@@ -369,156 +371,157 @@
+ 
+     # define handlers for general events
+     gladefile.signal_autoconnect({#{{{
+-        'gtk_main_quit'                          : self.destroy,
+-        'on_window_state'                        : self.on_window_state,
+-        'on_configure'                           : self.on_configure,
+-        'on_about1_activate'                     : self.about_dialog,
+-        'on_quit1_activate'                      : self.destroy,
+-        'on_toolbar_quit_clicked'                : self.destroy,
+-        'on_toolbar_add_clicked'                 : self.add_movie,
+-        'on_cancel_add_movie_clicked'            : self.hide_add_window,
+-        'on_add1_activate'                       : self.add_movie,
+-        'on_add_movie_clicked'                   : self.add_movie_db,
+-        'on_add_movie_close_clicked'             : self.add_movie_close_db,
+-        'on_delete_movie_clicked'                : self.delete_movie,
+-        'on_delete1_movie_activate'              : self.delete_movie,
+-        'on_main_treeview_row_activated'         : self.treeview_clicked,
+-        'on_row_activated'                       : self.treeview_clicked,
+-        'on_get_from_web_clicked'                : self.get_from_web,
+-        'on_update_button_clicked'               : self.update_movie,
+-        'on_import_activate'                     : self.on_import_activate,
+-        'on_seen_activate'                       : self.toggle_seen,
+-        'on_fullscreen_activate'                 : self.toggle_fullscreen,
++        'gtk_main_quit': self.destroy,
++        'on_window_state': self.on_window_state,
++        'on_configure': self.on_configure,
++        'on_about1_activate': self.about_dialog,
++        'on_quit1_activate': self.destroy,
++        'on_toolbar_quit_clicked': self.destroy,
++        'on_toolbar_add_clicked': self.add_movie,
++        'on_cancel_add_movie_clicked': self.hide_add_window,
++        'on_add1_activate': self.add_movie,
++        'on_add_movie_clicked': self.add_movie_db,
++        'on_add_movie_close_clicked': self.add_movie_close_db,
++        'on_delete_movie_clicked': self.delete_movie,
++        'on_delete1_movie_activate': self.delete_movie,
++        'on_main_treeview_row_activated': self.treeview_clicked,
++        'on_row_activated': self.treeview_clicked,
++        'on_get_from_web_clicked': self.get_from_web,
++        'on_update_button_clicked': self.update_movie,
++        'on_import_activate': self.on_import_activate,
++        'on_seen_activate': self.toggle_seen,
++        'on_fullscreen_activate': self.toggle_fullscreen,
+         # preferences
+-        'on_preferences1_activate'               : self.show_preferences,
+-        'on_select_db_activate'                  : lambda w: self.show_preferences(w, page=6),
+-        'on_cancel_preferences_clicked'          : self.hide_preferences,
+-        'on_save_preferences_clicked'            : self.save_preferences,
+-        'on_p_db_type_changed'                   : self.on_p_db_type_changed,
+-        'on_backup_activate'                     : self.backup,
+-        'on_restore_activate'                    : self.restore,
+-        'on_merge_activate'                      : self.merge,
+-        'on_cover_simple_activate'               : self.print_cover_simple_show,
+-        'on_cancel_print_cover_simple_clicked'   : self.print_cover_simple_hide,
+-        'on_b_print_cover_simple_clicked'        : self.print_cover_simple_process,
+-        'on_add_clear_clicked'                   : self.clear_add_dialog,
+-        'on_am_save_button_clicked'              : self.update_movie,
+-        'on_people_activate'                     : self.show_people_window,
+-        'on_cancel_people_clicked'               : self.hide_people_window,
+-        'on_filter_txt_changed'                  : self.filter_txt,
+-        'on_filter_criteria_changed'             : self.on_filter_criteria_changed,
+-        'on_clear_filter_clicked'                : self.clear_filter,
+-        'on_people_add_clicked'                  : self.add_person,
+-        'on_add_person_cancel_clicked'           : self.add_person_cancel,
+-        'on_add_person_db_clicked'               : self.add_person_db,
+-        'on_people_delete_clicked'               : self.delete_person,
+-        'on_people_edit_clicked'                 : self.edit_person,
+-        'on_edit_person_cancel_clicked'          : self.edit_person_cancel,
+-        'on_update_person_clicked'               : self.update_person,
+-        'on_clone_activate'                      : self.clone_movie,
+-        'on_loan_button_clicked'                 : self.loan_movie,
+-        'on_cancel_loan_clicked'                 : self.cancel_loan,
+-        'on_loan_ok_clicked'                     : self.commit_loan,
+-        'on_return_button_clicked'               : self.return_loan,
+-        'on_list_loaned_movies_activate'         : self.filter_loaned,
+-        'on_m_show_volume_button_clicked'        : self.show_volume,
+-        'on_m_show_collection_button_clicked'    : self.show_collection,
+-        'on_cover_choose_image_activate'         : self.print_cover_image,
+-        'on_cancel_print_cover_image_clicked'    : self.print_cover_image_hide,
+-        'on_b_print_cover_image_clicked'         : self.print_cover_image_process,
+-        'on_combo_source_changed'                : self.source_changed,
++        'on_preferences1_activate': self.show_preferences,
++        'on_select_db_activate': lambda w: self.show_preferences(w, page=6),
++        'on_cancel_preferences_clicked': self.hide_preferences,
++        'on_save_preferences_clicked': self.save_preferences,
++        'on_p_db_type_changed': self.on_p_db_type_changed,
++        'on_backup_activate': self.backup,
++        'on_restore_activate': self.restore,
++        'on_merge_activate': self.merge,
++        'on_cover_simple_activate': self.print_cover_simple_show,
++        'on_cancel_print_cover_simple_clicked': self.print_cover_simple_hide,
++        'on_b_print_cover_simple_clicked': self.print_cover_simple_process,
++        'on_add_clear_clicked': self.clear_add_dialog,
++        'on_am_save_button_clicked': self.update_movie,
++        'on_people_activate': self.show_people_window,
++        'on_cancel_people_clicked': self.hide_people_window,
++        'on_filter_txt_changed': self.filter_txt,
++        'on_filter_criteria_changed': self.on_filter_criteria_changed,
++        'on_clear_filter_clicked': self.clear_filter,
++        'on_people_add_clicked': self.add_person,
++        'on_add_person_cancel_clicked': self.add_person_cancel,
++        'on_add_person_db_clicked': self.add_person_db,
++        'on_people_delete_clicked': self.delete_person,
++        'on_people_edit_clicked': self.edit_person,
++        'on_edit_person_cancel_clicked': self.edit_person_cancel,
++        'on_update_person_clicked': self.update_person,
++        'on_clone_activate': self.clone_movie,
++        'on_loan_button_clicked': self.loan_movie,
++        'on_cancel_loan_clicked': self.cancel_loan,
++        'on_loan_ok_clicked': self.commit_loan,
++        'on_return_button_clicked': self.return_loan,
++        'on_list_loaned_movies_activate': self.filter_loaned,
++        'on_m_show_volume_button_clicked': self.show_volume,
++        'on_m_show_collection_button_clicked': self.show_collection,
++        'on_cover_choose_image_activate': self.print_cover_image,
++        'on_cancel_print_cover_image_clicked': self.print_cover_image_hide,
++        'on_b_print_cover_image_clicked': self.print_cover_image_process,
++        'on_combo_source_changed': self.source_changed,
+         # toolbar
+-        'on_view_toolbar_activate'               : self.toggle_toolbar,
+-        'on_view_ext_toolbar_activate'           : self.toggle_ext_toolbar,
+-        'on_go_first_clicked'                    : self.go_first,
+-        'on_go_last_clicked'                     : self.go_last,
+-        'on_go_back_clicked'                     : self.go_prev,
+-        'on_go_forward_clicked'                  : self.go_next,
+-        'on_new_bt_clicked'                      : self.new_dbb,
+-        'on_new_activate'                        : self.new_dbb,
+-        'on_edit_button_clicked'                 : self.edit_movie,
++        'on_view_toolbar_activate': self.toggle_toolbar,
++        'on_view_ext_toolbar_activate': self.toggle_ext_toolbar,
++        'on_go_first_clicked': self.go_first,
++        'on_go_last_clicked': self.go_last,
++        'on_go_back_clicked': self.go_prev,
++        'on_go_forward_clicked': self.go_next,
++        'on_new_bt_clicked': self.new_dbb,
++        'on_new_activate': self.new_dbb,
++        'on_edit_button_clicked': self.edit_movie,
+         # poster
+-        'on_e_picture_clicked'                   : self.change_poster,
+-        'on_open_poster_clicked'                 : self.change_poster,
+-        'on_zoom_poster_clicked'                 : self.z_poster,
+-        'on_delete_poster_clicked'               : self.del_poster,
++        'on_e_picture_clicked': self.change_poster,
++        'on_open_poster_clicked': self.change_poster,
++        'on_zoom_poster_clicked': self.z_poster,
++        'on_delete_poster_clicked': self.del_poster,
+         # URLs
+-        'on_goto_homepage_activate'              : self.on_goto_homepage_activate,
+-        'on_goto_forum_activate'                 : self.on_goto_forum_activate,
+-        'on_goto_report_bug_activate'            : self.on_goto_report_bug_activate,
+-        'on_go_o_site_clicked'                   : self.go_oficial_site,
+-        'on_go_site_clicked'                     : self.go_site,
+-        'on_go_trailer_clicked'                  : self.go_trailer_site,
+-        'on_seen_movies_activate'                : self.filter_not_seen,
+-        'on_all_movies_activate'                 : self.filter_all,
+-        'on_rating_scale_add_value_changed'      : self.scale_rating_change_add,
+-        'on_sugest_activate'                     : self.sugest_movie,
+-        'on_popup_delete_activate'               : self.delete_movie,
+-        'on_popup_clone_activate'                : self.clone_movie,
+-        'on_popup_simple_activate'               : self.print_cover_simple_show,
+-        'on_popup_choose_image_activate'         : self.print_cover_image,
++        'on_goto_homepage_activate': self.on_goto_homepage_activate,
++        'on_goto_forum_activate': self.on_goto_forum_activate,
++        'on_goto_report_bug_activate': self.on_goto_report_bug_activate,
++        'on_go_o_site_clicked': self.go_oficial_site,
++        'on_go_site_clicked': self.go_site,
++        'on_go_trailer_clicked': self.go_trailer_site,
++        'on_seen_movies_activate': self.filter_not_seen,
++        'on_all_movies_activate': self.filter_all,
++        'on_rating_scale_add_value_changed': self.scale_rating_change_add,
++        'on_sugest_activate': self.sugest_movie,
++        'on_popup_delete_activate': self.delete_movie,
++        'on_popup_clone_activate': self.clone_movie,
++        'on_popup_simple_activate': self.print_cover_simple_show,
++        'on_popup_choose_image_activate': self.print_cover_image,
+         # loans
+-        'on_popup_loan_activate'                 : self.loan_movie,
+-        'on_popup_return_activate'               : self.return_loan,
+-        'on_popup_email_activate'                : self.email_reminder,
+-        'on_email_reminder_clicked'              : self.email_reminder,
++        'on_popup_loan_activate': self.loan_movie,
++        'on_popup_return_activate': self.return_loan,
++        'on_popup_email_activate': self.email_reminder,
++        'on_email_reminder_clicked': self.email_reminder,
+         # volumes/collections
+-        'on_am_collection_combo_changed'         : self.on_am_collection_combo_changed,
+-        'on_am_volume_combo_changed'             : self.on_am_volume_combo_changed,
+-        'on_am_add_volume_button_clicked'        : self.add_volume,
+-        'on_am_add_collection_button_clicked'    : self.add_collection,
+-        'on_am_remove_volume_button_clicked'     : self.remove_volume,
+-        'on_am_remove_collection_button_clicked' : self.remove_collection,
+-        'on_f_col_changed'                       : self.filter_collection,
+-        'on_f_advfilter_changed'                 : self.filter_using_advfilter_rule,
+-        'on_results_cancel_clicked'              : self.on_results_window_close,
++        'on_am_collection_combo_changed': self.on_am_collection_combo_changed,
++        'on_am_volume_combo_changed': self.on_am_volume_combo_changed,
++        'on_am_add_volume_button_clicked': self.add_volume,
++        'on_am_add_collection_button_clicked': self.add_collection,
++        'on_am_remove_volume_button_clicked': self.remove_volume,
++        'on_am_remove_collection_button_clicked': self.remove_collection,
++        'on_f_col_changed': self.filter_collection,
++        'on_f_advfilter_changed': self.filter_using_advfilter_rule,
++        'on_results_cancel_clicked': self.on_results_window_close,
+         # languages
+-        'on_lang_add_clicked'                    : self.on_lang_add_clicked,
+-        'on_lang_remove_clicked'                 : self.on_lang_remove_clicked,
+-        'on_am_lang_add_clicked'                 : self.on_am_lang_add_clicked,
+-        'on_am_lang_remove_clicked'              : self.on_am_lang_remove_clicked,
+-        'on_lang_rename_clicked'                 : self.on_lang_rename_clicked,
+-        'on_lang_name_combo_changed'             : self.on_lang_name_combo_changed,
++        'on_lang_add_clicked': self.on_lang_add_clicked,
++        'on_lang_remove_clicked': self.on_lang_remove_clicked,
++        'on_am_lang_add_clicked': self.on_am_lang_add_clicked,
++        'on_am_lang_remove_clicked': self.on_am_lang_remove_clicked,
++        'on_lang_rename_clicked': self.on_lang_rename_clicked,
++        'on_lang_name_combo_changed': self.on_lang_name_combo_changed,
+         # tags
+-        'on_tag_add_clicked'                     : self.on_tag_add_clicked,
+-        'on_tag_remove_clicked'                  : self.on_tag_remove_clicked,
+-        'on_tag_rename_clicked'                  : self.on_tag_rename_clicked,
+-        'on_tag_name_combo_changed'              : self.on_tag_name_combo_changed,
++        'on_tag_add_clicked': self.on_tag_add_clicked,
++        'on_tag_remove_clicked': self.on_tag_remove_clicked,
++        'on_tag_rename_clicked': self.on_tag_rename_clicked,
++        'on_tag_name_combo_changed': self.on_tag_name_combo_changed,
+         # audio codecs
+-        'on_acodec_add_clicked'                  : self.on_acodec_add_clicked,
+-        'on_acodec_remove_clicked'               : self.on_acodec_remove_clicked,
+-        'on_acodec_rename_clicked'               : self.on_acodec_rename_clicked,
+-        'on_acodec_name_combo_changed'           : self.on_acodec_name_combo_changed,
++        'on_acodec_add_clicked': self.on_acodec_add_clicked,
++        'on_acodec_remove_clicked': self.on_acodec_remove_clicked,
++        'on_acodec_rename_clicked': self.on_acodec_rename_clicked,
++        'on_acodec_name_combo_changed': self.on_acodec_name_combo_changed,
+         # audio channels
+-        'on_achannel_add_clicked'                : self.on_achannel_add_clicked,
+-        'on_achannel_remove_clicked'             : self.on_achannel_remove_clicked,
+-        'on_achannel_rename_clicked'             : self.on_achannel_rename_clicked,
+-        'on_achannel_name_combo_changed'         : self.on_achannel_name_combo_changed,
++        'on_achannel_add_clicked': self.on_achannel_add_clicked,
++        'on_achannel_remove_clicked': self.on_achannel_remove_clicked,
++        'on_achannel_rename_clicked': self.on_achannel_rename_clicked,
++        'on_achannel_name_combo_changed': self.on_achannel_name_combo_changed,
+         # subtitle formats
+-        'on_subformat_add_clicked'               : self.on_subformat_add_clicked,
+-        'on_subformat_remove_clicked'            : self.on_subformat_remove_clicked,
+-        'on_subformat_rename_clicked'            : self.on_subformat_rename_clicked,
+-        'on_subformat_name_combo_changed'        : self.on_subformat_name_combo_changed,
++        'on_subformat_add_clicked': self.on_subformat_add_clicked,
++        'on_subformat_remove_clicked': self.on_subformat_remove_clicked,
++        'on_subformat_rename_clicked': self.on_subformat_rename_clicked,
++        'on_subformat_name_combo_changed': self.on_subformat_name_combo_changed,
+         # media
+-        'on_medium_add_clicked'                  : self.on_medium_add_clicked,
+-        'on_medium_remove_clicked'               : self.on_medium_remove_clicked,
+-        'on_medium_rename_clicked'               : self.on_medium_rename_clicked,
+-        'on_medium_name_combo_changed'           : self.on_medium_name_combo_changed,
++        'on_medium_add_clicked': self.on_medium_add_clicked,
++        'on_medium_remove_clicked': self.on_medium_remove_clicked,
++        'on_medium_rename_clicked': self.on_medium_rename_clicked,
++        'on_medium_name_combo_changed': self.on_medium_name_combo_changed,
+         # video codecs
+-        'on_vcodec_add_clicked'                  : self.on_vcodec_add_clicked,
+-        'on_vcodec_remove_clicked'               : self.on_vcodec_remove_clicked,
+-        'on_vcodec_rename_clicked'               : self.on_vcodec_rename_clicked,
+-        'on_vcodec_name_combo_changed'           : self.on_vcodec_name_combo_changed,
++        'on_vcodec_add_clicked': self.on_vcodec_add_clicked,
++        'on_vcodec_remove_clicked': self.on_vcodec_remove_clicked,
++        'on_vcodec_rename_clicked': self.on_vcodec_rename_clicked,
++        'on_vcodec_name_combo_changed': self.on_vcodec_name_combo_changed,
+         # advfilter
+-        'on_open_advfilterwindow_clicked'        : self.show_advfilter_window,
+-        'on_af_find_clicked'                     : self.on_af_find_clicked,
+-        'on_advfilter_close'                     : self.hide_advfilter_window,
+-        'on_advfilter_add'                       : lambda w: advfilter.add_query_widget(self.widgets['advfilter']['dynamic_vbox'], self.field_names),
+-        'on_advfilter_clear'                     : lambda w: advfilter.set_conditions(self.widgets['advfilter'], advfilter.get_def_conditions(), self.field_names),
+-        'on_advfilter_save'                      : lambda w: advfilter.save(self.db, self.widgets['advfilter']),
+-        'on_advfilter_open'                      : lambda w: advfilter.load(self.db, self.widgets['advfilter'], self.field_names),
++        'on_open_advfilterwindow_clicked': self.show_advfilter_window,
++        'on_af_find_clicked': self.on_af_find_clicked,
++        'on_advfilter_close': self.hide_advfilter_window,
++        'on_advfilter_add': lambda w: advfilter.add_query_widget(self.widgets['advfilter']['dynamic_vbox'], self.field_names),
++        'on_advfilter_clear': lambda w: advfilter.set_conditions(self.widgets['advfilter'], advfilter.get_def_conditions(), self.field_names),
++        'on_advfilter_save': lambda w: advfilter.save(self.db, self.widgets['advfilter']),
++        'on_advfilter_open': lambda w: advfilter.load(self.db, self.widgets['advfilter'], self.field_names),
+     })#}}}
+ 
++
+ def populate_results_window(treemodel, items):
+     treemodel.clear()
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000857.html">[Griffith-svn] r1391 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000859.html">[Griffith-svn] r1394 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#858">[ date ]</a>
+              <a href="thread.html#858">[ thread ]</a>
+              <a href="subject.html#858">[ subject ]</a>
+              <a href="author.html#858">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

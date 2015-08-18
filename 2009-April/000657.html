@@ -1,0 +1,740 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1185%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200904082016.n38KGvEH014736%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000656.html">
+   <LINK REL="Next"  HREF="000658.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1185%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200904082016.n38KGvEH014736%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1185 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  8 22:16:57 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000656.html">[Griffith-svn] r1184 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000658.html">[Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#657">[ date ]</a>
+              <a href="thread.html#657">[ thread ]</a>
+              <a href="subject.html#657">[ subject ]</a>
+              <a href="author.html#657">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-04-08 22:16:23 +0200 (Wed, 08 Apr 2009)
+New Revision: 1185
+
+Added:
+   branches/0.9.x/lib/plugins/movie/PluginMovieAllMovie.py
+   trunk/lib/plugins/movie/PluginMovieAllMovie.py
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/winpackage.iss
+   trunk/ChangeLog
+   trunk/winpackage.iss
+Log:
+added AllMovie plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-04-06 14:44:05 UTC (rev 1184)
++++ branches/0.9.x/ChangeLog	2009-04-08 20:16:23 UTC (rev 1185)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-04-08  Michael Jahn
++	* added AllMovie plugin
++
+ 2009-04-06  Michael Jahn
+ 	* [#348226] DVD Empire lookup problem
+ 
+
+Added: branches/0.9.x/lib/plugins/movie/PluginMovieAllMovie.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAllMovie.py	2009-04-06 14:44:05 UTC (rev 1184)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAllMovie.py	2009-04-08 20:16:23 UTC (rev 1185)
+@@ -0,0 +1,268 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string, re
++
++plugin_name         = &quot;allmovie&quot;
++plugin_description  = &quot;All Media Guide&quot;
++plugin_url          = &quot;www.allmovie.com&quot;
++plugin_language     = _(&quot;English&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&quot;
++plugin_version      = &quot;1.0&quot;
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.encode   = 'utf-8'
++        self.movie_id = id
++        self.url      = '<A HREF="http://allmovie.com/work/">http://allmovie.com/work/</A>' + str(self.movie_id)
++
++    def initialize(self):
++        self.page_cast = self.open_page(url = '<A HREF="http://allmovie.com/work/">http://allmovie.com/work/</A>' + str(self.movie_id) + '/cast')
++        self.page_cast = gutils.trim(self.page_cast, 'id=&quot;results-table&quot;', '&lt;/table&gt;')
++        self.page_credits = self.open_page(url = '<A HREF="http://allmovie.com/work/">http://allmovie.com/work/</A>' + str(self.movie_id) + '/credits')
++        self.page_credits = gutils.trim(self.page_credits, 'id=&quot;results-table&quot;', '&lt;/table&gt;')
++
++    def get_image(self):
++        tmp_page = gutils.trim(self.page, 'image.allmusic.com', '&quot;')
++        if tmp_page:
++            self.image_url = '<A HREF="http://image.allmusic.com">http://image.allmusic.com</A>' + tmp_page
++        else:
++            self.image_url = ''
++
++    def get_o_title(self):
++        title = re.search('(?:[&lt;]span[\t ]+class=&quot;title&quot;[&gt;])([^&lt;]+)(?:&lt;/span&gt;)', self.page)
++        if title:
++            self.o_title = title.group(0)
++        else:
++            self.o_title = ''
++
++    def get_title(self):
++        title = re.search('(?:[&lt;]span[\t ]+class=&quot;title&quot;[&gt;])([^&lt;]+)(?:&lt;/span&gt;)', self.page)
++        if title:
++            self.title = title.group(0)
++        else:
++            self.title = ''
++
++    def get_director(self):
++        self.director = ''
++        tmp = gutils.trim(self.page, '&lt;span&gt;Director&lt;/span&gt;', '&lt;/table&gt;')
++        directors = re.split('artist/', tmp)
++        for index in range(1, len(directors), 1):
++            director = directors[index]
++            if index &gt; 1:
++                self.director = self.director + ', ' + gutils.trim(director, '&gt;', '&lt;')
++            else:
++                self.director = self.director + gutils.trim(director, '&gt;', '&lt;')
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, 'Plot Synopsis&lt;/td&gt;', '&lt;/table&gt;')
++        self.plot = string.replace(self.plot, '&lt;/tr&gt;', '\n')
++
++    def get_year(self):
++        self.year = gutils.trim(self.page, 'href=&quot;<A HREF="http://allmovie.com/explore/year/">http://allmovie.com/explore/year/</A>', '&quot;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, '&lt;span&gt;Run Time&lt;/span&gt;', '&lt;/table&gt;')
++        foundtime = re.search('([0-9]+)(?: min[.])', self.runtime)
++        if foundtime:
++            self.runtime = foundtime.group(1)
++        else:
++            self.runtime = 0
++
++    def get_genre(self):
++        self.genre = ''
++        genres = re.split('href=[&quot;\']*http[:]//allmovie.com/explore/genre/', gutils.trim(self.page, '&lt;span&gt;Genres&lt;/span&gt;', '&lt;/table&gt;'))
++        for index in range(1, len(genres), 1):
++            genre = genres[index]
++            if index &gt; 1:
++                self.genre = self.genre + ', ' + gutils.trim(genre, '&gt;', '&lt;')
++            else:
++                self.genre = self.genre + gutils.trim(genre, '&gt;', '&lt;')
++
++    def get_cast(self):
++        self.cast = ''
++        casts = re.split('artist/', self.page_cast)
++        for index in range(1, len(casts), 1):
++            cast = casts[index]
++            name = gutils.trim(cast, '&gt;', '&lt;')
++            played = gutils.clean(gutils.trim(cast, '&gt;- ', '&lt;/td&gt;'))
++            if played:
++                name = name + _(' as ') + played
++            if index &gt; 1:
++                self.cast = self.cast + '\n' + name
++            else:
++                self.cast = self.cast + name
++
++    def get_classification(self):
++        self.classification = ''
++        tmp = gutils.trim(self.page, '&lt;span&gt;MPAA Rating&lt;/span&gt;', '&lt;/table&gt;')
++        jumptd = string.find(tmp, '&lt;/td&gt;')
++        if jumptd &gt;= 0:
++            jumptd = string.find(tmp[jumptd + 1:], '&lt;/td&gt;')
++            if jumptd &gt;= 0:
++                self.classification = tmp[jumptd + 1:]
++
++    def get_studio(self):
++        self.studio = ''
++        tmp = gutils.trim(self.page, '&lt;span&gt;Produced by&lt;/span&gt;', '&lt;/table&gt;')
++        studios = re.split('search/tag/899/', tmp)
++        for index in range(1, len(studios), 1):
++            studio = studios[index]
++            if index &gt; 1:
++                self.studio = self.studio + ', ' + gutils.trim(studio, '&gt;', '&lt;')
++            else:
++                self.studio = self.studio + gutils.trim(studio, '&gt;', '&lt;')
++
++    def get_o_site(self):
++        self.o_site = ''
++        offsindex = string.find(self.page, '&gt;Official Site&lt;/a&gt;')
++        if offsindex &gt;= 0:
++            offsindex = string.rfind(self.page[:offsindex], 'href=&quot;')
++            if offsindex &gt;= 0:
++                self.o_site = gutils.before(self.page[offsindex + 6:], '&quot;')
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = ''
++
++    def get_country(self):
++        self.country = ''
++        countries = re.split('href=[&quot;\']*http[:]//allmovie.com/explore/country/', self.page)
++        for index in range(1, len(countries), 1):
++            country = countries[index]
++            if index &gt; 1:
++                self.country = self.country + ', ' + gutils.trim(country, '&gt;', '&lt;')
++            else:
++                self.country = self.country + gutils.trim(country, '&gt;', '&lt;')
++
++    def get_rating(self):
++        tmp = gutils.trim(self.page, '&lt;span&gt;Work Rating&lt;/span&gt;', '&lt;/table&gt;')
++        foundnumber = re.search('(?:title=&quot;)([0-9])(?: Stars)', tmp)
++        if foundnumber:
++            try:
++                self.rating = str(int(foundnumber.group(1)) * 2)
++            except:
++                self.rating = '0'
++
++    def get_notes(self):
++        self.notes = ''
++
++class SearchPlugin(movie.SearchMovie):
++    def __init__(self):
++        self.original_url_search   = &quot;<A HREF="http://allmovie.com/search/all/">http://allmovie.com/search/all/</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://allmovie.com/search/all/">http://allmovie.com/search/all/</A>&quot;
++        self.encode                = 'utf-8'
++
++    def search(self,parent_window):
++        if not self.open_search(parent_window):
++            return None
++        return self.page
++
++    def get_searches(self):
++        elements = re.split('href=[&quot;\']*http[:]//allmovie.com/work/', self.page)
++        for index in range(1, len(elements), 1):
++            element = elements[index]
++            idend = re.search('[&quot;\']', element)
++            if idend:
++                id = element[:idend.end() - 1]
++                title = gutils.trim(element, '&gt;', '&lt;')
++                additionals = re.split('class=[&quot;\']cell[^&gt;]+[&gt;]', element)
++                if len(additionals) &gt; 2:
++                    title = title + ' (' + gutils.clean(gutils.before(additionals[2], '&lt;/td'))
++                    if len(additionals) &gt; 3:
++                        title = title + ', ' + gutils.clean(gutils.before(additionals[3], '&lt;/td'))
++                        if len(additionals) &gt; 4:
++                            title = title + ', ' + gutils.clean(gutils.before(additionals[4], '&lt;/td'))
++                    title = title + ')'
++                self.ids.append(id)
++                self.titles.append(title)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 100, 100 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        'rocky-balboa-337682' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason &quot;The Line&quot; Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Lou DiBella\n\
++Mike Tyson' + _(' as ') + 'Himself\n\
++Woodrow W. Paige\n\
++Skip Bayless\n\
++Jay Crawford\n\
++Brian Kenny\n\
++Dana Jacobson\n\
++Chuck Johnson\n\
++Jim Lampley\n\
++Larry Merchant\n\
++Max Kellerman\n\
++Leroy Neiman\n\
++Bert Randolph Sugar\n\
++Bernard Fernandez\n\
++Michael Buffer\n\
++Talia Shire',
++            'country'             : 'USA',
++            'genre'               : 'Drama',
++            'classification'      : 'PG',
++            'studio'              : 'Chartoff Winkler Productions, Columbia Pictures, MGM, Revolution Studios',
++            'o_site'              : '<A HREF="http://www.rocky.com/">http://www.rocky.com/</A>',
++            'site'                : '<A HREF="http://allmovie.com/work/rocky-balboa-337682">http://allmovie.com/work/rocky-balboa-337682</A>',
++            'trailer'             : False,
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 101,
++            'image'               : True,
++            'rating'              : 6
++        },
++    }
+
+
+Property changes on: branches/0.9.x/lib/plugins/movie/PluginMovieAllMovie.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: branches/0.9.x/winpackage.iss
+===================================================================
+--- branches/0.9.x/winpackage.iss	2009-04-06 14:44:05 UTC (rev 1184)
++++ branches/0.9.x/winpackage.iss	2009-04-08 20:16:23 UTC (rev 1185)
+@@ -79,6 +79,7 @@
+ Source: dist\lib\plugins\imp\*;    DestDir: {app}\lib\plugins\imp;    Flags: ignoreversion recursesubdirs createallsubdirs
+ ; component based installation
+ Source: dist\lib\plugins\movie\PluginMovie7arte.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\7arte
++Source: dist\lib\plugins\movie\PluginMovieAllMovie.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\AllMovie
+ Source: dist\lib\plugins\movie\PluginMovieAllocine.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\French\Allocine
+ Source: dist\lib\plugins\movie\PluginMovieAmazon.py;        DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Amazon
+ Source: dist\lib\plugins\movie\PluginMovieAniDB.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\AnimeDB
+@@ -147,6 +148,7 @@
+ Name: Movie_Import_Plugins\Amazon;                   Description: Amazon Import Plugin; Types: full
+ 
+ Name: Movie_Import_Plugins\English;                  Description: English Import Plugins; Types: full
++Name: Movie_Import_Plugins\English\AllMovie;         Description: All Media Guide / www.allmovie.com; Types: full
+ Name: Movie_Import_Plugins\English\AnimeDB;          Description: AnimeDB / www.anidb.net; Types: full
+ Name: Movie_Import_Plugins\English\DVD_Empire;       Description: DVD Empire / www.dvdempire.com; Types: full
+ Name: Movie_Import_Plugins\English\Mediadis;         Description: Mediadis / www.mediadis.com; Types: full
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-04-06 14:44:05 UTC (rev 1184)
++++ trunk/ChangeLog	2009-04-08 20:16:23 UTC (rev 1185)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-04-08  Michael Jahn
++	* added AllMovie plugin
++
+ 2009-04-06  Michael Jahn
+ 	* [#348226] DVD Empire lookup problem
+ 
+
+Added: trunk/lib/plugins/movie/PluginMovieAllMovie.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllMovie.py	2009-04-06 14:44:05 UTC (rev 1184)
++++ trunk/lib/plugins/movie/PluginMovieAllMovie.py	2009-04-08 20:16:23 UTC (rev 1185)
+@@ -0,0 +1,300 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils
++import movie
++import string, re
++
++plugin_name         = &quot;allmovie&quot;
++plugin_description  = &quot;All Media Guide&quot;
++plugin_url          = &quot;www.allmovie.com&quot;
++plugin_language     = _(&quot;English&quot;)
++plugin_author       = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&quot;
++plugin_version      = &quot;1.0&quot;
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.encode   = 'utf-8'
++        self.movie_id = id
++        self.url      = '<A HREF="http://allmovie.com/work/">http://allmovie.com/work/</A>' + str(self.movie_id)
++
++    def initialize(self):
++        self.page_cast = self.open_page(url = '<A HREF="http://allmovie.com/work/">http://allmovie.com/work/</A>' + str(self.movie_id) + '/cast')
++        self.page_cast = gutils.trim(self.page_cast, 'id=&quot;results-table&quot;', '&lt;/table&gt;')
++        self.page_credits = self.open_page(url = '<A HREF="http://allmovie.com/work/">http://allmovie.com/work/</A>' + str(self.movie_id) + '/credits')
++        self.page_credits = gutils.trim(self.page_credits, 'id=&quot;results-table&quot;', '&lt;/table&gt;')
++
++    def get_image(self):
++        tmp_page = gutils.trim(self.page, 'image.allmusic.com', '&quot;')
++        if tmp_page:
++            self.image_url = '<A HREF="http://image.allmusic.com">http://image.allmusic.com</A>' + tmp_page
++        else:
++            self.image_url = ''
++
++    def get_o_title(self):
++        title = re.search('(?:[&lt;]span[\t ]+class=&quot;title&quot;[&gt;])([^&lt;]+)(?:&lt;/span&gt;)', self.page)
++        if title:
++            self.o_title = title.group(0)
++        else:
++            self.o_title = ''
++
++    def get_title(self):
++        title = re.search('(?:[&lt;]span[\t ]+class=&quot;title&quot;[&gt;])([^&lt;]+)(?:&lt;/span&gt;)', self.page)
++        if title:
++            self.title = title.group(0)
++        else:
++            self.title = ''
++
++    def get_director(self):
++        self.director = ''
++        tmp = gutils.trim(self.page, '&lt;span&gt;Director&lt;/span&gt;', '&lt;/table&gt;')
++        directors = re.split('artist/', tmp)
++        for index in range(1, len(directors), 1):
++            director = directors[index]
++            if index &gt; 1:
++                self.director = self.director + ', ' + gutils.trim(director, '&gt;', '&lt;')
++            else:
++                self.director = self.director + gutils.trim(director, '&gt;', '&lt;')
++
++    def get_plot(self):
++        self.plot = gutils.trim(self.page, 'Plot Synopsis&lt;/td&gt;', '&lt;/table&gt;')
++        self.plot = string.replace(self.plot, '&lt;/tr&gt;', '\n')
++
++    def get_year(self):
++        self.year = gutils.trim(self.page, 'href=&quot;<A HREF="http://allmovie.com/explore/year/">http://allmovie.com/explore/year/</A>', '&quot;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, '&lt;span&gt;Run Time&lt;/span&gt;', '&lt;/table&gt;')
++        foundtime = re.search('([0-9]+)(?: min[.])', self.runtime)
++        if foundtime:
++            self.runtime = foundtime.group(1)
++        else:
++            self.runtime = 0
++
++    def get_genre(self):
++        self.genre = ''
++        genres = re.split('href=[&quot;\']*http[:]//allmovie.com/explore/genre/', gutils.trim(self.page, '&lt;span&gt;Genres&lt;/span&gt;', '&lt;/table&gt;'))
++        for index in range(1, len(genres), 1):
++            genre = genres[index]
++            if index &gt; 1:
++                self.genre = self.genre + ', ' + gutils.trim(genre, '&gt;', '&lt;')
++            else:
++                self.genre = self.genre + gutils.trim(genre, '&gt;', '&lt;')
++
++    def get_cast(self):
++        self.cast = ''
++        casts = re.split('artist/', self.page_cast)
++        for index in range(1, len(casts), 1):
++            cast = casts[index]
++            name = gutils.trim(cast, '&gt;', '&lt;')
++            played = gutils.clean(gutils.trim(cast, '&gt;- ', '&lt;/td&gt;'))
++            if played:
++                name = name + _(' as ') + played
++            if index &gt; 1:
++                self.cast = self.cast + '\n' + name
++            else:
++                self.cast = self.cast + name
++
++    def get_classification(self):
++        self.classification = ''
++        tmp = gutils.trim(self.page, '&lt;span&gt;MPAA Rating&lt;/span&gt;', '&lt;/table&gt;')
++        jumptd = string.find(tmp, '&lt;/td&gt;')
++        if jumptd &gt;= 0:
++            jumptd = string.find(tmp[jumptd + 1:], '&lt;/td&gt;')
++            if jumptd &gt;= 0:
++                self.classification = tmp[jumptd + 1:]
++
++    def get_studio(self):
++        self.studio = ''
++        tmp = gutils.trim(self.page, '&lt;span&gt;Produced by&lt;/span&gt;', '&lt;/table&gt;')
++        studios = re.split('search/tag/899/', tmp)
++        for index in range(1, len(studios), 1):
++            studio = studios[index]
++            if index &gt; 1:
++                self.studio = self.studio + ', ' + gutils.trim(studio, '&gt;', '&lt;')
++            else:
++                self.studio = self.studio + gutils.trim(studio, '&gt;', '&lt;')
++
++    def get_o_site(self):
++        self.o_site = ''
++        offsindex = string.find(self.page, '&gt;Official Site&lt;/a&gt;')
++        if offsindex &gt;= 0:
++            offsindex = string.rfind(self.page[:offsindex], 'href=&quot;')
++            if offsindex &gt;= 0:
++                self.o_site = gutils.before(self.page[offsindex + 6:], '&quot;')
++
++    def get_site(self):
++        self.site = self.url
++
++    def get_trailer(self):
++        self.trailer = ''
++
++    def get_country(self):
++        self.country = ''
++        countries = re.split('href=[&quot;\']*http[:]//allmovie.com/explore/country/', self.page)
++        for index in range(1, len(countries), 1):
++            country = countries[index]
++            if index &gt; 1:
++                self.country = self.country + ', ' + gutils.trim(country, '&gt;', '&lt;')
++            else:
++                self.country = self.country + gutils.trim(country, '&gt;', '&lt;')
++
++    def get_rating(self):
++        tmp = gutils.trim(self.page, '&lt;span&gt;Work Rating&lt;/span&gt;', '&lt;/table&gt;')
++        foundnumber = re.search('(?:title=&quot;)([0-9])(?: Stars)', tmp)
++        if foundnumber:
++            try:
++                self.rating = str(int(foundnumber.group(1)) * 2)
++            except:
++                self.rating = '0'
++
++    def get_notes(self):
++        self.notes = ''
++
++    def get_cameraman(self):
++        self.cameraman = ''
++        credits = re.split('artist/', self.page_credits)
++        for index in range(1, len(credits), 1):
++            credit = credits[index]
++            name = gutils.trim(credit, '&gt;', '&lt;')
++            played = string.find(credit, 'Cinematographer')
++            if played &gt;= 0:
++                if self.cameraman:
++                    self.cameraman = self.cameraman + ', ' + name
++                else:
++                    self.cameraman = self.cameraman + name
++
++    def get_screenplay(self):
++        self.screenplay = ''
++        credits = re.split('artist/', self.page_credits)
++        for index in range(1, len(credits), 1):
++            credit = credits[index]
++            name = gutils.trim(credit, '&gt;', '&lt;')
++            played = string.find(credit, 'Screenwriter')
++            if played &gt;= 0:
++                if self.screenplay:
++                    self.screenplay = self.screenplay + ', ' + name
++                else:
++                    self.screenplay = self.screenplay + name
++
++    def get_barcode(self):
++        self.barcode = ''
++
++class SearchPlugin(movie.SearchMovie):
++    def __init__(self):
++        self.original_url_search   = &quot;<A HREF="http://allmovie.com/search/all/">http://allmovie.com/search/all/</A>&quot;
++        self.translated_url_search = &quot;<A HREF="http://allmovie.com/search/all/">http://allmovie.com/search/all/</A>&quot;
++        self.encode                = 'utf-8'
++
++    def search(self,parent_window):
++        if not self.open_search(parent_window):
++            return None
++        return self.page
++
++    def get_searches(self):
++        elements = re.split('href=[&quot;\']*http[:]//allmovie.com/work/', self.page)
++        for index in range(1, len(elements), 1):
++            element = elements[index]
++            idend = re.search('[&quot;\']', element)
++            if idend:
++                id = element[:idend.end() - 1]
++                title = gutils.trim(element, '&gt;', '&lt;')
++                additionals = re.split('class=[&quot;\']cell[^&gt;]+[&gt;]', element)
++                if len(additionals) &gt; 2:
++                    title = title + ' (' + gutils.clean(gutils.before(additionals[2], '&lt;/td'))
++                    if len(additionals) &gt; 3:
++                        title = title + ', ' + gutils.clean(gutils.before(additionals[3], '&lt;/td'))
++                        if len(additionals) &gt; 4:
++                            title = title + ', ' + gutils.clean(gutils.before(additionals[4], '&lt;/td'))
++                    title = title + ')'
++                self.ids.append(id)
++                self.titles.append(title)
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa' : [ 100, 100 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -&gt; dict { arribute -&gt; value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        'rocky-balboa-337682' : { 
++            'title'               : 'Rocky Balboa',
++            'o_title'             : 'Rocky Balboa',
++            'director'            : 'Sylvester Stallone',
++            'plot'                : True,
++            'cast'                : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason &quot;The Line&quot; Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Balboa Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Lou DiBella\n\
++Mike Tyson' + _(' as ') + 'Himself\n\
++Woodrow W. Paige\n\
++Skip Bayless\n\
++Jay Crawford\n\
++Brian Kenny\n\
++Dana Jacobson\n\
++Chuck Johnson\n\
++Jim Lampley\n\
++Larry Merchant\n\
++Max Kellerman\n\
++Leroy Neiman\n\
++Bert Randolph Sugar\n\
++Bernard Fernandez\n\
++Michael Buffer\n\
++Talia Shire',
++            'country'             : 'USA',
++            'genre'               : 'Drama',
++            'classification'      : 'PG',
++            'studio'              : 'Chartoff Winkler Productions, Columbia Pictures, MGM, Revolution Studios',
++            'o_site'              : '<A HREF="http://www.rocky.com/">http://www.rocky.com/</A>',
++            'site'                : '<A HREF="http://allmovie.com/work/rocky-balboa-337682">http://allmovie.com/work/rocky-balboa-337682</A>',
++            'trailer'             : False,
++            'year'                : 2006,
++            'notes'               : False,
++            'runtime'             : 101,
++            'image'               : True,
++            'rating'              : 6,
++            'cameraman'           : 'Clark Mathis',
++            'screenplay'          : 'Sylvester Stallone',
++            'barcode'             : False
++        },
++    }
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieAllMovie.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2009-04-06 14:44:05 UTC (rev 1184)
++++ trunk/winpackage.iss	2009-04-08 20:16:23 UTC (rev 1185)
+@@ -79,6 +79,7 @@
+ Source: dist\lib\plugins\imp\*;    DestDir: {app}\lib\plugins\imp;    Flags: ignoreversion recursesubdirs createallsubdirs
+ ; component based installation
+ Source: dist\lib\plugins\movie\PluginMovie7arte.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Portuguese\7arte
++Source: dist\lib\plugins\movie\PluginMovieAllMovie.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\AllMovie
+ Source: dist\lib\plugins\movie\PluginMovieAllocine.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\French\Allocine
+ Source: dist\lib\plugins\movie\PluginMovieAmazon.py;        DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Amazon
+ Source: dist\lib\plugins\movie\PluginMovieAniDB.py;         DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\AnimeDB
+@@ -147,6 +148,7 @@
+ Name: Movie_Import_Plugins\Amazon;                   Description: Amazon Import Plugin; Types: full
+ 
+ Name: Movie_Import_Plugins\English;                  Description: English Import Plugins; Types: full
++Name: Movie_Import_Plugins\English\AllMovie;         Description: All Media Guide / www.allmovie.com; Types: full
+ Name: Movie_Import_Plugins\English\AnimeDB;          Description: AnimeDB / www.anidb.net; Types: full
+ Name: Movie_Import_Plugins\English\DVD_Empire;       Description: DVD Empire / www.dvdempire.com; Types: full
+ Name: Movie_Import_Plugins\English\Mediadis;         Description: Mediadis / www.mediadis.com; Types: full
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000656.html">[Griffith-svn] r1184 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000658.html">[Griffith-svn] r1186 - branches/0.9.x/lib trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#657">[ date ]</a>
+              <a href="thread.html#657">[ thread ]</a>
+              <a href="subject.html#657">[ subject ]</a>
+              <a href="author.html#657">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

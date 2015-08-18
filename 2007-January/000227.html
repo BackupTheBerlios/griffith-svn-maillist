@@ -1,0 +1,363 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r706 - in trunk: . lib lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r706%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp&In-Reply-To=%3C200701111806.l0BI6pSV026302%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000226.html">
+   <LINK REL="Next"  HREF="000228.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r706 - in trunk: . lib lib/plugins/imp</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r706%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/imp&In-Reply-To=%3C200701111806.l0BI6pSV026302%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r706 - in trunk: . lib lib/plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 11 19:06:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000226.html">[Griffith-svn] r705 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000228.html">[Griffith-svn] r707 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#227">[ date ]</a>
+              <a href="thread.html#227">[ thread ]</a>
+              <a href="subject.html#227">[ subject ]</a>
+              <a href="author.html#227">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-11 19:06:50 +0100 (Thu, 11 Jan 2007)
+New Revision: 706
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/backup.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/plugins/imp/CSV.py
+   trunk/lib/plugins/imp/__init__.py
+   trunk/lib/preferences.py
+   trunk/lib/quick_filter.py
+   trunk/lib/view.py
+Log:
+* Select first movie by default
+* Remove Excel mime types from CSV import plugin
+* Fix list of fields to import
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/ChangeLog	2007-01-11 18:06:50 UTC (rev 706)
+@@ -6,6 +6,9 @@
+ 
+ 2007-01-11  Piotr O&#380;arowski
+ 	* Fix possible memory leak
++	* Select first movie by default
++	* Remove Excel mime types from CSV import plugin
++	* Fix list of fields to import
+ 
+ 2007-01-10  Vasco Nunes
+ 	* PTGate movie plugin updated
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/griffith	2007-01-11 18:06:50 UTC (rev 706)
+@@ -98,7 +98,6 @@
+ 		self.clear_details()
+ 		self.populate_treeview()
+ 		self.count_statusbar()
+-		self.go_last()
+ 
+ 		# adding some completion fields
+ 		self.completion = gtk.EntryCompletion()
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/add.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -674,8 +674,5 @@
+ 	self.total = self.total + 1
+ 	self.count_statusbar()
+ 	self.populate_treeview()
+-	#self.widgets['treeview'].set_cursor(next_number-1)
+-	self.go_last()
+-	self.treeview_clicked()
+ 
+ # vim: fdm=marker
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/backup.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -155,8 +155,6 @@
+ 		# let's refresh the treeview
+ 		self.clear_details()
+ 		self.populate_treeview()
+-		self.go_last()
+-		self.treeview_clicked()
+ 		self.count_statusbar()
+ 		gutils.info(self, _(&quot;Backup restored&quot;), self.widgets['window'])
+ 
+@@ -246,8 +244,6 @@
+ 		self.clear_details()
+ 		self.populate_treeview(self.db.Movie.select())
+ 		self.total = self.db.Movie.count()
+-		self.go_last()
+-		self.treeview_clicked()
+ 		self.count_statusbar()
+ 		#gutils.info(self, _(&quot;Databases merged!\n\nProcessed movies: %s\nMerged movies: %s&quot;%(movies, merged)), self.widgets['window'])
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/initialize.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -65,7 +65,7 @@
+ 				lang = defaultLang
+ 		if lang:
+ 			os.environ['LANG'] = lang
+-	   
++
+ 	elif os.name == 'posix':
+ 		locations['home']  = os.path.join(os.path.expanduser('~'), &quot;.griffith&quot;)
+ 		locations['share'] = os.path.abspath(os.path.join(locations['lib'], '..'))
+@@ -350,6 +350,12 @@
+ 	&quot;&quot;&quot;
+ 	
+ 	import plugins.imp, math
++
++	fields_to_import = ( 'number','title', 'o_title', 'director', 'year', 'runtime', 'country',
++		'seen', 'rating', 'genre', 'studio', 'plot', 'cast', 'notes', 'classification',
++		'site', 'o_site', 'trailer', 'medium_id', 'media_num', 'vcodec_id', 'color', 'cond',
++		'layers', 'region', 'collection_id', 'volume_id', 'image')
++
+ 	# glade
+ 	glade_file = gtk.glade.XML(os.path.join(self.locations['glade'], 'import.glade'))
+ 	get = lambda x: glade_file.get_widget(x)
+@@ -384,7 +390,7 @@
+ 	# fields to import
+ 	j = 0
+ 	k = math.ceil( len(self.field_names) / float(3) )
+-	for i in self.field_names:
++	for i in fields_to_import:
+ 		j = j + 1
+ 		w['fields'][i] = gtk.CheckButton(self.field_names[i])
+ 		w['fields'][i].set_active(True) # TODO: get from config
+@@ -482,9 +488,8 @@
+ 		'genre', 'studio', 'media_num', 'rating', 'classification', 'collection_id',
+ 		'volume_id', 'cond', 'layers', 'region', 'movie_id']
+ 	self.search_criteria = (
+-		'o_title', 'title', 'number', 'director',
+-		'plot', 'cast', 'notes', 'year', 'runtime', 'country',
+-		'genre', 'studio', 'media_num', 'rating')
++		'o_title', 'title', 'number', 'director', 'plot', 'cast', 'notes', 'year',
++		'runtime', 'country', 'genre', 'studio', 'media_num', 'rating')
+ 	self.field_names = {
+ 		'cast'           : _('Cast'),
+ 		'classification' : _('Classification'),
+@@ -498,6 +503,7 @@
+ 		'layers'         : _('Layers'),
+ 		'loaned'         : _('Loaned'),
+ 		'media_num'      : _('Discs'),
++		'medium_id'      : _('Medium'),
+ 		'notes'          : _('Notes'),
+ 		'number'         : _('Number'),
+ 		'o_site'         : _('Official site'),
+@@ -511,6 +517,7 @@
+ 		'studio'         : _('Studio'),
+ 		'title'          : _('Title'),
+ 		'trailer'        : _('Trailer'),
++		'vcodec_id'      : _('Video codec'),
+ 		'volume_id'      : _('Volume'),
+ 		'year'           : _('Year')}
+ 	self._conditions = (_('N/A'), _('Damaged'), _('Poor'),  _('Fair'), _('Good'), _('Excellent'))
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/main_treeview.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -361,14 +361,13 @@
+ 	# disable refreshing while inserting
+ 	self.widgets['treeview'].freeze_child_notify()
+ 	self.widgets['treeview'].set_model(None)
+-	
++
+ 	# save user sort column
+ 	sort_column_id, order = self.treemodel.get_sort_column_id()
+-	
+-	self.treemodel.clear()
++
+ 	# new treemodel (faster and prevents some problems)
+ 	self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str)
+-	
++
+ 	# check preferences to hide or show columns
+ 	if self.config.get('view_number', 'True') == 'True':
+ 		self.number_column.set_visible(True)
+@@ -428,6 +427,7 @@
+ 	# add new treemodel and allow refreshs again
+ 	self.widgets['treeview'].set_model(self.treemodel)
+ 	self.widgets['treeview'].thaw_child_notify()
++	self.widgets['treeview'].set_cursor_on_cell(0)
+ #}}}
+ 
+ # vim: fdm=marker
+
+Modified: trunk/lib/plugins/imp/CSV.py
+===================================================================
+--- trunk/lib/plugins/imp/CSV.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/plugins/imp/CSV.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -45,8 +45,7 @@
+ 	email		= &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&quot;
+ 	version		= &quot;0.3&quot;
+ 	file_filters	= '*.[cC][sS][vV]'
+-	mime_types	= ('text/comma-separated-values', 'text/csv', 'application/csv',
+-			'application/excel', 'application/vnd.ms-excel', 'application/vnd.msexcel')
++	mime_types	= ('text/comma-separated-values', 'text/csv', 'application/csv')
+ 
+ 	def initialize(self):
+ 		if not IP.initialize(self):
+@@ -138,18 +137,11 @@
+ 	
+ 	def set_griffith_fields(self):
+ 		# 2nd list
+-		sorted_list = ( &quot;number&quot;,&quot;title&quot;, &quot;o_title&quot;, &quot;director&quot;, &quot;year&quot;, &quot;country&quot;, 
+-				&quot;cast&quot;, &quot;studio&quot;, &quot;plot&quot;, &quot;runtime&quot;, &quot;genre&quot;, &quot;classification&quot;,
+-				&quot;site&quot;, &quot;o_site&quot;, &quot;trailer&quot;, &quot;image&quot;, &quot;seen&quot;, &quot;loaned&quot;, &quot;notes&quot;, 
+-				&quot;rating&quot;, &quot;movie_id&quot;, &quot;collection_id&quot;, &quot;volumne_id&quot;, &quot;medium_id&quot;, 
+-				&quot;vcodec_id&quot;, &quot;color&quot;, &quot;cond&quot;, &quot;layers&quot;, &quot;region&quot;, &quot;media_num&quot; )
+-		# sort the list and add field and translated field-name
+-		for sorted in sorted_list:
+-			for name in self.fields_to_import:
+-				if sorted == name:
+-					iterator = self.ls_griffith.append()
+-					self.ls_griffith.set_value(iterator, 0, name)
+-					self.ls_griffith.set_value(iterator, 1, self.fields[name])
++		for name in self.fields_to_import:
++			if sorted == name:
++				iterator = self.ls_griffith.append()
++				self.ls_griffith.set_value(iterator, 0, name)
++				self.ls_griffith.set_value(iterator, 1, self.fields[name])
+ 		
+ 		
+ 	def create_import_table(self):
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/plugins/imp/__init__.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -231,7 +231,6 @@
+ 		ip.destroy()
+ 		self.widgets['import']['pwindow'].hide()
+ 		self.widgets['window'].set_sensitive(True)
+-	self.go_last()
+ 
+ def on_abort_button_clicked(button, self, *args):
+ 	self.widgets['import']['window'].hide()
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/preferences.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -382,5 +382,4 @@
+ 		self.initialized = True
+ 	self.clear_details()
+ 	self.filter_txt(None)
+-	self.go_last()
+ 	c.save()
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/quick_filter.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -43,7 +43,6 @@
+ 			if limit &gt; 0:
+ 				statement.limit = limit
+ 	self.populate_treeview(statement)
+-	self.go_last()
+ 
+ def clear_filter(self):
+ 	# prevent multiple treeview updates
+@@ -53,5 +52,4 @@
+ 	self.widgets['filter']['collection'].set_active(0)
+ 	self.initialized = True
+ 	self.populate_treeview()
+-	self.go_last()
+-	
++
+
+Modified: trunk/lib/view.py
+===================================================================
+--- trunk/lib/view.py	2007-01-11 14:11:04 UTC (rev 705)
++++ trunk/lib/view.py	2007-01-11 18:06:50 UTC (rev 706)
+@@ -26,17 +26,14 @@
+ def filter_not_seen(self):
+ 	self.populate_treeview()
+ 	self.update_statusbar(_(&quot;Filter activated. Showing only not seen movies.&quot;))
+-	self.go_last()
+ 
+ def filter_loaned(self):
+ 	self.populate_treeview()
+ 	self.update_statusbar(_(&quot;Filter activated. Showing only loaned movies.&quot;))
+-	self.go_last()
+ 
+ def filter_all(self):
+ 	self.populate_treeview()
+ 	self.count_statusbar()
+-	self.go_last()
+ 
+ def filter_by_volume(self, volume_id):
+ 	from quick_filter import clear_filter
+@@ -44,7 +41,6 @@
+ 	self.populate_treeview(where={'volume_id':volume_id})
+ 	volume_name = self.db.Volume.get_by(volume_id=volume_id).name
+ 	self.update_statusbar(_(&quot;Filter activated. Showing only movies from volume: %s&quot;)%volume_name)
+-	self.go_last()
+ 
+ def filter_by_collection(self, collection_id):
+ 	from quick_filter import clear_filter
+@@ -52,5 +48,4 @@
+ 	self.populate_treeview(where={'collection_id':collection_id})
+ 	collection_name = self.db.Collection.get_by(collection_id=collection_id).name
+ 	self.update_statusbar(_(&quot;Filter activated. Showing only movies from collection: %s&quot;)%collection_name)
+-	self.go_last()
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000226.html">[Griffith-svn] r705 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000228.html">[Griffith-svn] r707 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#227">[ date ]</a>
+              <a href="thread.html#227">[ thread ]</a>
+              <a href="subject.html#227">[ subject ]</a>
+              <a href="author.html#227">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,390 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1327 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1327%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912082038.nB8KcvNc021408%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000794.html">
+   <LINK REL="Next"  HREF="000796.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1327 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1327%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200912082038.nB8KcvNc021408%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1327 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec  8 21:38:57 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000794.html">[Griffith-svn] r1326 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000796.html">[Griffith-svn] r1328 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#795">[ date ]</a>
+              <a href="thread.html#795">[ thread ]</a>
+              <a href="subject.html#795">[ subject ]</a>
+              <a href="author.html#795">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-08 21:38:46 +0100 (Tue, 08 Dec 2009)
+New Revision: 1327
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCinematografo.py
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+* [#418911] It doesn't import cover art from FilmAffinity
+* movie plugin test data updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/ChangeLog	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -5,6 +5,10 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2009-12-08  Michael Jahn
++	* [#418911] It doesn't import cover art from FilmAffinity
++	* movie plugin test data updated
++
+ 2009-12-01  Michael Jahn
+ 	* re-introducing a debug window on windows platforms (activated via --debug)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCinematografo.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieCinematografo.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -181,72 +181,34 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '47931' : { 
+-            'title'             : 'Rocky Balboa',
+-            'o_title'           : 'Rocky Balboa',
+-            'director'          : 'Sylvester Stallone',
++        '3996' : { 
++            'title'             : 'Amor non ho, per&#195;&#178;... per&#195;&#178;...',
++            'o_title'           : 'Amor non ho, per&#195;&#178;... per&#195;&#178;...',
++            'director'          : 'Giorgio Bianchi',
+             'plot'              : True,
+-            'cast'              : 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
+-Burt Young' + _(' as ') + 'Pauliev\n\
+-Antonio Tarver' + _(' as ') + 'Mason \'The Line\' Dixon\n\
+-Geraldine Hughes' + _(' as ') + 'Marie\n\
+-Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+-Tony Burton' + _(' as ') + 'Duke\n\
+-A.J. Benza' + _(' as ') + 'L.C.\n\
+-James Francis Kelly III' + _(' as ') + 'Steps\n\
+-Talia Shire' + _(' as ') + 'Adrian (imagens de arquivo)\n\
+-Lou DiBella' + _(' as ') + 'Lou DiBella\n\
+-Mike Tyson (1)' + _(' as ') + 'Mike Tyson\n\
+-Henry G. Sanders' + _(' as ') + 'Martin\n\
+-Pedro Lovell' + _(' as ') + 'Spider Rico\n\
+-Ana Gerena' + _(' as ') + 'Isabel\n\
+-Angela Boyd' + _(' as ') + 'Angie\n\
+-Louis Giansante' + _(' as ') + 'Bandido do bar\n\
+-Maureen Schilling' + _(' as ') + 'Bartender do Lucky\n\
+-Lahmard Tate&#194;&#185;' + _(' as ') + 'X-Cell\n\
+-Woodrow W. Paige&#194;&#185;' + _(' as ') + 'Comentarista da ESPN\n\
+-Skip Bayless' + _(' as ') + 'Comentarista da ESPN\n\
+-Jay Crawford' + _(' as ') + 'Comentarista da ESPN\n\
+-Brian Kenny' + _(' as ') + 'Apresentador da ESPN\n\
+-Dana Jacobson' + _(' as ') + 'Apresentador da ESPN\n\
+-Chuck Johnson&#194;&#185;' + _(' as ') + 'Apresentador da ESPN\n\
+-James Binns' + _(' as ') + 'Comiss&#195;&#161;rio\n\
+-Johnnie Hobbs Jr.' + _(' as ') + 'Comiss&#195;&#161;rio\n\
+-Barney Fitzpatrick' + _(' as ') + 'Comiss&#195;&#161;rio\n\
+-Jim Lampley' + _(' as ') + 'Comentarista da HBO\n\
+-Larry Merchant' + _(' as ') + 'Comentarista da HBO\n\
+-Max Kellerman' + _(' as ') + 'Comentarista da HBO\n\
+-LeRoy Neiman' + _(' as ') + 'LeRoy Neiman\n\
+-Bert Randolph Sugar' + _(' as ') + 'Rep&#195;&#179;rter da Ring Magazine\n\
+-Bernard Fern&#195;&#161;ndez' + _(' as ') + 'Articulista da Boxing Association of America\n\
+-Gunnar Peterson' + _(' as ') + 'Treinador de levantamento de peso\n\
+-Yahya' + _(' as ') + 'Oponente de Dixon\n\
+-Marc Ratner (1)' + _(' as ') + 'Oficial de luta\n\
+-Anthony Lato Jr.' + _(' as ') + 'Inspetor de Rocky\n\
+-Jack Lazzarado' + _(' as ') + 'Inspetor de Dixon\n\
+-Michael Buffer' + _(' as ') + 'Anunciador de luta\n\
+-Joe Cortez' + _(' as ') + '&#195;&#129;rbitro\n\
+-Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
+-Vinod Kumar (1)' + _(' as ') + 'Ravi\n\
+-Fran Pultro' + _(' as ') + 'Pai no restaurante\n\
+-Frank Stallone Jr.&#194;&#185;' + _(' as ') + 'Cliente do restaurante\n\
+-Jody Giambelluca' + _(' as ') + 'Cliente do restaurante\n\
+-Tobias Segal' + _(' as ') + 'Amigo de Robert\n\
+-Tim Carr' + _(' as ') + 'Amigo de Robert\n\
+-Matt Frack' + _(' as ') + 'Amigo de Robert\n\
+-Paul Dion Monte' + _(' as ') + 'Amigo de Robert\n\
+-Kevin King Templeton' + _(' as ') + 'Amigo de Robert\n\
+-Robert Michael Kelly' + _(' as ') + 'Senhor Tomilson\n\
+-Rick Buchborn' + _(' as ') + 'F&#195;&#163; de Rocky\n\
+-Nick Baker' + _(' as ') + 'Bartender do pub irland&#195;&#170;s\n\
+-Don Sherman' + _(' as ') + 'Andy\n\
+-Stu Nahan' + _(' as ') + 'Comentarista da luta pelo computador\n\
+-Gary Compton' + _(' as ') + 'Seguran&#195;&#167;a\n\
+-Ricky Cavazos' + _(' as ') + 'Espectador da luta (n&#195;&#163;o creditado)\n\
+-Dolph Lundgren' + _(' as ') + 'Capit&#195;&#163;o Ivan Drago (imagens de arquivo) (n&#195;&#163;o creditado)\n\
+-Burgess Meredith' + _(' as ') + 'Mickey (imagens de arquivo) (n&#195;&#163;o creditado)\n\
+-Mr. T' + _(' as ') + 'Clubber Lang (imagens de arquivo) (n&#195;&#163;o creditado)\n\
+-Carl Weathers' + _(' as ') + 'Apollo Creed (imagens de arquivo) (n&#195;&#163;o creditado)',
++            'cast'              : 'Renato Rascel' + _(' as ') + 'Teodoro\n\
++Gina Lollobrigida' + _(' as ') + 'Gina\n\
++Luigi Pavese' + _(' as ') + 'Antonio Scutipizzo\n\
++Aroldo Tieri' + _(' as ') + 'Giuliano\n\
++Carlo Ninchi' + _(' as ') + 'Maurizio\n\
++Kiki Urbani' + _(' as ') + 'Kiki, la ballerina\n\
++Adriana Danieli' + _(' as ') + 'Olga\n\
++Strelsa Brown' + _(' as ') + 'Mabel\n\
++Virgilio Riento' + _(' as ') + 'Il contadino\n\
++Gabriele Tinti' + _(' as ') + '(Gastone Tinti) Un componente dell\'orchestra\n\
++Guglielmo Barnab&#195;&#178;' + _(' as ') + '\n\
++Giuseppe De Martino' + _(' as ') + '\n\
++Raimondo Vianello' + _(' as ') + '(Riccardo Vianello) \n\
++Maria Carla Vittone' + _(' as ') + '\n\
++Marco Tulli' + _(' as ') + '\n\
++Giuseppe Ricagno' + _(' as ') + '\n\
++Luciano Rebeggiani' + _(' as ') + '\n\
++Kurt Lary' + _(' as ') + '\n\
++Giovanni Lesa' + _(' as ') + '\n\
++Riccardo Ferri' + _(' as ') + '\n\
++Pia De Doses' + _(' as ') + '\n\
++Guido Barbarisi' + _(' as ') + '\n\
++Galeazzo Benti as',
+             'country'           : 'ITALIA',
+             'genre'             : 'commedia',
+             'classification'    : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -123,6 +123,7 @@
+         tmp_page = gutils.trim(self.page, 'Audio:', '&lt;b&gt;')
+         tmp_page = tmp_page.replace('&lt;br&gt;', '\n')
+         tmp_page = tmp_page.replace('&lt;br /&gt;', '\n')
++        tmp_page = tmp_page.replace('(more info)', '\n')
+         tmp_page = gutils.strip_tags(tmp_page)
+         if tmp_page &lt;&gt; '':
+             tmp_page = re.sub('[\r\n]+', '\n', tmp_page)
+@@ -243,7 +244,7 @@
+ Video:\n\
+ Widescreen 1.85:1 Color (Anamorphic) \n\
+ \n\
+-Audio:\n\
++Audio: \n\
+ ENGLISH: Dolby Digital 5.1 [CC]\n\
+ FRENCH: Dolby Digital 5.1\n\
+ \n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -231,7 +231,7 @@
+ Michael Buffer' + _(' as ') + 'Anunciador de luta\n\
+ Joe Cortez' + _(' as ') + '&#195;&#129;rbitro\n\
+ Carter Mitchell' + _(' as ') + 'Shamrock Foreman\n\
+-Vinod Kumar' + _(' as ') + 'Ravi\n\
++Vinod Kumar (1)' + _(' as ') + 'Ravi\n\
+ Fran Pultro' + _(' as ') + 'Pai no restaurante\n\
+ Frank Stallone Jr.&#194;&#185;' + _(' as ') + 'Cliente do restaurante\n\
+ Jody Giambelluca' + _(' as ') + 'Cliente do restaurante\n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -44,11 +44,11 @@
+         self.page = self.page.replace(u'\x92', '\'')
+ 
+     def get_image(self):
+-        tmp = string.find(self.page, 'pics.filmaffinity.com/')
+-        if tmp == -1:
++        tmp = re.search('pics[0-9]*.filmaffinity.com/', self.page)
++        if not tmp:
+             self.image_url = ''
+         else:
+-            self.image_url = '<A HREF="http://">http://</A>' + gutils.before(self.page[tmp:], '&quot;')
++            self.image_url = '<A HREF="http://">http://</A>' + gutils.before(self.page[tmp.start():], '&quot;')
+ 
+     def get_o_title(self):
+         self.o_title = gutils.trim(self.page, u'&lt;b&gt;T&#205;TULO ORIGINAL&lt;/b&gt;&lt;/td&gt;', '&lt;/b&gt;&lt;/td&gt;')
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -200,65 +200,65 @@
+             'director'            : 'Sylvester Stallone',
+             'plot'                : True,
+             'cast'                : 'Dolph Lundgren\n\
++Mike Tyson\n\
+ Sylvester Stallone\n\
+-Mike Tyson\n\
+ Carl Weathers\n\
+ Burt Young\n\
++Milo Ventimiglia\n\
+ Talia Shire\n\
+-Milo Ventimiglia\n\
+ Burgess Meredith\n\
+ Tony Burton\n\
+ Mr. T\n\
++Frank Stallone\n\
+ Geraldine Hughes\n\
+-Frank Stallone\n\
+ Lahmard J. Tate\n\
+ Michael Buffer\n\
+ Don Sherman\n\
+ Tobias Segal\n\
+ Gunnar Peterson\n\
+ LeRoy Neiman\n\
++Yahya\n\
++Henry G. Sanders\n\
++Stu Nahan\n\
+ Jody Giambelluca\n\
+ Ricky Cavazos\n\
+ Rick Buchborn\n\
+-Stu Nahan\n\
++Joe Cortez\n\
++Skip Bayless\n\
+ Barney Fitzpatrick\n\
+-Henry G. Sanders\n\
+ Fran Pultro\n\
+-Joe Cortez\n\
+-Yahya\n\
+-Skip Bayless\n\
++Angela Boyd\n\
+ Robert Michael Kelly\n\
+-Angela Boyd\n\
++Ana Gerena\n\
+ Tim Carr\n\
+ Jim Lampley\n\
+ Charles Johnson\n\
+ Carter Mitchell\n\
++Dana Jacobson\n\
++Matt Frack\n\
+ A.J. Benza\n\
+-Matt Frack\n\
++Antonio Tarver\n\
+ Max Kellerman\n\
++Marc Ratner\n\
+ Jack Lazzarado\n\
+-Marc Ratner\n\
++Maureen Schilling\n\
+ Larry Merchant\n\
+-Dana Jacobson\n\
+-Antonio Tarver\n\
+-Ana Gerena\n\
+-Maureen Schilling\n\
+ Bernard Fern&#195;&#161;ndez\n\
+ Louis Giansante\n\
+ Nick Baker\n\
+ James Binns\n\
+ Brian Kenny\n\
+ Anthony Lato Jr.\n\
++Paul Dion Monte\n\
+ Woody Paige\n\
+-Paul Dion Monte\n\
++Kevin King Templeton\n\
+ Gary Compton\n\
+ Lou DiBella\n\
+-Kevin King Templeton\n\
+ Jay Crawford\n\
+ Pedro Lovell\n\
+ Johnnie Hobbs Jr.\n\
++Vinod Kumar\n\
+ Bert Randolph Sugar\n\
+-Vinod Kumar\n\
+ James Francis Kelly III',
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+@@ -302,8 +302,8 @@
+             'director'            : 'Ryoo Seung-Wan',
+             'plot'                : True,
+             'cast'                : 'So-yi Yoon\n\
++Ahn Sung-ki\n\
+ Doo-hong Jung\n\
+-Ahn Sung-ki\n\
+ Ryu Seung-beom\n\
+ Yun Ju-Sang',
+             'country'             : 'RK',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -421,6 +421,6 @@
+ + _('Color') + ': Farbe (Eastmancolor)',
+             'runtime'            : 90,
+             'image'              : True,
+-            'rating'             : 8
++            'rating'             : 7
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-12-01 21:06:05 UTC (rev 1326)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2009-12-08 20:38:46 UTC (rev 1327)
+@@ -275,7 +275,7 @@
+             'cast'              : 'Geoffrey Rush' + _(' as ') + 'Philip Henslowe\n\
+ Tom Wilkinson' + _(' as ') + 'Hugh Fennyman\n\
+ Steven O\'Donnell' + _(' as ') + 'Lambert\n\
+-Tim McMullan' + _(' as ') + 'Frees\n\
++Tim McMullan' + _(' as ') + 'Frees (as Tim McMullen)\n\
+ Joseph Fiennes' + _(' as ') + 'Will Shakespeare\n\
+ Steven Beard' + _(' as ') + 'Makepeace - the Preacher\n\
+ Antony Sher' + _(' as ') + 'Dr. Moth\n\
+@@ -284,7 +284,7 @@
+ Sandra Reinton' + _(' as ') + 'Rosaline\n\
+ Simon Callow' + _(' as ') + 'Tilney - Master of the Revels\n\
+ Judi Dench' + _(' as ') + 'Queen Elizabeth\n\
+-Bridget McConnell' + _(' as ') + 'Lady in Waiting\n\
++Bridget McConnell' + _(' as ') + 'Lady in Waiting (as Bridget McConnel)\n\
+ Georgie Glen' + _(' as ') + 'Lady in Waiting\n\
+ Nicholas Boulton' + _(' as ') + 'Henry Condell\n\
+ Gwyneth Paltrow' + _(' as ') + 'Viola De Lesseps\n\
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000794.html">[Griffith-svn] r1326 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000796.html">[Griffith-svn] r1328 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#795">[ date ]</a>
+              <a href="thread.html#795">[ thread ]</a>
+              <a href="subject.html#795">[ subject ]</a>
+              <a href="author.html#795">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

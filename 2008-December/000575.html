@@ -1,0 +1,353 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1100 - branches/0.9.x/lib trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1100%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200812202148.mBKLm59A026260%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000574.html">
+   <LINK REL="Next"  HREF="000576.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1100 - branches/0.9.x/lib trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1100%20-%20branches/0.9.x/lib%20trunk/lib&In-Reply-To=%3C200812202148.mBKLm59A026260%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1100 - branches/0.9.x/lib trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 20 22:48:05 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000574.html">[Griffith-svn] r1099 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000576.html">[Griffith-svn] r1101 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#575">[ date ]</a>
+              <a href="thread.html#575">[ thread ]</a>
+              <a href="subject.html#575">[ subject ]</a>
+              <a href="author.html#575">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-12-20 22:47:39 +0100 (Sat, 20 Dec 2008)
+New Revision: 1100
+
+Modified:
+   branches/0.9.x/lib/test_movieplugins.py
+   trunk/lib/test_movieplugins.py
+Log:
+movie plugin test code writes result files
+0.10 compatibility fixed for movie plugin test code
+
+Modified: branches/0.9.x/lib/test_movieplugins.py
+===================================================================
+--- branches/0.9.x/lib/test_movieplugins.py	2008-12-20 21:44:52 UTC (rev 1099)
++++ branches/0.9.x/lib/test_movieplugins.py	2008-12-20 21:47:39 UTC (rev 1100)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2007
++# Copyright (c) 2006-2008
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -75,7 +75,7 @@
+ 	# simulates the search for a movie title and compares
+ 	# the count of results with the expected count
+ 	#
+-	def test_search(self, plugin, title, cntOriginal, cntTranslated):
++	def test_search(self, plugin, logFile, title, cntOriginal, cntTranslated):
+ 		global debug, myconfig
+ 		result = True
+ 		plugin.debug = debug
+@@ -90,6 +90,11 @@
+ 		plugin.get_searches()
+ 		if not len(plugin.ids) - 1 == cntOriginal:	# first entry is always '' (???)
+ 			print &quot;Title (Translated): %s - expected: %d - found: %d&quot; % (title, cntOriginal, len(plugin.ids) - 1)
++			logFile.write(&quot;Title (Translated): %s - expected: %d - found: %d\n\n&quot; % (title, cntOriginal, len(plugin.ids) - 1))
++			for titleFound in plugin.titles:
++				logFile.write(titleFound)
++				logFile.write('\n')
++			logFile.write('\n\n')
+ 			result = False
+ 		# plugin.original_url_search
+ 		plugin.url = plugin.original_url_search
+@@ -101,6 +106,11 @@
+ 		plugin.get_searches()
+ 		if not len(plugin.ids) - 1 == cntTranslated:	# first entry is always '' (???)
+ 			print &quot;Title (Original): %s - expected: %d - found: %d&quot; % (title, cntTranslated, len(plugin.ids) - 1)
++			logFile.write(&quot;Title (Original): %s - expected: %d - found: %d\n\n&quot; % (title, cntTranslated, len(plugin.ids) - 1))
++			for titleFound in plugin.titles:
++				logFile.write(titleFound)
++				logFile.write('\n')
++			logFile.write('\n\n')
+ 			result = False
+ 		return result
+ 
+@@ -118,11 +128,15 @@
+ 			pluginTestConfig = None
+ 		
+ 		if not pluginTestConfig == None:
+-			for i in pluginTestConfig.test_configuration:
+-				searchPlugin = plugin.SearchPlugin()
+-				if not self.test_search(searchPlugin, i, pluginTestConfig.test_configuration[i][0], pluginTestConfig.test_configuration[i][1]):
+-					result = False
+-				sleep(1) # needed for amazon
++			logFile = open(plugin_name + '-searchtest.txt', 'w+')
++			try:
++				for i in pluginTestConfig.test_configuration:
++					searchPlugin = plugin.SearchPlugin()
++					if not self.test_search(searchPlugin, logFile, i, pluginTestConfig.test_configuration[i][0], pluginTestConfig.test_configuration[i][1]):
++						result = False
++					sleep(1) # needed for amazon
++			finally:
++				logFile.close()
+ 		
+ 		if domsgbox:
+ 			if not result:
+@@ -136,7 +150,7 @@
+ 	# simulates the resolving of movie data for configured movies and
+ 	# compares the results with the expected once
+ 	#
+-	def test_one_movie(self, movieplugin, results_expected):
++	def test_one_movie(self, movieplugin, logFile, results_expected):
+ 		global debug, myconfig
+ 		result = True
+ 		self.movie = movieplugin
+@@ -190,18 +204,22 @@
+ 				if i_val:
+ 					if not results.has_key(i) or len(results[i]) &lt; 1:
+ 						print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++						logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
+ 						result = False
+ 				else:
+ 					if results.has_key(i) and len(results[i]) &gt; 0:
+ 						print &quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s&quot; % (movieplugin.movie_id, i, results[i])
++						logFile.write(&quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s\n\n&quot; % (movieplugin.movie_id, i, results[i]))
+ 						result = False
+ 			else:
+ 				if not results.has_key(i):
+ 					print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++					logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
+ 					result = False
+ 				else:
+ 					if not results[i] == i_val:
+ 						print &quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s&quot; % (movieplugin.movie_id, i, i_val, results[i])
++						logFile.write(&quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n&quot; % (movieplugin.movie_id, i, i_val, results[i]))
+ 						result = False
+ 		return result
+ 	
+@@ -219,11 +237,15 @@
+ 			pluginTestConfig = None
+ 		
+ 		if not pluginTestConfig == None:
+-			for i in pluginTestConfig.test_configuration:
+-				moviePlugin = plugin.Plugin(i)
+-				if not self.test_one_movie(moviePlugin, pluginTestConfig.test_configuration[i]):
+-					result = False
+-				sleep(1) # needed for amazon
++			logFile = open(plugin_name + '-loadtest.txt', 'w+')
++			try:
++				for i in pluginTestConfig.test_configuration:
++					moviePlugin = plugin.Plugin(i)
++					if not self.test_one_movie(moviePlugin, logFile, pluginTestConfig.test_configuration[i]):
++						result = False
++					sleep(1) # needed for amazon
++			finally:
++				logFile.close()
+ 
+ 		if domsgbox:
+ 			if not result:
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2008-12-20 21:44:52 UTC (rev 1099)
++++ trunk/lib/test_movieplugins.py	2008-12-20 21:47:39 UTC (rev 1100)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2006-2007
++# Copyright (c) 2006-2008
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -44,6 +44,7 @@
+ import sys
+ import initialize
+ import gutils
++import gconsole
+ import config
+ import os
+ from time import sleep
+@@ -52,7 +53,11 @@
+     import gobject
+ except:
+     pass
+-    
++
++import logging
++logging.basicConfig()
++log = logging.getLogger(&quot;Griffith&quot;)
++
+ sys.path.append('plugins/movie')
+ 
+ #
+@@ -74,7 +79,7 @@
+     # simulates the search for a movie title and compares
+     # the count of results with the expected count
+     #
+-    def test_search(self, plugin, title, cntOriginal, cntTranslated):
++    def test_search(self, plugin, logFile, title, cntOriginal, cntTranslated):
+         global myconfig
+         result = True
+         plugin.config = myconfig
+@@ -88,6 +93,11 @@
+         plugin.get_searches()
+         if not len(plugin.ids) - 1 == cntOriginal:    # first entry is always '' (???)
+             print &quot;Title (Translated): %s - expected: %d - found: %d&quot; % (title, cntOriginal, len(plugin.ids) - 1)
++            logFile.write(&quot;Title (Translated): %s - expected: %d - found: %d\n\n&quot; % (title, cntOriginal, len(plugin.ids) - 1))
++            for titleFound in plugin.titles:
++                logFile.write(titleFound)
++                logFile.write('\n')
++            logFile.write('\n\n')
+             result = False
+         # plugin.original_url_search
+         plugin.url = plugin.original_url_search
+@@ -99,6 +109,11 @@
+         plugin.get_searches()
+         if not len(plugin.ids) - 1 == cntTranslated:    # first entry is always '' (???)
+             print &quot;Title (Original): %s - expected: %d - found: %d&quot; % (title, cntTranslated, len(plugin.ids) - 1)
++            logFile.write(&quot;Title (Original): %s - expected: %d - found: %d\n\n&quot; % (title, cntTranslated, len(plugin.ids) - 1))
++            for titleFound in plugin.titles:
++                logFile.write(titleFound)
++                logFile.write('\n')
++            logFile.write('\n\n')
+             result = False
+         return result
+ 
+@@ -116,11 +131,15 @@
+             pluginTestConfig = None
+         
+         if not pluginTestConfig == None:
+-            for i in pluginTestConfig.test_configuration:
+-                searchPlugin = plugin.SearchPlugin()
+-                if not self.test_search(searchPlugin, i, pluginTestConfig.test_configuration[i][0], pluginTestConfig.test_configuration[i][1]):
+-                    result = False
+-                sleep(1) # needed for amazon
++            logFile = open(plugin_name + '-searchtest.txt', 'w+')
++            try:
++                for i in pluginTestConfig.test_configuration:
++                    searchPlugin = plugin.SearchPlugin()
++                    if not self.test_search(searchPlugin, logFile, i, pluginTestConfig.test_configuration[i][0], pluginTestConfig.test_configuration[i][1]):
++                        result = False
++                    sleep(1) # needed for amazon
++            finally:
++                logFile.close()
+         
+         if domsgbox:
+             if not result:
+@@ -134,7 +153,7 @@
+     # simulates the resolving of movie data for configured movies and
+     # compares the results with the expected once
+     #
+-    def test_one_movie(self, movieplugin, results_expected):
++    def test_one_movie(self, movieplugin, logFile, results_expected):
+         global myconfig
+         result = True
+         self.movie = movieplugin
+@@ -187,18 +206,22 @@
+                 if i_val:
+                     if not results.has_key(i) or len(results[i]) &lt; 1:
+                         print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++                        logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
+                         result = False
+                 else:
+                     if results.has_key(i) and len(results[i]) &gt; 0:
+                         print &quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s&quot; % (movieplugin.movie_id, i, results[i])
++                        logFile.write(&quot;Test error: %s: No value expected but something returned.\nKey: %s\nValue: %s\n\n&quot; % (movieplugin.movie_id, i, results[i]))
+                         result = False
+             else:
+                 if not results.has_key(i):
+                     print &quot;Test error: %s: Value expected but nothing returned.\nKey: %s&quot; % (movieplugin.movie_id, i)
++                    logFile.write(&quot;Test error: %s: Value expected but nothing returned.\nKey: %s\n\n&quot; % (movieplugin.movie_id, i))
+                     result = False
+                 else:
+                     if not results[i] == i_val:
+                         print &quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s&quot; % (movieplugin.movie_id, i, i_val, results[i])
++                        logFile.write(&quot;Test error: %s: Wrong value returned.\nKey: %s\nValue expected: %s\nValue returned: %s\n\n&quot; % (movieplugin.movie_id, i, i_val, results[i]))
+                         result = False
+         return result
+     
+@@ -216,11 +239,15 @@
+             pluginTestConfig = None
+         
+         if not pluginTestConfig == None:
+-            for i in pluginTestConfig.test_configuration:
+-                moviePlugin = plugin.Plugin(i)
+-                if not self.test_one_movie(moviePlugin, pluginTestConfig.test_configuration[i]):
+-                    result = False
+-                sleep(1) # needed for amazon
++            logFile = open(plugin_name + '-loadtest.txt', 'w+')
++            try:
++                for i in pluginTestConfig.test_configuration:
++                    moviePlugin = plugin.Plugin(i)
++                    if not self.test_one_movie(moviePlugin, logFile, pluginTestConfig.test_configuration[i]):
++                        result = False
++                    sleep(1) # needed for amazon
++            finally:
++                logFile.close()
+         
+         if domsgbox:
+             if not result:
+@@ -238,11 +265,13 @@
+     def do_test(self, domsgbox=True):
+         global myconfig
+         self._tmp_home = None
+-        self._tmp_config = 'griffith.cfg'
+-        initialize.locations(self)
++        home_dir, config_name = gconsole.check_args()
++        if not (config_name.find('/') &gt;= 0 or config_name.find('\\') &gt;= 0):
++            config_name = os.path.join(home_dir, config_name)
++        log.debug(&quot;config file used: %s&quot;, config_name)
++        myconfig = config.Config(file=config_name)
++        initialize.locations(self, home_dir)
+         gettext.install('griffith', self.locations['i18n'], unicode=1)
+-        configFileName = os.path.join(self.locations['home'], self._tmp_config)
+-        myconfig = self.config = config.Config(file=configFileName)
+         search_successful = ''
+         search_unsuccessful = ''
+         get_successful = ''
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000574.html">[Griffith-svn] r1099 - branches/0.9.x/lib/plugins/movie	trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000576.html">[Griffith-svn] r1101 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#575">[ date ]</a>
+              <a href="thread.html#575">[ thread ]</a>
+              <a href="subject.html#575">[ subject ]</a>
+              <a href="author.html#575">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

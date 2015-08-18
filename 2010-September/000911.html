@@ -1,0 +1,430 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1449 - in trunk: . glade lib lib/db
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1449%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/db&In-Reply-To=%3C20100929210304.AEC09481024%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000910.html">
+   <LINK REL="Next"  HREF="000912.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1449 - in trunk: . glade lib lib/db</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1449%20-%20in%20trunk%3A%20.%20glade%20lib%20lib/db&In-Reply-To=%3C20100929210304.AEC09481024%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1449 - in trunk: . glade lib lib/db">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 29 23:03:04 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000910.html">[Griffith-svn] r1448 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000912.html">[Griffith-svn] r1450 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#911">[ date ]</a>
+              <a href="thread.html#911">[ thread ]</a>
+              <a href="subject.html#911">[ subject ]</a>
+              <a href="author.html#911">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-09-29 23:03:04 +0200 (Wed, 29 Sep 2010)
+New Revision: 1449
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/advfilter.py
+   trunk/lib/db/__init__.py
+   trunk/lib/db/tables.py
+   trunk/lib/dbupgrade.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/preferences.py
+   trunk/lib/widgets.py
+Log:
+added fields &quot;created&quot; and &quot;updated&quot; to movie entries
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/ChangeLog	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-09-29  Michael Jahn
++	* added fields &quot;created&quot; and &quot;updated&quot; to movie entries
++
+ 2010-09-25  Michael Jahn
+ 	* [#502990] Own settings will not be saved in HTML-Export
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/glade/griffith.glade	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -2763,10 +2763,44 @@
+                             &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                             &lt;property name=&quot;border_width&quot;&gt;8&lt;/property&gt;
+                             &lt;property name=&quot;n_rows&quot;&gt;2&lt;/property&gt;
+-                            &lt;property name=&quot;n_columns&quot;&gt;5&lt;/property&gt;
++                            &lt;property name=&quot;n_columns&quot;&gt;6&lt;/property&gt;
+                             &lt;property name=&quot;column_spacing&quot;&gt;8&lt;/property&gt;
+                             &lt;property name=&quot;row_spacing&quot;&gt;8&lt;/property&gt;
+                             &lt;child&gt;
++                              &lt;widget class=&quot;GtkCheckButton&quot; id=&quot;view_created&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Created&lt;/property&gt;
++                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                                &lt;property name=&quot;draw_indicator&quot;&gt;True&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;6&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
++                            &lt;child&gt;
++                              &lt;widget class=&quot;GtkCheckButton&quot; id=&quot;view_updated&quot;&gt;
++                                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Updated&lt;/property&gt;
++                                &lt;property name=&quot;use_underline&quot;&gt;True&lt;/property&gt;
++                                &lt;property name=&quot;response_id&quot;&gt;0&lt;/property&gt;
++                                &lt;property name=&quot;draw_indicator&quot;&gt;True&lt;/property&gt;
++                              &lt;/widget&gt;
++                              &lt;packing&gt;
++                                &lt;property name=&quot;left_attach&quot;&gt;5&lt;/property&gt;
++                                &lt;property name=&quot;right_attach&quot;&gt;6&lt;/property&gt;
++                                &lt;property name=&quot;top_attach&quot;&gt;1&lt;/property&gt;
++                                &lt;property name=&quot;bottom_attach&quot;&gt;2&lt;/property&gt;
++                                &lt;property name=&quot;x_options&quot;&gt;GTK_FILL&lt;/property&gt;
++                                &lt;property name=&quot;y_options&quot;&gt;&lt;/property&gt;
++                              &lt;/packing&gt;
++                            &lt;/child&gt;
++                            &lt;child&gt;
+                               &lt;widget class=&quot;GtkCheckButton&quot; id=&quot;view_rating&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/griffith	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -1213,6 +1213,12 @@
+             elif treeview_column == self.rating_column:
+                 columnorder = columnorder + delimiter + 'rating'
+                 delimiter = ','
++            elif treeview_column == self.created_column:
++                columnorder = columnorder + delimiter + 'created'
++                delimiter = ','
++            elif treeview_column == self.updated_column:
++                columnorder = columnorder + delimiter + 'updated'
++                delimiter = ','
+         self.config.set('columnorder', columnorder, section='mainlist')
+         columnsorting = self.treemodel.get_sort_column_id()
+         self.config.set('columnsortid', columnsorting[0], section='mainlist')
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/add.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -142,6 +142,10 @@
+             tmp_model.set_value(tmp_iter, 9, '')
+         else:
+             tmp_model.set_value(tmp_iter, 9, movie.rating)
++        if movie.created:
++            tmp_model.set_value(tmp_iter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
++        if movie.updated:
++            tmp_model.set_value(tmp_iter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
+         # close add window
+         self.widgets['add']['window'].hide()
+         # refresh
+@@ -377,6 +381,8 @@
+         'cast': cast_buffer.get_text(cast_buffer.get_start_iter(), cast_buffer.get_end_iter()).decode('utf-8'),
+         'notes': notes_buffer.get_text(notes_buffer.get_start_iter(), notes_buffer.get_end_iter()).decode('utf-8'),
+         'plot': plot_buffer.get_text(plot_buffer.get_start_iter(), plot_buffer.get_end_iter()).decode('utf-8'),
++        'created': None,
++        'updated': None
+     }
+     if self._am_movie_id is not None:
+         t_movies['movie_id'] = self._am_movie_id
+@@ -736,6 +742,10 @@
+         self.treemodel.set_value(myiter, 9, '')
+     else:
+         self.treemodel.set_value(myiter, 9, int(details['rating']))
++    if details['created']:
++        self.treemodel.set_value(myiter, 10, details['created'].strftime('%Y-%m-%d %H:%M'))
++    if details['updated']:
++        self.treemodel.set_value(myiter, 11, details['updated'].strftime('%Y-%m-%d %H:%M'))
+     #update statusbar
+     self.total += 1
+     self.count_statusbar()
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/advfilter.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -445,7 +445,7 @@
+         db.Movie.director, db.Movie.poster_md5,
+         db.Movie.genre, db.Movie.seen,
+         db.Movie.year, db.Movie.runtime,
+-        db.Movie.rating]
++        db.Movie.rating, db.Movie.created, db.Movie.updated]
+     return columns_to_select # }}}
+ 
+ 
+
+Modified: trunk/lib/db/__init__.py
+===================================================================
+--- trunk/lib/db/__init__.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/db/__init__.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -1,7 +1,7 @@
+ # -*- coding: UTF-8 -*-
+ # vim: fdm=marker
+ __revision__ = '$Id$'
+-__version__ = 5 # XXX: database format version, remember to increase after changing data structures
++__version__ = 6 # XXX: database format version, remember to increase after changing data structures
+ 
+ # Copyright &#169; 2009 Piotr O&#380;arowski
+ #
+
+Modified: trunk/lib/db/tables.py
+===================================================================
+--- trunk/lib/db/tables.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/db/tables.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -21,8 +21,9 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
++import datetime
+ from sqlalchemy import Table, Column, ForeignKey, func
+-from sqlalchemy.types import Boolean, Unicode, Text, Integer, SmallInteger, Date, Binary, PickleType
++from sqlalchemy.types import Boolean, Unicode, Text, Integer, SmallInteger, Date, Binary, PickleType, DateTime
+ 
+ from db import metadata
+ 
+@@ -90,6 +91,8 @@
+     Column('plot', Text),
+     Column('notes', Text),
+     Column('image', Unicode(128)), # XXX: deprecated
++    Column('created', DateTime, default=datetime.datetime.now),
++    Column('updated', DateTime, onupdate=datetime.datetime.now),
+     )
+ 
+ people = Table('people', metadata,
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/dbupgrade.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -238,6 +238,25 @@
+         self.session.add(db_version)
+         self.session.commit()
+ 
++    if version == 5:    # fix changes between v5 and v6
++        version += 1
++        log.info(&quot;Upgrading database to version %d...&quot;, version)
++        
++        # common SQL statements
++        queries = {'created': 'ALTER TABLE movies ADD created DATETIME;',
++                   'updated': 'ALTER TABLE movies ADD updated DATETIME;'}
++        for key, query in queries.items():
++            try:
++                self.session.bind.execute(query)
++            except Exception, e:
++                log.error(&quot;Cannot add '%s' column: %s&quot;, key, e)
++                return False
++
++        db_version = self.session.query(db.Configuration).filter_by(param=u'version').one()
++        db_version.value = unicode(version)
++        self.session.add(db_version)
++        self.session.commit()
++
+     return True
+ 
+ 
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/initialize.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -167,7 +167,7 @@
+ 
+ 
+ def treeview(self):
+-    self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int)
++    self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int, str, str)
+     self.widgets['treeview'].set_model(self.treemodel)
+     self.widgets['treeview'].set_headers_visible(True)
+     # number column
+@@ -245,6 +245,24 @@
+     self.rating_column.set_alignment(0.5)
+     self.rating_column.set_reorderable(True)
+     self.widgets['treeview'].append_column(self.rating_column)
++    # created column
++    renderer = gtk.CellRendererText()
++    renderer.set_property('xalign', 0.5)
++    self.created_column = gtk.TreeViewColumn(_('Created'), renderer, text=10)
++    self.created_column.set_sort_column_id(10)
++    self.created_column.set_resizable(True)
++    self.created_column.set_alignment(0.5)
++    self.created_column.set_reorderable(True)
++    self.widgets['treeview'].append_column(self.created_column)
++    # updated column
++    renderer = gtk.CellRendererText()
++    renderer.set_property('xalign', 0.5)
++    self.updated_column = gtk.TreeViewColumn(_('Updated'), renderer, text=11)
++    self.updated_column.set_sort_column_id(11)
++    self.updated_column.set_resizable(True)
++    self.updated_column.set_alignment(0.5)
++    self.updated_column.set_reorderable(True)
++    self.widgets['treeview'].append_column(self.updated_column)
+     # reflect saved column order
+     columnorder = self.config.get('columnorder', None, section='mainlist')
+     if not columnorder is None:
+@@ -281,6 +299,12 @@
+             elif col == 'rating':
+                 self.widgets['treeview'].move_column_after(self.rating_column, currentcol)
+                 currentcol = self.rating_column
++            elif col == 'created':
++                self.widgets['treeview'].move_column_after(self.created_column, currentcol)
++                currentcol = self.created_column
++            elif col == 'updated':
++                self.widgets['treeview'].move_column_after(self.updated_column, currentcol)
++                currentcol = self.updated_column
+     # reflect saved column sorting
+     columnsortid = self.config.get('columnsortid', None, section='mainlist')
+     columnsortorder = self.config.get('columnsortorder', None, section='mainlist')
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/main_treeview.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -434,7 +434,7 @@
+     sort_column_id, order = self.treemodel.get_sort_column_id()
+ 
+     # new treemodel (faster and prevents some problems)
+-    self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int)
++    self.treemodel = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, str, str, str, bool, str, str, int, str, str)
+ 
+     # check preferences to hide or show columns
+     if self.config.get('number', True, 'mainlist') == True:
+@@ -477,6 +477,14 @@
+         self.rating_column.set_visible(True)
+     else:
+         self.rating_column.set_visible(False)
++    if self.config.get('created', True, 'mainlist') == True:
++        self.created_column.set_visible(True)
++    else:
++        self.created_column.set_visible(False)
++    if self.config.get('updated', True, 'mainlist') == True:
++        self.updated_column.set_visible(True)
++    else:
++        self.updated_column.set_visible(False)
+ 
+     for movie in movies:
+         myiter = self.treemodel.append(None)
+@@ -507,6 +515,10 @@
+             self.treemodel.set_value(myiter, 8, '%003d' % movie.runtime + _(' min'))
+         if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+             self.treemodel.set_value(myiter, 9, movie.rating)
++        if movie.created:
++            self.treemodel.set_value(myiter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
++        if movie.updated:
++            self.treemodel.set_value(myiter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
+ 
+     # restore user sort column
+     if sort_column_id is not None:
+
+Modified: trunk/lib/preferences.py
+===================================================================
+--- trunk/lib/preferences.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/preferences.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -91,6 +91,16 @@
+         w['view_rating'].set_active(False)
+     else:
+         w['view_rating'].set_active(True)
++    # created
++    if self.config.get('created', True, 'mainlist') == False:
++        w['view_created'].set_active(False)
++    else:
++        w['view_created'].set_active(True)
++    # updated
++    if self.config.get('updated', True, 'mainlist') == False:
++        w['view_updated'].set_active(False)
++    else:
++        w['view_updated'].set_active(True)
+ 
+     # email reminder
+     if self.config.get('use_auth', False, section='mail') == False:
+@@ -283,6 +293,16 @@
+         c.set('rating', 'True', section='mainlist')
+     else:
+         c.set('rating', 'False', section='mainlist')
++    # created
++    if w['view_created'].get_active():
++        c.set('created', 'True', section='mainlist')
++    else:
++        c.set('created', 'False', section='mainlist')
++    # updated
++    if w['view_updated'].get_active():
++        c.set('updated', 'True', section='mainlist')
++    else:
++        c.set('updated', 'False', section='mainlist')
+ 
+     # sortby
+     if w['sortby'].get_active():
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2010-09-27 18:59:20 UTC (rev 1448)
++++ trunk/lib/widgets.py	2010-09-29 21:03:04 UTC (rev 1449)
+@@ -241,6 +241,8 @@
+         'view_year': get('view_year'),
+         'view_runtime': get('view_runtime'),
+         'view_rating': get('view_rating'),
++        'view_created': get('view_created'),
++        'view_updated': get('view_updated'),
+         'rating_image': get('rating_image'),
+         'spellchecker': get('spellchecker_pref'),
+         'spell_notes': get('spell_notes'),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000910.html">[Griffith-svn] r1448 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000912.html">[Griffith-svn] r1450 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#911">[ date ]</a>
+              <a href="thread.html#911">[ thread ]</a>
+              <a href="subject.html#911">[ subject ]</a>
+              <a href="author.html#911">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

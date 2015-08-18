@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1343 - trunk/lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1343%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C200912222147.nBMLlTiN007820%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000810.html">
+   <LINK REL="Next"  HREF="000812.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1343 - trunk/lib/plugins/imp</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1343%20-%20trunk/lib/plugins/imp&In-Reply-To=%3C200912222147.nBMLlTiN007820%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1343 - trunk/lib/plugins/imp">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec 22 22:47:29 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000810.html">[Griffith-svn] r1342 - trunk/lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000812.html">[Griffith-svn] r1345 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#811">[ date ]</a>
+              <a href="thread.html#811">[ thread ]</a>
+              <a href="subject.html#811">[ subject ]</a>
+              <a href="author.html#811">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-12-22 22:47:14 +0100 (Tue, 22 Dec 2009)
+New Revision: 1343
+
+Modified:
+   trunk/lib/plugins/imp/__init__.py
+Log:
+* set current directory back after importing data
+* pep8ify
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2009-12-22 21:30:33 UTC (rev 1342)
++++ trunk/lib/plugins/imp/__init__.py	2009-12-22 21:47:14 UTC (rev 1343)
+@@ -38,6 +38,7 @@
+ __all__ = [os.path.basename(x)[:-3] for x in glob.glob(&quot;%s/*.py&quot; % os.path.dirname(__file__))]
+ __all__.remove('__init__')
+ 
++
+ class ImportPlugin(object):
+     description = None
+     author = None
+@@ -52,10 +53,12 @@
+     imported = 0
+     data = None
+ 
++    previous_dir = None
++
+     # mapping dicts name to id
+-    mediummap    = None
+-    tagmap       = None
+-    vcodecsmap   = None
++    mediummap = None
++    tagmap = None
++    vcodecsmap = None
+ 
+     def __init__(self, parent, fields_to_import):
+         self.parent = parent
+@@ -109,6 +112,7 @@
+     def set_source(self, name):
+         &quot;&quot;&quot;Prepare source (open file, etc.)&quot;&quot;&quot;
+         # change current dir because there are posters with relative paths (perhaps)
++        self.previous_dir = os.getcwd()
+         os.chdir(os.path.dirname(name))
+ 
+     def count_movies(self):
+@@ -124,11 +128,11 @@
+         from add import validate_details, edit_movie
+         from sqlalchemy import select
+         import gtk
+-        
++
+         if not self.set_source(name):
+             log.info(&quot;Can't read data from file %s&quot;, name)
+             return False
+-        
++
+         self.widgets['pwindow'].show()
+         while gtk.events_pending():    # give GTK some time for updates
+             gtk.main_iteration()
+@@ -137,12 +141,12 @@
+         update_on = []
+         count = self.count_movies()
+         if count &gt; 0:
+-            for i in range(0,100):
+-                update_on.append(int(float(i)/100*count))
++            for i in range(0, 100):
++                update_on.append(int(float(i) / 100 * count))
+ 
+         session = self.db.Session()
+         session.bind = self.db.session.bind
+-        
++
+         # move some stuff outside the loop to speed it up
+         set_fraction = self.widgets['progressbar'].set_fraction
+         set_text = self.widgets['progressbar'].set_text
+@@ -170,7 +174,7 @@
+ 
+                 processed += 1
+                 if processed in update_on:
+-                    set_fraction(float(processed)/count)
++                    set_fraction(float(processed) / count)
+                     main_iteration()
+                     set_text(&quot;%s (%s/%s)&quot; % (self.imported, processed, count))
+                     main_iteration()
+@@ -252,13 +256,13 @@
+                                             tag_id = self.tagmap[tag.lower()]
+                                         else:
+                                             tag_id = int(tag)
+-                                        db.tables.movie_tag.insert(bind=self.db.session.bind).execute({ 'movie_id':movie.lastrowid, 'tag_id':tag_id })
++                                        db.tables.movie_tag.insert(bind=self.db.session.bind).execute({'movie_id': movie.lastrowid, 'tag_id': tag_id})
+                                     except:
+                                         pass
+                             # adding poster
+                             if poster:
+                                 if len(poster) &gt; 4:
+-                                    # check for JPEG/PNG header otherwise it should be a filename 
++                                    # check for JPEG/PNG header otherwise it should be a filename
+                                     header = struct.unpack_from('4s', poster)[0]
+                                     if header == '\xff\xd8\xff\xe0' or \
+                                        header == '\x89\x50\x4e\x47':
+@@ -293,7 +297,9 @@
+         self.imported = 0
+         self.__source_name = None
+         self._continue = True
+-    
++        if self.previous_dir:
++            os.chdir(self.previous_dir)
++
+     def destroy(self):
+         &quot;&quot;&quot;close all resources&quot;&quot;&quot;
+         pass
+@@ -307,8 +313,8 @@
+     ip = eval(&quot;plugins.imp.%s.ImportPlugin&quot; % plugin_name)
+     widgets['author'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % ip.author)
+     widgets['email'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % ip.email)
+-    widgets['version'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; %ip.version)
+-    widgets['description'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; %ip.description)
++    widgets['version'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % ip.version)
++    widgets['description'].set_markup(&quot;&lt;i&gt;%s&lt;/i&gt;&quot; % ip.description)
+     # file filters
+     for i in widgets['fcw'].list_filters():
+         widgets['fcw'].remove_filter(i)
+@@ -332,11 +338,13 @@
+     f.add_pattern(&quot;*&quot;)
+     widgets['fcw'].add_filter(f)
+ 
++
+ def on_import_button_clicked(button, self, *args):
+-    import plugins.imp, gutils
++    import plugins.imp
++    import gutils
+     plugin_name = self.widgets['import']['plugin'].get_active_text()
+     filenames = self.widgets['import']['fcw'].get_filenames()
+-    
++
+     fields = []
+     w = self.widgets['import']['fields']
+     for i in w:
+@@ -370,8 +378,8 @@
+             self.widgets['import']['pwindow'].hide()
+             self.widgets['window'].set_sensitive(True)
+ 
++
+ def on_abort_button_clicked(button, self, *args):
+     self.widgets['import']['window'].hide()
+     self.widgets['import']['pwindow'].hide()
+     self.widgets['window'].set_sensitive(True)
+-
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000810.html">[Griffith-svn] r1342 - trunk/lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000812.html">[Griffith-svn] r1345 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#811">[ date ]</a>
+              <a href="thread.html#811">[ thread ]</a>
+              <a href="subject.html#811">[ subject ]</a>
+              <a href="author.html#811">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

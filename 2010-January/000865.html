@@ -1,0 +1,316 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1401 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1401%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C201001191542.o0JFgwEj031059%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000864.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1401 - trunk/lib/plugins/movie</H1>
+    <B>filosottile at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1401%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C201001191542.o0JFgwEj031059%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1401 - trunk/lib/plugins/movie">filosottile at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 19 16:42:59 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000864.html">[Griffith-svn] r1400 - extra_artwork/images
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#865">[ date ]</a>
+              <a href="thread.html#865">[ thread ]</a>
+              <a href="subject.html#865">[ subject ]</a>
+              <a href="author.html#865">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: filosottile
+Date: 2010-01-19 16:42:47 +0100 (Tue, 19 Jan 2010)
+New Revision: 1401
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieIMDB-it.py
+Log:
+IMDB-it movie plugin added (thanks to Enrico Carlesso)
+
+Added: trunk/lib/plugins/movie/PluginMovieIMDB-it.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-it.py	2010-01-17 20:27:14 UTC (rev 1400)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-it.py	2010-01-19 15:42:47 UTC (rev 1401)
+@@ -0,0 +1,242 @@
++# -*- coding: utf-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2010-2015 Enrico Carlesso
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils, movie
++import string, re
++
++plugin_name         = 'IMDb-IT'
++plugin_description  = 'Internet Movie Database in Italiano'
++plugin_url          = 'italian.imdb.com'
++plugin_language     = _('Italian')
++plugin_author       = 'Enrico Carlesso'
++plugin_author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">enrico at ecarlesso.org</A>'
++plugin_version      = '0.1'
++
++class Plugin(movie.Movie):
++    def __init__(self, id):
++        self.encode   = 'iso8859-1'
++        self.movie_id = id
++        self.url      = &quot;<A HREF="http://italian.imdb.com/title/tt%s">http://italian.imdb.com/title/tt%s</A>&quot; % self.movie_id
++        self.o_url      = &quot;<A HREF="http://imdb.com/title/tt%s">http://imdb.com/title/tt%s</A>&quot; % self.movie_id
++
++    def initialize(self):
++        self.cast_page = self.open_page(url=self.url + '/fullcredits')
++        self.plot_page = self.open_page(url=self.url + '/plotsummary')
++        self.o_page = self.open_page(url=self.o_url)
++
++    def get_image(self):
++        tmp = string.find(self.page, 'a name=&quot;poster&quot;')
++        if tmp == -1:        # poster not available
++            self.image_url = ''
++        else:
++            self.image_url = gutils.trim(self.page[tmp:], 'src=&quot;', '&quot;')
++
++    def get_o_title(self):
++        self.o_title = gutils.regextrim(self.o_page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
++        if self.o_title == '':
++            self.o_title = re.sub('[(].*', '', gutils.trim(self.o_page, '&lt;title&gt;', '&lt;/title&gt;'))
++
++    def get_title(self):    # same as get_o_title()
++        self.title = gutils.regextrim(self.page, '&lt;h1&gt;', '([ ]|[&amp;][#][0-9]+[;])&lt;span')
++        if self.title == '':
++            self.title = re.sub('[(].*', '', gutils.trim(self.page, '&lt;title&gt;', '&lt;/title&gt;'))
++
++    def get_director(self):
++        self.director = ''
++        parts = re.split('&lt;a href=', gutils.trim(self.cast_page, '&gt;Regia di&lt;', '&lt;/table&gt;'))
++        if len(parts) &gt; 1:
++            for part in parts[1:]:
++                director = gutils.trim(part, '&gt;', '&lt;')
++                self.director = self.director + director + ', '
++            self.director = self.director[0:len(self.director) - 2]
++
++    def get_plot(self):
++        self.plot = gutils.regextrim(self.page, '&lt;h5&gt;Plot:&lt;/h5&gt;', '(&lt;/div&gt;|&lt;a href.*)')
++        self.plot = self.__before_more(self.plot)
++        elements = string.split(self.plot_page, '&lt;p class=&quot;plotpar&quot;&gt;')
++        if len(elements) &gt; 1:
++            self.plot = self.plot + '\n\n'
++            elements[0] = ''
++            for element in elements:
++                if element &lt;&gt; '':
++                    self.plot = self.plot + gutils.strip_tags(gutils.before(element, '&lt;/a&gt;')) + '\n\n'
++
++    def get_year(self):
++        self.year = gutils.trim(self.o_page, '&lt;a href=&quot;/Sections/Years/', '&lt;/a&gt;')
++        self.year = gutils.after(self.year, '&quot;&gt;')
++
++    def get_runtime(self):
++        self.runtime = gutils.trim(self.page, '&lt;h5&gt;Durata:&lt;/h5&gt;', ' min')
++
++    def get_genre(self):
++        self.genre = gutils.trim(self.page, '&lt;h5&gt;Genere:&lt;/h5&gt;', '&lt;/div&gt;')
++        self.genre = self.__before_more(self.genre)
++
++    def get_cast(self):
++        self.cast = ''
++        self.cast = gutils.trim(self.cast_page, '&lt;table class=&quot;cast&quot;&gt;', '&lt;/table&gt;')
++        if self.cast == '':
++            self.cast = gutils.trim(self.page, '&lt;table class=&quot;cast&quot;&gt;', '&lt;/table&gt;')
++        self.cast = string.replace(self.cast, ' ... ', _(' as '))
++        self.cast = string.replace(self.cast, '...', _(' as '))
++        self.cast = string.replace(self.cast, '&lt;/tr&gt;&lt;tr&gt;', &quot;\n&quot;)
++        self.cast = re.sub('&lt;/tr&gt;[ \t]*&lt;tr[ \t]*class=&quot;even&quot;&gt;', &quot;\n&quot;, self.cast)
++        self.cast = re.sub('&lt;/tr&gt;[ \t]*&lt;tr[ \t]*class=&quot;odd&quot;&gt;', &quot;\n&quot;, self.cast)
++        self.cast = self.__before_more(self.cast)
++
++    def get_classification(self):
++        self.classification = gutils.trim(self.page, '&lt;h5&gt;&lt;a href=&quot;/mpaa&quot;&gt;MPAA&lt;/a&gt;:&lt;/h5&gt;', '&lt;/div&gt;')
++        self.classification = gutils.trim(self.classification, 'Rated ', ' ')
++
++    def get_studio(self):
++        self.studio = gutils.trim(self.page, '&lt;h5&gt;Compagnia:&lt;/h5&gt;', '&lt;/a&gt;')
++
++    def get_o_site(self):
++        self.o_site = ''
++
++    def get_site(self):
++        self.site = &quot;<A HREF="http://italian.imdb.com/title/tt%s">http://italian.imdb.com/title/tt%s</A>&quot; % self.movie_id
++
++    def get_trailer(self):
++        self.trailer = &quot;<A HREF="http://italian.imdb.com/title/tt%s/trailers">http://italian.imdb.com/title/tt%s/trailers</A>&quot; % self.movie_id
++
++    def get_country(self):
++        self.country = gutils.trim(self.page, '&lt;h5&gt;Nazionalit&#224;:&lt;/h5&gt;', '&lt;/div&gt;')
++        self.country = re.sub('[\n]+', '', self.country)
++
++    def get_rating(self):
++        pattern = re.compile('&gt;([0-9]([.][0-9])*)[/][0-9][0-9]&lt;')
++        result = pattern.search(self.o_page)
++        if result:
++            self.rating = result.groups()[0]
++            if self.rating:
++                try:
++                    self.rating = round(float(self.rating), 0)
++                except Exception, e:
++                    self.rating = 0
++        else:
++            self.rating = 0
++
++    def get_notes(self):
++        self.notes = ''
++        language = gutils.trim(self.page, '&lt;h5&gt;Lingua:&lt;/h5&gt;', '&lt;/div&gt;')
++        language = gutils.strip_tags(language)
++        language = re.sub('[\n]+', '', language)
++        language = re.sub('[ ]+', ' ', language)
++        language = language.rstrip()
++        color = gutils.trim(self.page, '&lt;h5&gt;Colore:&lt;/h5&gt;', '&lt;/div&gt;')
++        color = gutils.strip_tags(color)
++        color = re.sub('[\n]+', '', color)
++        color = re.sub('[ ]+', ' ', color)
++        color = color.rstrip()
++        sound = gutils.trim(self.page, '&lt;h5&gt;Sonoro:&lt;/h5&gt;', '&lt;/div&gt;')
++        sound = gutils.strip_tags(sound)
++        sound = re.sub('[\n]+', '', sound)
++        sound = re.sub('[ ]+', ' ', sound)
++        sound = sound.rstrip()
++        tagline = gutils.trim(self.page, '&lt;h5&gt;Trama:&lt;/h5&gt;', '&lt;/div&gt;')
++        tagline = self.__before_more(tagline)
++        tagline = gutils.strip_tags(tagline)
++        tagline = re.sub('[\n]+', '', tagline)
++        tagline = re.sub('[ ]+', ' ', tagline)
++        tagline = tagline.rstrip()
++        if len(language)&gt;0:
++            self.notes = &quot;%s: %s\n&quot; %(_('Language'), language)
++        if len(sound)&gt;0:
++            self.notes += &quot;%s: %s\n&quot; %(gutils.strip_tags(_('&lt;b&gt;Audio&lt;/b&gt;')), sound)
++        if len(color)&gt;0:
++            self.notes += &quot;%s: %s\n&quot; %(_('Color'), color)
++        if len(tagline)&gt;0 and tagline != &quot;Aggiungi o traduci un riassunto della trama&quot;:
++            self.notes += &quot;%s: %s\n&quot; %('Tagline', tagline)
++
++    def get_screenplay(self):
++        self.screenplay = ''
++        parts = re.split('&lt;a href=', gutils.trim(self.cast_page, '&gt;Scritto da&lt;', '&lt;/table&gt;'))
++        if len(parts) &gt; 1:
++            for part in parts[1:]:
++                screenplay = gutils.trim(part, '&gt;', '&lt;')
++                if screenplay == 'WGA':
++                    continue
++                screenplay = screenplay.replace(' (scritto da)', '')
++                screenplay = screenplay.replace(' e&lt;', '&lt;')
++                self.screenplay = self.screenplay + screenplay + ', '
++            if len(self.screenplay) &gt; 2:
++                self.screenplay = self.screenplay[0:len(self.screenplay) - 2]
++
++    def get_cameraman(self):
++        self.cameraman = ''
++
++    def __before_more(self, data):
++        tmp = string.find(data, '&gt;ancora&lt;')
++        if tmp &gt; 0:
++            data = data[:tmp] + '&gt;'
++        return data
++
++class SearchPlugin(movie.SearchMovie):
++    PATTERN = re.compile(r&quot;&quot;&quot;&lt;A HREF=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/LI&gt;&quot;&quot;&quot;)
++    PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;'](.*?)&lt;/tr&gt;&quot;&quot;&quot;)
++
++    def __init__(self):
++        self.original_url_search   = '<A HREF="http://italian.imdb.com/find?s=tt;q=">http://italian.imdb.com/find?s=tt;q=</A>'
++        self.translated_url_search = '<A HREF="http://italian.imdb.com/find?s=tt;q=">http://italian.imdb.com/find?s=tt;q=</A>'
++        self.encode                = 'iso8859-1'
++
++    def search(self, parent_window):
++        if not self.open_search(parent_window):
++            return None
++        tmp_page = gutils.trim(self.page, 'Titoli popolari', '&lt;/table&gt;')
++        if not tmp_page:
++            has_results = re.match('[(]Visualizza [1-9][0-7]* risultat[io]*[)]', self.page)
++            if not has_results:
++                # nothing or one result found, try another url which looks deeper in the imdb database
++                # example: Adventures of Falcon -&gt; one result, jumps directly to the movie page
++                # which isn't supported by this plugin
++                self.url = '<A HREF="http://italian.imdb.com/find?more=tt;q=">http://italian.imdb.com/find?more=tt;q=</A>'
++                if not self.open_search(parent_window):
++                    return None
++            self.page = gutils.trim(self.page, '(Visualizza', '&gt;Suggerimenti per migliorare i tuoi risultati&lt;')
++        else:
++            self.page = tmp_page
++        self.page = self.page.decode('iso-8859-1')
++        # correction of all &amp;#xxx entities
++        self.page = gutils.convert_entities(self.page)
++        return self.page
++
++    def get_searches(self):
++        elements = re.split('&lt;LI&gt;', self.page)
++        if len(elements) &lt; 2:
++            elements = string.split(self.page, '&lt;tr&gt;')
++            if len(elements):
++                for element in elements[1:]:
++                    match = self.PATTERN2.findall(element)
++                    if len(match):
++                        tmp = re.sub('^[0-9]+[.]', '', gutils.clean(gutils.after(match[0][1], '&gt;')))
++                        self.ids.append(match[0][0])
++                        self.titles.append(tmp)
++        else:
++            for element in elements[1:]:
++                match = self.PATTERN.findall(element)
++                if len(match):
++                    tmp = gutils.clean(match[0][1])
++                    self.ids.append(match[0][0])
++                    self.titles.append(tmp)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000864.html">[Griffith-svn] r1400 - extra_artwork/images
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#865">[ date ]</a>
+              <a href="thread.html#865">[ thread ]</a>
+              <a href="subject.html#865">[ subject ]</a>
+              <a href="author.html#865">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

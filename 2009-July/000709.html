@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1239 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1239%20-%20trunk/lib&In-Reply-To=%3C200907042050.n64KolwF031463%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000708.html">
+   <LINK REL="Next"  HREF="000710.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1239 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1239%20-%20trunk/lib&In-Reply-To=%3C200907042050.n64KolwF031463%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1239 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Jul  4 22:50:47 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000708.html">[Griffith-svn] r1238 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000710.html">[Griffith-svn] r1240 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#709">[ date ]</a>
+              <a href="thread.html#709">[ thread ]</a>
+              <a href="subject.html#709">[ subject ]</a>
+              <a href="author.html#709">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-07-04 22:50:46 +0200 (Sat, 04 Jul 2009)
+New Revision: 1239
+
+Modified:
+   trunk/lib/backup.py
+Log:
+copy posters first (to avoid IntegrityError)
+
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-07-04 20:40:05 UTC (rev 1238)
++++ trunk/lib/backup.py	2009-07-04 20:50:46 UTC (rev 1239)
+@@ -111,6 +111,10 @@
+     log.debug('replacing old database with new one')
+     db.metadata.drop_all(dst_engine) # remove all previous data
+     db.metadata.create_all(dst_engine) # create table stucture
++    
++    # posters
++    for poster in db.metadata.tables['posters'].select(bind=src_engine).execute():
++        db.metadata.tables['posters'].insert(bind=dst_engine).execute(md5sum=poster.md5sum, data=StringIO(poster.data).read())
+ 
+     for table in db.metadata.sorted_tables:
+         if table.name in ('posters', 'filters'):
+@@ -121,9 +125,6 @@
+         if data:
+             log.debug('inserting new data...')
+             dst_engine.execute(table.insert(), data)
+-    # posters
+-    for poster in db.metadata.tables['posters'].select(bind=src_engine).execute():
+-        db.metadata.tables['posters'].insert(bind=dst_engine).execute(md5sum=poster.md5sum, data=StringIO(poster.data).read())
+ 
+ def merge_db(src_db, dst_db): # FIXME
+     merged = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000708.html">[Griffith-svn] r1238 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000710.html">[Griffith-svn] r1240 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#709">[ date ]</a>
+              <a href="thread.html#709">[ thread ]</a>
+              <a href="subject.html#709">[ subject ]</a>
+              <a href="author.html#709">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

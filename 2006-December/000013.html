@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r481 - griffith/lib/plugins/import
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r481%20-%20griffith/lib/plugins/import&In-Reply-To=%3C200612060326.kB63Q82q031221%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000012.html">
+   <LINK REL="Next"  HREF="000014.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r481 - griffith/lib/plugins/import</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r481%20-%20griffith/lib/plugins/import&In-Reply-To=%3C200612060326.kB63Q82q031221%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r481 - griffith/lib/plugins/import">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec  6 04:26:08 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000012.html">[Griffith-svn] r480 - in griffith: . glade lib
+</A></li>
+        <LI>Next message: <A HREF="000014.html">[Griffith-svn] r482 - in griffith/lib: . plugins/import
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-06 04:26:08 +0100 (Wed, 06 Dec 2006)
+New Revision: 481
+
+Added:
+   griffith/lib/plugins/import/PluginImportCSV.py
+   griffith/lib/plugins/import/plugin.py
+Log:
+added missed files
+
+
+Added: griffith/lib/plugins/import/PluginImportCSV.py
+===================================================================
+--- griffith/lib/plugins/import/PluginImportCSV.py	2006-12-06 03:23:35 UTC (rev 480)
++++ griffith/lib/plugins/import/PluginImportCSV.py	2006-12-06 03:26:08 UTC (rev 481)
+@@ -0,0 +1,129 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++###########################################################################
++#    Copyright (C) 2006 by Jessica Katharina Parth                         
++#    &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">skorpion at slyclan.de</A>&gt;                                                 
++#
++# Copyright: See COPYING file that comes with this distribution
++#
++###########################################################################
++
++import csv
++import gtk
++import gutils
++import os
++import movie, string
++import re
++import codecs
++from gettext import gettext as _
++
++import plugin
++
++def digits_only(s):
++	_match = re.compile(r&quot;\d+&quot;)
++	try:
++		s = reduce( string.join, _match.findall(s) )
++	except:
++		s = '0'
++	return s
++	
++class ImportPlugin(plugin.ImportPlugin):
++	name = &quot;CSV&quot;
++	description = _(&quot;Full CSV list import plugin&quot;)
++	author = &quot;Jessica Katharina Parth&quot;
++	author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">deepfly at gmx.net</A>&quot;
++	version = &quot;0.1&quot;
++
++	def initialize(self):
++		# TODO: configure csv.reader
++		filename = gutils.file_chooser(_(&quot;Import a %s document&quot;)%&quot;CSV&quot;, action=gtk.FILE_CHOOSER_ACTION_OPEN, \
++			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK),name='')
++		if filename[0]:
++			self.set_source(filename[0])
++		else:
++			return False
++		return True
++
++	def set_source(self, name):
++		self.__source_name = name
++		self.data = csv.reader(codecs.open(name, 'r', 'iso-8859-1'), dialect='excel', quotechar='&quot;', delimiter=',')
++
++	def count_movies(self):
++		return len(open(self.__source_name).readlines())
++	
++	def get_movie_details(self, item):
++		x = 0
++		
++		t_movies = {
++			'classification' : item[8],
++			'color'          : None,
++			'cond'           : None,
++			'country'        : None,
++			'director'       : None,
++			'genre'          : item[4],
++			'image'          : None,
++			'layers'         : None,
++			'media_num'      : int(digits_only(item[0])),
++			'number'         : gutils.find_next_available(self),
++			'o_site'         : None,
++			'o_title'        : item[7],
++			'rating'         : None,
++			'region'         : None,
++			'runtime'        : digits_only(item[3]),
++			'site'           : None,
++			'studio'         : None,
++			'title'          : item[1],
++			'trailer'        : None,
++			'year'           : digits_only(item[2]),
++			'collection_id'  : None, #self.collection_combo_ids[],
++			'volume_id'      : None, #self.volume_combo_ids[],
++			'cast'           : item[6],
++			'notes'          : None,
++			'plot'           : item[5],
++		}
++#		t_movies['movie_id'] = 
++	
++		medium_id = 0
++		if medium_id&gt;0:
++			t_movies['medium_id'] = self.media_ids[medium_id]
++		vcodec_id = 0
++		if vcodec_id&gt;0:
++			t_movies['vcodec_id'] = self.vcodecs_ids[vcodec_id]
++		if item[x]:
++			t_movies['seen'] = True
++		else:
++			t_movies['seen'] = False
++		
++		# languages
++		from sets import Set as set # for python2.3 compatibility
++		t_movies['languages'] = set()
++#		for lang in item[x]:
++#			lang_id   = get_id(item[x], lang[0])
++#			lang_type = get_id(item[x], lang[1])
++#			acodec    = get_id(item[x], lang[2])
++#			achannel  = get_id(item[x], lang[3])
++#			subformat = get_id(item[x], lang[4])
++#			t_movies['languages'].add((lang_id, lang_type, acodec, achannel, subformat))
++	
++		# tags
++		t_movies['tags'] = {}
++		if item[x] == True:
++			t_movies['tags'][0] = 1
++			
++		# validate data
++		for i in t_movies.keys():
++			if t_movies[i] == '':
++				t_movies[i] = None
++		for i in ['color','cond','layers','region', 'media', 'vcodec']:
++			if t_movies.has_key(i) and t_movies[i] == -1:
++				t_movies[i]=None
++		for i in ['volume_id','collection_id', 'runtime']:
++			if t_movies.has_key(i) and (t_movies[i] is None or int(t_movies[i]) == 0):
++				t_movies[i] = None
++		if t_movies.has_key('year') and (t_movies['year'] is None or int(t_movies['year']) &lt; 1886):
++			t_movies['year'] = None
++	
++		return t_movies
++	
+
+
+Property changes on: griffith/lib/plugins/import/PluginImportCSV.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: griffith/lib/plugins/import/plugin.py
+===================================================================
+--- griffith/lib/plugins/import/plugin.py	2006-12-06 03:23:35 UTC (rev 480)
++++ griffith/lib/plugins/import/plugin.py	2006-12-06 03:26:08 UTC (rev 481)
+@@ -0,0 +1,113 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published byp
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++
++class ImportPlugin:
++	name = None
++	description = None
++	author = None
++	email = None
++	version = None
++
++	edit = False # should plugin open add window for every movie?
++	renumber = True # should imported number filed be ignored?
++
++	imported = 0
++	data = None
++
++	def __init__(self, parent):
++		self.db = parent.db
++		self.locations = parent.locations
++		self.parent = parent
++		global debug
++		debug = self.debug = self.parent.debug
++
++	def initialize(self):
++		&quot;&quot;&quot;
++		Initializes plugin (get all parameters from user, etc.)
++		&quot;&quot;&quot;
++		self.imported = 0
++		return True
++
++	def set_source(self, name):
++		&quot;&quot;&quot;
++		Prepare source (open file, etc.)
++
++		this function will prepare self.data for processing
++		&quot;&quot;&quot;
++
++	def count_movies(self):
++		&quot;&quot;&quot;
++		Returns number of movies in file which is about to be imported
++		&quot;&quot;&quot;
++		pass
++
++	def get_movie_details(self, item):
++		&quot;&quot;&quot;
++		Returns dictionary with movie details (process data item)
++		&quot;&quot;&quot;
++		pass
++
++	def run(self):
++		&quot;&quot;&quot;
++		Import movies
++		&quot;&quot;&quot;
++		
++		if self.edit is True:
++			from add import edit_movie
++		else:
++			from gutils import find_next_available
++		
++		for item in self.data:
++			details = self.get_movie_details(item)
++			if details is None:
++				continue
++			if details['o_title'] or details['title']:
++				if details['o_title']:
++					tmp_movie = self.db.Movie.get_by(o_title=details['o_title'])
++					if tmp_movie is not None:
++						debug.show(&quot;movie already exists (o_title=%s)&quot; % details['o_title'])
++						continue
++				if details['title']:
++					tmp_movie = self.db.Movie.get_by(title=details['title'])
++					if tmp_movie is not None:
++						debug.show(&quot;movie already exists (title=%s)&quot; % details['title'])
++						continue
++				if details.has_key('number') and self.renumber is True:
++					details['number'] = None
++				if self.edit is True:
++					edit_movie(self.parent, details)	# FIXME: wait until save or cancel button pressed
++				else:
++					if details['number'] is None:
++						details['number'] = find_next_available(self.parent)
++					movie = self.db.Movie()
++					movie.add_to_db(details)
++				self.imported += 1 # FIXME: what about cancel button in edit window
++			else:
++				debug('skipping movie without title or original title')
++
++	def clear(self):
++		self.data = None
++		self.imported = 0
++		self.__source_name = None
+
+
+Property changes on: griffith/lib/plugins/import/plugin.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000012.html">[Griffith-svn] r480 - in griffith: . glade lib
+</A></li>
+	<LI>Next message: <A HREF="000014.html">[Griffith-svn] r482 - in griffith/lib: . plugins/import
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

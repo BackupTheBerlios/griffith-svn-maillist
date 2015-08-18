@@ -1,0 +1,227 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r697 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r697%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701092011.l09KB1eu015959%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000219.html">
+   <LINK REL="Next"  HREF="000221.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r697 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r697%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701092011.l09KB1eu015959%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r697 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 21:11:01 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000219.html">[Griffith-svn] r696 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000221.html">[Griffith-svn] r698 - in trunk: . debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#220">[ date ]</a>
+              <a href="thread.html#220">[ thread ]</a>
+              <a href="subject.html#220">[ subject ]</a>
+              <a href="author.html#220">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-09 21:11:00 +0100 (Tue, 09 Jan 2007)
+New Revision: 697
+
+Modified:
+   trunk/ChangeLog
+   trunk/README
+   trunk/lib/dbupgrade.py
+   trunk/lib/sql.py
+   trunk/lib/version.py
+   trunk/winpackage.iss
+   trunk/winsetup.py
+Log:
+* Version changed to 0.9-rc3
+* More debug info
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/ChangeLog	2007-01-09 20:11:00 UTC (rev 697)
+@@ -8,6 +8,7 @@
+ 	* Catch some more bad cases while upgrading database
+ 	* Switch to sqlite if psycopg2 or MySQLdb module are not available
+ 	* Fix upgrading vol/col loan data
++	* Version changed to 0.9-rc3
+ 
+ 2007-01-08  Piotr O&#380;arowski
+ 	* Ignore bad entries in loans table
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/README	2007-01-09 20:11:00 UTC (rev 697)
+@@ -1,7 +1,7 @@
+-Griffith 0.9-rc2 README
++Griffith 0.9-rc3 README
+ =======================
+ 
+-This document was last updated on Thu Jan 04 2007.
++This document was last updated on Thu Jan 09 2007.
+ Please see the file COPYING for licensing and warranty information.
+ The latest version of this software is available at the following URL:
+ <A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/lib/dbupgrade.py	2007-01-09 20:11:00 UTC (rev 697)
+@@ -190,8 +190,6 @@
+ 	old_cursor.execute(&quot;DELETE FROM collections WHERE name = 'None'&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM languages WHERE name = ''&quot;)
+ 	
+-	#old_cursor.execute('SELECT number FROM movies WHERE (movies.id IN (SELECT movie_id FROM loans) OR movies.volume_id IN (SELECT volume_id FROM loans) OR movies.collection_id IN (SELECT collection_id FROM loans)); ' # wszystkie z histori&#261; wyp.
+-
+ 	self.config['db_type'] = 'sqlite'
+ 	self.config['default_db'] = 'griffith.db'
+ 	self.config['posters'] = 'posters'
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/lib/sql.py	2007-01-09 20:11:00 UTC (rev 697)
+@@ -326,13 +326,14 @@
+ 		try:
+ 			self.metadata = BoundMetaData(url)
+ 		except InvalidRequestError, e:
+-			debug.show(str(e))
++			debug.show(&quot;BoundMetaData: %s&quot; % e)
+ 			config['db_type'] = 'sqlite'
+ 			self.metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, config['default_db']))
+ 		# try to establish a db connection
+ 		try:
+ 			self.metadata.engine.connect()
+-		except:
++		except Exception, e:
++			debug.show(&quot;engine connection: %s&quot; % e)
+ 			gutils.error(self, _('Database connection failed.'))
+ 			config['db_type'] = 'sqlite'
+ 			url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+@@ -472,7 +473,8 @@
+ 		# check if database needs upgrade
+ 		try:
+ 			v = self.Configuration.get_by(param='version')	# returns None if table exists &amp;&amp; param ISNULL
+-		except exceptions.SQLError:	# table doesn't exist
++		except exceptions.SQLError, e:	# table doesn't exist
++			debug.show(&quot;DB version: %s&quot; % e)
+ 			v = 0
+ 
+ 		if v is not None and v&gt;1:
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/lib/version.py	2007-01-09 20:11:00 UTC (rev 697)
+@@ -23,7 +23,7 @@
+ 
+ from gettext import gettext as _
+ pname        = &quot;Griffith&quot;
+-pversion     = &quot;0.9-rc2+svn&quot;
++pversion     = &quot;0.9-rc3&quot;
+ pauthor      = &quot;Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;&quot;
+ pyear        = &quot;2005-2007&quot;
+ pwebsite     = &quot;<A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>&quot;
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/winpackage.iss	2007-01-09 20:11:00 UTC (rev 697)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.9-rc2
++AppVerName=Griffith 0.9-rc3
+ AppPublisher=Vasco Nunes, Piotr O&#380;arowski
+ AppPublisherURL=<A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+ AppSupportURL=<A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+@@ -14,7 +14,7 @@
+ LicenseFile=C:\griffith\COPYING
+ InfoAfterFile=C:\griffith\README
+ OutputDir=C:\griffith\installer
+-OutputBaseFilename=griffith-0.9-rc2-win32
++OutputBaseFilename=griffith-0.9-rc3-win32
+ SetupIconFile=C:\griffith\images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,7 +22,7 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.9-rc2
++AppVersion=0.9-rc3
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2007-01-09 17:01:26 UTC (rev 696)
++++ trunk/winsetup.py	2007-01-09 20:11:00 UTC (rev 697)
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env python
+ # -*- coding: utf-8 -*-
+ 
+-__revision__ = '$Id: $'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2005-2007 Vasco Nunes
+ # This program is free software; you can redistribute it and/or modify
+@@ -54,7 +54,7 @@
+ 
+ setup(
+     name = &quot;Griffith&quot;,
+-    version = &quot;0.9-rc2&quot;,
++    version = &quot;0.9-rc3&quot;,
+ 	description = 'Griffith - A film manager',
+     author = 'Vasco Nunes/Piotr Ozarowski',
+     author_email = '<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>',
+
+
+Property changes on: trunk/winsetup.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000219.html">[Griffith-svn] r696 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000221.html">[Griffith-svn] r698 - in trunk: . debian
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#220">[ date ]</a>
+              <a href="thread.html#220">[ thread ]</a>
+              <a href="subject.html#220">[ subject ]</a>
+              <a href="author.html#220">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

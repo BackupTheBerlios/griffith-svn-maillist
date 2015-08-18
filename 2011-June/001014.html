@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1555 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1555%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110601232350.5E47B480BAD%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="001015.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1555 - in trunk: . lib</H1>
+    <B>lanus at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1555%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20110601232350.5E47B480BAD%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1555 - in trunk: . lib">lanus at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun  2 01:23:50 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="001015.html">[Griffith-svn] r1556 - in trunk: . lib/db
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1014">[ date ]</a>
+              <a href="thread.html#1014">[ thread ]</a>
+              <a href="subject.html#1014">[ subject ]</a>
+              <a href="author.html#1014">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lanus
+Date: 2011-06-02 01:23:49 +0200 (Thu, 02 Jun 2011)
+New Revision: 1555
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/movie.py
+Log:
+Fixed crash when you try fetching a movie's information without internet connection.
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-05-29 19:13:45 UTC (rev 1554)
++++ trunk/ChangeLog	2011-06-01 23:23:49 UTC (rev 1555)
+@@ -4,6 +4,8 @@
+ ------------------
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
++2011-06-01  Ivo Nunes
++    * fixed crash when you try fetching a movie's information without internet connection
+ 
+ 2011-05-23  Michael Jahn
+ 	* updated MyMoviesIt plugin (full cast, screenplay, cameraman, director)
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-05-29 19:13:45 UTC (rev 1554)
++++ trunk/lib/add.py	2011-06-01 23:23:49 UTC (rev 1555)
+@@ -24,7 +24,7 @@
+ 
+ import logging
+ import os
+-
++import urllib2
+ import gtk
+ from sqlalchemy.exc import IntegrityError
+ 
+@@ -264,6 +264,7 @@
+ 
+ def get_from_web(self):
+     &quot;&quot;&quot;search the movie in web using the active plugin&quot;&quot;&quot;
++        
+     title = self.widgets['add']['title'].get_text()
+     o_title = self.widgets['add']['o_title'].get_text()
+ 
+@@ -290,17 +291,22 @@
+                 self.search_movie.title = gutils.remove_accents(title, 'utf-8')
+             else:
+                 self.search_movie.title = unicode(title, 'utf-8')
+-        if self.search_movie.search_movies(self.widgets['add']['window']):
+-            self.search_movie.get_searches()
+-        if len(self.search_movie.ids) == 1 and o_title and title:
+-            self.search_movie.url = self.search_movie.translated_url_search
+-            if self.search_movie.remove_accents:
+-                self.search_movie.title = gutils.remove_accents(title, 'utf-8')
+-            else:
+-                self.search_movie.title = unicode(title, 'utf-8')
++        # check if internet connection is available
++        try:
++            urllib2.urlopen(self.search_movie.url)
+             if self.search_movie.search_movies(self.widgets['add']['window']):
+                 self.search_movie.get_searches()
+-        self.show_search_results(self.search_movie)
++            if len(self.search_movie.ids) == 1 and o_title and title:
++                self.search_movie.url = self.search_movie.translated_url_search
++                if self.search_movie.remove_accents:
++                    self.search_movie.title = gutils.remove_accents(title, 'utf-8')
++                else:
++                    self.search_movie.title = unicode(title, 'utf-8')
++                if self.search_movie.search_movies(self.widgets['add']['window']):
++                    self.search_movie.get_searches()
++            self.show_search_results(self.search_movie)
++        except:
++            gutils.error(_(&quot;Connection failed.&quot;))
+     else:
+         gutils.error(_(&quot;You should fill the original title\nor the movie title.&quot;))
+ 
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2011-05-29 19:13:45 UTC (rev 1554)
++++ trunk/lib/movie.py	2011-06-01 23:23:49 UTC (rev 1555)
+@@ -31,6 +31,7 @@
+ from urllib import *
+ import gtk
+ import gutils
++import urllib2
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -150,6 +151,8 @@
+ 
+     def get_movie(self, parent_window=None):
+         try:
++            # check for internet connection
++            urllib2.urlopen(&quot;<A HREF="http://www.griffith.cc">http://www.griffith.cc</A>&quot;)
+             #
+             # initialize the progress dialog once for the following loading process
+             #
+@@ -161,13 +164,12 @@
+             #
+             if not self.open_page(parent_window):
+                 return None
++            return True
++
+         except:
+-            # close the dialog if an error occured
+-            self.progress.hide()
+-            # reraise the error
+-            raise
+-        return True
+-
++            gutils.error(_(&quot;Connection failed.&quot;))
++            return False
++        
+     def open_page(self, parent_window=None, url=None):
+         if url is None:
+             url_to_fetch = self.url
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="001015.html">[Griffith-svn] r1556 - in trunk: . lib/db
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1014">[ date ]</a>
+              <a href="thread.html#1014">[ thread ]</a>
+              <a href="subject.html#1014">[ subject ]</a>
+              <a href="author.html#1014">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

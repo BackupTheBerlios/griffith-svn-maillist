@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1071 - in online/trunk/webgriffith: controllers lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1071%20-%20in%20online/trunk/webgriffith%3A%20controllers%20lib&In-Reply-To=%3C200811221754.mAMHss9Y031603%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000545.html">
+   <LINK REL="Next"  HREF="000547.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1071 - in online/trunk/webgriffith: controllers lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1071%20-%20in%20online/trunk/webgriffith%3A%20controllers%20lib&In-Reply-To=%3C200811221754.mAMHss9Y031603%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1071 - in online/trunk/webgriffith: controllers lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 22 18:54:54 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000545.html">[Griffith-svn] r1070 - / online online/trunk	online/trunk/WebGriffith.egg-info online/trunk/docs	online/trunk/webgriffith online/trunk/webgriffith/config	online/trunk/webgriffith/controllers online/trunk/webgriffith/i18n	online/trunk/webgriffith/i18n/en	online/trunk/webgriffith/i18n/en/LC_MESSAGES	online/trunk/webgriffith/lib online/trunk/webgriffith/model	online/trunk/webgriffith/public online/trunk/webgriffith/public/js	online/trunk/webgriffith/templates	online/trunk/webgriffith/templates/default	online/trunk/webgriffith/tests	online/trunk/webgriffith/tests/functional
+</A></li>
+        <LI>Next message: <A HREF="000547.html">[Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#546">[ date ]</a>
+              <a href="thread.html#546">[ thread ]</a>
+              <a href="subject.html#546">[ subject ]</a>
+              <a href="author.html#546">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-22 18:54:53 +0100 (Sat, 22 Nov 2008)
+New Revision: 1071
+
+Modified:
+   online/trunk/webgriffith/controllers/settings.py
+   online/trunk/webgriffith/lib/base.py
+Log:
+use c.session only in settings' index
+
+
+Modified: online/trunk/webgriffith/controllers/settings.py
+===================================================================
+--- online/trunk/webgriffith/controllers/settings.py	2008-11-22 16:40:48 UTC (rev 1070)
++++ online/trunk/webgriffith/controllers/settings.py	2008-11-22 17:54:53 UTC (rev 1071)
+@@ -11,6 +11,7 @@
+ class SettingsController(BaseController):
+ 
+     def index(self):
++        c.session = session
+         return render(&quot;/%s/settings.mako&quot; % session['template'])
+ 
+     def set(self):
+@@ -37,4 +38,5 @@
+                 session_changed = True
+         if session_changed:
+             session.save()
++
+         redirect_to(action='index', id=None)
+
+Modified: online/trunk/webgriffith/lib/base.py
+===================================================================
+--- online/trunk/webgriffith/lib/base.py	2008-11-22 16:40:48 UTC (rev 1070)
++++ online/trunk/webgriffith/lib/base.py	2008-11-22 17:54:53 UTC (rev 1071)
+@@ -31,7 +31,8 @@
+             session['template'] = config[&quot;view.template&quot;]
+             session_changed = True
+         if 'items_per_page' not in session:
+-            session['items_per_page'] = config[&quot;view.items_per_page&quot;]
++            session['items_per_page'] = int(config[&quot;view.items_per_page&quot;])
++            session_changed = True
+ 
+         if session_changed:
+             session.save()
+@@ -39,8 +40,8 @@
+         set_lang(session['lang'])
+         #add_fallback('griffith')
+ 
+-        c.config = config
+-        c.session = session
++        #c.config = config
++        #c.session = session
+         c.header = config[&quot;view.header&quot;]
+ 
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000545.html">[Griffith-svn] r1070 - / online online/trunk	online/trunk/WebGriffith.egg-info online/trunk/docs	online/trunk/webgriffith online/trunk/webgriffith/config	online/trunk/webgriffith/controllers online/trunk/webgriffith/i18n	online/trunk/webgriffith/i18n/en	online/trunk/webgriffith/i18n/en/LC_MESSAGES	online/trunk/webgriffith/lib online/trunk/webgriffith/model	online/trunk/webgriffith/public online/trunk/webgriffith/public/js	online/trunk/webgriffith/templates	online/trunk/webgriffith/templates/default	online/trunk/webgriffith/tests	online/trunk/webgriffith/tests/functional
+</A></li>
+	<LI>Next message: <A HREF="000547.html">[Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#546">[ date ]</a>
+              <a href="thread.html#546">[ thread ]</a>
+              <a href="subject.html#546">[ subject ]</a>
+              <a href="author.html#546">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,2610 @@
+From mikej06 at mail.berlios.de  Sun Jan  6 21:25:06 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 6 Jan 2008 21:25:06 +0100
+Subject: [Griffith-svn] r894 - branches/0.9.x/lib/plugins/export
+	trunk/lib/plugins/export
+Message-ID: <200801062025.m06KP69V007818@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-01-06 21:24:35 +0100 (Sun, 06 Jan 2008)
+New Revision: 894
+
+Modified:
+   branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+   trunk/lib/plugins/export/PluginExportPDF.py
+Log:
+fixed pdf export with non-ascii characters [#174463]
+
+Modified: branches/0.9.x/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2007-12-25 23:28:06 UTC (rev 893)
++++ branches/0.9.x/lib/plugins/export/PluginExportPDF.py	2008-01-06 20:24:35 UTC (rev 894)
+@@ -132,14 +132,15 @@
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = ""
+-                    p = Paragraph("<font name=" + self.fontName + " size=\"7\">" + \
+-                        saxutils.escape(str(number) + " | " + original_title) + \
+-                        "</font><font name=" + self.fontName + " size=\"7\">" + \
+-                        saxutils.escape(" (" + title + ")" + year + director) + \
+-                        "</font>", self.styles["Normal"])
++                    paragraph_text = '<font name=' + self.fontName + ' size="7">' + \
++                        saxutils.escape(str(number) + ' | ' + original_title) + \
++                        '</font><font name=' + self.fontName + ' size="7">' + \
++                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '</font>'
++                    p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+-                gutils.info(self, _("PDF has been created."), self.parent)
++                gutils.info(self, _('PDF has been created.'), self.parent)
+             
+     def page_template(self, canvas, doc):
+         canvas.saveState()
+
+Modified: trunk/lib/plugins/export/PluginExportPDF.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportPDF.py	2007-12-25 23:28:06 UTC (rev 893)
++++ trunk/lib/plugins/export/PluginExportPDF.py	2008-01-06 20:24:35 UTC (rev 894)
+@@ -132,14 +132,15 @@
+                         director = ' - ' + str(movie.director).encode(defaultEnc)
+                     else:
+                         director = ""
+-                    p = Paragraph("<font name=" + self.fontName + " size=\"7\">" + \
+-                        saxutils.escape(str(number) + " | " + original_title) + \
+-                        "</font><font name=" + self.fontName + " size=\"7\">" + \
+-                        saxutils.escape(" (" + title + ")" + year + director) + \
+-                        "</font>", self.styles["Normal"])
++                    paragraph_text = '<font name=' + self.fontName + ' size="7">' + \
++                        saxutils.escape(str(number) + ' | ' + original_title) + \
++                        '</font><font name=' + self.fontName + ' size="7">' + \
++                        saxutils.escape(' (' + title + ')' + year + director) + \
++                        '</font>'
++                    p = Paragraph(paragraph_text.decode(defaultEnc), self.styles['Normal'])
+                     Story.append(p)
+                 c.build(Story, onFirstPage=self.page_template, onLaterPages=self.page_template)
+-                gutils.info(self, _("PDF has been created."), self.parent)
++                gutils.info(self, _('PDF has been created.'), self.parent)
+             
+     def page_template(self, canvas, doc):
+         canvas.saveState()
+
+
+
+From mikej06 at mail.berlios.de  Thu Jan 10 00:25:30 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 10 Jan 2008 00:25:30 +0100
+Subject: [Griffith-svn] r895 - branches/0.9.x
+	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+Message-ID: <200801092325.m09NPU9V032359@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-01-10 00:25:10 +0100 (Thu, 10 Jan 2008)
+New Revision: 895
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-06 20:24:35 UTC (rev 894)
++++ branches/0.9.x/ChangeLog	2008-01-09 23:25:10 UTC (rev 895)
+@@ -4,6 +4,12 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2008-01-10  Michael Jahn
++	* OFDb plugin updated
++
++2008-01-06  Michael Jahn
++	* fixed pdf export with non-ascii characters [#174463]
++
+ 2007-12-08  Vasco Nunes
+ 	* Danish language file updated
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-01-06 20:24:35 UTC (rev 894)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-01-09 23:25:10 UTC (rev 895)
+@@ -49,7 +49,7 @@
+ 		self.director = gutils.trim(self.page,"Regie: ","</a><br>")
+ 
+ 	def get_plot(self):
+-		storyid = gutils.trim(self.page, 'sid=', '">')
++		storyid = self.regextrim(self.page, '([?]|[&])sid=', '(">|[&])')
+ 		story_page = self.open_page(url="http://www.ofdb.de/view.php?page=inhalt&fid=%s&sid=%s" % (str(self.movie_id),storyid))
+ 		self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+@@ -86,7 +86,7 @@
+ 
+ 	def get_studio(self):
+ 		# from imdb
+-		self.studio = gutils.trim(self.imdb_page, '<h5>Company:</h5>', '</a>')
++		self.studio = gutils.trim(self.imdb_page, '<h5>Firma:</h5>', '</a>')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ""
+@@ -106,6 +106,19 @@
+ 			self.rating = "0"
+ 		self.rating = str(round(float(self.rating)))
+ 
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+ 		self.original_url_search    = "http://www.ofdb.de/view.php?page=suchergebnis&Kat=Titel&SText="
+@@ -128,7 +141,7 @@
+ 				elementid = gutils.digits_only( gutils.trim(element,'<a href="view.php?page=film&fid=','">') )
+ 				if elementid != 0:
+ 					self.ids.append(elementid)
+-					self.titles.append(gutils.trim(element,">","</a>"))
++					self.titles.append(gutils.trim(element,'">', '</a>'))
+ 
+ #
+ # Plugin Test
+@@ -235,7 +248,7 @@
+ 			'cast'				: 'Lino Ventura\n\
+ Fran?oise Fabian\n\
+ Charles G?rard\n\
+-Andr? Falcon\n\
++Andr? Falcon as Le bijoutier\n\
+ Mireille Mathieu\n\
+ Lilo\n\
+ Claude Mann\n\
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-06 20:24:35 UTC (rev 894)
++++ trunk/ChangeLog	2008-01-09 23:25:10 UTC (rev 895)
+@@ -4,6 +4,12 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2008-01-10  Michael Jahn
++	* OFDb plugin updated
++
++2008-01-06  Michael Jahn
++	* fixed pdf export with non-ascii characters [#174463]
++
+ 2007-12-16  Piotr O?arowski
+ 	* Version changed to 0.10~svn
+ 	* Started working on SQLAlchemy 0.4.x compatibility (NOT YET READY)
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-01-06 20:24:35 UTC (rev 894)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-01-09 23:25:10 UTC (rev 895)
+@@ -49,7 +49,7 @@
+ 		self.director = gutils.trim(self.page,"Regie: ","</a><br>")
+ 
+ 	def get_plot(self):
+-		storyid = gutils.trim(self.page, 'sid=', '">')
++		storyid = self.regextrim(self.page, '([?]|[&])sid=', '(">|[&])')
+ 		story_page = self.open_page(url="http://www.ofdb.de/view.php?page=inhalt&fid=%s&sid=%s" % (str(self.movie_id),storyid))
+ 		self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+@@ -86,7 +86,7 @@
+ 
+ 	def get_studio(self):
+ 		# from imdb
+-		self.studio = gutils.trim(self.imdb_page, '<h5>Company:</h5>', '</a>')
++		self.studio = gutils.trim(self.imdb_page, '<h5>Firma:</h5>', '</a>')
+ 
+ 	def get_o_site(self):
+ 		self.o_site = ""
+@@ -106,6 +106,19 @@
+ 			self.rating = "0"
+ 		self.rating = str(round(float(self.rating)))
+ 
++	def regextrim(self,text,key1,key2):
++		obj = re.search(key1, text)
++		if obj is None:
++			return ''
++		else:
++			p1 = obj.end()
++		obj = re.search(key2, text[p1:])
++		if obj is None:
++			return ''
++		else:
++			p2 = p1 + obj.start()
++		return text[p1:p2]
++
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+ 		self.original_url_search    = "http://www.ofdb.de/view.php?page=suchergebnis&Kat=Titel&SText="
+@@ -128,7 +141,7 @@
+ 				elementid = gutils.digits_only( gutils.trim(element,'<a href="view.php?page=film&fid=','">') )
+ 				if elementid != 0:
+ 					self.ids.append(elementid)
+-					self.titles.append(gutils.trim(element,">","</a>"))
++					self.titles.append(gutils.trim(element,'">', '</a>'))
+ 
+ #
+ # Plugin Test
+@@ -235,7 +248,7 @@
+ 			'cast'				: 'Lino Ventura\n\
+ Fran?oise Fabian\n\
+ Charles G?rard\n\
+-Andr? Falcon\n\
++Andr? Falcon as Le bijoutier\n\
+ Mireille Mathieu\n\
+ Lilo\n\
+ Claude Mann\n\
+
+
+
+From piotrek at mail.berlios.de  Sun Jan 13 23:55:15 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 13 Jan 2008 23:55:15 +0100
+Subject: [Griffith-svn] r897 - in branches/0.9.x: . debian
+Message-ID: <200801132255.m0DMtFF6025852@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-01-13 23:55:14 +0100 (Sun, 13 Jan 2008)
+New Revision: 897
+
+Modified:
+   branches/0.9.x/Makefile
+   branches/0.9.x/debian/changelog
+   branches/0.9.x/debian/control
+   branches/0.9.x/debian/copyright
+Log:
+* add install rules for SQLAlchemy
+* update Debian files
+
+
+Modified: branches/0.9.x/Makefile
+===================================================================
+--- branches/0.9.x/Makefile	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/Makefile	2008-01-13 22:55:14 UTC (rev 897)
+@@ -65,6 +65,16 @@
+ 	$(INSTALL) -m 644 images/griffith.png $(ICONDIR)
+ 	$(INSTALL) -m 644 images/griffith.xpm $(ICONDIR)
+ 	$(INSTALL) -m 644 data/griffith.desktop $(APPLICATIONSDIR)
++	# SQLAlchemy
++	$(INSTALL) -m 755 -d $(LIBDIR)/sqlalchemy $(LIBDIR)/sqlalchemy/databases \
++		$(LIBDIR)/sqlalchemy/engine $(LIBDIR)/sqlalchemy/ext \
++		$(LIBDIR)/sqlalchemy/mods $(LIBDIR)/sqlalchemy/orm
++	$(INSTALL) -m 644 lib/sqlalchemy/*.py $(LIBDIR)/sqlalchemy/
++	$(INSTALL) -m 644 lib/sqlalchemy/databases/*.py $(LIBDIR)/sqlalchemy/databases/
++	$(INSTALL) -m 644 lib/sqlalchemy/engine/*.py $(LIBDIR)/sqlalchemy/engine/
++	$(INSTALL) -m 644 lib/sqlalchemy/ext/*.py $(LIBDIR)/sqlalchemy/ext/
++	$(INSTALL) -m 644 lib/sqlalchemy/mods/*.py $(LIBDIR)/sqlalchemy/mods/
++	$(INSTALL) -m 644 lib/sqlalchemy/orm/*.py $(LIBDIR)/sqlalchemy/orm/
+ 	
+ 	# installing language files
+ 	for lang in $(LANGUAGES); do \
+
+Modified: branches/0.9.x/debian/changelog
+===================================================================
+--- branches/0.9.x/debian/changelog	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/debian/changelog	2008-01-13 22:55:14 UTC (rev 897)
+@@ -1,5 +1,18 @@
++griffith (0.9.6-1) UNRELEASED; urgency=low
++
++  * New upstream release
++    + includes local copy of SQLAlchemy 0.3.11 (closes: #453736)
++  * python-sqlalchemy dependency temporary removed
++    (0.10 will require SQLAlchemy 0.4 so it closes: #443199)
++  * Remove "XS-" prefix from Vcs-* fields (dpkg supports them now)
++  * Add Homepage field
++  * Bump Standards-Version to 3.7.3 (no changes needed)
++
++ -- Piotr O?arowski <piotr at debian.org>  Sun, 13 Jan 2008 21:57:49 +0100
++
+ griffith (0.9.5-1) unstable; urgency=low
+ 
++  * New upstream release 
+   * debian/watch file updated
+   * debian/menu file updated
+   * Add python-sqlalchemy (<< 0.4~) to depends (Griffith doesn't work with SA
+
+Modified: branches/0.9.x/debian/control
+===================================================================
+--- branches/0.9.x/debian/control	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/debian/control	2008-01-13 22:55:14 UTC (rev 897)
+@@ -4,15 +4,15 @@
+ Maintainer: Piotr O?arowski <piotr at debian.org>
+ Build-Depends: debhelper (>= 5.0.38)
+ Build-Depends-Indep: python (>= 2.3.5-11), python-central (>= 0.5.6)
+-Standards-Version: 3.7.2
+-XS-Python-Version: current, >=2.3
+-XS-Vcs-Svn: svn://svn.berlios.de/griffith/trunk/debian
+-XS-Vcs-Browser: http://svn.berlios.de/wsvn/griffith/debian/?sc=1
++Standards-Version: 3.7.3
++XS-Python-Version: >=2.3
++Vcs-Svn: svn://svn.berlios.de/griffith/trunk/debian
++Vcs-Browser: http://svn.berlios.de/wsvn/griffith/debian/?sc=1
++Homepage: http://griffith.berlios.de/
+ 
+ Package: griffith
+ Architecture: all
+ Depends: ${python:Depends}, python-gtk2 (>= 2.8.6-1), python-glade2 (>= 2.8.6-1),
+- python-sqlalchemy (>= 0.3.0-1), python-sqlalchemy (<< 0.4~),
+  python (>= 2.5) | python-pysqlite2 (>= 2.3.0-1),
+  python-reportlab (>= 1.20debian-6), python-imaging (>= 1.1.5-6)
+ Recommends: python-gnome2-extras (>= 2.14.0-1), python-chardet,
+@@ -23,5 +23,3 @@
+  Adding items to the movie collection is as quick and easy as typing the film
+  title and selecting a supported source. Griffith will then try to fetch all
+  the related information from the Web.
+- .
+-  Homepage: http://griffith.berlios.de/
+
+Modified: branches/0.9.x/debian/copyright
+===================================================================
+--- branches/0.9.x/debian/copyright	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/debian/copyright	2008-01-13 22:55:14 UTC (rev 897)
+@@ -8,7 +8,7 @@
+ 
+ License:
+ 
+- Copyright (c) 2005-2007 Vasco Nunes, Piotr O?arowski
++ Copyright (c) 2005-2008 Vasco Nunes, Piotr O?arowski
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+@@ -30,12 +30,41 @@
+ On Debian systems, the complete text of the GNU General Public License
+ can be found in `/usr/share/common-licenses/GPL'.
+ 
++----------------------------------------------------------------
+ 
+ File lib/amazon.py is licensed under Python license and is copyrighted
+ by Mark Pilgrim <f8dy at diveintomark.org>
+ 
+ Python licence can be found on http://www.python.org/psf/license/
+ 
++----------------------------------------------------------------
+ 
+-The Debian packaging is (C) 2005-2007, Piotr O?arowski <piotr at debian.org> and
++lib/sqlalchemy directory:
++
++ This is the MIT license: http://www.opensource.org/licenses/mit-license.php
++
++ Copyright (c) 2005, 2006, 2007 Michael Bayer and contributors. SQLAlchemy is a
++ trademark of Michael Bayer.
++
++ Permission is hereby granted, free of charge, to any person obtaining a copy
++ of this software and associated documentation files (the "Software"), to deal
++ in the Software without restriction, including without limitation the rights
++ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ copies of the Software, and to permit persons to whom the Software is
++ furnished to do so, subject to the following conditions:
++
++ The above copyright notice and this permission notice shall be included in all
++ copies or substantial portions of the Software.
++
++ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ SOFTWARE.
++
++----------------------------------------------------------------
++
++The Debian packaging is (C) 2005-2008, Piotr O?arowski <piotr at debian.org> and
+ is licensed under the GPL.
+
+
+
+From piotrek at mail.berlios.de  Sat Jan 26 21:01:21 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sat, 26 Jan 2008 21:01:21 +0100
+Subject: [Griffith-svn] r900 - branches/0.9.x branches/0.9.x/lib trunk
+	trunk/data trunk/lib
+Message-ID: <200801262001.m0QK1LZt017503@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-01-26 21:01:20 +0100 (Sat, 26 Jan 2008)
+New Revision: 900
+
+Modified:
+   branches/0.9.x/TRANSLATORS
+   branches/0.9.x/griffith
+   branches/0.9.x/lib/about.py
+   branches/0.9.x/lib/dbupgrade.py
+   trunk/TRANSLATORS
+   trunk/data/griffith.desktop
+   trunk/griffith
+   trunk/lib/about.py
+   trunk/lib/dbupgrade.py
+Log:
+fill in translations tab in about dialog automatically using TRANSLATORS file
+
+
+Modified: branches/0.9.x/TRANSLATORS
+===================================================================
+--- branches/0.9.x/TRANSLATORS	2008-01-26 19:06:12 UTC (rev 899)
++++ branches/0.9.x/TRANSLATORS	2008-01-26 20:01:20 UTC (rev 900)
+@@ -1,5 +1,5 @@
+ * Brasilian Portuguese
+-F?bio Nogueira <deb-user-ba at ubuntu.com>
++F??bio Nogueira <deb-user-ba at ubuntu.com>
+ Alan A. Dantas <alan.arsolto at gmail.com>
+ Augusta Carla Klug <augusta_klug at yahoo.com.br>
+ alexandrers <alexandrenescau at gmail.com>
+@@ -12,8 +12,8 @@
+ 
+ * Czech
+ Blondak <blondak at neser.cz>
+-Ondra 'Kepi' Kudl?k <kepi at igloonet.cz>
+-Kamil P?ral <ripper42 at gmail.com>
++Ondra 'Kepi' Kudl??k <kepi at igloonet.cz>
++Kamil P??ral <ripper42 at gmail.com>
+ 
+ * Danish
+ Joe Dalton <joedalton2 at yahoo.dk>
+@@ -27,7 +27,7 @@
+ Pierre-Luc Levy <pllevy at free.fr>
+ Guillaume Pratte <guillaume at guillaumepratte.net>
+ antou <antoou+inscriptions at gmail.com>
+-R?mi Preghenella <remi.pregh at gmail.com>
++R??mi Preghenella <remi.pregh at gmail.com>
+ sd2310 <sd2310 at gmail.com>
+ 
+ * German
+
+Modified: branches/0.9.x/griffith
+===================================================================
+--- branches/0.9.x/griffith	2008-01-26 19:06:12 UTC (rev 899)
++++ branches/0.9.x/griffith	2008-01-26 20:01:20 UTC (rev 900)
+@@ -196,7 +196,7 @@
+ 
+ 	def about_dialog(self, *args):
+ 		from about import AboutDialog
+-		about_dialog = AboutDialog(self.locations['images'])
++		about_dialog = AboutDialog(self.locations)
+ 
+ 	# add movie -----------------------------------------------------------
+ 
+
+Modified: branches/0.9.x/lib/about.py
+===================================================================
+--- branches/0.9.x/lib/about.py	2008-01-26 19:06:12 UTC (rev 899)
++++ branches/0.9.x/lib/about.py	2008-01-26 20:01:20 UTC (rev 900)
+@@ -29,7 +29,9 @@
+ 
+ class AboutDialog:
+ 	"""Shows a gtk about dialog"""
+-	def __init__(self, images_dir):
++	def __init__(self, locations):
++		TRANSLATORS_FILE = os.path.join(locations['share'], 'TRANSLATORS') # remember to encode this file in UTF-8
++		IMAGES_DIR = locations['images']
+ 		dialog = gtk.AboutDialog()
+ 		dialog.set_name(version.pname)
+ 		dialog.set_version(version.pversion)
+@@ -50,65 +52,24 @@
+ 			"\nPlease visit http://www.peekmambo.com/\n"),
+ 			'seen / unseen icons by dragonskulle <dragonskulle at gmail.com>'
+ 		])
+-		dialog.set_translator_credits(\
+-			_("Brasilian Portuguese") + ":\n\t" + \
+-				"F??bio Nogueira <deb-user-ba at ubuntu.com>\n\t" + \
+-				"Alan A. Dantas <alan.arsolto at gmail.com>\n\t" + \
+-				"Augusta Carla Klug <augusta_klug at yahoo.com.br>\n\t" + \
+-				"alexandrers <alexandrenescau at gmail.com>\n" + \
+-			_("Bulgarian") + ":\n\t" + \
+-				"Luchezar P. Petkov <luchezar.petkov at gmail.com>\n" + \
+-			_("Catalan") + ":\n\t" + \
+-				"el_libre <el.libre at gmail.com>\n" + \
+-			_("Czech") + ":\n\t" + \
+-				"Blondak <blondak at neser.cz>,\n\t" + \
+-				"Ondra 'Kepi' Kudl??k <kepi at igloonet.cz>\n\t" + \
+-				"Kamil P??ral <ripper42 at gmail.com>\n" + \
+-			_("Danish") + ":\n\t" + \
+-				"Joe Dalton <joedalton2 at yahoo.dk>\n" + \
+-			_("Dutch") + ":\n\t" + \
+-				"Marcel Dijkstra <mdtje at hotmail.com>\n\t" + \
+-				"Tominator <lambik+launchpad at gmail.com>\n\t" + \
+-				"warddr <ward.ubuntu at gmail.com>\n" + \
+-			_("French") + ":\n\t" + \
+-				"Guillaume Pratte <guillaume at guillaumepratte.net>\n\t" + \
+-				"Pierre-Luc L??vy <pllevy at free.fr>\n\t" + \
+-				"antou <antoou+inscriptions at gmail.com>\n\t" + \
+-				"R??mi Preghenella <remi.pregh at gmail.com>\n\t" + \
+-				"sd2310 <sd2310 at gmail.com>\n" + \
+-			_("German") + ":\n\t" + \
+-				"Jessica Katharina Parth <Jessica.K.P at women-at-work.org>,\n\t" + \
+-				"Sebastian Wallroth <sebastian at wallroth.de>\n\t" + \
+-				"Christian Sagmueller <christian at sagmueller.net>,\n\t" + \
+-				"Malte Wiemann <ryan2057 at gmx.de>\n" + \
+-			_("Greek") + ":\n\t" + \
+-				"Ioannis Koniaris <ikoniari at csd.auth.gr>\n\t" + \
+-				"Athanasia Tziola <erynies at gmail.com>\n\t" + \
+-				"linuxangel <chraniotis at gmail.com>\n" + \
+-			_("Italian") + ":\n\t" + \
+-				"Diego Porcelli <diego.p77 at gmail.com>\n\t" + \
+-				"Simone Vendemia <simonevendemia at gmail.com>\n" + \
+-			_("Japanese") + ":\n\t" + \
+-				"Jack Nihil <jnihil at gmail.com>\n" + \
+-			_("Norwegian Bokmal") + ":\n\t" + \
+-				"Anders Oftedal <anders.oftedal at gmail.com>\n" + \
+-			_("Polish") + ":\n\t" + \
+-				"Piotr Ozarowski <ozarow+griffith at gmail.com>\n" + \
+-			_("Portuguese") + ":\n\t" + \
+-				"Vasco Nunes <vasco.m.nunes at gmail.com>\n" + \
+-			_("Russian") + ":\n\t" + \
+-				"Pavel V. Kulikov <kulikovpv8256 at yandex.ru>\n\t" + \
+-				"Nkolay Parukhin <nik at sevpinro.ru>\n" + \
+-			_("Simplified Chinese") + ":\n\t" + \
+-				"kempson <kempson.chen at gmail.com>\n" + \
+-			_("Spanish") + ":\n\t" + \
+-				"Daniel Ucero <escaranbujo at gmail.com>\n" + \
+-			_("Swedish") + ":\n\t" + \
+-				"Daniel Nylander <po at danielnylander.se>\n" + \
+-			_("Turkish") + ":\n\t" + \
+-				"transorlate <iloveshorts at hotmail.com>\n" \
+-		)
+-		logo_file = os.path.abspath(os.path.join(images_dir, 'griffith.png'))
++		data = None
++		if os.path.isfile(TRANSLATORS_FILE):
++			data = open(TRANSLATORS_FILE).read()
++		elif os.path.isfile(TRANSLATORS_FILE+'.gz'):
++			from gutils import decompress
++			data = decompress(open(TRANSLATORS_FILE + '.gz').read())
++		translator_credits = ''
++		if data:
++			for line in data.split('\n'):
++				if line.startswith('* '):
++					lang = line[2:]
++					if _(lang) != lang:
++						line = "* %s:" % _(lang)
++				translator_credits += "%s\n" % line
++		else:
++			translator_credits = _("See TRANSLATORS file")
++		dialog.set_translator_credits(translator_credits)
++		logo_file = os.path.abspath(os.path.join(IMAGES_DIR, 'griffith.png'))
+ 		logo = gtk.gdk.pixbuf_new_from_file(logo_file)
+ 		dialog.set_logo(logo)
+ 		if os.path.isfile('/usr/share/common-licenses/GPL-2'):
+
+Modified: branches/0.9.x/lib/dbupgrade.py
+===================================================================
+--- branches/0.9.x/lib/dbupgrade.py	2008-01-26 19:06:12 UTC (rev 899)
++++ branches/0.9.x/lib/dbupgrade.py	2008-01-26 20:01:20 UTC (rev 900)
+@@ -85,13 +85,24 @@
+ 		self.Lang.mapper.mapped_table.create()
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('English'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Brazilian Portuguese'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Bulgarian'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Catalan'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Czech'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Danish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Dutch'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('French'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('German'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Greek'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Italian'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Japanese'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Norwegian Bokmal'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Polish'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Portuguese'))
+-		self.Lang.mapper.mapped_table.insert().execute(name=_('Polish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Russian'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Simplified Chinese'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Spanish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Swedish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Turkish'))
+ 		self.MovieLang.mapper.mapped_table.create()
+ 		self.Tag.mapper.mapped_table.create()
+ 		self.Tag.mapper.mapped_table.insert().execute(name=_('Favourite'))
+
+Modified: trunk/TRANSLATORS
+===================================================================
+--- trunk/TRANSLATORS	2008-01-26 19:06:12 UTC (rev 899)
++++ trunk/TRANSLATORS	2008-01-26 20:01:20 UTC (rev 900)
+@@ -1,5 +1,5 @@
+ * Brasilian Portuguese
+-F?bio Nogueira <deb-user-ba at ubuntu.com>
++F??bio Nogueira <deb-user-ba at ubuntu.com>
+ Alan A. Dantas <alan.arsolto at gmail.com>
+ Augusta Carla Klug <augusta_klug at yahoo.com.br>
+ alexandrers <alexandrenescau at gmail.com>
+@@ -12,8 +12,8 @@
+ 
+ * Czech
+ Blondak <blondak at neser.cz>
+-Ondra 'Kepi' Kudl?k <kepi at igloonet.cz>
+-Kamil P?ral <ripper42 at gmail.com>
++Ondra 'Kepi' Kudl??k <kepi at igloonet.cz>
++Kamil P??ral <ripper42 at gmail.com>
+ 
+ * Danish
+ Joe Dalton <joedalton2 at yahoo.dk>
+@@ -27,7 +27,7 @@
+ Pierre-Luc Levy <pllevy at free.fr>
+ Guillaume Pratte <guillaume at guillaumepratte.net>
+ antou <antoou+inscriptions at gmail.com>
+-R?mi Preghenella <remi.pregh at gmail.com>
++R??mi Preghenella <remi.pregh at gmail.com>
+ sd2310 <sd2310 at gmail.com>
+ 
+ * German
+
+Modified: trunk/data/griffith.desktop
+===================================================================
+--- trunk/data/griffith.desktop	2008-01-26 19:06:12 UTC (rev 899)
++++ trunk/data/griffith.desktop	2008-01-26 20:01:20 UTC (rev 900)
+@@ -2,14 +2,14 @@
+ Name=Griffith
+ GenericName=Griffith - Movie Collection Manager
+ Comment=Movie Collection Manager
+-Version=0.9.5
++Version=1.0
+ Exec=griffith
+ Icon=griffith.png
+ Terminal=false
+ Type=Application
+ StartupNotify=true
+ StartupWMClass=Griffith
+-Categories=GNOME;GTK;Database;AudioVideo
++Categories=GNOME;GTK;Database;AudioVideo;
+ 
+ GenericName[en_PT]=Griffith - Um gestor de colec????es de filmes
+ GenericName[pl]=Griffith - wspomaga zarz??dzanie kolekcj?? film??w
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-01-26 19:06:12 UTC (rev 899)
++++ trunk/griffith	2008-01-26 20:01:20 UTC (rev 900)
+@@ -195,7 +195,7 @@
+ 
+ 	def about_dialog(self, *args):
+ 		from about import AboutDialog
+-		about_dialog = AboutDialog(self.locations['images'])
++		about_dialog = AboutDialog(self.locations)
+ 
+ 	# add movie -----------------------------------------------------------
+ 
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2008-01-26 19:06:12 UTC (rev 899)
++++ trunk/lib/about.py	2008-01-26 20:01:20 UTC (rev 900)
+@@ -29,7 +29,9 @@
+ 
+ class AboutDialog:
+ 	"""Shows a gtk about dialog"""
+-	def __init__(self, images_dir):
++	def __init__(self, locations):
++		TRANSLATORS_FILE = os.path.join(locations['share'], 'TRANSLATORS') # remember to encode this file in UTF-8
++		IMAGES_DIR = locations['images']
+ 		dialog = gtk.AboutDialog()
+ 		dialog.set_name(version.pname)
+ 		dialog.set_version(version.pversion)
+@@ -50,65 +52,24 @@
+ 			"\nPlease visit http://www.peekmambo.com/\n"),
+ 			'seen / unseen icons by dragonskulle <dragonskulle at gmail.com>'
+ 		])
+-		dialog.set_translator_credits(\
+-			_("Brasilian Portuguese") + ":\n\t" + \
+-				"F??bio Nogueira <deb-user-ba at ubuntu.com>\n\t" + \
+-				"Alan A. Dantas <alan.arsolto at gmail.com>\n\t" + \
+-				"Augusta Carla Klug <augusta_klug at yahoo.com.br>\n\t" + \
+-				"alexandrers <alexandrenescau at gmail.com>\n" + \
+-			_("Bulgarian") + ":\n\t" + \
+-				"Luchezar P. Petkov <luchezar.petkov at gmail.com>\n" + \
+-			_("Catalan") + ":\n\t" + \
+-				"el_libre <el.libre at gmail.com>\n" + \
+-			_("Czech") + ":\n\t" + \
+-				"Blondak <blondak at neser.cz>,\n\t" + \
+-				"Ondra 'Kepi' Kudl??k <kepi at igloonet.cz>\n\t" + \
+-				"Kamil P??ral <ripper42 at gmail.com>\n" + \
+-			_("Danish") + ":\n\t" + \
+-				"Joe Dalton <joedalton2 at yahoo.dk>\n" + \
+-			_("Dutch") + ":\n\t" + \
+-				"Marcel Dijkstra <mdtje at hotmail.com>\n\t" + \
+-				"Tominator <lambik+launchpad at gmail.com>\n\t" + \
+-				"warddr <ward.ubuntu at gmail.com>\n" + \
+-			_("French") + ":\n\t" + \
+-				"Guillaume Pratte <guillaume at guillaumepratte.net>\n\t" + \
+-				"Pierre-Luc L??vy <pllevy at free.fr>\n\t" + \
+-				"antou <antoou+inscriptions at gmail.com>\n\t" + \
+-				"R??mi Preghenella <remi.pregh at gmail.com>\n\t" + \
+-				"sd2310 <sd2310 at gmail.com>\n" + \
+-			_("German") + ":\n\t" + \
+-				"Jessica Katharina Parth <Jessica.K.P at women-at-work.org>,\n\t" + \
+-				"Sebastian Wallroth <sebastian at wallroth.de>\n\t" + \
+-				"Christian Sagmueller <christian at sagmueller.net>,\n\t" + \
+-				"Malte Wiemann <ryan2057 at gmx.de>\n" + \
+-			_("Greek") + ":\n\t" + \
+-				"Ioannis Koniaris <ikoniari at csd.auth.gr>\n\t" + \
+-				"Athanasia Tziola <erynies at gmail.com>\n\t" + \
+-				"linuxangel <chraniotis at gmail.com>\n" + \
+-			_("Italian") + ":\n\t" + \
+-				"Diego Porcelli <diego.p77 at gmail.com>\n\t" + \
+-				"Simone Vendemia <simonevendemia at gmail.com>\n" + \
+-			_("Japanese") + ":\n\t" + \
+-				"Jack Nihil <jnihil at gmail.com>\n" + \
+-			_("Norwegian Bokmal") + ":\n\t" + \
+-				"Anders Oftedal <anders.oftedal at gmail.com>\n" + \
+-			_("Polish") + ":\n\t" + \
+-				"Piotr Ozarowski <ozarow+griffith at gmail.com>\n" + \
+-			_("Portuguese") + ":\n\t" + \
+-				"Vasco Nunes <vasco.m.nunes at gmail.com>\n" + \
+-			_("Russian") + ":\n\t" + \
+-				"Pavel V. Kulikov <kulikovpv8256 at yandex.ru>\n\t" + \
+-				"Nkolay Parukhin <nik at sevpinro.ru>\n" + \
+-			_("Simplified Chinese") + ":\n\t" + \
+-				"kempson <kempson.chen at gmail.com>\n" + \
+-			_("Spanish") + ":\n\t" + \
+-				"Daniel Ucero <escaranbujo at gmail.com>\n" + \
+-			_("Swedish") + ":\n\t" + \
+-				"Daniel Nylander <po at danielnylander.se>\n" + \
+-			_("Turkish") + ":\n\t" + \
+-				"transorlate <iloveshorts at hotmail.com>\n" \
+-		)
+-		logo_file = os.path.abspath(os.path.join(images_dir, 'griffith.png'))
++		data = None
++		if os.path.isfile(TRANSLATORS_FILE):
++			data = open(TRANSLATORS_FILE).read()
++		elif os.path.isfile(TRANSLATORS_FILE+'.gz'):
++			from gutils import decompress
++			data = decompress(open(TRANSLATORS_FILE + '.gz').read())
++		translator_credits = ''
++		if data:
++			for line in data.split('\n'):
++				if line.startswith('* '):
++					lang = line[2:]
++					if _(lang) != lang:
++						line = "* %s:" % _(lang)
++				translator_credits += "%s\n" % line
++		else:
++			translator_credits = _("See TRANSLATORS file")
++		dialog.set_translator_credits(translator_credits)
++		logo_file = os.path.abspath(os.path.join(IMAGES_DIR, 'griffith.png'))
+ 		logo = gtk.gdk.pixbuf_new_from_file(logo_file)
+ 		dialog.set_logo(logo)
+ 		if os.path.isfile('/usr/share/common-licenses/GPL-2'):
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2008-01-26 19:06:12 UTC (rev 899)
++++ trunk/lib/dbupgrade.py	2008-01-26 20:01:20 UTC (rev 900)
+@@ -85,13 +85,24 @@
+ 		self.Lang.mapper.mapped_table.create()
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('English'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Brazilian Portuguese'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Bulgarian'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Catalan'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Czech'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Danish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Dutch'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('French'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('German'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Greek'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Italian'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Japanese'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Norwegian Bokmal'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Polish'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Portuguese'))
+-		self.Lang.mapper.mapped_table.insert().execute(name=_('Polish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Russian'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Simplified Chinese'))
+ 		self.Lang.mapper.mapped_table.insert().execute(name=_('Spanish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Swedish'))
++		self.Lang.mapper.mapped_table.insert().execute(name=_('Turkish'))
+ 		self.MovieLang.mapper.mapped_table.create()
+ 		self.Tag.mapper.mapped_table.create()
+ 		self.Tag.mapper.mapped_table.insert().execute(name=_('Favourite'))
+
+
+
+From mikej06 at mail.berlios.de  Sun Jan 27 14:48:04 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 27 Jan 2008 14:48:04 +0100
+Subject: [Griffith-svn] r903 - branches/0.9.x/lib
+	branches/0.9.x/lib/plugins/movie trunk/lib trunk/lib/plugins/movie
+Message-ID: <200801271348.m0RDm4J3030142@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-01-27 14:47:34 +0100 (Sun, 27 Jan 2008)
+New Revision: 903
+
+Modified:
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py
+   branches/0.9.x/lib/test_movieplugins.py
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+   trunk/lib/test_movieplugins.py
+Log:
+* Zelluloid plugin updated
+* fixed some test data
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-01-26 21:21:09 UTC (rev 902)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -211,7 +211,7 @@
+ 			'year'				: 2006,
+ 			'notes'				: False,
+ 			'runtime'			: 102,
+-			'image'				: True,
++			'image'				: False,
+ 			'rating'			: False
+ 		},
+ 		'26956' : { 
+@@ -260,7 +260,7 @@
+ 			'year'				: 2004,
+ 			'notes'				: False,
+ 			'runtime'			: 108,
+-			'image'				: True,
++			'image'				: False,
+ 			'rating'			: False
+ 		}
+ 	}
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-01-26 21:21:09 UTC (rev 902)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -174,12 +174,12 @@
+ 			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
+ Burt Young' + _(' as ') + 'Paulie\n\
+ Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+-Geraldine Hughes\n\
++Geraldine Hughes' + (' as ') + 'Marie\n\
+ James Francis Kelly III\n\
+ Tony Burton\n\
+ A.J. Benza\n\
+ Henry G. Sanders\n\
+-Antonio Tarver\n\
++Antonio Tarver' + (' as ') + 'Mason \'The Line\' Dixon\n\
+ Pedro Lovell\n\
+ Ana Gerena\n\
+ Angela Boyd\n\
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py	2008-01-26 21:21:09 UTC (rev 902)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieZelluloid.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -1,168 +1,270 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2007 Michael Jahn
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-from gettext import gettext as _
+-import gutils
+-import movie
+-import string
+-import re
+-
+-plugin_name         = 'Zelluloid.de'
+-plugin_description  = 'ZELLULOID.DE'
+-plugin_url          = 'www.zelluloid.de'
+-plugin_language     = _('German')
+-plugin_author       = 'Michael Jahn'
+-plugin_author_email = '<mikej06 at hotmail.com>'
+-plugin_version      = '1.0'
+-
+-class Plugin(movie.Movie):
+-	index_url = 'http://www.zelluloid.de/filme/index.php3?id='
+-	
+-	def __init__(self, id):
+-		self.encode='iso-8859-1'
+-		self.movie_id = id
+-		self.url = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
+-
+-	def initialize(self):
+-		self.detail_page = self.page
+-		self.url = self.index_url + self.movie_id
+-		self.page = self.open_page(url=self.url)
+-
+-	def get_image(self):
+-		self.image_url = 'http://www.zelluloid.de/images/poster/' + gutils.trim(self.page, '<IMG SRC="/images/poster/', '"');
+-
+-	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '<BR>')
+-		if self.o_title == '':
+-			self.o_title = gutils.trim(self.page, '<TITLE>', '|')
+-
+-	def get_title(self):
+-		self.title = gutils.trim(self.page, '<TITLE>', '|')
+-
+-	def get_director(self):
+-		self.director = gutils.trim(self.detail_page, 'Regie', '</A>')
+-
+-	def get_plot(self):
+-		self.plot = gutils.trim(self.page, '<DIV CLASS=bigtext>', '</DIV>')
+-		
+-	def get_year(self):
+-		self.year = ''
+-		elements = string.split(self.detail_page, '/directory/az.php3?j')
+-		elements[0] = ''
+-		delimiter = ''
+-		for element in elements:
+-			if element <> '':
+-				self.year = self.year + delimiter + gutils.trim(element, '>', '<')
+-				delimiter = ', '
+-
+-	def get_runtime(self):
+-		self.runtime = gutils.trim(self.detail_page, 'ca.&nbsp;', '&nbsp;min');
+-
+-	def get_genre(self):
+-		self.genre = ''
+-		elements = string.split(self.detail_page, '/directory/az.php3?g')
+-		elements[0] = ''
+-		delimiter = ''
+-		for element in elements:
+-			if element <> '':
+-				self.genre = self.genre + delimiter + gutils.trim(element, '>', '<')
+-				delimiter = ', '
+-
+-	def get_cast(self):
+-		self.cast = gutils.trim(self.detail_page, '<B>Besetzung</B>', '<TD COLSPAN=')
+-		self.cast = self.cast.replace('<A HREF=', '--flip--' + '<A HREF=')
+-		self.cast = gutils.strip_tags(self.cast)
+-		elements = self.cast.split('\n')
+-		self.cast = ''
+-		for element in elements:
+-			elements2 = element.split("--flip--")
+-			if len(elements2) > 1:
+-				self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
+-			else:
+-				self.cast += element + '\n'
+-		self.cast = string.replace(self.cast, '--flip--', _(' as '))
+-
+-	def get_classification(self):
+-		self.classification = gutils.trim(self.detail_page, 'FSK: ', '</TD>')
+-		self.classification = re.sub(',.*', '', self.classification)
+-
+-	def get_studio(self):
+-		self.studio = gutils.strip_tags(gutils.trim(self.detail_page, '<B>Produktion</B>', '&nbsp;'))
+-		if self.studio == '':
+-			self.studio = gutils.trim(self.detail_page, '<B>Produktion</B>', '</TABLE>')
+-		self.studio = self.studio.replace('\n', ', ')
+-		self.studio = re.sub('((^, )|(, $))', '', self.studio)
+-		
+-	def get_o_site(self):
+-		self.o_site = ""
+-
+-	def get_site(self):
+-		self.site = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
+-
+-	def get_trailer(self):
+-		self.trailer = ""
+-
+-	def get_country(self):
+-		self.country = ''
+-		elements = string.split(self.detail_page, '/directory/az.php3?l')
+-		elements[0] = ''
+-		delimiter = ''
+-		for element in elements:
+-			if element <> '':
+-				self.country = self.country + delimiter + gutils.trim(element, '>', '<')
+-				delimiter = ', '
+-
+-	def get_rating(self):
+-		self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '</TABLE>'))
+-		self.rating = self.rating.replace('%', '')
+-		self.rating = self.rating.replace('&nbsp;', '')
+-		try:
+-			ratingint = int(self.rating) / 10
+-		except:
+-			ratingint = 0
+-		self.rating = str(ratingint)
+-
+-	def get_notes(self):
+-		self.notes = ""
+-
+-class SearchPlugin(movie.SearchMovie):
+-
+-	def __init__(self):
+-		self.original_url_search   = "http://www.zelluloid.de/suche/index.php3?qstring="
+-		self.translated_url_search = "http://www.zelluloid.de/suche/index.php3?qstring="
+-		self.encode='iso-8859-1'
+-
+-	def search(self,parent_window):
+-		self.open_search(parent_window)
+-		tmp = gutils.before(gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>"), 'ALT="Person"')
+-		if tmp == '':
+-			tmp = gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>")
+-		return tmp
+-
+-	def get_searches(self):
+-		elements = string.split(self.page, "hit.php3?hit=")
+-		elements[0] = ''
+-		for element in elements:
+-			if element <> '':
+-				self.ids.append(gutils.trim(element, 'movie-', '-'))
+-				self.titles.append(gutils.strip_tags(gutils.trim(element, '>', '</A>')))
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = 'Zelluloid.de'
++plugin_description  = 'ZELLULOID.DE'
++plugin_url          = 'www.zelluloid.de'
++plugin_language     = _('German')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = '<mikej06 at hotmail.com>'
++plugin_version      = '1.0'
++
++class Plugin(movie.Movie):
++	index_url = 'http://www.zelluloid.de/filme/index.php3?id='
++	
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
++
++	def initialize(self):
++		self.detail_page = self.page
++		self.url = self.index_url + self.movie_id
++		self.page = self.open_page(url=self.url)
++
++	def get_image(self):
++		self.image_url = 'http://www.zelluloid.de/images/poster/' + gutils.trim(self.page, '<IMG SRC="/images/poster/', '"');
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '<BR>')
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, '<TITLE>', '|')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<TITLE>', '|')
++
++	def get_director(self):
++		self.director = gutils.trim(self.detail_page, 'Regie', '</A>')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, '<DIV CLASS=bigtext>', '</DIV>')
++		
++	def get_year(self):
++		self.year = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?j')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.year = self.year + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_runtime(self):
++		self.runtime = gutils.trim(self.detail_page, 'ca.&nbsp;', '&nbsp;min');
++
++	def get_genre(self):
++		self.genre = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?g')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.genre = self.genre + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.detail_page, 'alt="Besetzung"', '<TD COLSPAN=')
++		self.cast = self.cast.replace('<A HREF=', '--flip--' + '<A HREF=')
++		self.cast = gutils.strip_tags(self.cast)
++		self.cast = gutils.after(self.cast, '>')
++		elements = self.cast.split('\n')
++		self.cast = ''
++		for element in elements:
++			elements2 = element.split("--flip--")
++			if len(elements2) > 1:
++				self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
++			else:
++				self.cast += element + '\n'
++		self.cast = string.replace(self.cast, '--flip--', _(' as '))
++
++	def get_classification(self):
++		self.classification = gutils.trim(self.detail_page, 'FSK: ', '</TD>')
++		self.classification = re.sub(',.*', '', self.classification)
++
++	def get_studio(self):
++		self.studio = gutils.strip_tags(gutils.trim(self.detail_page, 'alt="Produktion"', '&nbsp;'))
++		if self.studio == '':
++			self.studio = gutils.trim(self.detail_page, 'alt="Produktion"', '</TABLE>')
++		self.studio = gutils.after(self.studio, '>')
++		self.studio = self.studio.replace('\n', ', ')
++		self.studio = re.sub('((^, )|(, $))', '', self.studio)
++		
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		self.country = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?l')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.country = self.country + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_rating(self):
++		self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '</TABLE>'))
++		self.rating = self.rating.replace('%', '')
++		self.rating = self.rating.replace('&nbsp;', '')
++		self.rating = self.rating.replace('\n', '')
++		try:
++			ratingint = round(float(self.rating) / 10.0)
++		except:
++			ratingint = 0
++		self.rating = str(ratingint)
++
++	def get_notes(self):
++		self.notes = ""
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = "http://www.zelluloid.de/suche/index.php3?qstring="
++		self.translated_url_search = "http://www.zelluloid.de/suche/index.php3?qstring="
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		tmp = gutils.before(gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>"), 'ALT="Person"')
++		if tmp == '':
++			tmp = gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>")
++		return tmp
++
++	def get_searches(self):
++		elements = string.split(self.page, "hit.php3?hit=")
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				id = gutils.trim(element, 'movie-', '-')
++				if id <> '':
++					self.ids.append(id)
++					self.titles.append(gutils.strip_tags(gutils.trim(element, '>', '</A>')))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -> expected result count }
++	#
++	test_configuration = {
++		'Rocky Balboa'		: 1,
++		'Die wilden H?hner'	: 2
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -> dict { arribute -> value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'2835' : { 
++			'title' 			: 'Rocky Balboa',
++			'o_title' 			: 'Rocky Balboa',
++			'director'			: 'Sylvester Stallone',
++			'plot' 				: True,
++			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian\n\
++Lou DiBella' + _(' as ') + 'Lou DiBella\n\
++Mike Tyson' + _(' as ') + 'Mike Tyson\n\
++Henry G. Sanders' + _(' as ') + 'Martin',
++			'country'			: 'USA',
++			'genre'				: 'Drama, Sport',
++			'classification'	: 'ab 12',
++			'studio'			: 'Chartoff-Winkler Productions, Columbia Pictures Corporation, Metro-Goldwyn-Mayer, Revolution Studios, Rogue Marble',
++			'o_site'			: False,
++			'site'				: 'http://www.zelluloid.de/filme/details.php3?id=2835',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 102,
++			'image'				: True,
++			'rating'			: 8.0
++		},
++		'6342' : { 
++			'title' 			: 'Die wilden H?hner',
++			'o_title' 			: 'Die wilden H?hner',
++			'director'			: 'Vivian Naefe',
++			'plot' 				: True,
++			'cast'				: 'Michelle von Treuberg' + _(' as ') + 'Sprotte\n\
++Lucie Hollmann' + _(' as ') + 'Frieda\n\
++Paula Riemann' + _(' as ') + 'Melanie\n\
++Zsa Zsa Inci B?rkle' + _(' as ') + 'Trude\n\
++Jette Hering' + _(' as ') + 'Wilma\n\
++Jeremy Mockridge' + _(' as ') + 'Fred\n\
++Philip Wiegratz' + _(' as ') + 'Steve\n\
++Martin Kurz' + _(' as ') + 'Torte\n\
++Vincent Redetzki' + _(' as ') + 'Willi\n\
++Veronica Ferres' + _(' as ') + 'Sprottes Mutter Sibylle\n\
++Doris Schade' + _(' as ') + 'Oma Sl?ttberg\n\
++Jessica Schwarz' + _(' as ') + 'Frau Rose\n\
++Benno F?rmann' + _(' as ') + 'Herr Gr?nbaum\n\
++Axel Prahl' + _(' as ') + 'Willis Vater\n\
++Lukas Steimel' + _(' as ') + 'Luki\n\
++Lukas Engel' + _(' as ') + 'Titus\n\
++Pino Severino Geyssen' + _(' as ') + 'Paolo\n\
++Christine Rose' + _(' as ') + 'Jutta\n\
++Herbert Meurer' + _(' as ') + 'Herr Feistkorn\n\
++Marius Fischer' + _(' as ') + 'Bo\n\
++Anya Hoffmann' + _(' as ') + 'Melanies Mutter\n\
++Frank Wickermann' + _(' as ') + 'Melanies Vater\n\
++Axel H?fner' + _(' as ') + 'Schrottplatzw?rter\n\
++Simon Gosejohann' + _(' as ') + 'junger Mann\n\
++Piet Klocke' + _(' as ') + 'Junggeselle',
++			'country'			: 'Deutschland',
++			'genre'				: 'Kinder',
++			'classification'	: 'ohne',
++			'studio'			: 'Bavaria Film, Constantin Film',
++			'o_site'			: False,
++			'site'				: 'http://www.zelluloid.de/filme/details.php3?id=6342',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 109,
++			'image'				: True,
++			'rating'			: 8.0
++		}
++	}
+
+Modified: branches/0.9.x/lib/test_movieplugins.py
+===================================================================
+--- branches/0.9.x/lib/test_movieplugins.py	2008-01-26 21:21:09 UTC (rev 902)
++++ branches/0.9.x/lib/test_movieplugins.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -1,6 +1,6 @@
+ # -*- coding: UTF-8 -*-
+ 
+-__revision__ = '$Id'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2006-2007
+ #
+@@ -59,9 +59,10 @@
+ #
+ class PluginTester:
+ 	test_plugins = [
++		'PluginMovieFilmeVonAZ',
+ 		'PluginMovieKinoDe',
+-		'PluginMovieFilmeVonAZ',
+-		'PluginMovieOFDb'
++		'PluginMovieOFDb',
++		'PluginMovieZelluloid',
+ 	]
+ 
+ 	#
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-01-26 21:21:09 UTC (rev 902)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -211,7 +211,7 @@
+ 			'year'				: 2006,
+ 			'notes'				: False,
+ 			'runtime'			: 102,
+-			'image'				: True,
++			'image'				: False,
+ 			'rating'			: False
+ 		},
+ 		'26956' : { 
+@@ -260,7 +260,7 @@
+ 			'year'				: 2004,
+ 			'notes'				: False,
+ 			'runtime'			: 108,
+-			'image'				: True,
++			'image'				: False,
+ 			'rating'			: False
+ 		}
+ 	}
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-01-26 21:21:09 UTC (rev 902)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -174,12 +174,12 @@
+ 			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
+ Burt Young' + _(' as ') + 'Paulie\n\
+ Milo Ventimiglia' + _(' as ') + 'Robert Jr.\n\
+-Geraldine Hughes\n\
++Geraldine Hughes' + (' as ') + 'Marie\n\
+ James Francis Kelly III\n\
+ Tony Burton\n\
+ A.J. Benza\n\
+ Henry G. Sanders\n\
+-Antonio Tarver\n\
++Antonio Tarver' + (' as ') + 'Mason \'The Line\' Dixon\n\
+ Pedro Lovell\n\
+ Ana Gerena\n\
+ Angela Boyd\n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2008-01-26 21:21:09 UTC (rev 902)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -1,168 +1,270 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2007 Michael Jahn
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-from gettext import gettext as _
+-import gutils
+-import movie
+-import string
+-import re
+-
+-plugin_name         = 'Zelluloid.de'
+-plugin_description  = 'ZELLULOID.DE'
+-plugin_url          = 'www.zelluloid.de'
+-plugin_language     = _('German')
+-plugin_author       = 'Michael Jahn'
+-plugin_author_email = '<mikej06 at hotmail.com>'
+-plugin_version      = '1.0'
+-
+-class Plugin(movie.Movie):
+-	index_url = 'http://www.zelluloid.de/filme/index.php3?id='
+-	
+-	def __init__(self, id):
+-		self.encode='iso-8859-1'
+-		self.movie_id = id
+-		self.url = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
+-
+-	def initialize(self):
+-		self.detail_page = self.page
+-		self.url = self.index_url + self.movie_id
+-		self.page = self.open_page(url=self.url)
+-
+-	def get_image(self):
+-		self.image_url = 'http://www.zelluloid.de/images/poster/' + gutils.trim(self.page, '<IMG SRC="/images/poster/', '"');
+-
+-	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '<BR>')
+-		if self.o_title == '':
+-			self.o_title = gutils.trim(self.page, '<TITLE>', '|')
+-
+-	def get_title(self):
+-		self.title = gutils.trim(self.page, '<TITLE>', '|')
+-
+-	def get_director(self):
+-		self.director = gutils.trim(self.detail_page, 'Regie', '</A>')
+-
+-	def get_plot(self):
+-		self.plot = gutils.trim(self.page, '<DIV CLASS=bigtext>', '</DIV>')
+-		
+-	def get_year(self):
+-		self.year = ''
+-		elements = string.split(self.detail_page, '/directory/az.php3?j')
+-		elements[0] = ''
+-		delimiter = ''
+-		for element in elements:
+-			if element <> '':
+-				self.year = self.year + delimiter + gutils.trim(element, '>', '<')
+-				delimiter = ', '
+-
+-	def get_runtime(self):
+-		self.runtime = gutils.trim(self.detail_page, 'ca.&nbsp;', '&nbsp;min');
+-
+-	def get_genre(self):
+-		self.genre = ''
+-		elements = string.split(self.detail_page, '/directory/az.php3?g')
+-		elements[0] = ''
+-		delimiter = ''
+-		for element in elements:
+-			if element <> '':
+-				self.genre = self.genre + delimiter + gutils.trim(element, '>', '<')
+-				delimiter = ', '
+-
+-	def get_cast(self):
+-		self.cast = gutils.trim(self.detail_page, '<B>Besetzung</B>', '<TD COLSPAN=')
+-		self.cast = self.cast.replace('<A HREF=', '--flip--' + '<A HREF=')
+-		self.cast = gutils.strip_tags(self.cast)
+-		elements = self.cast.split('\n')
+-		self.cast = ''
+-		for element in elements:
+-			elements2 = element.split("--flip--")
+-			if len(elements2) > 1:
+-				self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
+-			else:
+-				self.cast += element + '\n'
+-		self.cast = string.replace(self.cast, '--flip--', _(' as '))
+-
+-	def get_classification(self):
+-		self.classification = gutils.trim(self.detail_page, 'FSK: ', '</TD>')
+-		self.classification = re.sub(',.*', '', self.classification)
+-
+-	def get_studio(self):
+-		self.studio = gutils.strip_tags(gutils.trim(self.detail_page, '<B>Produktion</B>', '&nbsp;'))
+-		if self.studio == '':
+-			self.studio = gutils.trim(self.detail_page, '<B>Produktion</B>', '</TABLE>')
+-		self.studio = self.studio.replace('\n', ', ')
+-		self.studio = re.sub('((^, )|(, $))', '', self.studio)
+-		
+-	def get_o_site(self):
+-		self.o_site = ""
+-
+-	def get_site(self):
+-		self.site = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
+-
+-	def get_trailer(self):
+-		self.trailer = ""
+-
+-	def get_country(self):
+-		self.country = ''
+-		elements = string.split(self.detail_page, '/directory/az.php3?l')
+-		elements[0] = ''
+-		delimiter = ''
+-		for element in elements:
+-			if element <> '':
+-				self.country = self.country + delimiter + gutils.trim(element, '>', '<')
+-				delimiter = ', '
+-
+-	def get_rating(self):
+-		self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '</TABLE>'))
+-		self.rating = self.rating.replace('%', '')
+-		self.rating = self.rating.replace('&nbsp;', '')
+-		try:
+-			ratingint = int(self.rating) / 10
+-		except:
+-			ratingint = 0
+-		self.rating = str(ratingint)
+-
+-	def get_notes(self):
+-		self.notes = ""
+-
+-class SearchPlugin(movie.SearchMovie):
+-
+-	def __init__(self):
+-		self.original_url_search   = "http://www.zelluloid.de/suche/index.php3?qstring="
+-		self.translated_url_search = "http://www.zelluloid.de/suche/index.php3?qstring="
+-		self.encode='iso-8859-1'
+-
+-	def search(self,parent_window):
+-		self.open_search(parent_window)
+-		tmp = gutils.before(gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>"), 'ALT="Person"')
+-		if tmp == '':
+-			tmp = gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>")
+-		return tmp
+-
+-	def get_searches(self):
+-		elements = string.split(self.page, "hit.php3?hit=")
+-		elements[0] = ''
+-		for element in elements:
+-			if element <> '':
+-				self.ids.append(gutils.trim(element, 'movie-', '-'))
+-				self.titles.append(gutils.strip_tags(gutils.trim(element, '>', '</A>')))
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007 Michael Jahn
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++import re
++
++plugin_name         = 'Zelluloid.de'
++plugin_description  = 'ZELLULOID.DE'
++plugin_url          = 'www.zelluloid.de'
++plugin_language     = _('German')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = '<mikej06 at hotmail.com>'
++plugin_version      = '1.0'
++
++class Plugin(movie.Movie):
++	index_url = 'http://www.zelluloid.de/filme/index.php3?id='
++	
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
++
++	def initialize(self):
++		self.detail_page = self.page
++		self.url = self.index_url + self.movie_id
++		self.page = self.open_page(url=self.url)
++
++	def get_image(self):
++		self.image_url = 'http://www.zelluloid.de/images/poster/' + gutils.trim(self.page, '<IMG SRC="/images/poster/', '"');
++
++	def get_o_title(self):
++		self.o_title = gutils.trim(self.page, 'Originaltitel: ', '<BR>')
++		if self.o_title == '':
++			self.o_title = gutils.trim(self.page, '<TITLE>', '|')
++
++	def get_title(self):
++		self.title = gutils.trim(self.page, '<TITLE>', '|')
++
++	def get_director(self):
++		self.director = gutils.trim(self.detail_page, 'Regie', '</A>')
++
++	def get_plot(self):
++		self.plot = gutils.trim(self.page, '<DIV CLASS=bigtext>', '</DIV>')
++		
++	def get_year(self):
++		self.year = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?j')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.year = self.year + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_runtime(self):
++		self.runtime = gutils.trim(self.detail_page, 'ca.&nbsp;', '&nbsp;min');
++
++	def get_genre(self):
++		self.genre = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?g')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.genre = self.genre + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.detail_page, 'alt="Besetzung"', '<TD COLSPAN=')
++		self.cast = self.cast.replace('<A HREF=', '--flip--' + '<A HREF=')
++		self.cast = gutils.strip_tags(self.cast)
++		self.cast = gutils.after(self.cast, '>')
++		elements = self.cast.split('\n')
++		self.cast = ''
++		for element in elements:
++			elements2 = element.split("--flip--")
++			if len(elements2) > 1:
++				self.cast += elements2[1] + '--flip--' + elements2[0] + '\n'
++			else:
++				self.cast += element + '\n'
++		self.cast = string.replace(self.cast, '--flip--', _(' as '))
++
++	def get_classification(self):
++		self.classification = gutils.trim(self.detail_page, 'FSK: ', '</TD>')
++		self.classification = re.sub(',.*', '', self.classification)
++
++	def get_studio(self):
++		self.studio = gutils.strip_tags(gutils.trim(self.detail_page, 'alt="Produktion"', '&nbsp;'))
++		if self.studio == '':
++			self.studio = gutils.trim(self.detail_page, 'alt="Produktion"', '</TABLE>')
++		self.studio = gutils.after(self.studio, '>')
++		self.studio = self.studio.replace('\n', ', ')
++		self.studio = re.sub('((^, )|(, $))', '', self.studio)
++		
++	def get_o_site(self):
++		self.o_site = ""
++
++	def get_site(self):
++		self.site = "http://www.zelluloid.de/filme/details.php3?id=" + self.movie_id
++
++	def get_trailer(self):
++		self.trailer = ""
++
++	def get_country(self):
++		self.country = ''
++		elements = string.split(self.detail_page, '/directory/az.php3?l')
++		elements[0] = ''
++		delimiter = ''
++		for element in elements:
++			if element <> '':
++				self.country = self.country + delimiter + gutils.trim(element, '>', '<')
++				delimiter = ', '
++
++	def get_rating(self):
++		self.rating = gutils.strip_tags(gutils.trim(self.page, 'User-Wertung:', '</TABLE>'))
++		self.rating = self.rating.replace('%', '')
++		self.rating = self.rating.replace('&nbsp;', '')
++		self.rating = self.rating.replace('\n', '')
++		try:
++			ratingint = round(float(self.rating) / 10.0)
++		except:
++			ratingint = 0
++		self.rating = str(ratingint)
++
++	def get_notes(self):
++		self.notes = ""
++
++class SearchPlugin(movie.SearchMovie):
++
++	def __init__(self):
++		self.original_url_search   = "http://www.zelluloid.de/suche/index.php3?qstring="
++		self.translated_url_search = "http://www.zelluloid.de/suche/index.php3?qstring="
++		self.encode='iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		tmp = gutils.before(gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>"), 'ALT="Person"')
++		if tmp == '':
++			tmp = gutils.trim(self.page, "Der Suchbegriff erzielte", "</TABLE>")
++		return tmp
++
++	def get_searches(self):
++		elements = string.split(self.page, "hit.php3?hit=")
++		elements[0] = ''
++		for element in elements:
++			if element <> '':
++				id = gutils.trim(element, 'movie-', '-')
++				if id <> '':
++					self.ids.append(id)
++					self.titles.append(gutils.strip_tags(gutils.trim(element, '>', '</A>')))
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -> expected result count }
++	#
++	test_configuration = {
++		'Rocky Balboa'		: 1,
++		'Die wilden H?hner'	: 2
++	}
++
++class PluginTest:
++	#
++	# Configuration for automated tests:
++	# dict { movie_id -> dict { arribute -> value } }
++	#
++	# value: * True/False if attribute only should be tested for any value
++	#        * or the expected value
++	#
++	test_configuration = {
++		'2835' : { 
++			'title' 			: 'Rocky Balboa',
++			'o_title' 			: 'Rocky Balboa',
++			'director'			: 'Sylvester Stallone',
++			'plot' 				: True,
++			'cast'				: 'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason Dixon\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Jr.\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adrian\n\
++Lou DiBella' + _(' as ') + 'Lou DiBella\n\
++Mike Tyson' + _(' as ') + 'Mike Tyson\n\
++Henry G. Sanders' + _(' as ') + 'Martin',
++			'country'			: 'USA',
++			'genre'				: 'Drama, Sport',
++			'classification'	: 'ab 12',
++			'studio'			: 'Chartoff-Winkler Productions, Columbia Pictures Corporation, Metro-Goldwyn-Mayer, Revolution Studios, Rogue Marble',
++			'o_site'			: False,
++			'site'				: 'http://www.zelluloid.de/filme/details.php3?id=2835',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 102,
++			'image'				: True,
++			'rating'			: 8.0
++		},
++		'6342' : { 
++			'title' 			: 'Die wilden H?hner',
++			'o_title' 			: 'Die wilden H?hner',
++			'director'			: 'Vivian Naefe',
++			'plot' 				: True,
++			'cast'				: 'Michelle von Treuberg' + _(' as ') + 'Sprotte\n\
++Lucie Hollmann' + _(' as ') + 'Frieda\n\
++Paula Riemann' + _(' as ') + 'Melanie\n\
++Zsa Zsa Inci B?rkle' + _(' as ') + 'Trude\n\
++Jette Hering' + _(' as ') + 'Wilma\n\
++Jeremy Mockridge' + _(' as ') + 'Fred\n\
++Philip Wiegratz' + _(' as ') + 'Steve\n\
++Martin Kurz' + _(' as ') + 'Torte\n\
++Vincent Redetzki' + _(' as ') + 'Willi\n\
++Veronica Ferres' + _(' as ') + 'Sprottes Mutter Sibylle\n\
++Doris Schade' + _(' as ') + 'Oma Sl?ttberg\n\
++Jessica Schwarz' + _(' as ') + 'Frau Rose\n\
++Benno F?rmann' + _(' as ') + 'Herr Gr?nbaum\n\
++Axel Prahl' + _(' as ') + 'Willis Vater\n\
++Lukas Steimel' + _(' as ') + 'Luki\n\
++Lukas Engel' + _(' as ') + 'Titus\n\
++Pino Severino Geyssen' + _(' as ') + 'Paolo\n\
++Christine Rose' + _(' as ') + 'Jutta\n\
++Herbert Meurer' + _(' as ') + 'Herr Feistkorn\n\
++Marius Fischer' + _(' as ') + 'Bo\n\
++Anya Hoffmann' + _(' as ') + 'Melanies Mutter\n\
++Frank Wickermann' + _(' as ') + 'Melanies Vater\n\
++Axel H?fner' + _(' as ') + 'Schrottplatzw?rter\n\
++Simon Gosejohann' + _(' as ') + 'junger Mann\n\
++Piet Klocke' + _(' as ') + 'Junggeselle',
++			'country'			: 'Deutschland',
++			'genre'				: 'Kinder',
++			'classification'	: 'ohne',
++			'studio'			: 'Bavaria Film, Constantin Film',
++			'o_site'			: False,
++			'site'				: 'http://www.zelluloid.de/filme/details.php3?id=6342',
++			'trailer'			: False,
++			'year'				: 2006,
++			'notes'				: False,
++			'runtime'			: 109,
++			'image'				: True,
++			'rating'			: 8.0
++		}
++	}
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2008-01-26 21:21:09 UTC (rev 902)
++++ trunk/lib/test_movieplugins.py	2008-01-27 13:47:34 UTC (rev 903)
+@@ -1,6 +1,6 @@
+ # -*- coding: UTF-8 -*-
+ 
+-__revision__ = '$Id'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2006-2007
+ #
+@@ -59,9 +59,10 @@
+ #
+ class PluginTester:
+ 	test_plugins = [
++		'PluginMovieFilmeVonAZ',
+ 		'PluginMovieKinoDe',
+-		'PluginMovieFilmeVonAZ',
+-		'PluginMovieOFDb'
++		'PluginMovieOFDb',
++		'PluginMovieZelluloid',
+ 	]
+ 
+ 	#
+
+
+
+From piotrek at mail.berlios.de  Sun Jan 27 15:56:43 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 27 Jan 2008 15:56:43 +0100
+Subject: [Griffith-svn] r904 - branches/0.9.x branches/0.9.x/glade
+	branches/0.9.x/lib/plugins/movie trunk trunk/glade
+	trunk/lib/plugins/movie
+Message-ID: <200801271456.m0REuhEY007524@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-01-27 15:56:42 +0100 (Sun, 27 Jan 2008)
+New Revision: 904
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/NEWS
+   branches/0.9.x/glade/griffith.glade.h
+   branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/glade/griffith.glade.h
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+AniDB movie plugin updated
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-27 13:47:34 UTC (rev 903)
++++ branches/0.9.x/ChangeLog	2008-01-27 14:56:42 UTC (rev 904)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2008-01-27  Piotr O?arowski
++	* AniDB movie plugin updated
++
+ 2008-01-26  Piotr O?arowski
+ 	* Translators tab (about dialog) filled in automatically
+ 
+
+Modified: branches/0.9.x/NEWS
+===================================================================
+--- branches/0.9.x/NEWS	2008-01-27 13:47:34 UTC (rev 903)
++++ branches/0.9.x/NEWS	2008-01-27 14:56:42 UTC (rev 904)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.6
+ ==============
+ * Distribute local copy of SQLAlchemy 0.3.11 (Griffith 0.10 which will work with SQLAlchemy 0.4.x is not ready yet)
+-* Updated movie plugins: OFDb, Kino.de, FilmeVonAZ
++* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ
+ * Translation changes:
+   + new: Estonian, Hungarian, Indonesian, Korean, Occitan (post 1500), Pashto, Slovak
+   + updated: almost all :-)
+
+Modified: branches/0.9.x/glade/griffith.glade.h
+===================================================================
+--- branches/0.9.x/glade/griffith.glade.h	2008-01-27 13:47:34 UTC (rev 903)
++++ branches/0.9.x/glade/griffith.glade.h	2008-01-27 14:56:42 UTC (rev 904)
+@@ -26,7 +26,9 @@
+ char *s = N_("Add movie and close");
+ char *s = N_("Add new movie");
+ char *s = N_("All Movies");
++char *s = N_("Attempt to fetch a big poster from Amazon services Web site");
+ char *s = N_("By Collection");
++char *s = N_("By Volume");
+ char *s = N_("Cast");
+ char *s = N_("Choose Image");
+ char *s = N_("Classification");
+@@ -144,7 +146,6 @@
+ char *s = N_("Title");
+ char *s = N_("Toolbar");
+ char *s = N_("Trailer");
+-char *s = N_("Try to fetch a big poster from Amazon services website");
+ char *s = N_("Type");
+ char *s = N_("Type in the original film tile, select source and choose <i>Get from web</i>. Griffith will try to fetch all the related information from the Web.");
+ char *s = N_("Use Spellchecker");
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 13:47:34 UTC (rev 903)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 14:56:42 UTC (rev 904)
+@@ -32,7 +32,7 @@
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = '<ozarow+griffith at gmail.com>'
+-plugin_version      = '2.4'
++plugin_version      = '2.5'
+ 
+ aid_pattern = re.compile('[?&;]aid=(\d+)')
+ 
+@@ -68,31 +68,31 @@
+ 			self.image_url = ''
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '"field">Title', '</td>')
+-		self.o_title = gutils.after(self.o_title, '"value">')
+-		self.o_title = re.sub(' \(\d*\)', '', self.o_title)
++		self.o_title = gutils.trim(self.page, '<h1>Anime: ', '</h1>')
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page,'"field">English', '</td>')
++		self.title = gutils.trim(self.page, '"field">Official Title', '</td>')
++		self.title = gutils.trim(self.title, '<span>', '</span>')
+ 
+ 	def get_director(self):
+ 		self.director = ''
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page, 'class="desc">', '</p>')
++		self.plot = gutils.trim(self.page, 'class="desc">', '</div>')
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page, '"field">Year', '</td>')
+-		self.year = gutils.after(self.year, '"value">')[:4]
++		self.year = gutils.after(self.year, '"value">')[-4:]
+ 
+ 	def get_runtime(self):
+ 		self.runtime = ''
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page, '"field">Genre', '</td>')
++		self.genre = gutils.trim(self.page, '>Categories<', '</td>')
++		self.genre = gutils.after(self.genre, 'value">')
+ 		self.genre = gutils.strip_tags(self.genre)
+-		if len(self.genre) and self.genre.endswith('[similar]'):
+-			self.genre =  self.genre[:-11]
++		if len(self.genre) and self.genre.endswith('- similar'):
++			self.genre =  self.genre[:-9]
+ 		elif self.genre == '-':
+ 			self.genre = ''
+ 		self.genre = string.replace(self.genre, '\n', '')
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-27 13:47:34 UTC (rev 903)
++++ trunk/ChangeLog	2008-01-27 14:56:42 UTC (rev 904)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2008-01-27  Piotr O?arowski
++	* AniDB movie plugin updated
++
+ 2008-01-26  Piotr O?arowski
+ 	* Translators tab (about dialog) filled in automatically
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2008-01-27 13:47:34 UTC (rev 903)
++++ trunk/NEWS	2008-01-27 14:56:42 UTC (rev 904)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.6
+ ==============
+ * Distribute local copy of SQLAlchemy 0.3.11 (Griffith 0.10 which will work with SQLAlchemy 0.4.x is not ready yet)
+-* Updated movie plugins: OFDb, Kino.de, FilmeVonAZ
++* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ
+ * Translation changes:
+   + new: Estonian, Hungarian, Indonesian, Korean, Occitan (post 1500), Pashto, Slovak
+   + updated: almost all :-)
+
+Modified: trunk/glade/griffith.glade.h
+===================================================================
+--- trunk/glade/griffith.glade.h	2008-01-27 13:47:34 UTC (rev 903)
++++ trunk/glade/griffith.glade.h	2008-01-27 14:56:42 UTC (rev 904)
+@@ -26,7 +26,9 @@
+ char *s = N_("Add movie and close");
+ char *s = N_("Add new movie");
+ char *s = N_("All Movies");
++char *s = N_("Attempt to fetch a big poster from Amazon services Web site");
+ char *s = N_("By Collection");
++char *s = N_("By Volume");
+ char *s = N_("Cast");
+ char *s = N_("Choose Image");
+ char *s = N_("Classification");
+@@ -144,7 +146,6 @@
+ char *s = N_("Title");
+ char *s = N_("Toolbar");
+ char *s = N_("Trailer");
+-char *s = N_("Try to fetch a big poster from Amazon services website");
+ char *s = N_("Type");
+ char *s = N_("Type in the original film tile, select source and choose <i>Get from web</i>. Griffith will try to fetch all the related information from the Web.");
+ char *s = N_("Use Spellchecker");
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 13:47:34 UTC (rev 903)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 14:56:42 UTC (rev 904)
+@@ -32,7 +32,7 @@
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = '<ozarow+griffith at gmail.com>'
+-plugin_version      = '2.4'
++plugin_version      = '2.5'
+ 
+ aid_pattern = re.compile('[?&;]aid=(\d+)')
+ 
+@@ -68,31 +68,31 @@
+ 			self.image_url = ''
+ 
+ 	def get_o_title(self):
+-		self.o_title = gutils.trim(self.page, '"field">Title', '</td>')
+-		self.o_title = gutils.after(self.o_title, '"value">')
+-		self.o_title = re.sub(' \(\d*\)', '', self.o_title)
++		self.o_title = gutils.trim(self.page, '<h1>Anime: ', '</h1>')
+ 
+ 	def get_title(self):
+-		self.title = gutils.trim(self.page,'"field">English', '</td>')
++		self.title = gutils.trim(self.page, '"field">Official Title', '</td>')
++		self.title = gutils.trim(self.title, '<span>', '</span>')
+ 
+ 	def get_director(self):
+ 		self.director = ''
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page, 'class="desc">', '</p>')
++		self.plot = gutils.trim(self.page, 'class="desc">', '</div>')
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page, '"field">Year', '</td>')
+-		self.year = gutils.after(self.year, '"value">')[:4]
++		self.year = gutils.after(self.year, '"value">')[-4:]
+ 
+ 	def get_runtime(self):
+ 		self.runtime = ''
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page, '"field">Genre', '</td>')
++		self.genre = gutils.trim(self.page, '>Categories<', '</td>')
++		self.genre = gutils.after(self.genre, 'value">')
+ 		self.genre = gutils.strip_tags(self.genre)
+-		if len(self.genre) and self.genre.endswith('[similar]'):
+-			self.genre =  self.genre[:-11]
++		if len(self.genre) and self.genre.endswith('- similar'):
++			self.genre =  self.genre[:-9]
+ 		elif self.genre == '-':
+ 			self.genre = ''
+ 		self.genre = string.replace(self.genre, '\n', '')
+
+
+
+From piotrek at mail.berlios.de  Sun Jan 27 16:00:51 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 27 Jan 2008 16:00:51 +0100
+Subject: [Griffith-svn] r905 - branches/0.9.x/lib/plugins/movie
+	trunk/lib/plugins/movie
+Message-ID: <200801271500.m0RF0pth007917@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-01-27 16:00:50 +0100 (Sun, 27 Jan 2008)
+New Revision: 905
+
+Modified:
+   branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+Log:
+s/anidb.info/anidb.net
+
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 14:56:42 UTC (rev 904)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 15:00:50 UTC (rev 905)
+@@ -28,7 +28,7 @@
+ 
+ plugin_name         = 'AnimeDB'
+ plugin_description  = 'Anime DataBase'
+-plugin_url          = 'www.anidb.info'
++plugin_url          = 'www.anidb.net'
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = '<ozarow+griffith at gmail.com>'
+@@ -44,7 +44,7 @@
+ 			self.movie_id = 'anidb'
+ 		else:
+ 			self.movie_id = str(id)
+-			self.url = "http://anidb.info/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
++			self.url = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
+ 
+ 	def initialize(self):
+ 		self.page = decompress(self.page)
+@@ -52,7 +52,7 @@
+ 			aid =  aid_pattern.search(self.page)
+ 			if aid:
+ 				self.movie_id = aid.groups()[0]
+-				self.url = "http://anidb.info/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
++				self.url = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
+ 			else:
+ 				return False
+ 		self.page = gutils.after(self.page, 'id="layout-content"')
+@@ -61,7 +61,7 @@
+ 			self.page = self.page[:pos]
+ 
+ 	def get_image(self):
+-		match = re.search('http://img\d*.anidb.info/pics/anime/\d*.jpg', self.page)
++		match = re.search('http://img\d*.anidb.net/pics/anime/\d*.jpg', self.page)
+ 		if match is not None:
+ 			self.image_url = match.group()
+ 		else:
+@@ -144,8 +144,8 @@
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+ 		self.encode = 'utf-8'
+-		self.original_url_search	= 'http://anidb.info/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
+-		self.translated_url_search	= 'http://anidb.info/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
++		self.original_url_search	= 'http://anidb.net/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
++		self.translated_url_search	= 'http://anidb.net/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 14:56:42 UTC (rev 904)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2008-01-27 15:00:50 UTC (rev 905)
+@@ -28,7 +28,7 @@
+ 
+ plugin_name         = 'AnimeDB'
+ plugin_description  = 'Anime DataBase'
+-plugin_url          = 'www.anidb.info'
++plugin_url          = 'www.anidb.net'
+ plugin_language     = _('English')
+ plugin_author       = 'Piotr O?arowski'
+ plugin_author_email = '<ozarow+griffith at gmail.com>'
+@@ -44,7 +44,7 @@
+ 			self.movie_id = 'anidb'
+ 		else:
+ 			self.movie_id = str(id)
+-			self.url = "http://anidb.info/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
++			self.url = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
+ 
+ 	def initialize(self):
+ 		self.page = decompress(self.page)
+@@ -52,7 +52,7 @@
+ 			aid =  aid_pattern.search(self.page)
+ 			if aid:
+ 				self.movie_id = aid.groups()[0]
+-				self.url = "http://anidb.info/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
++				self.url = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=%s" % self.movie_id
+ 			else:
+ 				return False
+ 		self.page = gutils.after(self.page, 'id="layout-content"')
+@@ -61,7 +61,7 @@
+ 			self.page = self.page[:pos]
+ 
+ 	def get_image(self):
+-		match = re.search('http://img\d*.anidb.info/pics/anime/\d*.jpg', self.page)
++		match = re.search('http://img\d*.anidb.net/pics/anime/\d*.jpg', self.page)
+ 		if match is not None:
+ 			self.image_url = match.group()
+ 		else:
+@@ -144,8 +144,8 @@
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+ 		self.encode = 'utf-8'
+-		self.original_url_search	= 'http://anidb.info/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
+-		self.translated_url_search	= 'http://anidb.info/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
++		self.original_url_search	= 'http://anidb.net/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
++		self.translated_url_search	= 'http://anidb.net/perl-bin/animedb.pl?show=animelist&do.search=search&adb.search='
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+
+
+
+From mikej06 at mail.berlios.de  Sun Jan 27 21:15:07 2008
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 27 Jan 2008 21:15:07 +0100
+Subject: [Griffith-svn] r906 - branches/0.9.x trunk
+Message-ID: <200801272015.m0RKF7JF014211@sheep.berlios.de>
+
+Author: mikej06
+Date: 2008-01-27 21:14:26 +0100 (Sun, 27 Jan 2008)
+New Revision: 906
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/NEWS
+   branches/0.9.x/winpackage.iss
+   branches/0.9.x/winsetup.bat
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+Log:
+* use relative paths in scripts for windows package
+* updated ChangeLog and NEWS
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/ChangeLog	2008-01-27 20:14:26 UTC (rev 906)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2008-01-27  Michael Jahn
++	* Zelluloid plugin updated
++
+ 2008-01-27  Piotr O?arowski
+ 	* AniDB movie plugin updated
+ 
+
+Modified: branches/0.9.x/NEWS
+===================================================================
+--- branches/0.9.x/NEWS	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/NEWS	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.6
+ ==============
+ * Distribute local copy of SQLAlchemy 0.3.11 (Griffith 0.10 which will work with SQLAlchemy 0.4.x is not ready yet)
+-* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ
++* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ, Zelluloid
+ * Translation changes:
+   + new: Estonian, Hungarian, Indonesian, Korean, Occitan (post 1500), Pashto, Slovak
+   + updated: almost all :-)
+
+Modified: branches/0.9.x/winpackage.iss
+===================================================================
+--- branches/0.9.x/winpackage.iss	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/winpackage.iss	2008-01-27 20:14:26 UTC (rev 906)
+@@ -11,18 +11,19 @@
+ DefaultDirName={pf}\Griffith
+ DefaultGroupName=Griffith
+ AllowNoIcons=true
+-LicenseFile=C:\griffith\COPYING
+-InfoAfterFile=C:\griffith\README
+-OutputDir=C:\griffith\installer
++LicenseFile=COPYING
++InfoAfterFile=README
++OutputDir=installer
+ OutputBaseFilename=griffith-0.9.6-win32
+-SetupIconFile=C:\griffith\images\griffith.ico
++SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+-WizardImageFile=C:\griffith\images\griffith_win32_installer.bmp
++WizardImageFile=images\griffith_win32_installer.bmp
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+ AppVersion=0.9.6
++VersionInfoVersion=0.9.6
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -51,8 +52,8 @@
+ Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+ 
+ [Files]
+-Source: C:\griffith\dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
+-Source: C:\griffith\dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
++Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+ 
+ [INI]
+
+Modified: branches/0.9.x/winsetup.bat
+===================================================================
+--- branches/0.9.x/winsetup.bat	2008-01-27 15:00:50 UTC (rev 905)
++++ branches/0.9.x/winsetup.bat	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,9 +1,24 @@
+ @rem *** Used to create a Python exe  
+- 
+- at rem ***** get rid of all the old files in the build folder 
+- at rd /S /Q build 
+- at rd /S /Q dist 
+ 
++ at set GTKDIR=%GTK_BASEPATH%
++
++ at set GRIFFITHDIR=.\
++
++ at rem *** check the configuration
++ at if not exist "%GTKDIR%" (
++   @echo Can't find directory %GTKDIR%.
++   @goto END
++)
++
++ at if not exist "%GRIFFITHDIR%" (
++   @echo Can't find directory %GRIFFITHDIR%.
++   @goto END
++)
++
++ at rem ***** get rid of all the old files in the build folder
++ at if exist "%GRIFFITHDIR%\build" @rd /S /Q build 
++ at if exist "%GRIFFITHDIR%\dist" @rd /S /Q dist 
++
+ @mkdir dist\etc
+ @mkdir dist\share
+ @mkdir dist\lib
+@@ -13,10 +28,14 @@
+ 
+ @python.exe -OO winsetup.py py2exe
+ 
+- at xcopy "C:\Programas\Ficheiros comuns\GTK\2.0\etc" c:\griffith\dist\etc /s /e
+- at xcopy "C:\Programas\Ficheiros comuns\GTK\2.0\lib" c:\griffith\dist\lib /s /e
+- at xcopy "C:\Programas\Ficheiros comuns\GTK\2.0\share\locale" c:\griffith\dist\share\locale /s /e
++ at xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
++ at xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
++ at xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
+ 
+- at copy "C:\Programas\Ficheiros comuns\GTK\2.0\share\themes\MS-Windows\gtk-2.0\*.*" c:\griffith\dist\
+- at copy "C:\Programas\Ficheiros comuns\GTK\2.0\bin\jpeg62.dll" c:\griffith\dist\
+- at rem **** pause so we can see the exit codes 
+\ No newline at end of file
++ at copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
++ at copy "%GTKDIR%\bin\jpeg62.dll" "%GRIFFITHDIR%\dist\"
++
++:END
++
++ at rem **** pause so we can see the exit codes
++ at pause
+\ No newline at end of file
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/ChangeLog	2008-01-27 20:14:26 UTC (rev 906)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2008-01-27  Michael Jahn
++	* Zelluloid plugin updated
++
+ 2008-01-27  Piotr O?arowski
+ 	* AniDB movie plugin updated
+ 
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/NEWS	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,7 +1,7 @@
+ Griffith 0.9.6
+ ==============
+ * Distribute local copy of SQLAlchemy 0.3.11 (Griffith 0.10 which will work with SQLAlchemy 0.4.x is not ready yet)
+-* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ
++* Updated movie plugins: AniDb, OFDb, Kino.de, FilmeVonAZ, Zelluloid
+ * Translation changes:
+   + new: Estonian, Hungarian, Indonesian, Korean, Occitan (post 1500), Pashto, Slovak
+   + updated: almost all :-)
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/winpackage.iss	2008-01-27 20:14:26 UTC (rev 906)
+@@ -11,18 +11,19 @@
+ DefaultDirName={pf}\Griffith
+ DefaultGroupName=Griffith
+ AllowNoIcons=true
+-LicenseFile=C:\griffith\COPYING
+-InfoAfterFile=C:\griffith\README
+-OutputDir=C:\griffith\installer
++LicenseFile=COPYING
++InfoAfterFile=README
++OutputDir=installer
+ OutputBaseFilename=griffith-0.9.5-win32
+-SetupIconFile=C:\griffith\images\griffith.ico
++SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+-WizardImageFile=C:\griffith\images\griffith_win32_installer.bmp
++WizardImageFile=images\griffith_win32_installer.bmp
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+ AppVersion=0.9.5
++VersionInfoVersion=0.9.5
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+@@ -51,8 +52,8 @@
+ Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+ 
+ [Files]
+-Source: C:\griffith\dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
+-Source: C:\griffith\dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
++Source: dist\griffith.exe; DestDir: {app}; Flags: ignoreversion
++Source: dist\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
+ ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+ 
+ [INI]
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2008-01-27 15:00:50 UTC (rev 905)
++++ trunk/winsetup.bat	2008-01-27 20:14:26 UTC (rev 906)
+@@ -1,9 +1,24 @@
+ @rem *** Used to create a Python exe  
+- 
+- at rem ***** get rid of all the old files in the build folder 
+- at rd /S /Q build 
+- at rd /S /Q dist 
+ 
++ at set GTKDIR=%GTK_BASEPATH%
++
++ at set GRIFFITHDIR=.\
++
++ at rem *** check the configuration
++ at if not exist "%GTKDIR%" (
++   @echo Can't find directory %GTKDIR%.
++   @goto END
++)
++
++ at if not exist "%GRIFFITHDIR%" (
++   @echo Can't find directory %GRIFFITHDIR%.
++   @goto END
++)
++
++ at rem ***** get rid of all the old files in the build folder
++ at if exist "%GRIFFITHDIR%\build" @rd /S /Q build 
++ at if exist "%GRIFFITHDIR%\dist" @rd /S /Q dist 
++
+ @mkdir dist\etc
+ @mkdir dist\share
+ @mkdir dist\lib
+@@ -13,10 +28,14 @@
+ 
+ @python.exe -OO winsetup.py py2exe
+ 
+- at xcopy "C:\Programas\Ficheiros comuns\GTK\2.0\etc" c:\griffith\dist\etc /s /e
+- at xcopy "C:\Programas\Ficheiros comuns\GTK\2.0\lib" c:\griffith\dist\lib /s /e
+- at xcopy "C:\Programas\Ficheiros comuns\GTK\2.0\share\locale" c:\griffith\dist\share\locale /s /e
++ at xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
++ at xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
++ at xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
+ 
+- at copy "C:\Programas\Ficheiros comuns\GTK\2.0\share\themes\MS-Windows\gtk-2.0\*.*" c:\griffith\dist\
+- at copy "C:\Programas\Ficheiros comuns\GTK\2.0\bin\jpeg62.dll" c:\griffith\dist\
+- at rem **** pause so we can see the exit codes 
+\ No newline at end of file
++ at copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
++ at copy "%GTKDIR%\bin\jpeg62.dll" "%GRIFFITHDIR%\dist\"
++
++:END
++
++ at rem **** pause so we can see the exit codes
++ at pause
+\ No newline at end of file
+
+
+
+From piotrek at mail.berlios.de  Sun Jan 27 22:23:05 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 27 Jan 2008 22:23:05 +0100
+Subject: [Griffith-svn] r907 - branches/0.9.x/lib trunk/lib
+Message-ID: <200801272123.m0RLN570019109@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-01-27 22:23:04 +0100 (Sun, 27 Jan 2008)
+New Revision: 907
+
+Modified:
+   branches/0.9.x/lib/about.py
+   trunk/lib/about.py
+Log:
+try to open /usr/share/doc/griffith/TRANSLATORS if it's not in locations['share']
+
+
+Modified: branches/0.9.x/lib/about.py
+===================================================================
+--- branches/0.9.x/lib/about.py	2008-01-27 20:14:26 UTC (rev 906)
++++ branches/0.9.x/lib/about.py	2008-01-27 21:23:04 UTC (rev 907)
+@@ -58,6 +58,12 @@
+ 		elif os.path.isfile(TRANSLATORS_FILE+'.gz'):
+ 			from gutils import decompress
+ 			data = decompress(open(TRANSLATORS_FILE + '.gz').read())
++		elif os.name == 'posix':
++			if os.path.isfile('/usr/share/doc/griffith/TRANSLATORS'):
++				data = open('/usr/share/doc/griffith/TRANSLATORS').read()
++			elif os.path.isfile('/usr/share/doc/griffith/TRANSLATORS.gz'):
++				from gutils import decompress
++				data = decompress(open('/usr/share/doc/griffith/TRANSLATORS.gz').read())
+ 		translator_credits = ''
+ 		if data:
+ 			for line in data.split('\n'):
+
+Modified: trunk/lib/about.py
+===================================================================
+--- trunk/lib/about.py	2008-01-27 20:14:26 UTC (rev 906)
++++ trunk/lib/about.py	2008-01-27 21:23:04 UTC (rev 907)
+@@ -58,6 +58,12 @@
+ 		elif os.path.isfile(TRANSLATORS_FILE+'.gz'):
+ 			from gutils import decompress
+ 			data = decompress(open(TRANSLATORS_FILE + '.gz').read())
++		elif os.name == 'posix':
++			if os.path.isfile('/usr/share/doc/griffith/TRANSLATORS'):
++				data = open('/usr/share/doc/griffith/TRANSLATORS').read()
++			elif os.path.isfile('/usr/share/doc/griffith/TRANSLATORS.gz'):
++				from gutils import decompress
++				data = decompress(open('/usr/share/doc/griffith/TRANSLATORS.gz').read())
+ 		translator_credits = ''
+ 		if data:
+ 			for line in data.split('\n'):
+
+
+
+From piotrek at mail.berlios.de  Tue Jan 29 21:48:39 2008
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Tue, 29 Jan 2008 21:48:39 +0100
+Subject: [Griffith-svn] r911 - in trunk: . data
+Message-ID: <200801292048.m0TKmd5K013106@sheep.berlios.de>
+
+Author: piotrek
+Date: 2008-01-29 21:48:39 +0100 (Tue, 29 Jan 2008)
+New Revision: 911
+
+Modified:
+   trunk/ChangeLog
+   trunk/data/griffith.desktop
+Log:
+heh, MimeType is already removed (wrong field, reverting my last change)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-01-29 20:37:28 UTC (rev 910)
++++ trunk/ChangeLog	2008-01-29 20:48:39 UTC (rev 911)
+@@ -4,9 +4,6 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O?arowski
+ 
+-2008-01-27  Piotr O?arowski
+-	* Remove Type from .desktop file (we don't really want to open executable files with Griffith)
+-
+ ---- 0.9.6 ---
+ 
+ 2008-01-27  Michael Jahn
+
+Modified: trunk/data/griffith.desktop
+===================================================================
+--- trunk/data/griffith.desktop	2008-01-29 20:37:28 UTC (rev 910)
++++ trunk/data/griffith.desktop	2008-01-29 20:48:39 UTC (rev 911)
+@@ -6,6 +6,7 @@
+ Exec=griffith
+ Icon=griffith
+ Terminal=false
++Type=Application
+ StartupNotify=true
+ StartupWMClass=Griffith
+ Categories=GNOME;GTK;Database;AudioVideo;
+
+
+

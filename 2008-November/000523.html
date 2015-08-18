@@ -1,0 +1,639 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1045 - in trunk: . glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1045%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200811152346.mAFNkrPO030565%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000522.html">
+   <LINK REL="Next"  HREF="000524.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1045 - in trunk: . glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1045%20-%20in%20trunk%3A%20.%20glade%20lib&In-Reply-To=%3C200811152346.mAFNkrPO030565%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1045 - in trunk: . glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 16 00:46:53 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000522.html">[Griffith-svn] r1044 - trunk/lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000524.html">[Griffith-svn] r1046 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#523">[ date ]</a>
+              <a href="thread.html#523">[ thread ]</a>
+              <a href="subject.html#523">[ subject ]</a>
+              <a href="author.html#523">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-16 00:46:51 +0100 (Sun, 16 Nov 2008)
+New Revision: 1045
+
+Removed:
+   trunk/lib/update.py
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/griffith
+   trunk/lib/advfilter.py
+   trunk/lib/edit.py
+   trunk/lib/initialize.py
+   trunk/lib/main_treeview.py
+   trunk/lib/quick_filter.py
+   trunk/lib/widgets.py
+Log:
+Replace &quot;by ...&quot; quick filter combo boxes with saved search conditions
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/ChangeLog	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -7,6 +7,7 @@
+ 
+ 2008-11-15  Piotr O&#380;arowski
+ 	* Export plugins are now exporting movies listed in main window
++	* Replace &quot;by ...&quot; quick filter combo boxes with saved search conditions
+ 
+ 2008-11-13  Piotr O&#380;arowski
+ 	* update translations
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/glade/griffith.glade	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -751,7 +751,7 @@
+                   &lt;widget class=&quot;GtkLabel&quot; id=&quot;label291&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;xpad&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;By Volume&lt;/property&gt;
++                    &lt;property name=&quot;label&quot;&gt;saved&lt;/property&gt;
+                   &lt;/widget&gt;
+                 &lt;/child&gt;
+               &lt;/widget&gt;
+@@ -764,10 +764,10 @@
+               &lt;widget class=&quot;GtkToolItem&quot; id=&quot;toolitem15&quot;&gt;
+                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                 &lt;child&gt;
+-                  &lt;widget class=&quot;GtkComboBox&quot; id=&quot;f_volume&quot;&gt;
++                  &lt;widget class=&quot;GtkComboBox&quot; id=&quot;f_advfilter&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                     &lt;property name=&quot;items&quot; translatable=&quot;yes&quot;&gt;&lt;/property&gt;
+-                    &lt;signal name=&quot;changed&quot; handler=&quot;on_f_volume_changed&quot;/&gt;
++                    &lt;signal name=&quot;changed&quot; handler=&quot;on_f_advfilter_changed&quot;/&gt;
+                   &lt;/widget&gt;
+                 &lt;/child&gt;
+               &lt;/widget&gt;
+@@ -776,82 +776,6 @@
+                 &lt;property name=&quot;homogeneous&quot;&gt;False&lt;/property&gt;
+               &lt;/packing&gt;
+             &lt;/child&gt;
+-            &lt;child&gt;
+-              &lt;widget class=&quot;GtkToolItem&quot; id=&quot;toolitem16&quot;&gt;
+-                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label292&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xpad&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;Loaned to&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                &lt;/child&gt;
+-              &lt;/widget&gt;
+-              &lt;packing&gt;
+-                &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+-                &lt;property name=&quot;homogeneous&quot;&gt;False&lt;/property&gt;
+-              &lt;/packing&gt;
+-            &lt;/child&gt;
+-            &lt;child&gt;
+-              &lt;widget class=&quot;GtkToolItem&quot; id=&quot;toolitem17&quot;&gt;
+-                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkComboBox&quot; id=&quot;f_loanedto&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;items&quot; translatable=&quot;yes&quot;&gt;&lt;/property&gt;
+-                    &lt;signal name=&quot;changed&quot; handler=&quot;on_f_loanedto_changed&quot;/&gt;
+-                  &lt;/widget&gt;
+-                &lt;/child&gt;
+-              &lt;/widget&gt;
+-              &lt;packing&gt;
+-                &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+-                &lt;property name=&quot;homogeneous&quot;&gt;False&lt;/property&gt;
+-              &lt;/packing&gt;
+-            &lt;/child&gt;
+-            &lt;child&gt;
+-              &lt;widget class=&quot;GtkToolItem&quot; id=&quot;toolitem18&quot;&gt;
+-                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkLabel&quot; id=&quot;label293&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;xpad&quot;&gt;6&lt;/property&gt;
+-                    &lt;property name=&quot;label&quot; translatable=&quot;yes&quot;&gt;By Tag&lt;/property&gt;
+-                  &lt;/widget&gt;
+-                &lt;/child&gt;
+-              &lt;/widget&gt;
+-              &lt;packing&gt;
+-                &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+-                &lt;property name=&quot;homogeneous&quot;&gt;False&lt;/property&gt;
+-              &lt;/packing&gt;
+-            &lt;/child&gt;
+-            &lt;child&gt;
+-              &lt;widget class=&quot;GtkToolItem&quot; id=&quot;toolitem19&quot;&gt;
+-                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                &lt;child&gt;
+-                  &lt;widget class=&quot;GtkComboBox&quot; id=&quot;f_bytag&quot;&gt;
+-                    &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;items&quot; translatable=&quot;yes&quot;&gt;&lt;/property&gt;
+-                    &lt;signal name=&quot;changed&quot; handler=&quot;on_f_bytag_changed&quot;/&gt;
+-                  &lt;/widget&gt;
+-                &lt;/child&gt;
+-              &lt;/widget&gt;
+-              &lt;packing&gt;
+-                &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+-                &lt;property name=&quot;homogeneous&quot;&gt;False&lt;/property&gt;
+-              &lt;/packing&gt;
+-            &lt;/child&gt;
+-            &lt;child&gt;
+-              &lt;widget class=&quot;GtkToolItem&quot; id=&quot;toolitem13&quot;&gt;
+-                &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                &lt;child&gt;
+-                  &lt;placeholder/&gt;
+-                &lt;/child&gt;
+-              &lt;/widget&gt;
+-              &lt;packing&gt;
+-                &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+-                &lt;property name=&quot;homogeneous&quot;&gt;False&lt;/property&gt;
+-              &lt;/packing&gt;
+-            &lt;/child&gt;
+           &lt;/widget&gt;
+           &lt;packing&gt;
+             &lt;property name=&quot;expand&quot;&gt;False&lt;/property&gt;
+@@ -2773,12 +2697,6 @@
+                             &lt;property name=&quot;column_spacing&quot;&gt;8&lt;/property&gt;
+                             &lt;property name=&quot;row_spacing&quot;&gt;8&lt;/property&gt;
+                             &lt;child&gt;
+-                              &lt;placeholder/&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+-                              &lt;placeholder/&gt;
+-                            &lt;/child&gt;
+-                            &lt;child&gt;
+                               &lt;widget class=&quot;GtkCheckButton&quot; id=&quot;view_image&quot;&gt;
+                                 &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+                                 &lt;property name=&quot;can_focus&quot;&gt;True&lt;/property&gt;
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/griffith	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -67,7 +67,6 @@
+ import initialize
+ import main_treeview
+ import quick_filter
+-import update
+ import version
+ 
+ class Griffith(object):
+@@ -425,7 +424,7 @@
+             session.rollback()
+             log.warn(&quot;Cannot add volume: %s&quot;, e.message)
+         else:
+-            update.update_volume_combo_ids(self)
++            initialize.update_volume_combo_ids(self)
+             initialize.fill_volumes_combo(self, id)
+ 
+     def add_collection(self, widget):
+@@ -439,7 +438,7 @@
+             session.rollback()
+             log.warn(&quot;Cannot add collection: %s&quot;, e.message)
+         else:
+-            update.update_collection_combo_ids(self)
++            initialize.update_collection_combo_ids(self)
+             initialize.fill_collections_combo(self, id)
+ 
+     def remove_volume(self, widget):
+@@ -454,7 +453,7 @@
+                 session.rollback()
+                 log.warn(&quot;Cannot remove volume: %s&quot;, e.message)
+             else:
+-                update.update_volume_combo_ids(self)
++                initialize.update_volume_combo_ids(self)
+                 initialize.fill_volumes_combo(self, id)
+ 
+     def remove_collection(self, widget):
+@@ -469,7 +468,7 @@
+                 session.rollback()
+                 log.warn(&quot;Cannot remove collection: %s&quot;, e.message)
+             else:
+-                update.update_collection_combo_ids(self)
++                initialize.update_collection_combo_ids(self)
+                 initialize.fill_collections_combo(self, id)
+ 
+     def rename_volume(self, widget):
+@@ -661,8 +660,6 @@
+         else:
+             initialize.fill_preferences_tags_combo(self)
+             initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+-            update.update_bytag_combo_ids(self)
+-            initialize.fill_bytag_combo(self)
+ 
+     def on_tag_remove_clicked(self, widget):
+         session = self.db.Session()
+@@ -679,8 +676,6 @@
+                     log.warn(&quot;Cannot remove tag: %s&quot;, e.message)
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+-                update.update_bytag_combo_ids(self)
+-                initialize.fill_bytag_combo(self)
+             else:
+                 gutils.warning(self, msg=_(&quot;This item is in use.\nOperation aborted!&quot;))
+         else:
+@@ -704,8 +699,6 @@
+             else:
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+-                update.update_bytag_combo_ids(self)
+-                initialize.fill_bytag_combo(self)
+ 
+     def on_tag_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['tag_name'].get_active()
+@@ -1192,15 +1185,9 @@
+     def filter_collection(self, *args):
+         quick_filter.change_filter(self)
+ 
+-    def filter_volume(self, *args):
++    def filter_using_advfilter_rule(self, *args):
+         quick_filter.change_filter(self)
+ 
+-    def filter_loanedto(self, *args):
+-        quick_filter.change_filter(self)
+-
+-    def filter_bytag(self, *args):
+-        quick_filter.change_filter(self)
+-
+     # windows/dialogs -----------------------------------------------------
+ 
+     def results_cancel_ck(self, *args):
+@@ -1208,7 +1195,7 @@
+         reconnect_add_signals(self)
+         self.widgets['results']['window'].hide()
+ 
+-    def save_state(self): 
++    def save_state(self):
+         &quot;&quot;&quot;Saves main window state&quot;&quot;&quot;
+         # size should only be saved on microsoft windows systems
+         # on other systems the window manager should manage the windows
+
+Modified: trunk/lib/advfilter.py
+===================================================================
+--- trunk/lib/advfilter.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/advfilter.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -99,6 +99,9 @@
+         i.destroy()
+     for i in widgets['dynamic_vbox'].get_children():
+         i.destroy()
++    
++    from initialize import fill_advfilter_combo
++    fill_advfilter_combo(self)
+ 
+     return True
+ 
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/edit.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -34,7 +34,6 @@
+ import delete
+ import gutils
+ import movie
+-import update
+ 
+ def change_poster(self):
+     &quot;&quot;&quot;
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/initialize.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -580,16 +580,12 @@
+ 
+ def dictionaries(self):
+     &quot;&quot;&quot;initializes data filled dynamically by users&quot;&quot;&quot;
+-    import update
+     self.am_tags = {} # dictionary for tag CheckBoxes
+-    update.update_volume_combo_ids(self)
+-    update.update_collection_combo_ids(self)
+-    update.update_loanedto_combo_ids(self)
+-    update.update_bytag_combo_ids(self)
++    update_volume_combo_ids(self)
++    update_collection_combo_ids(self)
+     fill_volumes_combo(self)
+     fill_collections_combo(self)
+-    fill_loanedto_combo(self)
+-    fill_bytag_combo(self)
++    fill_advfilter_combo(self)
+     fill_preferences_tags_combo(self)
+     language_combos(self)
+     acodec_combos(self)
+@@ -716,11 +712,26 @@
+     else:
+         self.widgets['preferences']['db_type'].set_active(0)
+ 
++def update_volume_combo_ids(self):
++    self.volume_combo_ids = {}
++    self.volume_combo_ids[0] = 0
++    i = 1
++    for volume in self.db.session.query(db.Volume).all():
++        self.volume_combo_ids[i] = volume.volume_id
++        i += 1
++
++def update_collection_combo_ids(self):
++    self.collection_combo_ids = {}
++    self.collection_combo_ids[0] = 0
++    i = 1
++    for collection in self.db.session.query(db.Collection).all():
++        self.collection_combo_ids[i] = collection.collection_id
++        i += 1
++
+ def fill_volumes_combo(self, default=0):
+     _tmp = self.initialized
+     self.initialized = False # don't refresh main treeview
+     self.widgets['add']['volume'].get_model().clear()
+-    self.widgets['filter']['volume'].get_model().clear()
+     for i in self.volume_combo_ids:
+         vol_id = self.volume_combo_ids[i]
+         if vol_id&gt;0:
+@@ -728,16 +739,12 @@
+         else:
+             name = ''
+         self.widgets['add']['volume'].insert_text(int(i), str(name))
+-        # add some white spaces to prevent scrollbar hides parts of the names    
+-        self.widgets['filter']['volume'].insert_text(int(i), str(name) + '   ')
+-    self.initialized = _tmp
+     self.widgets['add']['volume'].show_all()
+-    self.widgets['filter']['volume'].show_all()
+-    self.widgets['filter']['volume'].set_active(0)
+     i = gutils.findKey(default, self.volume_combo_ids)
+     if i is not None:
+         self.widgets['add']['volume'].set_active(int(i))
+     self.widgets['add']['volume'].set_wrap_width(3)
++    self.initialized = _tmp
+ 
+ def fill_collections_combo(self, default=0):
+     _tmp = self.initialized
+@@ -753,7 +760,6 @@
+         self.widgets['add']['collection'].insert_text(int(i), str(name))
+         # add some white spaces to prevent scrollbar hides parts of the names    
+         self.widgets['filter']['collection'].insert_text(int(i), str(name) + '   ')
+-    self.initialized = _tmp
+     self.widgets['add']['collection'].show_all()
+     self.widgets['filter']['collection'].show_all()
+     self.widgets['filter']['collection'].set_active(0)
+@@ -761,38 +767,21 @@
+     if i is not None:
+         self.widgets['add']['collection'].set_active(int(i))
+     self.widgets['add']['collection'].set_wrap_width(2)
+-
+-def fill_loanedto_combo(self):
+-    _tmp = self.initialized
+-    self.initialized = False # don't refresh main treeview
+-    self.widgets['filter']['loanedto'].get_model().clear()
+-    for i in self.loanedto_combo_ids:
+-        per_id = self.loanedto_combo_ids[i]
+-        if per_id&gt;0:
+-            name = self.db.session.query(db.Person).filter_by(person_id=per_id).first().name
+-        else:
+-            name = ''
+-        # add some white spaces to prevent scrollbar hides parts of the names    
+-        self.widgets['filter']['loanedto'].insert_text(int(i), str(name) + '   ')
+     self.initialized = _tmp
+-    self.widgets['filter']['loanedto'].show_all()
+-    self.widgets['filter']['loanedto'].set_active(0)
+ 
+-def fill_bytag_combo(self):
++def fill_advfilter_combo(self):
+     _tmp = self.initialized
+     self.initialized = False # don't refresh main treeview
+-    self.widgets['filter']['tag'].get_model().clear()
+-    for i in self.bytag_combo_ids:
+-        id = self.bytag_combo_ids[i]
+-        if id&gt;0:
+-            name = self.db.session.query(db.Tag).filter_by(tag_id=id).first().name
+-        else:
+-            name = ''
++    self.widgets['filter']['advfilter'].get_model().clear()
++    self.widgets['filter']['advfilter'].insert_text(0, '') # empty one
++    i = 1
++    for item in self.db.session.query(db.Filter.name).all():
+         # add some white spaces to prevent scrollbar hides parts of the names    
+-        self.widgets['filter']['tag'].insert_text(int(i), str(name) + '   ')
++        self.widgets['filter']['advfilter'].insert_text(int(i), item.name + '   ')
++        i += 1
++    self.widgets['filter']['advfilter'].show_all()
++    self.widgets['filter']['advfilter'].set_active(0)
+     self.initialized = _tmp
+-    self.widgets['filter']['tag'].show_all()
+-    self.widgets['filter']['tag'].set_active(0)
+ 
+ def fill_preferences_tags_combo(self):
+     _tmp = self.initialized
+@@ -804,9 +793,9 @@
+         self.tags_ids[i] = tag.tag_id
+         self.widgets['preferences']['tag_name'].insert_text(int(i), str(tag.name))
+         i += 1
+-    self.initialized = _tmp
+     self.widgets['preferences']['tag_name'].show_all()
+     self.widgets['preferences']['tag_name'].set_active(0)
++    self.initialized = _tmp
+ 
+ def language_combos(self):
+     self.widgets['preferences']['lang_name'].get_model().clear()
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/main_treeview.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -353,7 +353,16 @@
+     if qf and not movies or isinstance(movies, Select): # if &quot;.execute().fetchall()&quot; not invoked on movies yet
+         if not where: # due to possible 'seen', 'loaned', 'collection_id' in where
+             import advfilter
+-            cond = advfilter.get_def_conditions()
++            
++            # saved in advfilter
++            name = self.widgets['filter']['advfilter'].get_active_text()[:-3].decode('utf-8') # :-3 due to additional '   ' in the name
++            if name:
++                from sql import load_conditions
++                cond = load_conditions(self.db, name)
++                if not cond:
++                    cond = advfilter.get_def_conditions()
++            else:
++                cond = advfilter.get_def_conditions()
+ 
+             # seen / loaned
+             cond['loaned_only']   = self.widgets['menu']['loaned_movies'].get_active()
+@@ -364,24 +373,6 @@
+                 col_id = self.collection_combo_ids[pos]
+                 if col_id &gt; 0:
+                     cond[&quot;collections&quot;].add(col_id)
+-            # volume
+-            pos = self.widgets['filter']['volume'].get_active()
+-            if pos &gt;= 0:
+-                vol_id = self.volume_combo_ids[pos]
+-                if vol_id &gt; 0:
+-                    cond[&quot;volumes&quot;].add(vol_id)
+-            # loaned to
+-            pos = self.widgets['filter']['loanedto'].get_active()
+-            if pos &gt;= 0:
+-                per_id = self.loanedto_combo_ids[pos]
+-                if per_id &gt; 0:
+-                    cond[&quot;loaned_to&quot;].add(per_id)
+-            # tag
+-            pos = self.widgets['filter']['tag'].get_active()
+-            if pos &gt;= 0:
+-                tag_id = self.bytag_combo_ids[pos]
+-                if tag_id &gt; 0:
+-                    cond[&quot;tags&quot;].add(tag_id)
+ 
+             movies = advfilter.create_select_query(self, None, cond, movies)
+         
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/quick_filter.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -51,8 +51,7 @@
+     self.widgets['filter']['text'].set_text('')
+     self.widgets['filter']['criteria'].set_active(0)
+     self.widgets['filter']['collection'].set_active(0)
+-    self.widgets['filter']['volume'].set_active(0)
+-    self.widgets['filter']['tag'].set_active(0)
++    self.widgets['filter']['advfilter'].set_active(0)
+     self.initialized = True
+     if populate:
+         self.populate_treeview()
+
+Deleted: trunk/lib/update.py
+===================================================================
+--- trunk/lib/update.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/update.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -1,58 +0,0 @@
+-# -*- coding: UTF-8 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2005-2008 Vasco Nunes, Piotr O&#380;arowski
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-import gutils
+-import os
+-import db
+-
+-def update_volume_combo_ids(self):
+-    self.volume_combo_ids = {}
+-    self.volume_combo_ids[0] = 0
+-    i = 1
+-    for volume in self.db.session.query(db.Volume).all():
+-        self.volume_combo_ids[i] = volume.volume_id
+-        i += 1
+-
+-def update_collection_combo_ids(self):
+-    self.collection_combo_ids = {}
+-    self.collection_combo_ids[0] = 0
+-    i = 1
+-    for collection in self.db.session.query(db.Collection).all():
+-        self.collection_combo_ids[i] = collection.collection_id
+-        i += 1
+-
+-def update_loanedto_combo_ids(self):
+-    self.loanedto_combo_ids = {}
+-    self.loanedto_combo_ids[0] = 0
+-    i = 1
+-    for person in self.db.session.query(db.Person).order_by('name').all():
+-        self.loanedto_combo_ids[i] = person.person_id
+-        i += 1
+-
+-def update_bytag_combo_ids(self):
+-    self.bytag_combo_ids = {}
+-    self.bytag_combo_ids[0] = 0
+-    i = 1
+-    for tag in self.db.session.query(db.Tag).order_by('name').all():
+-        self.bytag_combo_ids[i] = tag.tag_id
+-        i += 1
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2008-11-15 22:06:56 UTC (rev 1044)
++++ trunk/lib/widgets.py	2008-11-15 23:46:51 UTC (rev 1045)
+@@ -312,9 +312,7 @@
+         'text'       : get('filter_txt'),
+         'criteria'   : get('filter_criteria'),
+         'collection' : get('f_col'),
+-        'volume'     : get('f_volume'),
+-        'loanedto'   : get('f_loanedto'),
+-        'tag'        : get('f_bytag'),
++        'advfilter'  : get('f_advfilter'),
+     }#}}}
+     
+     self.widgets['menu'] = {#{{{
+@@ -455,9 +453,7 @@
+         'on_am_remove_volume_button_clicked'     : self.remove_volume,
+         'on_am_remove_collection_button_clicked' : self.remove_collection,
+         'on_f_col_changed'                       : self.filter_collection,
+-        'on_f_volume_changed'                    : self.filter_volume,
+-        'on_f_loanedto_changed'                  : self.filter_loanedto,
+-        'on_f_bytag_changed'                     : self.filter_bytag,
++        'on_f_advfilter_changed'                 : self.filter_using_advfilter_rule,
+         'on_results_cancel_clicked'              : self.results_cancel_ck,
+         # languages
+         'on_lang_add_clicked'                    : self.on_lang_add_clicked,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000522.html">[Griffith-svn] r1044 - trunk/lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000524.html">[Griffith-svn] r1046 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#523">[ date ]</a>
+              <a href="thread.html#523">[ thread ]</a>
+              <a href="subject.html#523">[ subject ]</a>
+              <a href="author.html#523">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r605 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r605%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200612231925.kBNJPq2D019643%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000130.html">
+   <LINK REL="Next"  HREF="000132.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r605 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r605%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200612231925.kBNJPq2D019643%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r605 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 23 20:25:52 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000130.html">[Griffith-svn] r604 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000132.html">[Griffith-svn] r606 - in trunk: docs/pl i18n/pl/LC_MESSAGES po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-23 20:25:52 +0100 (Sat, 23 Dec 2006)
+New Revision: 605
+
+Modified:
+   trunk/griffith
+   trunk/lib/add.py
+   trunk/lib/edit.py
+   trunk/lib/widgets.py
+Log:
+fix fetching amazon poster and movie details at the same time
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2006-12-23 14:09:59 UTC (rev 604)
++++ trunk/griffith	2006-12-23 19:25:52 UTC (rev 605)
+@@ -170,16 +170,6 @@
+ 	def show_search_results(self, results):
+ 		add.show_websearch_results(self)
+ 
+-	def hide_results(self, *args):
+-		self.treemodel_results.clear()
+-		try:
+-			self.widgets['results']['select'].disconnect(self.poster_results_signal)
+-			self.widgets['results']['signal'] = self.widgets['results']['select'].connect(&quot;clicked&quot;, \
+-				self.populate_dialog_with_results)
+-		except:
+-			pass
+-		self.widgets['results']['window'].hide()
+-
+ 	def populate_dialog_with_results(self, *args):
+ 		add.populate_with_results(self)
+ 
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2006-12-23 14:09:59 UTC (rev 604)
++++ trunk/lib/add.py	2006-12-23 19:25:52 UTC (rev 605)
+@@ -225,8 +225,6 @@
+ 	w['notebook'].set_current_page(0)
+ 	w['source'].set_active(self.d_plugin)
+ 	w['o_title'].grab_focus()
+-	from widgets import connect_add_signals
+-	connect_add_signals(self)
+ 	#}}}
+ 
+ def get_details(self): #{{{
+@@ -458,7 +456,9 @@
+ 		treeselection = self.widgets['results']['treeview'].get_selection()
+ 		(tmp_model, tmp_iter) = treeselection.get_selected()
+ 		m_id = tmp_model.get_value(tmp_iter, 0)
+-	self.hide_results()
++	
++	self.treemodel_results.clear()
++	self.widgets['results']['window'].hide()
+ 
+ 	plugin_name = 'PluginMovie' + self.active_plugin
+ 	plugin = __import__(plugin_name)
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2006-12-23 14:09:59 UTC (rev 604)
++++ trunk/lib/edit.py	2006-12-23 19:25:52 UTC (rev 605)
+@@ -177,10 +177,11 @@
+ 	if event.type == gtk.gdk._2BUTTON_PRESS:
+ 		get_poster(mself, None, result, current_poster)
+ 
+-def get_poster_select(self, mself, result, current_poster):
++def get_poster_select(self, mself, result, current_poster): # TODO: it ir used?
+ 	get_poster(mself, None, result, current_poster)
+ 
+ def get_poster(self, f, result, current_poster):
++	from widgets import reconnect_add_signals
+ 	if f is None:
+ 		treeselection = self.widgets['results']['treeview'].get_selection()
+ 		(tmp_model, tmp_iter) = treeselection.get_selected()
+@@ -217,6 +218,7 @@
+ 			if im.format == &quot;GIF&quot;:
+ 				gutils.warning(self, _(&quot;Sorry. This poster image format is not supported.&quot;))
+ 				os.remove(file_to_copy)
++				reconnect_add_signals(self)
+ 				return
+ 		self.widgets['poster_window'].show()
+ 		self.widgets['poster_window'].move(0,0)
+@@ -236,4 +238,5 @@
+ 		self.widgets['poster_window'].hide()
+ 	else:
+ 		gutils.warning(self, _(&quot;Sorry. This movie is listed but have no poster available at Amazon.com.&quot;))
++	reconnect_add_signals(self)
+ 
+
+Modified: trunk/lib/widgets.py
+===================================================================
+--- trunk/lib/widgets.py	2006-12-23 14:09:59 UTC (rev 604)
++++ trunk/lib/widgets.py	2006-12-23 19:25:52 UTC (rev 605)
+@@ -22,7 +22,6 @@
+ # GNU General Public License, version 2 or later
+ 
+ from gettext import gettext as _
+-import edit
+ import gtk
+ import sys
+ 
+@@ -216,6 +215,9 @@
+ 	}
+ 	self.widgets['results']['window'].connect('delete_event', self.on_delete_event_r)
+ 	self.widgets['results']['window'].set_transient_for(self.widgets['add']['window'])
++	# default results window signals:
++	self.results_signal = self.widgets['results']['select'].connect('clicked', self.populate_dialog_with_results)
++	self.results_double_click = self.widgets['results']['treeview'].connect('button_press_event', self.on_results_button_press_event)
+ 	#}}}
+ 
+ 	self.widgets['print_cover'] = {#{{{
+@@ -439,7 +441,7 @@
+ 		'on_vcodec_name_combo_changed'		: self.on_vcodec_name_combo_changed
+ 	})#}}}
+ 
+-def connect_add_signals(self):#{{{
++def reconnect_add_signals(self):#{{{
+ 	try:
+ 		self.widgets['results']['select'].disconnect(self.poster_results_signal)
+ 	except:
+@@ -450,18 +452,8 @@
+ 	except:
+ 		pass
+ 
+-	try:
+-		self.widgets['results']['select'].disconnect(self.widgets['results']['signal'])
+-	except:
+-		pass
+-
+-	try:
+-		self.widgets['results']['treeview'].disconnect(self.results_double_click)
+-	except:
+-		pass
+-
+ 	# connect signals
+-	self.widgets['results']['signal'] = self.widgets['results']['select'].connect('clicked', \
++	self.results_signal = self.widgets['results']['select'].connect('clicked', \
+ 			self.populate_dialog_with_results)
+ 	self.results_double_click = self.widgets['results']['treeview'].connect('button_press_event', \
+ 		self.on_results_button_press_event)#}}}
+@@ -470,21 +462,11 @@
+ 	import edit
+ 
+ 	try:
+-		self.widgets['results']['select'].disconnect(self.poster_results_signal)
++		self.widgets['results']['select'].disconnect(self.results_signal)
+ 	except:
+ 		pass
+ 
+ 	try:
+-		self.widgets['results']['treeview'].disconnect(self.results_poster_double_click)
+-	except:
+-		pass
+-
+-	try:
+-		self.widgets['results']['select'].disconnect(self.widgets['results']['signal'])
+-	except:
+-		pass
+-
+-	try:
+ 		self.widgets['results']['treeview'].disconnect(self.results_double_click)
+ 	except:
+ 		pass
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000130.html">[Griffith-svn] r604 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000132.html">[Griffith-svn] r606 - in trunk: docs/pl i18n/pl/LC_MESSAGES po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

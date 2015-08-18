@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r897 - in branches/0.9.x: . debian
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r897%20-%20in%20branches/0.9.x%3A%20.%20debian&In-Reply-To=%3C200801132255.m0DMtFF6025852%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000395.html">
+   <LINK REL="Next"  HREF="000397.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r897 - in branches/0.9.x: . debian</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r897%20-%20in%20branches/0.9.x%3A%20.%20debian&In-Reply-To=%3C200801132255.m0DMtFF6025852%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r897 - in branches/0.9.x: . debian">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 13 23:55:15 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000395.html">[Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000397.html">[Griffith-svn] r900 - branches/0.9.x branches/0.9.x/lib trunk	trunk/data trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#396">[ date ]</a>
+              <a href="thread.html#396">[ thread ]</a>
+              <a href="subject.html#396">[ subject ]</a>
+              <a href="author.html#396">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-01-13 23:55:14 +0100 (Sun, 13 Jan 2008)
+New Revision: 897
+
+Modified:
+   branches/0.9.x/Makefile
+   branches/0.9.x/debian/changelog
+   branches/0.9.x/debian/control
+   branches/0.9.x/debian/copyright
+Log:
+* add install rules for SQLAlchemy
+* update Debian files
+
+
+Modified: branches/0.9.x/Makefile
+===================================================================
+--- branches/0.9.x/Makefile	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/Makefile	2008-01-13 22:55:14 UTC (rev 897)
+@@ -65,6 +65,16 @@
+ 	$(INSTALL) -m 644 images/griffith.png $(ICONDIR)
+ 	$(INSTALL) -m 644 images/griffith.xpm $(ICONDIR)
+ 	$(INSTALL) -m 644 data/griffith.desktop $(APPLICATIONSDIR)
++	# SQLAlchemy
++	$(INSTALL) -m 755 -d $(LIBDIR)/sqlalchemy $(LIBDIR)/sqlalchemy/databases \
++		$(LIBDIR)/sqlalchemy/engine $(LIBDIR)/sqlalchemy/ext \
++		$(LIBDIR)/sqlalchemy/mods $(LIBDIR)/sqlalchemy/orm
++	$(INSTALL) -m 644 lib/sqlalchemy/*.py $(LIBDIR)/sqlalchemy/
++	$(INSTALL) -m 644 lib/sqlalchemy/databases/*.py $(LIBDIR)/sqlalchemy/databases/
++	$(INSTALL) -m 644 lib/sqlalchemy/engine/*.py $(LIBDIR)/sqlalchemy/engine/
++	$(INSTALL) -m 644 lib/sqlalchemy/ext/*.py $(LIBDIR)/sqlalchemy/ext/
++	$(INSTALL) -m 644 lib/sqlalchemy/mods/*.py $(LIBDIR)/sqlalchemy/mods/
++	$(INSTALL) -m 644 lib/sqlalchemy/orm/*.py $(LIBDIR)/sqlalchemy/orm/
+ 	
+ 	# installing language files
+ 	for lang in $(LANGUAGES); do \
+
+Modified: branches/0.9.x/debian/changelog
+===================================================================
+--- branches/0.9.x/debian/changelog	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/debian/changelog	2008-01-13 22:55:14 UTC (rev 897)
+@@ -1,5 +1,18 @@
++griffith (0.9.6-1) UNRELEASED; urgency=low
++
++  * New upstream release
++    + includes local copy of SQLAlchemy 0.3.11 (closes: #453736)
++  * python-sqlalchemy dependency temporary removed
++    (0.10 will require SQLAlchemy 0.4 so it closes: #443199)
++  * Remove &quot;XS-&quot; prefix from Vcs-* fields (dpkg supports them now)
++  * Add Homepage field
++  * Bump Standards-Version to 3.7.3 (no changes needed)
++
++ -- Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;  Sun, 13 Jan 2008 21:57:49 +0100
++
+ griffith (0.9.5-1) unstable; urgency=low
+ 
++  * New upstream release 
+   * debian/watch file updated
+   * debian/menu file updated
+   * Add python-sqlalchemy (&lt;&lt; 0.4~) to depends (Griffith doesn't work with SA
+
+Modified: branches/0.9.x/debian/control
+===================================================================
+--- branches/0.9.x/debian/control	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/debian/control	2008-01-13 22:55:14 UTC (rev 897)
+@@ -4,15 +4,15 @@
+ Maintainer: Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt;
+ Build-Depends: debhelper (&gt;= 5.0.38)
+ Build-Depends-Indep: python (&gt;= 2.3.5-11), python-central (&gt;= 0.5.6)
+-Standards-Version: 3.7.2
+-XS-Python-Version: current, &gt;=2.3
+-XS-Vcs-Svn: <A HREF="svn://svn.berlios.de/griffith/trunk/debian">svn://svn.berlios.de/griffith/trunk/debian</A>
+-XS-Vcs-Browser: <A HREF="http://svn.berlios.de/wsvn/griffith/debian/?sc=1">http://svn.berlios.de/wsvn/griffith/debian/?sc=1</A>
++Standards-Version: 3.7.3
++XS-Python-Version: &gt;=2.3
++Vcs-Svn: <A HREF="svn://svn.berlios.de/griffith/trunk/debian">svn://svn.berlios.de/griffith/trunk/debian</A>
++Vcs-Browser: <A HREF="http://svn.berlios.de/wsvn/griffith/debian/?sc=1">http://svn.berlios.de/wsvn/griffith/debian/?sc=1</A>
++Homepage: <A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+ 
+ Package: griffith
+ Architecture: all
+ Depends: ${python:Depends}, python-gtk2 (&gt;= 2.8.6-1), python-glade2 (&gt;= 2.8.6-1),
+- python-sqlalchemy (&gt;= 0.3.0-1), python-sqlalchemy (&lt;&lt; 0.4~),
+  python (&gt;= 2.5) | python-pysqlite2 (&gt;= 2.3.0-1),
+  python-reportlab (&gt;= 1.20debian-6), python-imaging (&gt;= 1.1.5-6)
+ Recommends: python-gnome2-extras (&gt;= 2.14.0-1), python-chardet,
+@@ -23,5 +23,3 @@
+  Adding items to the movie collection is as quick and easy as typing the film
+  title and selecting a supported source. Griffith will then try to fetch all
+  the related information from the Web.
+- .
+-  Homepage: <A HREF="http://griffith.berlios.de/">http://griffith.berlios.de/</A>
+
+Modified: branches/0.9.x/debian/copyright
+===================================================================
+--- branches/0.9.x/debian/copyright	2008-01-13 20:52:17 UTC (rev 896)
++++ branches/0.9.x/debian/copyright	2008-01-13 22:55:14 UTC (rev 897)
+@@ -8,7 +8,7 @@
+ 
+ License:
+ 
+- Copyright (c) 2005-2007 Vasco Nunes, Piotr O&#380;arowski
++ Copyright (c) 2005-2008 Vasco Nunes, Piotr O&#380;arowski
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+@@ -30,12 +30,41 @@
+ On Debian systems, the complete text of the GNU General Public License
+ can be found in `/usr/share/common-licenses/GPL'.
+ 
++----------------------------------------------------------------
+ 
+ File lib/amazon.py is licensed under Python license and is copyrighted
+ by Mark Pilgrim &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">f8dy at diveintomark.org</A>&gt;
+ 
+ Python licence can be found on <A HREF="http://www.python.org/psf/license/">http://www.python.org/psf/license/</A>
+ 
++----------------------------------------------------------------
+ 
+-The Debian packaging is (C) 2005-2007, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt; and
++lib/sqlalchemy directory:
++
++ This is the MIT license: <A HREF="http://www.opensource.org/licenses/mit-license.php">http://www.opensource.org/licenses/mit-license.php</A>
++
++ Copyright (c) 2005, 2006, 2007 Michael Bayer and contributors. SQLAlchemy is a
++ trademark of Michael Bayer.
++
++ Permission is hereby granted, free of charge, to any person obtaining a copy
++ of this software and associated documentation files (the &quot;Software&quot;), to deal
++ in the Software without restriction, including without limitation the rights
++ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ copies of the Software, and to permit persons to whom the Software is
++ furnished to do so, subject to the following conditions:
++
++ The above copyright notice and this permission notice shall be included in all
++ copies or substantial portions of the Software.
++
++ THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ SOFTWARE.
++
++----------------------------------------------------------------
++
++The Debian packaging is (C) 2005-2008, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">piotr at debian.org</A>&gt; and
+ is licensed under the GPL.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000395.html">[Griffith-svn] r895 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000397.html">[Griffith-svn] r900 - branches/0.9.x branches/0.9.x/lib trunk	trunk/data trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#396">[ date ]</a>
+              <a href="thread.html#396">[ thread ]</a>
+              <a href="subject.html#396">[ subject ]</a>
+              <a href="author.html#396">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

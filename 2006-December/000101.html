@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r572 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r572%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200612170159.kBH1xwge014770%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000100.html">
+   <LINK REL="Next"  HREF="000102.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r572 - in trunk: . lib lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r572%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200612170159.kBH1xwge014770%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r572 - in trunk: . lib lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 17 02:59:58 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000100.html">[Griffith-svn] r571 - in trunk/lib: . plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000102.html">[Griffith-svn] r573 - trunk/po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#101">[ date ]</a>
+              <a href="thread.html#101">[ thread ]</a>
+              <a href="subject.html#101">[ subject ]</a>
+              <a href="author.html#101">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-17 02:59:56 +0100 (Sun, 17 Dec 2006)
+New Revision: 572
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/dbupgrade.py
+   trunk/lib/plugins/movie/PluginMovieStopklatka.py
+Log:
+* Stopklatka movie plugin updated
+* Upgrade from old database: detect SQLite3 and print some hints
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2006-12-17 01:11:53 UTC (rev 571)
++++ trunk/ChangeLog	2006-12-17 01:59:56 UTC (rev 572)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+ 
++2006-12-17 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
++	* Stopklatka movie plugin updated
++	* Upgrade from old database: detect SQLite3 and print some hints
++
+ 2006-12-16 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* WP, FDb and Onet movie plugins updated
+ 	* movie plugins:
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2006-12-17 01:11:53 UTC (rev 571)
++++ trunk/griffith	2006-12-17 01:59:56 UTC (rev 572)
+@@ -62,11 +62,14 @@
+ 		# convert old database
+ 		filename = os.path.join(self.locations['home'], self.config['default_db'])
+ 		if self.config['default_db'].lower().endswith('.gri'):
+-			debug.show('SQLite2 database format detected. Converting...')
++			debug.show('Old database format detected. Converting...')
+ 			from dbupgrade import convert_from_old_db
+ 			if convert_from_old_db(self, filename, os.path.join(self.locations['home'], 'griffith.db')):
+ 				self.config.save()
+ 				initialize.location_posters(self.locations, self.config)
++			else:
++				print 'Cant convert old database, exiting.'
++				sys.exit(4)
+ 		
+ 		# create/connect db
+ 		self.db = sql.GriffithSQL(self.config, self.debug, self.locations['home'])
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2006-12-17 01:11:53 UTC (rev 571)
++++ trunk/lib/dbupgrade.py	2006-12-17 01:59:56 UTC (rev 572)
+@@ -120,8 +120,9 @@
+ 	import os
+ 	try:
+ 		import sqlite
++		from sqlite import DatabaseError
+ 	except:
+-		self.debug.show(&quot;Old DB conversion: please install pysqlite legacy (v1.0)&quot;)
++		print 'Old DB conversion: please install pysqlite legacy (v1.0)'
+ 		return False
+ 
+ 	if os.path.isfile(destination_file):
+@@ -134,7 +135,19 @@
+ 				break
+ 		os.rename(destination_file, &quot;%s_%s&quot; % (destination_file, i))
+ 
+-	old_db = sqlite.connect(source_file,autocommit=0)
++	try:
++		old_db = sqlite.connect(source_file,autocommit=0)
++	except DatabaseError, e:
++		if str(e) == 'file is encrypted or is not a database':
++			print 'Your database is most probably in SQLite3 format, please convert it to SQLite2:'
++			print '$ sqlite3 ~/.griffith/griffith.gri .dump | sqlite ~/.griffith/griffith.gri2'
++			print '$ mv ~/.griffith/griffith.gri{,3}'
++			print '$ mv ~/.griffith/griffith.gri{2,}'
++			print 'or install pysqlite in version 1.1'
++		else:
++			raise
++		return False
++
+ 	old_cursor = old_db.cursor()
+ 
+ 	# fix old database
+
+Modified: trunk/lib/plugins/movie/PluginMovieStopklatka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieStopklatka.py	2006-12-17 01:11:53 UTC (rev 571)
++++ trunk/lib/plugins/movie/PluginMovieStopklatka.py	2006-12-17 01:59:56 UTC (rev 572)
+@@ -1,8 +1,8 @@
+-# -*- coding: iso-8859-2 -*-
++# -*- coding: utf-8 -*-
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2006 Piotr O?arowski
++# Copyright (c) 2005-2006 Piotr O&#380;arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -29,15 +29,15 @@
+ plugin_description  = 'Internetowy Serwis Filmowy'
+ plugin_url          = 'www.stopklatka.pl'
+ plugin_language     = _('Polish')
+-plugin_author       = 'Piotr Ozarowski'
++plugin_author       = 'Piotr O&#380;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '1.6'
++plugin_version      = '1.7'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+ 		self.movie_id = id
+ 		self.url = &quot;<A HREF="http://www.stopklatka.pl/film/film.asp?fi=%s">http://www.stopklatka.pl/film/film.asp?fi=%s</A>&quot; % str(self.movie_id)
+-		self.encode = 'iso-8859-2'
++		self.encode = 'iso-8859-2' # with some cp-1250 data (sic!)
+ 
+ 	def initialize(self):
+ 		self.page = self.page.replace('\x9c','&#347;')
+@@ -49,14 +49,18 @@
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page,&quot;&lt;h2&gt;(&quot;,&quot;)&lt;/h2&gt;&quot;)
++		if self.o_title == '':
++			self.o_title = self.get_title(True)
+ 
+-	def get_title(self):
+-		self.title = gutils.trim(self.page,&quot;&lt;i&gt;&lt;h1&gt;&quot;,&quot;&lt;/h1&gt;&quot;)
+-		if self.o_title == &quot;&quot;:
+-			self.o_title = self.title
++	def get_title(self, ret=False):
++		data = gutils.trim(self.page,&quot;&lt;i&gt;&lt;h1&gt;&quot;,&quot;&lt;/h1&gt;&quot;)
++		if ret is True:
++			return data
++		else:
++			self.title = data
+ 
+ 	def get_director(self):
+-		self.director = gutils.trim(self.page,&quot;&gt;re&#380;yseria:&lt;&quot;,&quot;&lt;/font&gt;&quot;)
++		self.director = gutils.trim(self.page,&quot;&gt;re\xbfyseria:&lt;&quot;,&quot;&lt;/font&gt;&quot;)
+ 		self.director = gutils.after(self.director,&quot;&lt;b&gt;&quot;)
+ 		self.director = gutils.strip_tags(self.director)
+ 
+@@ -81,7 +85,7 @@
+ 		self.cast = gutils.after(self.cast,&quot;&lt;b&gt;&quot;)
+ 		self.cast = string.replace(self.cast,&quot;, &quot;, &quot;\n&quot;)
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
+-		pos = string.find(self.with,&quot;Wi&#281;cej &gt;&quot;)
++		pos = string.find(self.cast, 'Wi&#281;cej &gt;')
+ 		if pos &gt; 0:
+ 			self.cast = self.cast[0:pos]
+ 
+@@ -137,4 +141,3 @@
+ 				self.titles.append(gutils.convert_entities(gutils.trim(element,&quot;&lt;b&gt;&quot;,&quot;&lt;/b&gt;&lt;/a&gt;&quot;)))
+ 		else:
+ 			self.number_results = 0
+-# vim: encoding=iso-8859-2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000100.html">[Griffith-svn] r571 - in trunk/lib: . plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000102.html">[Griffith-svn] r573 - trunk/po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#101">[ date ]</a>
+              <a href="thread.html#101">[ thread ]</a>
+              <a href="subject.html#101">[ subject ]</a>
+              <a href="author.html#101">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

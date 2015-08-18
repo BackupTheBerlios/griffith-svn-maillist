@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1576%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/extensions&In-Reply-To=%3C20110823202013.17B4B481462%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001034.html">
+   <LINK REL="Next"  HREF="001036.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1576%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/extensions&In-Reply-To=%3C20110823202013.17B4B481462%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 23 22:20:12 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001034.html">[Griffith-svn] r1575 - in trunk: . lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="001036.html">[Griffith-svn] r1577 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1035">[ date ]</a>
+              <a href="thread.html#1035">[ thread ]</a>
+              <a href="subject.html#1035">[ subject ]</a>
+              <a href="author.html#1035">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-08-23 22:20:12 +0200 (Tue, 23 Aug 2011)
+New Revision: 1576
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/plugins/extensions/ge_remover.py
+   trunk/lib/quick_filter.py
+Log:
+extension remover now respects the simple filter condition
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/ChangeLog	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -9,6 +9,7 @@
+ 	* added buttons to remove and add a poster within the movie edit dialog
+ 	* fixed bug in extension &quot;remover&quot;, it doesn't work if a criteria is required
+ 	  (f.e. adv filter with &quot;required tag&quot; did only remove the tags not the movie entries)
++	* extension remover now respects the simple filter condition
+ 
+ 2011-08-20  Michael Jahn
+ 	* updated KinoDe plugin
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/griffith	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -1137,6 +1137,9 @@
+ 
+     def on_af_find_clicked(self, *args):
+         from advfilter import create_select_query, hide_window
++        # remove the simple filter conditions because adv filter takes effect
++        self.clear_filter()
++        # now filtering in advanced
+         movies = create_select_query(self, None, None, None).execute().fetchall()
+         main_treeview.populate(self, movies, qf=False)
+ 
+
+Modified: trunk/lib/plugins/extensions/ge_remover.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/lib/plugins/extensions/ge_remover.py	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -31,6 +31,7 @@
+ from gutils import question
+ from plugins.extensions import GriffithExtensionBase as Base
+ from sql import update_whereclause
++from quick_filter import change_filter_update_whereclause
+ 
+ log = logging.getLogger('Griffith')
+ 
+@@ -51,7 +52,9 @@
+ 
+             # first: remove all dependend data (associated tags, languages, ...)
+             query = select([movies_table.c.movie_id])
+-            # FIXME: self.app._search_conditions contains advfilter conditions only (no other filters)
++            # add conditions from simple filter
++            change_filter_update_whereclause(self.app, query)
++            # add conditions from adv filter
+             query = update_whereclause(query, self.app._search_conditions)
+             query = query.where(movies_table.c.loaned==False) # don't delete loaned movies
+             log.debug(query)
+@@ -71,13 +74,14 @@
+                 # TODO: removing posters if no longer used by another movie?
+ 
+             # second: remove the movie entries
+-            query = delete(movies_table)
+-            # use the collected movie ids because other conditions are not true anymore
+-            # (f.e. tags are already deleted)
+-            query = query.where(movies_table.c.movie_id.in_(movie_ids))
++            if len(movie_ids):
++                query = delete(movies_table)
++                # use the collected movie ids because other conditions are not true anymore
++                # (f.e. tags are already deleted)
++                query = query.where(movies_table.c.movie_id.in_(movie_ids))
+ 
+-            log.debug(query)
+-            session.execute(query)
++                log.debug(query)
++                session.execute(query)
+             session.commit()
+ 
+             self.app.populate_treeview()
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2011-08-23 19:45:27 UTC (rev 1575)
++++ trunk/lib/quick_filter.py	2011-08-23 20:20:12 UTC (rev 1576)
+@@ -25,13 +25,16 @@
+ import db
+ 
+ def change_filter(self):
+-    x = 0
+-    text = gutils.gescape(self.widgets['filter']['text'].get_text().decode('utf-8'))
+-    
+     from sqlalchemy import select, or_
+     from sqlalchemy.orm.util import class_mapper, object_mapper
+     statement = select(db.tables.movies.columns, bind=self.db.session.bind)
+     
++    change_filter_update_whereclause(self, statement)
++    self.populate_treeview(statement)
++
++
++def change_filter_update_whereclause(self, statement):
++    text = gutils.gescape(self.widgets['filter']['text'].get_text().decode('utf-8'))
+     if text:
+         (criterianame, criteria) = self.search_criteria_sorted[self.widgets['filter']['criteria'].get_active()]
+         if criteria in ('year', 'runtime', 'media_num', 'rating'):
+@@ -48,8 +51,8 @@
+             limit = int(self.config.get('limit', 0, section='mainlist'))
+             if limit &gt; 0:
+                 statement.limit = limit
+-    self.populate_treeview(statement)
+ 
++    
+ def clear_filter(self, populate=True):
+     # prevent multiple treeview updates
+     self.initialized = False
+@@ -59,4 +62,3 @@
+     self.initialized = True
+     if populate:
+         self.populate_treeview()
+-
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001034.html">[Griffith-svn] r1575 - in trunk: . lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="001036.html">[Griffith-svn] r1577 - in trunk: . lib lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1035">[ date ]</a>
+              <a href="thread.html#1035">[ thread ]</a>
+              <a href="subject.html#1035">[ subject ]</a>
+              <a href="author.html#1035">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

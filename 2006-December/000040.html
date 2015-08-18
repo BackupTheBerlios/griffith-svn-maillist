@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r509 - in griffith/lib: . plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r509%20-%20in%20griffith/lib%3A%20.%20plugins/imp&In-Reply-To=%3C200612100059.kBA0xjgl004609%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000039.html">
+   <LINK REL="Next"  HREF="000041.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r509 - in griffith/lib: . plugins/imp</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r509%20-%20in%20griffith/lib%3A%20.%20plugins/imp&In-Reply-To=%3C200612100059.kBA0xjgl004609%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r509 - in griffith/lib: . plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 10 01:59:45 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000039.html">[Griffith-svn] r508 - in griffith: . lib
+</A></li>
+        <LI>Next message: <A HREF="000041.html">[Griffith-svn] r510 - griffith/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#40">[ date ]</a>
+              <a href="thread.html#40">[ thread ]</a>
+              <a href="subject.html#40">[ subject ]</a>
+              <a href="author.html#40">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-10 01:59:45 +0100 (Sun, 10 Dec 2006)
+New Revision: 509
+
+Modified:
+   griffith/lib/gutils.py
+   griffith/lib/plugins/imp/__init__.py
+Log:
+fix finding next available number in import plugin
+
+
+Modified: griffith/lib/gutils.py
+===================================================================
+--- griffith/lib/gutils.py	2006-12-10 00:23:29 UTC (rev 508)
++++ griffith/lib/gutils.py	2006-12-10 00:59:45 UTC (rev 509)
+@@ -53,7 +53,7 @@
+ 	except:
+ 		return False
+ 
+-def find_next_available(self):
++def find_next_available(db):
+ 	&quot;&quot;&quot;
+ 	finds next available movie number.
+ 	This is the first empty position.
+@@ -62,7 +62,7 @@
+ 	a = first = 0
+ 	row = None
+ 
+-	movies = self.db.Movie.select(order_by=&quot;number ASC&quot;)
++	movies = db.Movie.select(order_by=&quot;number ASC&quot;)
+ 	for movie in movies:
+ 		second = int(movie.number)
+ 		if second is None:
+
+Modified: griffith/lib/plugins/imp/__init__.py
+===================================================================
+--- griffith/lib/plugins/imp/__init__.py	2006-12-10 00:23:29 UTC (rev 508)
++++ griffith/lib/plugins/imp/__init__.py	2006-12-10 00:59:45 UTC (rev 509)
+@@ -115,7 +115,7 @@
+ 					edit_movie(self.parent, details)	# FIXME: wait until save or cancel button pressed
+ 				else:
+ 					if details['number'] is None:
+-						details['number'] = find_next_available(self.parent)
++						details['number'] = find_next_available(self.db)
+ 					movie = self.db.Movie()
+ 					movie.add_to_db(details)
+ 				self.imported += 1 # FIXME: what about cancel button in edit window
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000039.html">[Griffith-svn] r508 - in griffith: . lib
+</A></li>
+	<LI>Next message: <A HREF="000041.html">[Griffith-svn] r510 - griffith/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#40">[ date ]</a>
+              <a href="thread.html#40">[ thread ]</a>
+              <a href="subject.html#40">[ subject ]</a>
+              <a href="author.html#40">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

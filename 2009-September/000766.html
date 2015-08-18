@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1298 - in trunk: glade lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1298%20-%20in%20trunk%3A%20glade%20lib&In-Reply-To=%3C200909022123.n82LNWUx014283%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000765.html">
+   <LINK REL="Next"  HREF="000767.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1298 - in trunk: glade lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1298%20-%20in%20trunk%3A%20glade%20lib&In-Reply-To=%3C200909022123.n82LNWUx014283%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1298 - in trunk: glade lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep  2 23:23:32 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000765.html">[Griffith-svn] r1297 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000767.html">[Griffith-svn] r1299 - in trunk: . lib lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#766">[ date ]</a>
+              <a href="thread.html#766">[ thread ]</a>
+              <a href="subject.html#766">[ subject ]</a>
+              <a href="author.html#766">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-09-02 23:23:31 +0200 (Wed, 02 Sep 2009)
+New Revision: 1298
+
+Modified:
+   trunk/glade/griffith.glade
+   trunk/lib/sql.py
+Log:
+* don't show text next to icons in extensions toolbar
+* don't fail if port number is not present in user's config file
+
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2009-09-02 20:29:58 UTC (rev 1297)
++++ trunk/glade/griffith.glade	2009-09-02 21:23:31 UTC (rev 1298)
+@@ -792,7 +792,7 @@
+                 &lt;child&gt;
+                   &lt;widget class=&quot;GtkToolbar&quot; id=&quot;ext_toolbar&quot;&gt;
+                     &lt;property name=&quot;visible&quot;&gt;True&lt;/property&gt;
+-                    &lt;property name=&quot;toolbar_style&quot;&gt;GTK_TOOLBAR_BOTH_HORIZ&lt;/property&gt;
++                    &lt;property name=&quot;toolbar_style&quot;&gt;GTK_TOOLBAR_ICONS&lt;/property&gt;
+                     &lt;property name=&quot;show_arrow&quot;&gt;False&lt;/property&gt;
+                   &lt;/widget&gt;
+                 &lt;/child&gt;
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2009-09-02 20:29:58 UTC (rev 1297)
++++ trunk/lib/sql.py	2009-09-02 21:23:31 UTC (rev 1298)
+@@ -28,13 +28,13 @@
+ import logging
+ import os.path
+ 
+-from sqlalchemy import *
++from sqlalchemy import create_engine, or_, and_, not_, exists, asc, desc
+ from sqlalchemy.exceptions import OperationalError
+ from sqlalchemy.orm import sessionmaker
+ from sqlalchemy.sql.expression import Update
+ 
+ import db # ORM data (SQLAlchemy stuff)
+-import gutils # TODO: get rid of this import
++from gutils import warning # TODO: get rid of this import
+ 
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -61,10 +61,10 @@
+             if config.get('name', None, section='database') is None:
+                 config.set('name', 'griffith', section='database')
+             if config.get('port', 0, section='database') == 0:
+-                config.set('port', DEFAULT_PORTS[config.get('type', section='database')], section='database')
++                config.set('port', GriffithSQL.DEFAULT_PORTS[config.get('type', section='database')], section='database')
+ 
+         conn_params = config.to_dict(section='database')
+-        conn_params.update({'port': int(conn_params['port']),
++        conn_params.update({'port': int(conn_params.get('port', 0)),
+                             'engine_kwargs': {'echo': False, 'convert_unicode': False}})
+ 
+         # connect to database --------------------------------------{{{
+@@ -99,7 +99,7 @@
+             if not fallback:
+                 raise e
+             config.set('type', 'sqlite', section='database')
+-            gutils.warning(&quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
++            warning(&quot;%s\n\n%s&quot; % (_('Cannot connect to database.\nFalling back to SQLite.'), _('Please check debug output for more informations.')))
+             url = &quot;<A HREF="sqlite:///%s.db">sqlite:///%s.db</A>&quot; % os.path.join(griffith_dir, conn_params['name'])
+             engine = create_engine(url)
+             conn = engine.connect()
+@@ -128,7 +128,7 @@
+                 raise Exception('cannot upgrade database')
+         elif v &gt; self.version:
+             log.error(&quot;database version mismatch (detected:%s; current:%s)&quot;, v, self.version)
+-            gutils.warning(_('This database requires newer version of Griffith.'))
++            warning(_('This database requires newer version of Griffith.'))
+             raise Exception(&quot;database version mismatch&quot;)
+ 
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000765.html">[Griffith-svn] r1297 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000767.html">[Griffith-svn] r1299 - in trunk: . lib lib/plugins/extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#766">[ date ]</a>
+              <a href="thread.html#766">[ thread ]</a>
+              <a href="subject.html#766">[ subject ]</a>
+              <a href="author.html#766">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

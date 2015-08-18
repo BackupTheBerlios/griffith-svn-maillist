@@ -1,0 +1,183 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1130 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1130%20-%20trunk/lib&In-Reply-To=%3C200901181217.n0ICHIML002561%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000604.html">
+   <LINK REL="Next"  HREF="000606.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1130 - trunk/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1130%20-%20trunk/lib&In-Reply-To=%3C200901181217.n0ICHIML002561%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1130 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 18 13:17:18 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000604.html">[Griffith-svn] r1129 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000606.html">[Griffith-svn] r1131 - in trunk: . debian lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#605">[ date ]</a>
+              <a href="thread.html#605">[ thread ]</a>
+              <a href="subject.html#605">[ subject ]</a>
+              <a href="author.html#605">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-01-18 13:17:17 +0100 (Sun, 18 Jan 2009)
+New Revision: 1130
+
+Modified:
+   trunk/lib/db.py
+   trunk/lib/people.py
+Log:
+new Person properties:
+* loaned_movies_count (number of currently loaned movies by this person)
+* returned_movies_count (number of movies in loan history assigned to this person)
+
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2009-01-17 21:58:04 UTC (rev 1129)
++++ trunk/lib/db.py	2009-01-18 12:17:17 UTC (rev 1130)
+@@ -25,7 +25,7 @@
+ # XXX: keep stdlib and SQLAlchemy imports only in this file
+ 
+ from sqlalchemy     import *
+-from sqlalchemy.orm import mapper, relation, deferred, sessionmaker, validates
++from sqlalchemy.orm import mapper, relation, deferred, sessionmaker, validates, column_property
+ import re
+ import string
+ import logging
+@@ -305,7 +305,24 @@
+ mapper(VCodec, vcodecs_table, properties={
+     'movies': relation(Movie, backref='vcodec')})
+ mapper(Person, people_table, properties = {
+-    'loans'    : relation(Loan, backref='person', cascade='all, delete-orphan')})
++    'loans'    : relation(Loan, backref='person', cascade='all, delete-orphan'),
++    'loaned_movies_count': column_property(
++            select(
++                [func.count(loans_table.c.loan_id)],
++                and_(
++                    people_table.c.person_id == loans_table.c.person_id,
++                    loans_table.c.return_date == None
++                )
++            ).label('loaned_movies_count')),
++    'returned_movies_count': column_property( # AKA loan history
++            select(
++                [func.count(loans_table.c.loan_id)],
++                and_(
++                    people_table.c.person_id == loans_table.c.person_id,
++                    loans_table.c.return_date != None
++                )
++            ).label('returned_movies_count'))
++    })
+ mapper(MovieLang, movie_lang_table, primary_key=[movie_lang_table.c.ml_id], properties = {
+     'movie'    : relation(Movie),
+     'language' : relation(Lang),
+@@ -350,33 +367,33 @@
+     log.info(&quot;SQLAlchemy version: %s&quot;, sqlalchemy.__version__)
+ 
+     ### ENGINE ###
+-    engine_mem = create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>', echo=False)
++    mem_engine = create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>', echo=False)
+ 
+     # create tables
+-    metadata.create_all(engine_mem)
++    metadata.create_all(mem_engine)
+ 
+     ### MEMORY SESSION ###
+     # create a configured &quot;Session&quot; class
+-    Session = sessionmaker(bind=engine_mem)
++    Session = sessionmaker(bind=mem_engine)
+     # create a Session
+-    sess_mem = Session()
++    mem_sess = Session()
+ 
+ 
+     griffith_dir = os.path.expanduser(&quot;~/.griffith/&quot;)
+     url = &quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % os.path.join(griffith_dir, 'griffith.db')
+-    engine_my = create_engine(url, echo=False)
+-    Session2 = sessionmaker(bind=engine_my)
+-    sess_my = Session2()
++    my_engine = create_engine(url, echo=False)
++    Session2 = sessionmaker(bind=my_engine)
++    my_sess = Session2()
+ 
+     print &quot;\nAvailable variables:&quot;
+-    print &quot;sess_my:  %s&quot; % sess_my
+-    print &quot;sess_mem: %s&quot; % sess_mem
++    print &quot;my_sess:  %s&quot; % my_sess
++    print &quot;mem_sess: %s&quot; % mem_sess
+ 
+-    movie1_my = sess_my.query(Movie).first()
+-    if movie1_my:
+-        movie1_mem = sess_mem.merge(movie1_my)
+-        movie1_mem.title = u'updated movie title'
+-        sess_mem.add(movie1_mem)
+-        sess_mem.commit()
+-        print &quot;movie1_my:  %s - title: %s&quot; % (movie1_my, movie1_my.title)
+-        print &quot;movie1_mem: %s - title: %s&quot; % (movie1_mem, movie1_mem.title)
++    my_movie1 = my_sess.query(Movie).first()
++    if my_movie1:
++        mem_movie1 = mem_sess.merge(my_movie1)
++        mem_movie1.title = u'updated movie title'
++        mem_sess.add(mem_movie1)
++        mem_sess.commit()
++        print &quot;my_movie1:  %s - title: %s&quot; % (my_movie1, my_movie1.title)
++        print &quot;mem_movie1: %s - title: %s&quot; % (mem_movie1, mem_movie1.title)
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2009-01-17 21:58:04 UTC (rev 1129)
++++ trunk/lib/people.py	2009-01-18 12:17:17 UTC (rev 1130)
+@@ -128,10 +128,10 @@
+     person = self.db.session.query(db.Person).filter_by(name=person).first()
+     if not person:
+         return False
+-    if self.db.session.query(db.Loan).filter_by(person_id=person.person_id, return_date=None).count() &gt; 0:
++    if person.loaned_movies_count &gt; 0:
+         gutils.info(_(&quot;This person has loaned films from you. Return them first.&quot;), self.widgets['people']['window'])
+         return False
+-    if self.db.session.query(db.Loan).filter_by(person_id=person.person_id).count() &gt; 0:
++    if person.returned_movies_count &gt; 0:
+         has_history = True
+         has_history_msg = _(&quot;This person has data in the loan history. This data will be erased if you continue.&quot;)
+     response = gutils.question(_(&quot;%s\nAre you sure you want to delete this person?&quot; % has_history_msg), \
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000604.html">[Griffith-svn] r1129 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000606.html">[Griffith-svn] r1131 - in trunk: . debian lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#605">[ date ]</a>
+              <a href="thread.html#605">[ thread ]</a>
+              <a href="subject.html#605">[ subject ]</a>
+              <a href="author.html#605">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

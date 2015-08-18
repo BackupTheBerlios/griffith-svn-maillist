@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1321 - in trunk: . lib lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1321%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export&In-Reply-To=%3C200911172153.nAHLrpIB021595%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000788.html">
+   <LINK REL="Next"  HREF="000790.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1321 - in trunk: . lib lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1321%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export&In-Reply-To=%3C200911172153.nAHLrpIB021595%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1321 - in trunk: . lib lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 17 22:53:51 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000788.html">[Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="000790.html">[Griffith-svn] r1322 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#789">[ date ]</a>
+              <a href="thread.html#789">[ thread ]</a>
+              <a href="subject.html#789">[ subject ]</a>
+              <a href="author.html#789">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-11-17 22:53:24 +0100 (Tue, 17 Nov 2009)
+New Revision: 1321
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/gutils.py
+   trunk/lib/plugins/export/PluginExportXML.py
+Log:
+[#484385] Export to XML: no image filename exported to XML-File
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/ChangeLog	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -7,6 +7,7 @@
+ 
+ 2009-11-17  Michael Jahn
+ 	* load and save of extensions preferences
++	* [#484385] Export to XML: no image filename exported to XML-File
+ 
+ 2009-11-10  Michael Jahn
+ 	* updated movie plugins Allocine and FilmAffinity
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/griffith	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -177,7 +177,7 @@
+             try:
+                 plugin.run()
+             except Exception, e:
+-                log.error(str(e))
++                log.exception('')
+             plugin.cleanup()
+ 
+     def on_import_activate(self, *args):
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/lib/gutils.py	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -663,8 +663,29 @@
+         pixbuf.save(fn_small, &quot;jpeg&quot;, {&quot;quality&quot;:&quot;70&quot;})
+ 
+     return True
+-        
+ 
++def create_imagefile(destdir, md5sum, gsql, destfilename = None):
++    poster = gsql.session.query(db.Poster).filter_by(md5sum=md5sum).first()
++    if not poster:
++        log.warn(&quot;poster not available: %s&quot;, md5sum)
++        return False
++    if not poster.data:
++        log.warn(&quot;poster data not available: %s&quot;, md5sum)
++        return False
++    
++    if destfilename:
++        fulldestpath = os.path.join(destdir, destfilename + '.jpg')
++    else:
++        fulldestpath = os.path.join(destdir, md5sum + '.jpg')
++
++    f = file(fulldestpath, 'wb')
++    try:
++        f.write(poster.data)
++    finally:
++        f.close()
++
++    return True
++
+ def get_image_fname(md5sum, gsql, size=None):
+     &quot;&quot;&quot;size: s - small; m - medium, b or None - big&quot;&quot;&quot;
+     if size not in (None, 's', 'm', 'b'):
+
+Modified: trunk/lib/plugins/export/PluginExportXML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportXML.py	2009-11-17 21:07:29 UTC (rev 1320)
++++ trunk/lib/plugins/export/PluginExportXML.py	2009-11-17 21:53:24 UTC (rev 1321)
+@@ -22,7 +22,6 @@
+ # GNU General Public License, version 2 or later
+ 
+ import xml.dom.minidom
+-import xml.dom.ext
+ import gtk
+ import os
+ import db
+@@ -38,7 +37,7 @@
+ 
+     fields_to_export = ('number', 'o_title', 'title', 'director', 'year', 'classification', 'country',
+                         'genre', 'rating', 'runtime', 'studio', 'seen', 'loaned', 'o_site', 'site', 'trailer',
+-                        'plot', 'cast', 'notes', 'image', 'volumes.name', 'collections.name', 'media.name')
++                        'plot', 'cast', 'notes', 'poster_md5', 'volumes.name', 'collections.name', 'media.name')
+ 
+     def run(self):
+         basedir = None
+@@ -60,7 +59,11 @@
+                     overwrite = True
+                 else:
+                     overwrite = False
+-                    
++            
++            posterdir = os.path.join(os.path.dirname(filename[0]), 'posters')
++            if not os.path.exists(posterdir):
++                os.mkdir(posterdir)
++            
+             if overwrite or overwrite is None:
+                 # create document
+                 impl = xml.dom.minidom.getDOMImplementation()
+@@ -86,10 +89,28 @@
+                         t = doc.createTextNode(value)
+                         e2.appendChild(t)
+                         e.appendChild(e2)
++                    # create image file in ./posters/...
++                    md5sum = None
++                    posterfilepath = ''
++                    if 'poster_md5' in self.exported_columns and movie['poster_md5']:
++                        md5sum = movie['poster_md5']
++                    if 'movies_poster_md5' in self.exported_columns and movie['movies_poster_md5']:
++                        md5sum = movie['movies_poster_md5']
++                    if md5sum:
++                        if gutils.create_imagefile(posterdir, md5sum, self.db):
++                            posterfilepath = os.path.join('.', 'posters', md5sum + '.jpg')
++                    e2 = doc.createElement('image')
++                    # relative path to image related to xml file
++                    t = doc.createTextNode(posterfilepath)
++                    e2.appendChild(t)
++                    e.appendChild(e2)
+                     
+                 # write XML to file
++                xmldata = doc.toprettyxml(encoding='utf-8')
+                 fp = open(filename[0], &quot;w&quot;)
+-                xml.dom.ext.PrettyPrint(doc, fp)
+-                fp.close()
++                try:
++                    fp.write(xmldata)
++                finally:
++                    fp.close()
+                 gutils.info( _(&quot;%s file has been created.&quot;)%&quot;XML&quot;, self.parent_window)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000788.html">[Griffith-svn] r1320 - in trunk: . lib lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="000790.html">[Griffith-svn] r1322 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#789">[ date ]</a>
+              <a href="thread.html#789">[ thread ]</a>
+              <a href="subject.html#789">[ subject ]</a>
+              <a href="author.html#789">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1176 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-March/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1176%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200903102042.n2AKgYrO008315%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000647.html">
+   <LINK REL="Next"  HREF="000649.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1176 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1176%20-%20branches/0.9.x%20branches/0.9.x/lib%20trunk%0A%09trunk/lib&In-Reply-To=%3C200903102042.n2AKgYrO008315%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1176 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Mar 10 21:42:34 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000647.html">[Griffith-svn] r1175 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000649.html">[Griffith-svn] r1177 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#648">[ date ]</a>
+              <a href="thread.html#648">[ thread ]</a>
+              <a href="subject.html#648">[ subject ]</a>
+              <a href="author.html#648">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-03-10 21:41:16 +0100 (Tue, 10 Mar 2009)
+New Revision: 1176
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/dbupgrade.py
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+Log:
+added HD DVD and Blu-ray to the medium table for new databases
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-03-10 20:24:47 UTC (rev 1175)
++++ branches/0.9.x/ChangeLog	2009-03-10 20:41:16 UTC (rev 1176)
+@@ -8,6 +8,7 @@
+ 2009-03-10  Michael Jahn
+ 	* [#337758] 'Titel' and 'Original Titel' get the same content
+ 	  (IMDb-de plugin updated)
++	* added HD DVD and Blu-ray to the medium table for new databases
+ 
+ 2009-03-03  Michael Jahn
+ 	* Cinematografo movie plugin updated
+
+Modified: branches/0.9.x/lib/dbupgrade.py
+===================================================================
+--- branches/0.9.x/lib/dbupgrade.py	2009-03-10 20:24:47 UTC (rev 1175)
++++ branches/0.9.x/lib/dbupgrade.py	2009-03-10 20:41:16 UTC (rev 1176)
+@@ -48,6 +48,8 @@
+ 		self.Medium.mapper.mapped_table.insert().execute(name='VHS')
+ 		self.Medium.mapper.mapped_table.insert().execute(name='BETACAM')
+ 		self.Medium.mapper.mapped_table.insert().execute(name='LaserDisc')
++		self.Medium.mapper.mapped_table.insert().execute(name='HD DVD')
++		self.Medium.mapper.mapped_table.insert().execute(name='Blu-ray')
+ 		self.ACodec.mapper.mapped_table.create()
+ 		self.ACodec.mapper.mapped_table.insert().execute(name='AC-3 Dolby audio')
+ 		self.ACodec.mapper.mapped_table.insert().execute(name='OGG')
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-03-10 20:24:47 UTC (rev 1175)
++++ trunk/ChangeLog	2009-03-10 20:41:16 UTC (rev 1176)
+@@ -8,6 +8,7 @@
+ 2009-03-10  Michael Jahn
+ 	* [#337758] 'Titel' and 'Original Titel' get the same content
+ 	  (IMDb-de plugin updated)
++	* added HD DVD and Blu-ray to the medium table for new databases
+ 
+ 2009-03-03  Michael Jahn
+ 	* Cinematografo movie plugin updated
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2009-03-10 20:24:47 UTC (rev 1175)
++++ trunk/lib/dbupgrade.py	2009-03-10 20:41:16 UTC (rev 1176)
+@@ -50,6 +50,8 @@
+         db.media_table.insert(bind=b).execute(name=u'VHS')
+         db.media_table.insert(bind=b).execute(name=u'BETACAM')
+         db.media_table.insert(bind=b).execute(name=u'LaserDisc')
++        db.media_table.insert(bind=b).execute(name=u'HD DVD')
++        db.media_table.insert(bind=b).execute(name=u'Blu-ray')
+         db.ratios_table.insert(bind=b).execute(name=u'16:9')
+         db.ratios_table.insert(bind=b).execute(name=u'4:3')
+         db.acodecs_table.insert(bind=b).execute(name=u'AC-3 Dolby audio')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000647.html">[Griffith-svn] r1175 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000649.html">[Griffith-svn] r1177 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#648">[ date ]</a>
+              <a href="thread.html#648">[ thread ]</a>
+              <a href="subject.html#648">[ subject ]</a>
+              <a href="author.html#648">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

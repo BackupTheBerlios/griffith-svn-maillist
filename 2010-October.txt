@@ -1,0 +1,1972 @@
+From mikej06 at mail.berlios.de  Fri Oct  1 21:30:11 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  1 Oct 2010 21:30:11 +0200
+Subject: [Griffith-svn] r1453 - in trunk: . lib/plugins/movie
+Message-ID: <20101001193011.A8F2848109B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-01 21:30:11 +0200 (Fri, 01 Oct 2010)
+New Revision: 1453
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+[#640219] Original title is not well raised by Allocine plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-09-30 20:54:43 UTC (rev 1452)
++++ trunk/ChangeLog	2010-10-01 19:30:11 UTC (rev 1453)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-10-01  Michael Jahn
++	* [#640219] Original title is not well raised by Allocine plugin
++
+ 2010-09-30  Michael Jahn
+ 	* saving the width of the columns of the mainlist
+ 	* default filter operator changed from equals to contains
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-09-30 20:54:43 UTC (rev 1452)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-10-01 19:30:11 UTC (rev 1453)
+@@ -58,7 +58,7 @@
+                 break
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, "Titre original : <i>", "</i>")
++        self.o_title = gutils.after(gutils.trim(self.page, 'Titre original : <span', '</span>'), '>')
+         if (self.o_title == ''):
+             self.o_title = re.sub('[(][0-9]+[)]', '', string.replace(gutils.trim(self.page, '<title>', '</title>'), u' - AlloCin?', ''))
+ 
+
+
+
+From mikej06 at mail.berlios.de  Fri Oct  1 21:51:34 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  1 Oct 2010 21:51:34 +0200
+Subject: [Griffith-svn] r1454 - trunk/lib
+Message-ID: <20101001195134.712F848109B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-01 21:51:34 +0200 (Fri, 01 Oct 2010)
+New Revision: 1454
+
+Modified:
+   trunk/lib/add.py
+Log:
+refreshing created and updated field after db operation
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-10-01 19:30:11 UTC (rev 1453)
++++ trunk/lib/add.py	2010-10-01 19:51:34 UTC (rev 1454)
+@@ -708,6 +708,8 @@
+     session.add(movie)
+     if not commit(session):
+         return False
++    details['created'] = movie.created
++    details['updated'] = movie.created
+ 
+     rows = len(self.treemodel)
+     if rows > 0:
+
+
+
+From mikej06 at mail.berlios.de  Fri Oct  1 21:57:05 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  1 Oct 2010 21:57:05 +0200
+Subject: [Griffith-svn] r1455 - trunk/lib
+Message-ID: <20101001195705.606A548109B@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-01 21:57:05 +0200 (Fri, 01 Oct 2010)
+New Revision: 1455
+
+Modified:
+   trunk/lib/add.py
+Log:
+don't asked twice if an already existing movie should be added
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-10-01 19:51:34 UTC (rev 1454)
++++ trunk/lib/add.py	2010-10-01 19:57:05 UTC (rev 1455)
+@@ -669,11 +669,13 @@
+             parent=self.widgets['add']['window'])
+         return False
+ 
++    asked = False
+     if details['o_title']:
+         if session.query(db.Movie).filter_by(o_title=details['o_title']).count() > 0:
++            asked = True
+             if not gutils.question(_('Movie with that title already exists, are you sure you want to add?'), self.widgets['add']['window']):
+                 return False
+-    if details['title']:
++    if not asked and details['title']:
+         if session.query(db.Movie).filter_by(title=details['title']).count() > 0:
+             if not gutils.question(_('Movie with that title already exists, are you sure you want to add?'), self.widgets['add']['window']):
+                 return False
+
+
+
+From mikej06 at mail.berlios.de  Sun Oct  3 13:41:50 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun,  3 Oct 2010 13:41:50 +0200
+Subject: [Griffith-svn] r1456 - trunk/lib
+Message-ID: <20101003114150.3B571480F75@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-03 13:41:49 +0200 (Sun, 03 Oct 2010)
+New Revision: 1456
+
+Modified:
+   trunk/lib/add.py
+   trunk/lib/main_treeview.py
+Log:
+refactoring adding and modifying entries in the mainlist
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-10-01 19:57:05 UTC (rev 1455)
++++ trunk/lib/add.py	2010-10-03 11:41:49 UTC (rev 1456)
+@@ -32,6 +32,7 @@
+ import db
+ import gutils
+ import initialize
++import main_treeview
+ 
+ log = logging.getLogger("Griffith")
+ 
+@@ -114,38 +115,8 @@
+     if commit(session):
+         treeselection = self.widgets['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
++        main_treeview.setmovie(self, movie, tmp_iter, tmp_model)
+ 
+-        if new_poster_md5 and new_poster_md5 != old_poster_md5:
+-            # update thumbnail in main list
+-            new_image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
+-            if not new_image_path:
+-                new_image_path = gutils.get_defaultthumbnail_fname(self)
+-            handler = self.Image.set_from_file(new_image_path)
+-            pixbuf = self.Image.get_pixbuf()
+-            tmp_model.set_value(tmp_iter, 1, pixbuf)
+-        # update main treelist
+-        tmp_model.set_value(tmp_iter, 0, "%004d" % int(movie.number))
+-        tmp_model.set_value(tmp_iter, 2, movie.o_title)
+-        tmp_model.set_value(tmp_iter, 3, movie.title)
+-        tmp_model.set_value(tmp_iter, 4, movie.director)
+-        tmp_model.set_value(tmp_iter, 5, movie.genre)
+-        tmp_model.set_value(tmp_iter, 6, movie.seen)
+-        if movie.year is None:
+-            tmp_model.set_value(tmp_iter, 7, '')
+-        else:
+-            tmp_model.set_value(tmp_iter, 7, movie.year)
+-        if movie.runtime is None:
+-            tmp_model.set_value(tmp_iter, 8, '')
+-        else:
+-            tmp_model.set_value(tmp_iter, 8, "%003d" % int(movie.runtime) + _(' min'))
+-        if movie.rating is None:
+-            tmp_model.set_value(tmp_iter, 9, '')
+-        else:
+-            tmp_model.set_value(tmp_iter, 9, movie.rating)
+-        if movie.created:
+-            tmp_model.set_value(tmp_iter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
+-        if movie.updated:
+-            tmp_model.set_value(tmp_iter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
+         # close add window
+         self.widgets['add']['window'].hide()
+         # refresh
+@@ -710,52 +681,15 @@
+     session.add(movie)
+     if not commit(session):
+         return False
+-    details['created'] = movie.created
+-    details['updated'] = movie.created
+ 
+-    rows = len(self.treemodel)
+-    if rows > 0:
+-        insert_after = self.treemodel.get_iter(rows-1)    # last
+-    else:
+-        insert_after = None
+-    myiter = self.treemodel.insert_after(None, insert_after)
+-
+-    image_path = ''
+-    if new_poster_md5:
+-        image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
+-    if not image_path or not os.path.isfile(image_path):
+-        image_path = gutils.get_defaultthumbnail_fname(self)
+-    handler = self.Image.set_from_file(image_path)
+-    pixbuf = self.Image.get_pixbuf()
+-    self.treemodel.set_value(myiter, 0, '%004d' % details['number'])
+-    self.treemodel.set_value(myiter, 1, pixbuf)
+-    self.treemodel.set_value(myiter, 2, details['o_title'])
+-    self.treemodel.set_value(myiter, 3, details['title'])
+-    self.treemodel.set_value(myiter, 4, details['director'])
+-    self.treemodel.set_value(myiter, 5, details['genre'])
+-    self.treemodel.set_value(myiter, 6, details['seen'])
+-    if details['year'] is None:
+-        self.treemodel.set_value(myiter, 7, '')
+-    else:
+-        self.treemodel.set_value(myiter, 7, int(details['year']))
+-    if details['runtime'] is None:
+-        self.treemodel.set_value(myiter, 8, '')
+-    else:
+-        self.treemodel.set_value(myiter, 8, '%003d' % int(details['runtime']) + _(' min'))
+-    if details['rating'] is None:
+-        self.treemodel.set_value(myiter, 9, '')
+-    else:
+-        self.treemodel.set_value(myiter, 9, int(details['rating']))
+-    if details['created']:
+-        self.treemodel.set_value(myiter, 10, details['created'].strftime('%Y-%m-%d %H:%M'))
+-    if details['updated']:
+-        self.treemodel.set_value(myiter, 11, details['updated'].strftime('%Y-%m-%d %H:%M'))
+-    #update statusbar
++    # create and select new entry in main treelist
++    myiter = main_treeview.addmovie(self, movie)
++    main_treeview.select(self, myiter)
++    
++    # update statusbar
+     self.total += 1
+     self.count_statusbar()
+-    #select new entry from main treelist
+-    self.widgets['treeview'].get_selection().select_iter(myiter)
+-    self.treeview_clicked()
++    
+     clear(self)
+ 
+     if close:
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2010-10-01 19:57:05 UTC (rev 1455)
++++ trunk/lib/main_treeview.py	2010-10-03 11:41:49 UTC (rev 1456)
+@@ -487,39 +487,8 @@
+         self.updated_column.set_visible(False)
+ 
+     for movie in movies:
+-        myiter = self.treemodel.append(None)
++        addmovie(self, movie)
+ 
+-        self.treemodel.set_value(myiter, 0, '%004d' % int(movie.number))
+-
+-        if self.config.get('image', True, section='mainlist') == True:
+-            filename = None
+-            if movie.poster_md5:
+-                filename = gutils.get_image_fname(movie.poster_md5, self.db, "s")
+-            if not filename:
+-                filename = os.path.join(self.locations['images'], 'default_thumbnail.png')
+-
+-            self.Image.set_from_file(filename)
+-            try:
+-                pixbuf = self.Image.get_pixbuf()
+-                self.treemodel.set_value(myiter, 1, pixbuf)
+-            except:
+-                log.exception("can't load the image %s" % filename)
+-        self.treemodel.set_value(myiter, 2, movie.o_title)
+-        self.treemodel.set_value(myiter, 3, movie.title)
+-        self.treemodel.set_value(myiter, 4, movie.director)
+-        self.treemodel.set_value(myiter, 5, movie.genre)
+-        self.treemodel.set_value(myiter, 6, movie.seen)
+-        if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
+-            self.treemodel.set_value(myiter, 7, movie.year)
+-        if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
+-            self.treemodel.set_value(myiter, 8, '%003d' % movie.runtime + _(' min'))
+-        if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
+-            self.treemodel.set_value(myiter, 9, movie.rating)
+-        if movie.created:
+-            self.treemodel.set_value(myiter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
+-        if movie.updated:
+-            self.treemodel.set_value(myiter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
+-
+     # restore user sort column
+     if sort_column_id is not None:
+         self.treemodel.set_sort_column_id(sort_column_id, order)
+@@ -532,4 +501,55 @@
+     self.count_statusbar()
+ #}}}
+ 
++def addmovie(self, movie): #{{{
++    myiter = self.treemodel.append(None)
++    setmovie(self, movie, myiter)
++    return myiter
++#}}}
++
++def setmovie(self, movie, iter, treemodel = None): #{{{
++    if not treemodel:
++        treemodel = self.treemodel
++
++    treemodel.set_value(iter, 0, '%004d' % int(movie.number))
++
++    if self.config.get('image', True, section='mainlist') == True:
++        filename = None
++        if movie.poster_md5:
++            filename = gutils.get_image_fname(movie.poster_md5, self.db, "s")
++        if not filename:
++            filename = os.path.join(self.locations['images'], 'default_thumbnail.png')
++
++        self.Image.set_from_file(filename)
++        try:
++            pixbuf = self.Image.get_pixbuf()
++            treemodel.set_value(iter, 1, pixbuf)
++        except:
++            log.exception("can't load the image %s" % filename)
++
++    treemodel.set_value(iter, 2, movie.o_title)
++    treemodel.set_value(iter, 3, movie.title)
++    treemodel.set_value(iter, 4, movie.director)
++    treemodel.set_value(iter, 5, movie.genre)
++    treemodel.set_value(iter, 6, movie.seen)
++    if movie.year is not None and (isinstance(movie.year, int) or isinstance(movie.year, long)):
++        treemodel.set_value(iter, 7, movie.year)
++    if movie.runtime is not None and (isinstance(movie.runtime, int) or isinstance(movie.runtime, long)):
++        treemodel.set_value(iter, 8, '%003d' % movie.runtime + _(' min'))
++    if movie.rating is not None and (isinstance(movie.rating, int) or isinstance(movie.rating, long)):
++        treemodel.set_value(iter, 9, movie.rating)
++    if movie.created:
++        treemodel.set_value(iter, 10, movie.created.strftime('%Y-%m-%d %H:%M'))
++    if movie.updated:
++        treemodel.set_value(iter, 11, movie.updated.strftime('%Y-%m-%d %H:%M'))
++    return iter
++#}}}
++
++def select(self, iter, ensurevisible = True): #{{{
++    self.widgets['treeview'].get_selection().select_iter(iter)
++    if ensurevisible:
++        self.widgets['treeview'].scroll_to_cell(self.treemodel.get_path(iter))
++    self.treeview_clicked()
++#}}}
++
+ # vim: fdm=marker
+
+
+
+From piotrek at mail.berlios.de  Sun Oct  3 20:38:47 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun,  3 Oct 2010 20:38:47 +0200
+Subject: [Griffith-svn] r1457 - in trunk: . lib
+Message-ID: <20101003183847.85523480F75@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-03 20:38:47 +0200 (Sun, 03 Oct 2010)
+New Revision: 1457
+
+Modified:
+   trunk/griffith
+   trunk/lib/config.py
+   trunk/lib/gconsole.py
+Log:
+self.windows is not available in Config class
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-10-03 11:41:49 UTC (rev 1456)
++++ trunk/griffith	2010-10-03 18:38:47 UTC (rev 1457)
+@@ -32,6 +32,9 @@
+ if '--debug' not in sys.argv and '-D' not in sys.argv:
+     import warnings
+     warnings.simplefilter('ignore')
++else:
++    # see also gconsole.check_args()
++    log.setLevel(logging.DEBUG)
+ 
+ # set the PATH
+ import os.path
+
+Modified: trunk/lib/config.py
+===================================================================
+--- trunk/lib/config.py	2010-10-03 11:41:49 UTC (rev 1456)
++++ trunk/lib/config.py	2010-10-03 18:38:47 UTC (rev 1457)
+@@ -192,15 +192,15 @@
+         self._cfg.set('main', 'default_movie_plugin', 'IMDB')
+         self._cfg.set('main', 'font', '')
+         self._cfg.set('main', 'font_size', '18')
+-        if self.windows:
++        if os.name == 'nt' or os.name.startswith('win'):  # win32, win64
+             self._cfg.set('main', 'pdf_reader', '')
+         else:
+             self._cfg.set('main', 'pdf_reader', 'xpdf')
+         self._cfg.set('main', 'posters', 'posters')
+-        self._cfg.set('main', 'rating_image', '0')    # 0 = meter; 1 = stars
++        self._cfg.set('main', 'rating_image', '0')  # 0 = meter; 1 = stars
+         self._cfg.set('mainlist', 'director', 'True')
+         self._cfg.set('mainlist', 'image', 'True')
+-        self._cfg.set('mainlist', 'limit', '0')        # limit search results to x items (0 -> no limits)
++        self._cfg.set('mainlist', 'limit', '0')  # limit search results to x items (0 -> no limits)
+         self._cfg.set('mainlist', 'number', 'True')
+         self._cfg.set('mainlist', 'otitle', 'True')
+         self._cfg.set('mainlist', 'sortby', 'number')
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2010-10-03 11:41:49 UTC (rev 1456)
++++ trunk/lib/gconsole.py	2010-10-03 18:38:47 UTC (rev 1457)
+@@ -82,7 +82,6 @@
+                 from platform import platform
+                 import version
+                 GriffithDebug.set_debug(logdir = home)
+-                log.setLevel(logging.DEBUG)
+                 log.debug("Starting %s %s", version.pname, version.pversion)
+                 log.debug("Platform: %s (%s)", platform(), os.name)
+                 log.debug('Dependencies:')
+
+
+
+From piotrek at mail.berlios.de  Sun Oct  3 20:52:24 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun,  3 Oct 2010 20:52:24 +0200
+Subject: [Griffith-svn] r1458 - trunk/debian
+Message-ID: <20101003185224.C79F1480F75@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-03 20:52:24 +0200 (Sun, 03 Oct 2010)
+New Revision: 1458
+
+Modified:
+   trunk/debian/changelog
+   trunk/debian/control
+Log:
+New upstream release
+
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2010-10-03 18:38:47 UTC (rev 1457)
++++ trunk/debian/changelog	2010-10-03 18:52:24 UTC (rev 1458)
+@@ -1,3 +1,11 @@
++griffith (0.12-1) unstable; urgency=medium
++
++  * New upstream release
++    - compatible with SQLAlchemy 0.6 (closes: 590463)
++  * Bump Standards-Version to 3.9.1 (no changes needed)
++
++ -- Piotr O?arowski <piotr at debian.org>  Sun, 03 Oct 2010 20:44:33 +0200
++
+ griffith (0.11-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: trunk/debian/control
+===================================================================
+--- trunk/debian/control	2010-10-03 18:38:47 UTC (rev 1457)
++++ trunk/debian/control	2010-10-03 18:52:24 UTC (rev 1458)
+@@ -4,7 +4,7 @@
+ Maintainer: Piotr O?arowski <piotr at debian.org>
+ Build-Depends: debhelper (>= 5)
+ Build-Depends-Indep: python (>= 2.3.5-11), python-support (>= 0.6.4), docbook2x
+-Standards-Version: 3.8.3
++Standards-Version: 3.9.1
+ XS-Python-Version: >=2.5
+ Vcs-Svn: svn://svn.berlios.de/griffith/trunk/debian
+ Vcs-Browser: http://svn.berlios.de/wsvn/griffith/debian/?sc=1
+
+
+
+From piotrek at mail.berlios.de  Sun Oct  3 20:52:54 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun,  3 Oct 2010 20:52:54 +0200
+Subject: [Griffith-svn] r1459 - in trunk: . lib
+Message-ID: <20101003185254.6EC54480F75@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-03 20:52:54 +0200 (Sun, 03 Oct 2010)
+New Revision: 1459
+
+Modified:
+   trunk/README
+   trunk/lib/version.py
+   trunk/winpackage.iss
+   trunk/winsetup.py
+Log:
+version updated to 0.12
+
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2010-10-03 18:52:24 UTC (rev 1458)
++++ trunk/README	2010-10-03 18:52:54 UTC (rev 1459)
+@@ -1,4 +1,4 @@
+-Griffith 0.11 README
++Griffith 0.12 README
+ ====================
+ 
+ This document was last updated on Thu Jun 10 2009.
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2010-10-03 18:52:24 UTC (rev 1458)
++++ trunk/lib/version.py	2010-10-03 18:52:54 UTC (rev 1459)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname = 'Griffith'
+-pversion = '0.11'
++pversion = '0.12'
+ pauthor = 'Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>'
+ pyear = '2005-2010'
+ pwebsite = 'http://www.griffith.cc/'
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-10-03 18:52:24 UTC (rev 1458)
++++ trunk/winpackage.iss	2010-10-03 18:52:54 UTC (rev 1459)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.11
++AppVerName=Griffith 0.12
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://www.griffith.cc/
+ AppSupportURL=http://www.griffith.cc/
+@@ -14,7 +14,7 @@
+ LicenseFile=COPYING
+ InfoAfterFile=README
+ OutputDir=installer
+-OutputBaseFilename=griffith-0.11-win32
++OutputBaseFilename=griffith-0.12-win32
+ SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,8 +22,8 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.11
+-VersionInfoVersion=0.11
++AppVersion=0.12
++VersionInfoVersion=0.12
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2010-10-03 18:52:24 UTC (rev 1458)
++++ trunk/winsetup.py	2010-10-03 18:52:54 UTC (rev 1459)
+@@ -53,7 +53,7 @@
+ 
+ setup(
+     name="Griffith",
+-    version="0.11",
++    version="0.12",
+     description='Griffith - A film manager',
+     author='Vasco Nunes/Piotr Ozarowski',
+     author_email='griffith-private at lists.berlios.de',
+
+
+
+From piotrek at mail.berlios.de  Sun Oct  3 20:59:35 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun,  3 Oct 2010 20:59:35 +0200
+Subject: [Griffith-svn] r1460 - trunk
+Message-ID: <20101003185935.8FABB480F75@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-03 20:59:35 +0200 (Sun, 03 Oct 2010)
+New Revision: 1460
+
+Modified:
+   trunk/griffith
+Log:
+show only first letter of level name
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-10-03 18:52:54 UTC (rev 1459)
++++ trunk/griffith	2010-10-03 18:59:35 UTC (rev 1460)
+@@ -26,7 +26,7 @@
+ gettext.install('griffith', unicode=1)
+ import sys
+ import logging
+-logging.basicConfig(format='%(asctime)s: %(levelname)s: %(name)s(%(module)s:%(lineno)d): %(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
++logging.basicConfig(format='%(asctime)s: %(levelname).1s: %(name)s(%(module)s:%(lineno)d): %(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
+ log = logging.getLogger('Griffith')
+ # print programming warnings in debug mode only (ugly workaround)
+ if '--debug' not in sys.argv and '-D' not in sys.argv:
+
+
+
+From mikej06 at mail.berlios.de  Fri Oct  8 22:26:43 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  8 Oct 2010 22:26:43 +0200
+Subject: [Griffith-svn] r1463 - in trunk: . lib/plugins/movie
+Message-ID: <20101008202643.D2D72480B55@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-08 22:26:43 +0200 (Fri, 08 Oct 2010)
+New Revision: 1463
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDb plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-03 20:37:43 UTC (rev 1462)
++++ trunk/ChangeLog	2010-10-08 20:26:43 UTC (rev 1463)
+@@ -5,6 +5,11 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-10-08  Michael Jahn
++	* IMDb plugin updated
++
++---- 0.12 ----
++
+ 2010-10-03  Piotr O?arowski
+ 	* Update translations
+ 	* Version changed to 0.12
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-10-03 20:37:43 UTC (rev 1462)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-10-08 20:26:43 UTC (rev 1463)
+@@ -30,7 +30,7 @@
+ plugin_language     = _('English')
+ plugin_author       = 'Vasco Nunes, Piotr O?arowski'
+ plugin_author_email = 'griffith-private at lists.berlios.de'
+-plugin_version      = '1.9'
++plugin_version      = '1.11'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -41,13 +41,12 @@
+     def initialize(self):
+         self.cast_page = self.open_page(url=self.url + '/fullcredits')
+         self.plot_page = self.open_page(url=self.url + '/plotsummary')
++        self.comp_page = self.open_page(url=self.url + '/companycredits')
++        self.tagl_page = self.open_page(url=self.url + '/taglines')
+ 
+     def get_image(self):
+-        tmp = string.find(self.page, 'a name="poster"')
+-        if tmp == -1:        # poster not available
+-            self.image_url = ''
+-        else:
+-            self.image_url = gutils.trim(self.page[tmp:], 'src="', '"')
++        tmp = gutils.trim(self.page, 'id="img_primary"', '</a>')
++        self.image_url = gutils.trim(tmp, 'src="', '"')
+ 
+     def get_o_title(self):
+         self.o_title = gutils.regextrim(self.page, 'class="title-extra">', '<')
+@@ -86,10 +85,10 @@
+         self.year = gutils.after(self.year, '">')
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page, '<h5>Runtime:</h5>', ' min')
++        self.runtime = gutils.regextrim(self.page, 'Runtime:<[^>]+>', ' min')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, '<h5>Genre:</h5>', '</div>')
++        self.genre = gutils.regextrim(self.page, 'Genre[s]*:<[^>]+>', '</div>')
+         self.genre = self.__before_more(self.genre)
+ 
+     def get_cast(self):
+@@ -105,11 +104,19 @@
+         self.cast = self.__before_more(self.cast)
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page, '<h5><a href="/mpaa">MPAA</a>:</h5>', '</div>')
++        self.classification = gutils.trim(self.page, '(<a href="/mpaa">MPAA</a>)', '</div>')
+         self.classification = gutils.trim(self.classification, 'Rated ', ' ')
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '<h5>Company:</h5>', '</a>')
++        self.studio = ''
++        tmp = gutils.regextrim(self.comp_page, 'Production Companies<[^>]+', '</ul>')
++        tmp = string.split(tmp, 'href="')
++        for entry in tmp:
++            entry = gutils.trim(entry, '>', '<')
++            if entry:
++                self.studio = self.studio + entry + ', '
++        if self.studio:
++            self.studio = self.studio[:-2]
+ 
+     def get_o_site(self):
+         self.o_site = ''
+@@ -121,11 +128,11 @@
+         self.trailer = "http://www.imdb.com/title/tt%s/trailers" % self.movie_id
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '<h5>Country:</h5>', '</div>')
++        self.country = '<' + gutils.trim(self.page, 'Country:<', '</div>')
+         self.country = re.sub('[\n]+', '', self.country)
+ 
+     def get_rating(self):
+-        pattern = re.compile('>([0-9]([.][0-9])*)[/][0-9][0-9]<')
++        pattern = re.compile('>([0-9]([.][0-9])*)<[^>]+>[/][0-9][0-9]<')
+         result = pattern.search(self.page)
+         if result:
+             self.rating = result.groups()[0]
+@@ -139,27 +146,32 @@
+ 
+     def get_notes(self):
+         self.notes = ''
+-        language = gutils.trim(self.page, '<h5>Language:</h5>', '</div>')
++        language = gutils.regextrim(self.page, 'Language:<[^>]+>', '</div>')
+         language = gutils.strip_tags(language)
+         language = re.sub('[\n]+', '', language)
+         language = re.sub('[ ]+', ' ', language)
+-        language = language.rstrip()
+-        color = gutils.trim(self.page, '<h5>Color:</h5>', '</div>')
++        language = language.strip()
++        color = gutils.regextrim(self.page, 'Color:<[^>]+>', '</div>')
+         color = gutils.strip_tags(color)
+         color = re.sub('[\n]+', '', color)
+         color = re.sub('[ ]+', ' ', color)
+-        color = color.rstrip()
+-        sound = gutils.trim(self.page, '<h5>Sound Mix:</h5>', '</div>')
++        color = color.strip()
++        sound = gutils.regextrim(self.page, 'Sound Mix:<[^>]+>', '</div>')
+         sound = gutils.strip_tags(sound)
+         sound = re.sub('[\n]+', '', sound)
+         sound = re.sub('[ ]+', ' ', sound)
+-        sound = sound.rstrip()
+-        tagline = gutils.trim(self.page, '<h5>Tagline:</h5>', '</div>')
+-        tagline = self.__before_more(tagline)
+-        tagline = gutils.strip_tags(tagline)
+-        tagline = re.sub('[\n]+', '', tagline)
+-        tagline = re.sub('[ ]+', ' ', tagline)
+-        tagline = tagline.rstrip()
++        sound = sound.strip()
++        tagline = gutils.regextrim(self.tagl_page, 'Taglines for', 'Related Links')
++        index = string.rfind(tagline, '</div>')
++        if index > -1:
++            taglines = string.split(tagline[index:], '<hr')
++            tagline = ''
++            for entry in taglines:
++                entry = gutils.clean(gutils.after(entry, '>'))
++                if entry:
++                    tagline = tagline + entry + '\n'
++        else:
++            tagline = ''
+         if len(language)>0:
+             self.notes = "%s: %s\n" %(_('Language'), language)
+         if len(sound)>0:
+@@ -258,7 +270,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 21, 21 ],
+-        'Ein gl?ckliches Jahr' : [ 43, 43 ]
++        'Ein gl?ckliches Jahr' : [ 45, 45 ]
+     }
+ 
+ class PluginTest:
+@@ -333,7 +345,7 @@
+             'country'           : 'USA | UK',
+             'genre'             : 'Comedy | Drama | Romance',
+             'classification'    : 'R',
+-            'studio'            : 'Universal Pictures',
++            'studio'            : 'Universal Pictures, Miramax Films, Bedford Falls Productions',
+             'o_site'            : False,
+             'site'              : 'http://www.imdb.com/title/tt0138097',
+             'trailer'           : 'http://www.imdb.com/title/tt0138097/trailers',
+@@ -341,7 +353,8 @@
+             'notes'             : _('Language') + ': English\n'\
+ + _('Audio') + ': Dolby Digital\n'\
+ + _('Color') + ': Color\n\
+-Tagline: ...A Comedy About the Greatest Love Story Almost Never Told...',
++Tagline: ...A Comedy About the Greatest Love Story Almost Never Told...\n\
++Love is the only inspiration',
+             'runtime'           : 123,
+             'image'             : True,
+             'rating'            : 7,
+
+
+
+From piotrek at mail.berlios.de  Fri Oct  8 22:56:18 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Fri,  8 Oct 2010 22:56:18 +0200
+Subject: [Griffith-svn] r1464 - in trunk: . lib/plugins/movie
+Message-ID: <20101008205618.8AF44480B55@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-08 22:56:18 +0200 (Fri, 08 Oct 2010)
+New Revision: 1464
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+Log:
+Filmweb movie plugin updated (thanks to Mariusz Szczepanek)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-08 20:26:43 UTC (rev 1463)
++++ trunk/ChangeLog	2010-10-08 20:56:18 UTC (rev 1464)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-10-08  Piotr O?arowski
++	* Filmweb movie plugin updated (thanks to Mariusz Szczepanek)
++
+ 2010-10-08  Michael Jahn
+ 	* IMDb plugin updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2010-10-08 20:26:43 UTC (rev 1463)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2010-10-08 20:56:18 UTC (rev 1464)
+@@ -21,35 +21,32 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-import gutils, movie
+-import re,string
++import gutils, movie, string
+ 
+-plugin_name         = 'Filmweb'
+-plugin_description  = 'Web pe?en film?w'
+-plugin_url          = 'www.filmweb.pl'
+-plugin_language     = _('Polish')
+-plugin_author       = 'Piotr O?arowski, Bartosz Kurczewski'
+-plugin_author_email = '<bartosz.kurczewski at gmail.com>'
+-plugin_version      = '1.14'
++plugin_name = 'Filmweb'
++plugin_description = 'Web pe?en film?w'
++plugin_url = 'www.filmweb.pl'
++plugin_server = '193.200.227.13'
++plugin_language = _('Polish')
++plugin_author = 'Piotr O?arowski, Bartosz Kurczewsk, Mariusz Szczepanek'
++plugin_author_email = '<mariusz2806 at gmail.com>'
++plugin_version = '1.21'
+ 
+ class Plugin(movie.Movie):
+-    TRAILER_PATTERN     = re.compile("""<a class=["']notSelected["'].*?href=["'](.*?)["']>zwiastuny</a>\s*\[\d+\]\s*&raquo;""")
+-    DIRECTOR_PATTERN    = re.compile('yseria\s+(.*)\s+scenariusz', re.MULTILINE)
+-    SCREENPLAY_PATTERN  = re.compile('scenariusz\s+(.*)\s+zdj.cia', re.MULTILINE)
+-    O_TITLE_AKA_PATTERN = re.compile('\(AKA\s+(.*?)\)')
+-
+     def __init__(self, id):
+         self.movie_id = 'filmweb'
+-        self.url      = str(id)
+-        self.encode   = 'utf-8'
++        self.url = str(id)
++        self.encode = 'utf-8'
+ 
+     def get_image(self):
+-        if string.find(self.page,'<div class="film-poster">') > -1:
+-            self.image_url = gutils.trim(self.page, 'rel="artshow" href="', '">')
++        if string.find(self.page, '<div class="posterLightbox">') > -1:
++            self.image_url = gutils.trim(self.page, '<div class="posterLightbox">', '</div>')
++            self.image_url = gutils.trim(self.image_url, 'href="', '" ')
+         else:
+             self.image_url = ''
+ 
+     def get_o_title(self):
++        self.url = string.replace(self.url, plugin_server, plugin_url)
+         self.o_title = gutils.trim(self.page, '<title>', '</title>')
+         if string.find(self.o_title, '/') > -1:
+             self.o_title = gutils.trim(self.o_title, '/', '(')
+@@ -57,70 +54,67 @@
+             self.o_title = gutils.before(self.o_title, '(')
+ 
+     def get_title(self):
++        self.url = string.replace(self.url, plugin_server, plugin_url)
+         self.title = gutils.trim(self.page, '<title>', '</title>')
+         if string.find(self.title, '(') > -1:
+             self.title = gutils.before(self.title, '(')
+         if string.find(self.title, '/') > -1:
+             self.title = gutils.before(self.title, '/')
+-            
++
+     def get_director(self):
+-        director = self.DIRECTOR_PATTERN.findall(self.page)
+-        if len(director)>0:
+-            self.director = director[0]
+-            self.director = string.replace(self.director, "\t",'')
+-            self.director = re.sub('\s+', ' ', self.director)
+-            self.director = string.replace(self.director, ",",", ")
+-            self.director = string.replace(self.director, "  "," ")
+-            self.director = string.replace(self.director, " ,  ",", ")
+-            self.director = string.replace(self.director, "(wi?cej...)", '')
++        self.director = gutils.trim(self.page, "re?yseria:", '</tr>')
++        self.director = gutils.after(self.director, '</th>')
++        self.director = string.replace(self.director, "(wi?cej...)", '')
++        self.director = string.replace(self.director, '  ', '\t')
++        self.director = string.replace(self.director, "\t ", '')
++        self.director = string.replace(self.director, "\t", '')
++        self.director = string.replace(self.director, ',', ', ')
++        self.director = gutils.strip_tags(self.director)
+ 
+     def get_screenplay(self):
+-	screenplay = self.SCREENPLAY_PATTERN.findall(self.page)
+-	if len(screenplay)>0:
+-            self.screenplay = screenplay[0]
+-	    self.screenplay = string.replace(self.screenplay, "\t", '')
+-	    self.screenplay = re.sub('\s+', ' ', self.screenplay)
+-	    self.screenplay = string.replace(self.screenplay, ",",", ")
+-	    self.screenplay = string.replace(self.screenplay, "  "," ")
+-	    self.screenplay = string.replace(self.screenplay, " ,  ",", ")
+-	    self.screenplay = string.replace(self.screenplay, "(wi?cej...)", '')
++        self.screenplay = gutils.trim(self.page,"scenariusz:", '</tr>')
++        self.screenplay = gutils.after(self.screenplay, '</th>')
++        self.screenplay = string.replace(self.screenplay, "(wi?cej...)", '')
++        self.screenplay = string.replace(self.screenplay, '  ', '\t')
++        self.screenplay = string.replace(self.screenplay, "\t ", '')
++        self.screenplay = string.replace(self.screenplay, "\t", '')
++        self.screenplay = string.replace(self.screenplay, ',', ', ')
++        self.screenplay = gutils.strip_tags(self.screenplay)
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page,'<h2 id="o-filmie-header" class="replace">','</div>')
+-        self.plot = gutils.after(self.plot, '<p>')
+-        url = gutils.trim(self.plot,"\t...","</a>")
+-        url = gutils.trim(url, 'href="','"')
+-        self.plot = gutils.strip_tags(self.plot)
+-        if url != '':
+-            plot_page = self.open_page(url=url)
+-	    self.plot = gutils.trim(plot_page, '<div class="filmContent" style="position: relative;">', '</p></li>')
+-            self.plot = gutils.after(self.plot, u'zg?o? poprawk?')
++        self.plot = gutils.trim(self.page, '<span class="filmDescrBg">', '</span>')
++        self.plot = string.replace(self.plot, '  ', ' ')
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '<span class="year">', '</a>')
++        self.year = gutils.trim(self.page, '<span id="filmYear" class="filmYear">', '</span>')
+ 
+     def get_runtime(self):
+-        self.runtime = gutils.trim(self.page,"\tczas trwania: ","\n")
++        self.runtime = gutils.trim(self.page, '<div class="time">', '<')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page,"\tgatunek:", '</p>')
+-        self.genre = string.replace(self.genre, "\t",'')
+-        self.genre = string.replace(self.genre, "\n",'')
++        self.genre = gutils.trim(self.page, "gatunek:", '</tr>')
++        self.genre = string.replace(self.genre, "\t", '')
++        self.genre = string.replace(self.genre, "\n", '')
++        self.genre = string.replace(self.genre, '  ', '')
++        self.genre = string.replace(self.genre, ',', ', ')
+ 
+     def get_cast(self):
+-        self.cast = gutils.trim(self.page, '<td class="film-actor">',u"zobacz wi?cej")
+-        self.cast = string.replace(self.cast, chr(13),"")
+-        self.cast = string.replace(self.cast, chr(10),"")
+-        self.cast = string.replace(self.cast, "\t",'')
+-        self.cast = string.replace(self.cast, "  ",'')
+-        self.cast = string.replace(self.cast, '<td class="film-protagonist">', _(" as "))
+-        self.cast = string.replace(self.cast, '</tr>',"\n")
+-        self.cast = gutils.strip_tags(self.cast)
++        self.cast = gutils.trim(self.page, '<div class="castListWrapper cl">', '<div class="additional-info comBox">')
++        url = gutils.after(self.cast, '</ul>')
++        url = gutils.trim(url, 'href="','"')
++        self.cast = gutils.before(self.cast, '</ul>')
++        self.cast = string.replace(self.cast, chr(13), '')
++        self.cast = string.replace(self.cast, chr(10), '')
++        self.cast = string.replace(self.cast, "  ", '\t')
++        self.cast = string.replace(self.cast, "\t ", '')
++        self.cast = string.replace(self.cast, '\t', '')
++        self.cast = string.replace(self.cast, " (", '(')
++        self.cast = string.replace(self.cast, '(', " (")
++        self.cast = string.replace(self.cast, '<div>', _(" as "))
++        self.cast = string.replace(self.cast, '</li>', "\n")
+ 
+     def get_classification(self):
+-        self.classification = gutils.trim(self.page,"\tod lat: ","\t")
+-        self.classification = string.replace(self.classification, "\t",'')
+-        self.classification = string.replace(self.classification, "\n",'')
++        self.classification = ''
+ 
+     def get_studio(self):
+         self.studio = ''
+@@ -132,19 +126,20 @@
+         self.site = self.url
+ 
+     def get_trailer(self):
+-        trailer = self.TRAILER_PATTERN.findall(self.page)
+-        if trailer:
+-            self.trailer = trailer[0]
++        self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page,"\tprodukcja:", '</strong>')
+-        self.country = string.replace(self.country, "\t",'')
++        self.country = gutils.trim(self.page, "produkcja:", '</tr>')
++        self.country = string.replace(self.country, '  ', '')
++        self.country = string.replace(self.country, "\t", '')
+ 
+     def get_rating(self):
+-        self.rating = gutils.trim(self.page, '\t<span><strong class="value">', '</strong>')
++        self.rating = gutils.trim(self.page, '<div class="rates">', '</div>')
++        self.rating = gutils.trim(self.rating, '<span class="average">', '</span>')
+         if self.rating != '':
++            self.rating = string.replace(self.rating, ' ', '')
+             self.rating = string.replace(self.rating, ',', '.')
+-            self.rating = str( float(string.strip(self.rating)) )
++            self.rating = str(float(string.strip(self.rating)))
+ 
+     def get_notes(self):
+         self.notes = ''
+@@ -152,41 +147,50 @@
+ class SearchPlugin(movie.SearchMovie):
+     def __init__(self):
+         self.encode='utf-8'
+-        self.original_url_search   = "http://www.filmweb.pl/szukaj?c=film&q="
+-        self.translated_url_search = "http://www.filmweb.pl/szukaj?c=film&q="
++        self.original_url_search = 'http://' + plugin_server + '/search?alias=film&q='
++        self.translated_url_search = 'http://' + plugin_server + '/search?alias=film&q='
+ 
+-    def search(self,parent_window):
++    def search(self, parent_window):
+         if not self.open_search(parent_window):
+             return None
+-        pos = string.find(self.page, 'Znaleziono <b>')
+-        if pos == -1:    # movie page
++        pos = string.find(self.page, '<div class="stdBar">')
++        if pos == -1: # movie page
+             self.page = None
+-        else:        # search results
+-            items = gutils.trim(self.page[pos:], '<b>', '</b>')
++        else: # search results
++            items = gutils.trim(self.page[pos:], '(', ')')
+             if items == '0':
+                 self.page = False
+             else:
+-                self.page = gutils.before(self.page[pos:], 'id="sitemap"')
++                self.page = gutils.before(self.page[pos:], '</ul>')
+                 self.page = gutils.after(self.page, '<li ')
+         return self.page
+ 
+     def get_searches(self):
+-        if self.page is None:    # movie page
+-            self.number_results = 1
++        if self.page is None: # movie page
+             self.ids.append(self.url)
+             self.titles.append(gutils.convert_entities(self.title))
+         elif self.page is False: # no movie found
+             self.number_results = 0
+-        else:            # multiple matches
++        else: # multiple matches
+             elements = string.split(self.page, '<li ')
+             self.number_results = elements[-1]
+-            if (elements[0]<>''):
++            if (elements[0] <> ''):
+                 for element in elements:
+-                    element = gutils.after(element, '<a class="searchResultTitle" href="')
+-                    self.ids.append(gutils.before(element, '">'))
+-                    element_title = gutils.trim(element, '">', '</a>')
+-                    element_year = gutils.trim(element, '</a>', '<span')
+-                    element = string.strip(element_title) + ' ' + string.strip(element_year)
++                    element = gutils.after(element, '<a href="')
++                    self.ids.append('http://' + plugin_server + gutils.before(element, '"'))
++                    element_title = gutils.trim(element, 'class="searchResultTitle"', '</a>')
++                    element_title = gutils.after(element_title, '">')
++                    element_title = string.replace(element_title, "\t", '')
++                    element = gutils.after(element, 'class="searchResultDetails"')
++                    element_year = gutils.trim(element, '>', '|')
++                    element_year = string.replace(element_year, " ", '')
++                    element_year = gutils.strip_tags(element_year)
++                    element_country = gutils.trim(element, '">', '</a>')
++                    element = string.strip(element_title)
++                    if (element_year <> ''):
++                        element = element + ' (' + string.strip(element_year) + ')'
++                    if (element_country <> ''):
++                        element = element + ' - ' + string.strip(element_country)
+                     element = gutils.convert_entities(element)
+                     element = gutils.strip_tags(element)
+                     self.titles.append(element)
+
+
+
+From mikej06 at mail.berlios.de  Sat Oct  9 21:35:30 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat,  9 Oct 2010 21:35:30 +0200
+Subject: [Griffith-svn] r1465 - in trunk: . lib/plugins/movie
+Message-ID: <20101009193531.498DC48103D@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-09 21:35:30 +0200 (Sat, 09 Oct 2010)
+New Revision: 1465
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb and IMDb plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-08 20:56:18 UTC (rev 1464)
++++ trunk/ChangeLog	2010-10-09 19:35:30 UTC (rev 1465)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-10-09  Michael Jahn
++	* OFDb and IMDb plugin updated
++
+ 2010-10-08  Piotr O?arowski
+ 	* Filmweb movie plugin updated (thanks to Mariusz Szczepanek)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-10-08 20:56:18 UTC (rev 1464)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-10-09 19:35:30 UTC (rev 1465)
+@@ -197,6 +197,14 @@
+ 
+     def get_cameraman(self):
+         self.cameraman = ''
++        tmp = gutils.regextrim(self.cast_page, 'Cinematography by<[^>]+', '</table>')
++        tmp = string.split(tmp, 'href="')
++        for entry in tmp:
++            entry = gutils.trim(entry, '>', '<')
++            if entry:
++                self.cameraman = self.cameraman + entry + ', '
++        if self.cameraman:
++            self.cameraman = self.cameraman[:-2]
+ 
+     def __before_more(self, data):
+         for element in ['>See more<', '>more<', '>Full summary<', '>Full synopsis<']:
+@@ -359,7 +367,7 @@
+             'image'             : True,
+             'rating'            : 7,
+             'screenplay'        : 'Marc Norman, Tom Stoppard',
+-            'cameraman'         : False,
++            'cameraman'         : 'Richard Greatrex',
+             'barcode'           : False
+         },
+     }
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2010-10-08 20:56:18 UTC (rev 1464)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2010-10-09 19:35:30 UTC (rev 1465)
+@@ -29,11 +29,11 @@
+         # lets use the imdb page, why not
+         imdb_nr = gutils.trim(self.page, 'http://german.imdb.com/Title?', '"')
+         if imdb_nr != '':
+-            self.imdb_page = self.open_page(url='http://german.imdb.com/Title?' + imdb_nr)
++            self.imdb_page = self.open_page(url='http://www.imdb.de/Title?' + imdb_nr)
+         else:
+             imdb_nr = gutils.trim(self.page, 'http://www.imdb.com/Title?', '"')
+             if imdb_nr != '':
+-                self.imdb_page = self.open_page(url='http://www.imdb.com/Title?' + imdb_nr)
++                self.imdb_page = self.open_page(url='http://www.imdb.de/Title?' + imdb_nr)
+             else:
+                 self.imdb_page = ''
+ 
+@@ -65,7 +65,7 @@
+ 
+     def get_runtime(self):
+         # from imdb
+-        self.runtime = gutils.regextrim(self.imdb_page, '<h5>(L&auml;nge|Runtime):</h5>', ' (min|Min)')
++        self.runtime = gutils.regextrim(self.imdb_page, '<h5>(L&auml;nge|L&#xE4;nge|Runtime):</h5>', ' (min|Min)')
+ 
+     def get_genre(self):
+         self.genre = gutils.trim(self.page,"Genre(s):","</table>")
+@@ -90,7 +90,7 @@
+ 
+     def get_classification(self):
+         # from imdb
+-        self.classification = gutils.regextrim(gutils.regextrim(self.imdb_page, '(Altersfreigabe|Certification):', '</div>'), 'Germany:', '(&|[|])')
++        self.classification = gutils.regextrim(gutils.regextrim(self.imdb_page, '(Altersfreigabe|Certification):', '</div>'), '(Deutschland|Germany):', '(&|[|])')
+ 
+     def get_studio(self):
+         # from imdb
+@@ -283,10 +283,10 @@
+             'rating'              : 6
+         },
+         'film/54088,Arahan' : {
+-            'title'             : 'Arahan',
++            'title'               : 'Arahan',
+             'o_title'             : 'Arahan jangpung daejakjeon',
+             'director'            : 'Ryoo Seung-wan',
+-            'plot'                 : True,
++            'plot'                : True,
+             'cast'                : 'Ryoo Seung-beom\n\
+ Yoon Soy' + _(' as ') + 'Wi-jin\n\
+ Ahn Seong-gi' + _(' as ') + 'Ja-woon\n\
+@@ -317,17 +317,17 @@
+ Min Hye-ryeong\n\
+ Oh Soon-tae\n\
+ Lee Oi-soo',
+-            'country'            : 'S?dkorea',
+-            'genre'                : 'Action, Fantasy, Kom?die',
+-            'classification'    : '16',
+-            'studio'            : 'Fun and Happiness',
+-            'o_site'            : False,
++            'country'             : 'S?dkorea',
++            'genre'               : 'Action, Fantasy, Kom?die',
++            'classification'      : '16',
++            'studio'              : 'Fun and Happiness',
++            'o_site'              : False,
+             'site'                : 'http://www.ofdb.de/film/54088,Arahan',
+-            'trailer'            : False,
++            'trailer'             : False,
+             'year'                : 2004,
+-            'notes'                : False,
+-            'runtime'            : 114,
+-            'image'                : True,
+-            'rating'            : 7
++            'notes'               : False,
++            'runtime'             : 114,
++            'image'               : True,
++            'rating'              : 7
+         }
+     }
+
+
+
+From mikej06 at mail.berlios.de  Sat Oct  9 21:55:38 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat,  9 Oct 2010 21:55:38 +0200
+Subject: [Griffith-svn] r1466 - trunk
+Message-ID: <20101009195538.CF9F6480FCB@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-09 21:55:38 +0200 (Sat, 09 Oct 2010)
+New Revision: 1466
+
+Modified:
+   trunk/INSTALL
+   trunk/winpackage.iss
+   trunk/winsetup.bat
+   trunk/winsetup.py
+Log:
+* updated the windows section of the file INSTALL
+* small enhancements of the windows build skripts
+
+Modified: trunk/INSTALL
+===================================================================
+--- trunk/INSTALL	2010-10-09 19:35:30 UTC (rev 1465)
++++ trunk/INSTALL	2010-10-09 19:55:38 UTC (rev 1466)
+@@ -65,31 +65,31 @@
+ 
+ 	Just run the griffith installer available for your system.
+ 	A separated GTK+ Runtime Environment for Win32 is NOT necessary.
+-	For now, Griffith is only known to work under Microsoft Windows XP
+-	Professional Edition but should work on other windows flavours too.
++	For now, Griffith is known to work under Microsoft Windows XP
++	Windows Vista and Windows 7 but should work on other windows flavours too.
+ 	
+ 2.2 Compiling and making a custom installer
+ 
+-	2.2.1 	This was tested with Griffith 0.11. Should work with later versions.
++	2.2.1 	This was tested with Griffith 0.12. Should work with later versions.
+ 			You will need the following packages installed on your system. You can grab them from the pointed urls:
+ 	
+-			* Python            - python 2.5.4                   (http://www.python.org/download/)
++			* Python            - python 2.6.5                   (http://www.python.org/download/)
+ 			* GTK+ with Glade 3 - glade3-3.6.7-with-GTK+         (http://ftp.gnome.org/pub/GNOME/binaries/win32/glade3/3.6/)
+-			* PyGTK             - pygtk-2.12.1-3.win32-py2.5     (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.12/)
+-			* PyCairo           - pycairo-1.4.12-2.win32-py2.5   (http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.4/)
+-			* PyGObject         - pygobject-2.14.2-2.win32-py2.5 (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.14/)
+-			* ReportLab         - reportlab-2.4.win32-py2.5      (http://www.reportlab.com/software/opensource/rl-toolkit/download/)
++			* PyGTK             - pygtk-2.16.0+glade.win32-py2.6 (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.12/)
++			* PyCairo           - pycairo-1.8.6.win32-py2.6      (http://ftp.gnome.org/pub/GNOME/binaries/win32/pycairo/1.4/)
++			* PyGObject         - pygobject-2.20.0.win32-py2.6   (http://ftp.gnome.org/pub/GNOME/binaries/win32/pygobject/2.14/)
++			* ReportLab         - reportlab-2.4.win32-py2.6      (http://www.reportlab.com/software/opensource/rl-toolkit/download/)
+ 			* winshell          - winshell-0.2                   (http://timgolden.me.uk/python/winshell.html)
+-			* PIL               - PIL-1.1.7.win32-py2.5          (http://www.pythonware.com/products/pil/#pil116)
+-			* py2exe            - py2exe-0.6.9.win32-py2.5       (http://sourceforge.net/projects/py2exe/files/)
+-			* Python For Windows Extensions (pywin32) - pywin32-214.win32-py2.5 (http://sourceforge.net/projects/pywin32/files/)
+-			* SQLAlchemy        - SQLAlchemy-0.5.8               (http://www.sqlalchemy.org/download.html)
+-			* psycopg2          - psycopg2-2.0.14.win32-py2.5    (http://www.stickpeople.com/projects/python/win-psycopg/#Version2)
+-			* MySQLPython       - MySQL-python-1.2.2.win32-py2.5 (http://sourceforge.net/projects/mysql-python/files/)
+-            * PyODBC            - pyodbc-2.1.7.win32-py2.5       (http://code.google.com/p/pyodbc/)
++			* PIL               - PIL-1.1.7.win32-py2.6          (http://www.pythonware.com/products/pil/#pil116)
++			* py2exe            - py2exe-0.6.9.win32-py2.6       (http://sourceforge.net/projects/py2exe/files/)
++			* Python For Windows Extension (pywin32) - pywin32-214.win32-py2.6 (http://sourceforge.net/projects/pywin32/files/)
++			* SQLAlchemy        - SQLAlchemy-0.6.3               (http://www.sqlalchemy.org/download.html)
++			* psycopg2          - psycopg2-2.2.1.win32-py2.6-pg8.4.3 (http://www.stickpeople.com/projects/python/win-psycopg/#Version2)
++			* MySQLPython       - MySQL-python-1.2.2.win32-py2.6 (http://sourceforge.net/projects/mysql-python/files/)
++            * PyODBC            - pyodbc-2.1.7.win32-py2.6       (http://code.google.com/p/pyodbc/)
+ 			* Python-chardet    - python2-chardet-2.0.1          (http://chardet.feedparser.org/download/)
+-			* Python SQLite     - pysqlite-2.5.6.win32-py2.5     (http://www.initd.org/tracker/pysqlite/wiki/pysqlite)
+-			* Inno Setup        - isetup-5.3.9                   (http://www.jrsoftware.org/isdl.php)
++			* Python SQLite     - pysqlite-2.6.0.win32-py2.6     (http://www.initd.org/tracker/pysqlite/wiki/pysqlite)
++			* Inno Setup        - isetup-5.3.11-unicode          (http://www.jrsoftware.org/isdl.php)
+ 			
+ 	2.2.2	After installing all the above packages, get griffith from SVN
+ 			or download the latest source tarball from the official site (http://www.griffith.cc/)
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-10-09 19:35:30 UTC (rev 1465)
++++ trunk/winpackage.iss	2010-10-09 19:55:38 UTC (rev 1466)
+@@ -1,4 +1,4 @@
+-; Script generated by the Inno Setup Script Wizard.
++?; Script generated by the Inno Setup Script Wizard.
+ ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
+ 
+ [Setup]
+@@ -16,11 +16,12 @@
+ OutputDir=installer
+ OutputBaseFilename=griffith-0.12-win32
+ SetupIconFile=images\griffith.ico
++UninstallDisplayIcon={app}\griffith.exe
+ Compression=lzma
+ SolidCompression=true
+ WizardImageFile=images\griffith_win32_installer.bmp
+ InternalCompressLevel=ultra
+-AppCopyright=Vasco Nunes/Piotr Ozarowski
++AppCopyright=Vasco Nunes/Piotr O?arowski
+ DisableStartupPrompt=false
+ AppVersion=0.12
+ VersionInfoVersion=0.12
+@@ -39,13 +40,13 @@
+ Name: nor; MessagesFile: compiler:languages\Norwegian.isl
+ Name: hun; MessagesFile: compiler:languages\Hungarian.isl
+ Name: spa; MessagesFile: compiler:languages\Spanish.isl
+-Name: chi; MessagesFile: compiler:languages\ChineseSimp-11-5.1.0.isl
++Name: chi; MessagesFile: compiler:languages\ChineseSimp-12-5.1.11.isl
+ Name: gre; MessagesFile: compiler:languages\Greek-4-5.1.11.isl
+ Name: jap; MessagesFile: compiler:languages\Japanese-5-5.1.11.isl
+ Name: bul; MessagesFile: compiler:languages\Bulgarian-5.1.11.isl
+ 
+-[LangOptions]
+-LanguageCodePage=0
++;[LangOptions]
++;LanguageCodePage=0
+ 
+ [Tasks]
+ Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2010-10-09 19:35:30 UTC (rev 1465)
++++ trunk/winsetup.bat	2010-10-09 19:55:38 UTC (rev 1466)
+@@ -25,6 +25,7 @@
+ mkdir dist\share
+ mkdir dist\lib
+ mkdir dist\share\locale
++mkdir dist\share\themes\MS-Windows\gtk-2.0
+ 
+ rem ***** create the exe 
+ 
+@@ -41,11 +42,17 @@
+ )
+ 
+ xcopy "%GTKDIR%\etc" "%GRIFFITHDIR%\dist\etc" /s /e
++if not "%ERRORLEVEL%" == "0" (pause)
+ xcopy "%GTKDIR%\lib" "%GRIFFITHDIR%\dist\lib" /s /e
++if not "%ERRORLEVEL%" == "0" (pause)
+ xcopy "%GTKDIR%\share\locale" "%GRIFFITHDIR%\dist\share\locale" /s /e
++if not "%ERRORLEVEL%" == "0" (pause)
+ 
+-copy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\"
+-copy "%GTKDIR%\bin\jpeg62.dll"   "%GRIFFITHDIR%\dist\"
++xcopy "%GTKDIR%\share\themes\MS-Windows\gtk-2.0\*.*" "%GRIFFITHDIR%\dist\" /s /e
++if not "%ERRORLEVEL%" == "0" (pause)
++xcopy "%GTKDIR%\bin\jpeg62.dll"   "%GRIFFITHDIR%\dist\" /s /e
++if not "%ERRORLEVEL%" == "0" (pause)
++
+ copy "%GRIFFITHDIR%\AUTHORS"     "%GRIFFITHDIR%\dist\"
+ copy "%GRIFFITHDIR%\COPYING"     "%GRIFFITHDIR%\dist\"
+ copy "%GRIFFITHDIR%\INSTALL"     "%GRIFFITHDIR%\dist\"
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2010-10-09 19:35:30 UTC (rev 1465)
++++ trunk/winsetup.py	2010-10-09 19:55:38 UTC (rev 1466)
+@@ -45,7 +45,7 @@
+ 
+ opts = {
+     "py2exe": {
+-        "includes": "pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,sqlalchemy.sql.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*,ConfigParser,gtk.glade,xmlrpclib",
++        "includes": "pygtk,cairo,pangocairo,gobject,cgi,PIL,pysqlite2,pysqlite2.*,pango,atk,gobject,tempfile,csv,xml.dom,xml.dom.minidom,xml.sax,threading,htmlentitydefs,sqlalchemy,sqlalchemy.*,sqlalchemy.databases.*,sqlalchemy.engine.*,sqlalchemy.ext.*,sqlalchemy.orm.*,sqlalchemy.sql.*,zipfile,webbrowser,shutil,reportlab,reportlab.pdfgen,reportlab.pdfgen.canvas,reportlab.platypus,reportlab.pdfbase.ttfonts,smtplib,win32com,platform,winshell,psycopg2,MySQLdb,chardet,gzip,commands,encodings,encodings.*,ConfigParser,gtk.glade,xmlrpclib,gio",
+         "optimize": 2,
+         "dist_dir": "dist",
+     }
+
+
+
+From mikej06 at mail.berlios.de  Thu Oct 14 20:16:49 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 14 Oct 2010 20:16:49 +0200
+Subject: [Griffith-svn] r1467 - in trunk: . lib/plugins/movie
+Message-ID: <20101014181649.50E54480F5D@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-14 20:16:49 +0200 (Thu, 14 Oct 2010)
+New Revision: 1467
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+Log:
+E-Pipoca plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-09 19:55:38 UTC (rev 1466)
++++ trunk/ChangeLog	2010-10-14 18:16:49 UTC (rev 1467)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-10-14  Michael Jahn
++	* E-Pipoca plugin updated
++
+ 2010-10-09  Michael Jahn
+ 	* OFDb and IMDb plugin updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieE-Pipoca.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2010-10-09 19:55:38 UTC (rev 1466)
++++ trunk/lib/plugins/movie/PluginMovieE-Pipoca.py	2010-10-14 18:16:49 UTC (rev 1467)
+@@ -29,7 +29,7 @@
+ 
+ plugin_name         = "E-Pipoca"
+ plugin_description  = "E-Pipoca Brasil"
+-plugin_url          = "epipoca.uol.com.br"
++plugin_url          = "www.epipoca.com.br"
+ plugin_language     = _("Brazilian Portuguese")
+ plugin_author       = "Vasco Nunes"
+ plugin_author_email = "<vasco.m.nunes at gmail.com>"
+@@ -40,16 +40,16 @@
+     def __init__(self, id):
+         self.encode   = 'iso-8859-1'
+         self.movie_id = id
+-        self.url      = "http://epipoca.uol.com.br/filmes_detalhes.php?idf=" + str(self.movie_id)
++        self.url      = "http://www.epipoca.com.br/filmes_detalhes.php?idf=" + str(self.movie_id)
+ 
+     def initialize(self):
+-        self.page_cast = self.open_page(url = 'http://epipoca.uol.com.br/filmes_ficha.php?idf=' + str(self.movie_id))
++        self.page_cast = self.open_page(url = 'http://www.epipoca.com.br/filmes_ficha.php?idf=' + str(self.movie_id))
+ 
+     def get_image(self):
+         "Find the film's poster image"
+         tmp_pic = gutils.trim(self.page, "images/filmes/poster/poster_", "\"")
+         self.image_url = \
+-            "http://epipoca.uol.com.br/images/filmes/poster/poster_" + tmp_pic
++            "http://www.epipoca.com.br/images/filmes/poster/poster_" + tmp_pic
+ 
+     def get_o_title(self):
+         "Find the film's original title"
+@@ -100,15 +100,15 @@
+ 
+     def get_o_site(self):
+         "Find the film's oficial site"
+-        self.o_site = "http://epipoca.uol.com.br/filmes_web.php?idf=" + str(self.movie_id)
++        self.o_site = "http://www.epipoca.com.br/filmes_web.php?idf=" + str(self.movie_id)
+ 
+     def get_site(self):
+         "Find the film's imdb details page"
+-        self.site = "http://epipoca.uol.com.br/filmes_ficha.php?idf=" + str(self.movie_id)
++        self.site = "http://www.epipoca.com.br/filmes_ficha.php?idf=" + str(self.movie_id)
+ 
+     def get_trailer(self):
+         "Find the film's trailer page or location"
+-        self.trailer = "http://epipoca.uol.com.br/filmes_trailer.php?idf=" + str(self.movie_id)
++        self.trailer = "http://www.epipoca.com.br/filmes_trailer.php?idf=" + str(self.movie_id)
+             
+     def get_country(self):
+         "Find the film's country"
+@@ -135,9 +135,9 @@
+     "A movie search object"
+     def __init__(self):
+         self.original_url_search = \
+-            "http://epipoca.uol.com.br/busca.php?opc=todos&busca="
++            "http://www.epipoca.com.br/busca.php?opc=todos&busca="
+         self.translated_url_search = \
+-            "http://epipoca.uol.com.br/busca.php?opc=todos&busca="
++            "http://www.epipoca.com.br/busca.php?opc=todos&busca="
+         self.encode='iso-8859-1'
+ 
+     def search(self, parent_window):
+@@ -255,9 +255,9 @@
+             'genre'               : 'A??o',
+             'classification'      : False,
+             'studio'              : 'Fox Film',
+-            'o_site'              : 'http://epipoca.uol.com.br/filmes_web.php?idf=11521',
+-            'site'                : 'http://epipoca.uol.com.br/filmes_ficha.php?idf=11521',
+-            'trailer'             : 'http://epipoca.uol.com.br/filmes_trailer.php?idf=11521',
++            'o_site'              : 'http://www.epipoca.com.br/filmes_web.php?idf=11521',
++            'site'                : 'http://www.epipoca.com.br/filmes_ficha.php?idf=11521',
++            'trailer'             : 'http://www.epipoca.com.br/filmes_trailer.php?idf=11521',
+             'year'                : 2006,
+             'notes'               : False,
+             'runtime'             : 102,
+
+
+
+From mikej06 at mail.berlios.de  Sun Oct 17 14:35:49 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 17 Oct 2010 14:35:49 +0200
+Subject: [Griffith-svn] r1468 - in trunk: . lib
+Message-ID: <20101017123549.4BC47480FC9@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-17 14:35:49 +0200 (Sun, 17 Oct 2010)
+New Revision: 1468
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/backup.py
+   trunk/lib/dbupgrade.py
+Log:
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-14 18:16:49 UTC (rev 1467)
++++ trunk/ChangeLog	2010-10-17 12:35:49 UTC (rev 1468)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-10-17  Michael Jahn
++	* error fixed which prevents updates from pre-0.11 versions
++
+ 2010-10-14  Michael Jahn
+ 	* E-Pipoca plugin updated
+ 
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2010-10-14 18:16:49 UTC (rev 1467)
++++ trunk/lib/backup.py	2010-10-17 12:35:49 UTC (rev 1468)
+@@ -205,6 +205,7 @@
+         return False
+ 
+     try:
++        tmp_db = None
+         tmp_dir = mkdtemp()
+         os.mkdir(os.path.join(tmp_dir, 'posters'))
+ 
+@@ -289,6 +290,7 @@
+         raise
+     finally:
+         # disposing the temporary db connection before rmtree and in finally block to avoid locked db file
+-        tmp_db.dispose()
++        if tmp_db:
++            tmp_db.dispose()
+         log.debug('temporary directory no logger needed, removing %s', tmp_dir)
+         rmtree(tmp_dir)
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2010-10-14 18:16:49 UTC (rev 1467)
++++ trunk/lib/dbupgrade.py	2010-10-17 12:35:49 UTC (rev 1468)
+@@ -175,6 +175,9 @@
+                     self.session.add(poster)
+ 
+                 update_query = movies_table.update(movies_table.c.image == movie.image, {'poster_md5': poster_md5, 'image': None}, bind=b)
++                # deactivating a 0.12 feature
++                save_update_onupdated = movies_table.c['updated'].onupdate
++                movies_table.c['updated'].onupdate = None
+ 
+                 try:
+                     # yeah, we're commiting inside the loop,
+@@ -190,10 +193,18 @@
+                         os.remove(poster_file_name)
+                     except:
+                         log.warn("cannot remove %s", poster_file_name)
++                finally:
++                    movies_table.c['updated'].onupdate = save_update_onupdated
+             else:
+-                log.warn("file not found: %s)", movie.image)
++                log.warn("file not found: %s", movie.image)
+                 update_query = movies_table.update(movies_table.c.image == movie.image, {'image': None}, bind=b)
+-                update_query.execute()
++                # deactivating a 0.12 feature
++                save_update_onupdated = movies_table.c['updated'].onupdate
++                movies_table.c['updated'].onupdate = None
++                try:
++                    update_query.execute()
++                finally:
++                    movies_table.c['updated'].onupdate = save_update_onupdated
+                 updated[poster_file_name] = True
+         del updated
+ 
+
+
+
+From mikej06 at mail.berlios.de  Sun Oct 17 21:27:33 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 17 Oct 2010 21:27:33 +0200
+Subject: [Griffith-svn] r1469 - in trunk: . lib/plugins/movie
+Message-ID: <20101017192733.BE1D9481067@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-17 21:27:33 +0200 (Sun, 17 Oct 2010)
+New Revision: 1469
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+Log:
+Allocine plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-17 12:35:49 UTC (rev 1468)
++++ trunk/ChangeLog	2010-10-17 19:27:33 UTC (rev 1469)
+@@ -6,6 +6,7 @@
+ 
+ 
+ 2010-10-17  Michael Jahn
++	* Allocine plugin updated
+ 	* error fixed which prevents updates from pre-0.11 versions
+ 
+ 2010-10-14  Michael Jahn
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-10-17 12:35:49 UTC (rev 1468)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-10-17 19:27:33 UTC (rev 1469)
+@@ -169,7 +169,7 @@
+         return self.page
+ 
+     def sub_search(self):
+-        self.page = gutils.regextrim(self.page, u'r?sultat[s]* trouv?[s]*', '<form method=')
++        self.page = gutils.regextrim(self.page, u'r?sultat[s]* trouv?[s]*', '<form ')
+ 
+     def get_searches(self):
+         elements = string.split(self.page, '<a href=\'/film/fichefilm_gen_cfilm=')
+
+
+
+From piotrek at mail.berlios.de  Mon Oct 18 21:55:46 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Mon, 18 Oct 2010 21:55:46 +0200
+Subject: [Griffith-svn] r1470 - trunk/debian
+Message-ID: <20101018195546.D2CEE4801AA@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-18 21:55:46 +0200 (Mon, 18 Oct 2010)
+New Revision: 1470
+
+Modified:
+   trunk/debian/watch
+Log:
+debian/watch file updated to track launchpad.net
+
+
+Modified: trunk/debian/watch
+===================================================================
+--- trunk/debian/watch	2010-10-17 19:27:33 UTC (rev 1469)
++++ trunk/debian/watch	2010-10-18 19:55:46 UTC (rev 1470)
+@@ -1,4 +1,3 @@
+ version=3
+-opts=downloadurlmangle=s/prdownload/download/,uversionmangle=s/-/~/ \
+-http://developer.berlios.de/project/showfiles.php?group_id=4891 \
+-http://prdownload.berlios.de/griffith/griffith-(\d.*).tar.gz
++https://launchpad.net/griffith/+download \
++http://launchpad.net/griffith/trunk/.*/+download/griffith-(\d.*)\.tar\.xz
+
+
+
+From piotrek at mail.berlios.de  Mon Oct 18 21:56:50 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Mon, 18 Oct 2010 21:56:50 +0200
+Subject: [Griffith-svn] r1471 - in trunk: . debian lib
+Message-ID: <20101018195650.239794801AA@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-18 21:56:49 +0200 (Mon, 18 Oct 2010)
+New Revision: 1471
+
+Modified:
+   trunk/ChangeLog
+   trunk/README
+   trunk/debian/changelog
+   trunk/lib/version.py
+   trunk/winpackage.iss
+   trunk/winsetup.py
+Log:
+Version changed to 0.12.1
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-18 19:55:46 UTC (rev 1470)
++++ trunk/ChangeLog	2010-10-18 19:56:49 UTC (rev 1471)
+@@ -5,6 +5,11 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++---- 0.12.1 ----
++
++2010-10-18  Piotr O?arowski
++	* Version changed to 0.12.1
++
+ 2010-10-17  Michael Jahn
+ 	* Allocine plugin updated
+ 	* error fixed which prevents updates from pre-0.11 versions
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2010-10-18 19:55:46 UTC (rev 1470)
++++ trunk/README	2010-10-18 19:56:49 UTC (rev 1471)
+@@ -1,5 +1,5 @@
+-Griffith 0.12 README
+-====================
++Griffith 0.12.1 README
++======================
+ 
+ This document was last updated on Thu Jun 10 2009.
+ Please see the file COPYING for licensing and warranty information.
+
+Modified: trunk/debian/changelog
+===================================================================
+--- trunk/debian/changelog	2010-10-18 19:55:46 UTC (rev 1470)
++++ trunk/debian/changelog	2010-10-18 19:56:49 UTC (rev 1471)
+@@ -1,3 +1,11 @@
++griffith (0.12.1-1) unstable; urgency=low
++
++  * New upstream release
++    - fixes upgrades from 0.9.x
++  * debian/watch file updated to track launchpad.net
++
++ -- Piotr O?arowski <piotr at debian.org>  Mon, 18 Oct 2010 21:52:41 +0200
++
+ griffith (0.12-1) unstable; urgency=medium
+ 
+   * New upstream release
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2010-10-18 19:55:46 UTC (rev 1470)
++++ trunk/lib/version.py	2010-10-18 19:56:49 UTC (rev 1471)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname = 'Griffith'
+-pversion = '0.12'
++pversion = '0.12.1'
+ pauthor = 'Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>'
+ pyear = '2005-2010'
+ pwebsite = 'http://www.griffith.cc/'
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2010-10-18 19:55:46 UTC (rev 1470)
++++ trunk/winpackage.iss	2010-10-18 19:56:49 UTC (rev 1471)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.12
++AppVerName=Griffith 0.12.1
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://www.griffith.cc/
+ AppSupportURL=http://www.griffith.cc/
+@@ -14,7 +14,7 @@
+ LicenseFile=COPYING
+ InfoAfterFile=README
+ OutputDir=installer
+-OutputBaseFilename=griffith-0.12-win32
++OutputBaseFilename=griffith-0.12.1-win32.1
+ SetupIconFile=images\griffith.ico
+ UninstallDisplayIcon={app}\griffith.exe
+ Compression=lzma
+@@ -23,8 +23,8 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr O?arowski
+ DisableStartupPrompt=false
+-AppVersion=0.12
+-VersionInfoVersion=0.12
++AppVersion=0.12.1
++VersionInfoVersion=0.12.1
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: trunk/winsetup.py
+===================================================================
+--- trunk/winsetup.py	2010-10-18 19:55:46 UTC (rev 1470)
++++ trunk/winsetup.py	2010-10-18 19:56:49 UTC (rev 1471)
+@@ -53,7 +53,7 @@
+ 
+ setup(
+     name="Griffith",
+-    version="0.12",
++    version="0.12.1",
+     description='Griffith - A film manager',
+     author='Vasco Nunes/Piotr Ozarowski',
+     author_email='griffith-private at lists.berlios.de',
+
+
+
+From piotrek at mail.berlios.de  Mon Oct 18 22:00:22 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Mon, 18 Oct 2010 22:00:22 +0200
+Subject: [Griffith-svn] r1472 - trunk/debian
+Message-ID: <20101018200022.E86154801AA@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-18 22:00:22 +0200 (Mon, 18 Oct 2010)
+New Revision: 1472
+
+Modified:
+   trunk/debian/watch
+Log:
+escape +
+
+
+Modified: trunk/debian/watch
+===================================================================
+--- trunk/debian/watch	2010-10-18 19:56:49 UTC (rev 1471)
++++ trunk/debian/watch	2010-10-18 20:00:22 UTC (rev 1472)
+@@ -1,3 +1,3 @@
+ version=3
+ https://launchpad.net/griffith/+download \
+-http://launchpad.net/griffith/trunk/.*/+download/griffith-(\d.*)\.tar\.xz
++http://launchpad.net/griffith/trunk/.*/\+download/griffith-(\d.*)\.tar\.xz
+
+
+
+From mikej06 at mail.berlios.de  Mon Oct 18 22:24:44 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 18 Oct 2010 22:24:44 +0200
+Subject: [Griffith-svn] r1473 - in trunk: . lib
+Message-ID: <20101018202444.25F644801AA@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-18 22:24:43 +0200 (Mon, 18 Oct 2010)
+New Revision: 1473
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+Log:
+stabilized upgrade procedure for databases which are corrupt after an interuption of a previous upgrade procedure
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-18 20:00:22 UTC (rev 1472)
++++ trunk/ChangeLog	2010-10-18 20:24:43 UTC (rev 1473)
+@@ -10,6 +10,9 @@
+ 2010-10-18  Piotr O?arowski
+ 	* Version changed to 0.12.1
+ 
++2010-10-18  Michael Jahn
++	* stabilized upgrade procedure for databases which are corrupt after an interuption of a previous upgrade procedure
++
+ 2010-10-17  Michael Jahn
+ 	* Allocine plugin updated
+ 	* error fixed which prevents updates from pre-0.11 versions
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2010-10-18 20:00:22 UTC (rev 1472)
++++ trunk/lib/dbupgrade.py	2010-10-18 20:24:43 UTC (rev 1473)
+@@ -26,6 +26,7 @@
+ import os.path
+ 
+ from sqlalchemy import *
++from sqlalchemy.exc import *
+ 
+ import db
+ import gutils
+@@ -138,8 +139,13 @@
+         db.tables.posters.create(checkfirst=True, bind=b)
+         db.tables.filters.create(checkfirst=True, bind=b)
+         db.tables.ratios.create(checkfirst=True, bind=b)
+-        db.tables.ratios.insert(bind=b).execute(name=u'16:9')
+-        db.tables.ratios.insert(bind=b).execute(name=u'4:3')
++        try:
++            db.tables.ratios.insert(bind=b).execute(name=u'16:9')
++            db.tables.ratios.insert(bind=b).execute(name=u'4:3')
++        except IntegrityError, e:
++            # if the following conversion of the posters takes to long and the user
++            # kills the application the database is in a undefined state which throughs that exception
++            log.warn("Cannot add values because they exist already: %s", e)
+ 
+         log.info('... adding new columns')
+         # common SQL statements
+@@ -155,6 +161,13 @@
+         for key, query in queries.items():
+             try:
+                 self.session.bind.execute(query)
++            except OperationalError, e:
++                if e.message.find(b'(OperationalError) duplicate column name:') > -1:
++                    log.warn("Cannot add '%s' column because it exists already: %s", key, e)
++                    continue
++                else:
++                    log.error("Cannot add '%s' column: %s", key, e)
++                    return False
+             except Exception, e:
+                 log.error("Cannot add '%s' column: %s", key, e)
+                 return False
+
+
+
+From mikej06 at mail.berlios.de  Mon Oct 18 22:29:45 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 18 Oct 2010 22:29:45 +0200
+Subject: [Griffith-svn] r1474 - in trunk: . lib
+Message-ID: <20101018202946.0A5034801AA@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-10-18 22:29:45 +0200 (Mon, 18 Oct 2010)
+New Revision: 1474
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+Log:
+enabled interactive search by number, title and original title in mainlist ("typeahead find")
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-10-18 20:24:43 UTC (rev 1473)
++++ trunk/ChangeLog	2010-10-18 20:29:45 UTC (rev 1474)
+@@ -12,6 +12,7 @@
+ 
+ 2010-10-18  Michael Jahn
+ 	* stabilized upgrade procedure for databases which are corrupt after an interuption of a previous upgrade procedure
++	* enabled interactive search by number, title and original title in mainlist ("typeahead find")
+ 
+ 2010-10-17  Michael Jahn
+ 	* Allocine plugin updated
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-10-18 20:24:43 UTC (rev 1473)
++++ trunk/lib/initialize.py	2010-10-18 20:29:45 UTC (rev 1474)
+@@ -312,9 +312,16 @@
+         log.exception('')
+     # add data to treeview
+     self.total = self.db.session.query(db.Movie).count()
++    self.widgets['treeview'].set_search_equal_func(search_func_treeview)
+     self.widgets['treeview'].show()
+ 
+ 
++def search_func_treeview(model, column, key, iter):
++    return not (str(model.get_value(iter, 0)).startswith(key) or 
++        str(model.get_value(iter, 2)).lower().startswith(key.lower()) or 
++        str(model.get_value(iter, 3)).lower().startswith(key.lower()))
++
++
+ def loans_treeview(self):
+     self.loans_treemodel = gtk.TreeStore(str, str, str) # move to self.widgets
+     self.widgets['movie']['loan_history'].set_model(self.loans_treemodel)
+
+
+
+From piotrek at mail.berlios.de  Sun Oct 24 22:37:34 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Sun, 24 Oct 2010 22:37:34 +0200
+Subject: [Griffith-svn] r1475 - tags
+Message-ID: <20101024203734.EF4CB481082@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-10-24 22:37:34 +0200 (Sun, 24 Oct 2010)
+New Revision: 1475
+
+Added:
+   tags/0.12.1/
+Log:
+tagging 0.12.1
+
+
+
+

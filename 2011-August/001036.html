@@ -1,0 +1,453 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1577 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1577%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110830211327.209984811BB%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001035.html">
+   <LINK REL="Next"  HREF="001037.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1577 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1577%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C20110830211327.209984811BB%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1577 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 30 23:13:26 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001035.html">[Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions
+</A></li>
+        <LI>Next message: <A HREF="001037.html">[Griffith-svn] r1578 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1036">[ date ]</a>
+              <a href="thread.html#1036">[ thread ]</a>
+              <a href="subject.html#1036">[ subject ]</a>
+              <a href="author.html#1036">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-08-30 23:13:26 +0200 (Tue, 30 Aug 2011)
+New Revision: 1577
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/plugins/movie/PluginMovieAllRovi.py
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/lib/plugins/movie/PluginMovieCineteka.py
+   trunk/lib/plugins/movie/PluginMovieCulturalia.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Log:
+updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
+test data refreshed
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/ChangeLog	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
+ 
++2011-08-30  Michael Jahn
++	* updated plugins: AllRovi, Cinemovies, Cineteka, CSFD, IMDb, Zelluloid
++
+ 2011-08-23  Michael Jahn
+ 	* added buttons to remove and add a poster within the movie edit dialog
+ 	* fixed bug in extension &quot;remover&quot;, it doesn't work if a criteria is required
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/add.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -311,6 +311,7 @@
+                     self.search_movie.get_searches()
+             self.show_search_results(self.search_movie)
+         except:
++            log.exception('')
+             gutils.error(_(&quot;Connection failed.&quot;))
+     else:
+         gutils.error(_(&quot;You should fill the original title\nor the movie title.&quot;))
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllRovi.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieAllRovi.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -46,10 +46,10 @@
+         self.image_url = gutils.trim(self.page, '&lt;img class=&quot;cover-art&quot; src=&quot;', '&quot;')
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '&lt;div class=&quot;page-heading&quot;&gt;', '&lt;/div&gt;')
++        self.o_title = gutils.regextrim(self.page, '&lt;div class=&quot;page-heading&quot;&gt;', '(&lt;/div&gt;|&lt;span&gt;)')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;div class=&quot;page-heading&quot;&gt;', '&lt;/div&gt;')
++        self.title = gutils.regextrim(self.page, '&lt;div class=&quot;page-heading&quot;&gt;', '(&lt;/div&gt;|&lt;span&gt;)')
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page, '&lt;dt&gt;directed by&lt;/dt&gt;', '&lt;/ul&gt;')
+@@ -78,7 +78,7 @@
+         self.classification = ''
+ 
+     def get_studio(self):
+-        self.studio = gutils.trim(self.page, '&lt;dt&gt;produced by&lt;/dt&gt;', '&lt;/div&gt;')
++        self.studio = gutils.regextrim(self.page, '&lt;dt&gt;produced by&lt;/dt&gt;', '(&lt;/div&gt;|&lt;dt&gt;)')
+ 
+     def get_o_site(self):
+         self.o_site = ''
+@@ -90,10 +90,10 @@
+         self.trailer = ''
+ 
+     def get_country(self):
+-        self.country = gutils.trim(self.page, '&lt;dt&gt;countries&lt;/dt&gt;', '&lt;/div&gt;')
++        self.country = gutils.regextrim(self.page, '&lt;dt&gt;countries&lt;/dt&gt;', '(&lt;/div&gt;|&lt;dt&gt;)')
+ 
+     def get_rating(self):
+-        self.rating = len(string.split(gutils.trim(self.page, '&lt;dt&gt;rovi rating&lt;/dt&gt;', '&lt;/div&gt;'), '&lt;li&gt;')) * 2
++        self.rating = (len(string.split(gutils.trim(self.page, '&lt;dt&gt;rovi rating&lt;/dt&gt;', '&lt;/div&gt;'), '&quot;star full&quot;')) - 1) * 2
+ 
+     def get_notes(self):
+         self.notes = ''
+@@ -151,7 +151,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 56, 56 ],
++        'Rocky' : [ 57, 57 ],
+     }
+ 
+ class PluginTest:
+@@ -195,7 +195,7 @@
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+             'classification'      : False,
+-            'studio'              : 'Columbia Pictures, Chartoff Winkler Productions, MGM, Revolution Studios',
++            'studio'              : 'Chartoff Winkler Productions, MGM, Revolution Studios, Columbia Pictures',
+             'o_site'              : False,
+             'site'                : '<A HREF="http://www.allrovi.com/movies/movie/rocky-balboa-v337682">http://www.allrovi.com/movies/movie/rocky-balboa-v337682</A>',
+             'trailer'             : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -86,7 +86,10 @@
+     def get_year(self):
+         self.year = re.search(r'&lt;p class=&quot;origin&quot;[^&lt;]*&gt;([^&gt;]*)', self.page)
+         if self.year:
+-            self.year = self.year.group()[18:-7].split(&quot;, &quot;)[-2]
++            try:
++                self.year = self.year.group()[18:-7].split(&quot;, &quot;)[-2]
++            except:
++                self.year = &quot;&quot;
+         else:
+             self.year = &quot;&quot;
+ 
+@@ -145,20 +148,26 @@
+             self.trailer = &quot;&quot;
+ 
+     def get_rating(self):
+-        self.rating = &quot;&quot;
+         a = re.sub(&quot;\t&quot;, &quot;&quot;, self.page)
+         a = re.sub(&quot;\n&quot;, &quot;&quot;, a)
+-        search = re.search(r&quot;[\s]*([\d]+)%[\s]*&lt;/h2&gt;&quot;, a)
+-        if search:
+-            self.rating = search.group()[:-6]
+-            if self.rating:
+-                self.rating = str(float(self.rating) / 10)
++        self.rating = re.search(r&quot;[\s]*([\d]+)%[\s]*&lt;/h2&gt;&quot;, a).group()[:-6]
+ 
++        if self.rating:
++            self.rating = str(float(self.rating) / 10)
++        else:
++            self.rating = &quot;&quot;
++
+     def get_o_site(self):
++        self.o_site = &quot;&quot;
+         try:
+-            self.o_site = gutils.before(&quot;<A HREF="http://">http://</A>&quot; + re.findall(r'&lt;li&gt;&lt;a\ href=&quot;<A HREF="http://([^">http://([^</A>&gt; ]*)', self.page)[1], '&quot;')
++            index = string.rfind(self.page, u'title=&quot;ofici&#195;&#161;ln&#195;&#173; web&quot;')
++            if index &gt; 0:
++                tmp = gutils.before(self.page, u'title=&quot;ofici&#195;&#161;ln&#195;&#173; web&quot;')
++                index = string.rfind(tmp, 'href=&quot;')
++                if index &gt; 0:
++                    self.o_site = gutils.trim(tmp[index:], '&quot;', '&quot;')
+         except:
+-            self.o_site = &quot;&quot;
++            pass
+ 
+     def get_notes(self):
+         self.notes = &quot;&quot;
+@@ -275,7 +284,7 @@
+             'genre'          : 'Ak&#196;&#141;n&#195;&#173; / Dobrodru&#197;&#190;n&#195;&#189; / Thriller',
+             'classification' : False,
+             'studio'         : False,
+-            'o_site'         : '<A HREF="http://www.popron.cz/cliffhanger-dvd/s-368398/?_actionnumber=9045">http://www.popron.cz/cliffhanger-dvd/s-368398/?_actionnumber=9045</A>',
++            'o_site'         : False,
+             'site'           : '<A HREF="http://www.imdb.com/title/tt0106582/">http://www.imdb.com/title/tt0106582/</A>',
+             'trailer'        : '<A HREF="http://www.csfd.cz/film/4155-cliffhanger/videa">http://www.csfd.cz/film/4155-cliffhanger/videa</A>',
+             'year'           : 1993,
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -105,7 +105,7 @@
+ 
+     def get_rating(self):
+         # site's rating, not users'
+-        self.rating = gutils.trim(self.page, '&lt;div class=number3&gt;', '&lt;/div&gt;')
++        self.rating = gutils.clean(gutils.trim(self.page, '&lt;div class=number3&gt;', '&lt;/div&gt;'))
+ 
+     def get_screenplay(self):
+         self.screenplay = gutils.clean(gutils.trim(self.page_cast, u'Sc&#195;&#169;nario de&lt;/h2&gt; :', '&lt;div id=&quot;cast_film&quot;&gt;'))
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineteka.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCineteka.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -147,13 +147,14 @@
+ 
+     def get_searches(self):
+         &quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
+-        elements = re.split('index[.]php[?]op=Movie&amp;id=([0-9]+)&quot;&gt;', self.page)
++        elements = re.split('index[.]php[?]op=Movie&amp;id=([0-9]+)&quot; ', self.page)
+         
+         for index in range(2, len(elements), 2):
+             id = elements[index - 1]
+-            title = gutils.before(elements[index], '&lt;')
+-            self.ids.append(id)
+-            self.titles.append(gutils.strip_tags(gutils.convert_entities(title)))
++            title = gutils.clean(gutils.trim(elements[index], '&gt;', '&lt;/'))
++            if id and title:
++                self.ids.append(id)
++                self.titles.append(gutils.strip_tags(gutils.convert_entities(title)))
+ 
+ #
+ # Plugin Test
+@@ -164,7 +165,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa' : [ 1, 1 ],
++        'Rocky Balboa' : [ 3, 3 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieCulturalia.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCulturalia.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieCulturalia.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -179,7 +179,7 @@
+ Maureen Schilling',
+             'country'             : 'USA',
+             'genre'               : 'Drama / Deportes',
+-            'classification'      : False,
++            'classification'      : u'No recom. menores de 7 a&#241;os',
+             'studio'              : False,
+             'o_site'              : False,
+             'site'                : '<A HREF="http://www.culturalianet.com/art/ver.php?art=27039">http://www.culturalianet.com/art/ver.php?art=27039</A>',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -198,8 +198,8 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 14, 14 ],
+-        'Darkness' : [51, 51 ]
++        'Rocky' : [ 16, 16 ],
++        'Darkness' : [56, 56 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -182,7 +182,7 @@
+     test_configuration = {
+         'Rocky Balboa' : [  1,  1 ],
+         'Arahan'       : [  1,  1 ],
+-        'M&#195;&#164;rchen'      : [ 23, 23 ]
++        'M&#195;&#164;rchen'      : [ 24, 24 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -293,8 +293,8 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 24, 24 ],
+-        'Ein gl&#195;&#188;ckliches Jahr' : [  6,  6 ]
++        'Rocky Balboa'         : [ 25, 25 ],
++        'Ein gl&#195;&#188;ckliches Jahr' : [ 47, 47 ]
+     }
+ 
+ class PluginTest:
+@@ -400,9 +400,9 @@
+ Ryan Tygh' + _(' as ') + 'Ring Photographer (nicht im Abspann)\n\
+ Kimberly Villanova' + _(' as ') + 'Businesswoman (nicht im Abspann)',
+             'country'           : 'USA',
+-            'genre'             : 'Drama | Sport',
++            'genre'             : 'Action | Drama | Romanze | Sport',
+             'classification'    : False,
+-            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
++            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Rogue Marble',
+             'o_site'            : False,
+             'site'              : '<A HREF="http://www.imdb.de/title/tt0479143">http://www.imdb.de/title/tt0479143</A>',
+             'trailer'           : '<A HREF="http://www.imdb.com/title/tt0479143/trailers">http://www.imdb.com/title/tt0479143/trailers</A>',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -248,7 +248,7 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 24, 24 ]
++        'Rocky Balboa'         : [ 25, 25 ]
+     }
+ 
+ class PluginTest:
+@@ -354,9 +354,9 @@
+ Ryan Tygh' + _(' as ') + 'Ring Photographer (sin acreditar)\n\
+ Kimberly Villanova' + _(' as ') + 'Businesswoman (sin acreditar)',
+             'country'           : 'Estados Unidos',
+-            'genre'             : 'Drama | Deporte',
+-            'classification'    : u'Estados Unidos:PG  | Singapur:PG  | Finlandia:K-11  | Reino Unido:12A  | Canad&#225;:G (British Columbia) | Australia:M  | Irlanda:PG  | Hong Kong:IIA  | M&#233;xico:A  | Noruega:11  | Suiza:12 (canton of Vaud) | Suiza:12 (canton of Geneva) | Brasil:12  | Argentina:Atp  | Malasia:U  | Filipinas:PG-13 (MTRCB) | Portugal:M/12  | Corea del Sur:12  | Suecia:11  | Nueva Zelanda:M',
+-            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
++            'genre'             : u'Acci&#243;n | Drama | Romance | Deporte',
++            'classification'    : u'Estados Unidos:PG  | Singapur:PG  | Finlandia:K-11  | Reino Unido:12A  | Canad&#225;:G (British Columbia) | Australia:M  | Irlanda:PG  | Hong Kong:IIA  | M&#233;xico:A  | Noruega:11  | Suiza:12 (canton of Geneva) | Suiza:12 (canton of Vaud) | Brasil:12  | Argentina:Atp  | Malasia:U  | Filipinas:PG-13 (MTRCB) | Portugal:M/12  | Corea del Sur:12  | Suecia:11  | Nueva Zelanda:M',
++            'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Rogue Marble',
+             'o_site'            : False,
+             'site'              : '<A HREF="http://www.imdb.es/title/tt0479143">http://www.imdb.es/title/tt0479143</A>',
+             'trailer'           : '<A HREF="http://www.imdb.es/title/tt0479143/trailers">http://www.imdb.es/title/tt0479143/trailers</A>',
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -132,7 +132,7 @@
+         self.country = re.sub('[\n]+', '', self.country)
+ 
+     def get_rating(self):
+-        pattern = re.compile('&gt;([0-9]([.][0-9])*)&lt;[/][^/]+&gt;[/][0-9][0-9]&lt;')
++        pattern = re.compile('&gt;([0-9]([.][0-9])*)(&lt;[^&gt;]+&gt;)+[/](&lt;[^&gt;]+&gt;)[0-9][0-9]&lt;')
+         result = pattern.search(self.page)
+         if result:
+             self.rating = result.groups()[0]
+@@ -277,8 +277,8 @@
+     # dict { movie_id -&gt; [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa'         : [ 24, 24 ],
+-        'Ein gl&#195;&#188;ckliches Jahr' : [ 45, 45 ]
++        'Rocky Balboa'         : [ 25, 25 ],
++        'Ein gl&#195;&#188;ckliches Jahr' : [ 47, 47 ]
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -230,7 +230,7 @@
+             'genre'          : 'Sportivo',
+             'classification' : False,
+             'studio'         : False,
+-            'o_site'         : False,
++            'o_site'         : '<A HREF="http://www.mgm.com/rocky_balboa/">http://www.mgm.com/rocky_balboa/</A>',
+             'site'           : '<A HREF="http://www.mymovies.it/dizionario/recensione.asp?id=44566">http://www.mymovies.it/dizionario/recensione.asp?id=44566</A>',
+             'trailer'        : '<A HREF="http://www.mymovies.it/trailer/?id=44566">http://www.mymovies.it/trailer/?id=44566</A>',
+             'year'           : 2006,
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-08-23 20:20:12 UTC (rev 1576)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2011-08-30 21:13:26 UTC (rev 1577)
+@@ -166,17 +166,23 @@
+         if not self.open_search(parent_window):
+             return None
+         tmp = gutils.trim(self.page, &quot;Der Suchbegriff erzielte&quot;, &quot;&lt;/TABLE&gt;&quot;)
++        if not tmp:
++            return self.page
+         return tmp
+ 
+     def get_searches(self):
+-        elements = string.split(self.page, &quot;hit.php3?hit=&quot;)
+-        elements[0] = ''
+-        for element in elements:
+-            if element &lt;&gt; '':
+-                id = gutils.trim(element, 'movie-', '-')
+-                if id &lt;&gt; '':
+-                    self.ids.append(id)
+-                    self.titles.append(gutils.strip_tags(string.replace(gutils.regextrim(element, '&gt;', '&lt;/[Aa]&gt;'), '&lt;br /&gt;', ' - ')))
++        if string.find(self.page, '&lt;title&gt;Suche') &gt; 0:
++            elements = string.split(self.page, &quot;hit.php3?hit=&quot;)
++            elements[0] = ''
++            for element in elements:
++                if element &lt;&gt; '':
++                    id = gutils.trim(element, 'movie-', '-')
++                    if id &lt;&gt; '':
++                        self.ids.append(id)
++                        self.titles.append(gutils.strip_tags(string.replace(gutils.regextrim(element, '&gt;', '&lt;/[Aa]&gt;'), '&lt;br /&gt;', ' - ')))
++        else:
++            id = gutils.regextrim(self.page, 'index[.]php3[?]id=', '(&quot;|;|\')')
++            self.ids.append(id)
+ 
+ #
+ # Plugin Test
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001035.html">[Griffith-svn] r1576 - in trunk: . lib lib/plugins/extensions
+</A></li>
+	<LI>Next message: <A HREF="001037.html">[Griffith-svn] r1578 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1036">[ date ]</a>
+              <a href="thread.html#1036">[ thread ]</a>
+              <a href="subject.html#1036">[ subject ]</a>
+              <a href="author.html#1036">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

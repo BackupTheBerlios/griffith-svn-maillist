@@ -1,0 +1,522 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1034 - in trunk: . lib lib/plugins/export	lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1034%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export%0A%09lib/plugins/movie&In-Reply-To=%3C200811112122.mABLMLqk004803%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000513.html">
+   <LINK REL="Next"  HREF="000515.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1034 - in trunk: . lib lib/plugins/export	lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1034%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/export%0A%09lib/plugins/movie&In-Reply-To=%3C200811112122.mABLMLqk004803%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1034 - in trunk: . lib lib/plugins/export	lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 11 22:22:21 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000513.html">[Griffith-svn] r1033 - in branches/0.9.x: . lib lib/plugins/export
+</A></li>
+        <LI>Next message: <A HREF="000515.html">[Griffith-svn] r1037 - branches/0.9.x/glade branches/0.9.x/po	trunk/glade
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#514">[ date ]</a>
+              <a href="thread.html#514">[ thread ]</a>
+              <a href="subject.html#514">[ subject ]</a>
+              <a href="author.html#514">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-11-11 22:22:16 +0100 (Tue, 11 Nov 2008)
+New Revision: 1034
+
+Modified:
+   trunk/griffith
+   trunk/lib/gemail.py
+   trunk/lib/people.py
+   trunk/lib/plugins/export/PluginExportHTML.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+Log:
+* don't try to rename/remove fake acodec/changel/...
+* few more unicode related changes
+
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-11-11 20:49:40 UTC (rev 1033)
++++ trunk/griffith	2008-11-11 21:22:16 UTC (rev 1034)
+@@ -402,10 +402,10 @@
+ 
+     # volumes/collections ----------------------------------------------{{{
+     def on_am_collection_combo_changed(self,widget):
+-        if widget.get_active()!=-1:
++        if widget.get_active() != -1:
+             self._selected_collection = self.collection_combo_ids[widget.get_active()]
+     def on_am_volume_combo_changed(self,widget):
+-        if widget.get_active()!=-1:
++        if widget.get_active() != -1:
+             self._selected_volume = self.volume_combo_ids[widget.get_active()]
+ 
+     def add_volume(self, widget):
+@@ -469,7 +469,7 @@
+     def rename_volume(self, widget):
+         session = self.db.Session()
+         vol_id = self._selected_volume
+-        if vol_id != 0:
++        if vol_id &gt; 0:
+             new_name = self.widgets['add']['volume'].get_active_text().decode('utf-8')
+             vol = session.query(db.Volume).filter_by(volume_id=vol_id).first()
+             if vol:
+@@ -486,7 +486,7 @@
+     def rename_collection(self, widget):
+         session = self.db.Session()
+         col_id = self.e_selected_collection
+-        if col_id != 0:
++        if col_id &gt; 0:
+             new_name = self.widgets['add']['collection'].get_active_text().decode('utf-8')
+             col = session.query(db.Collection).filter_by(collection_id=col_id).first()
+             if col:
+@@ -592,14 +592,14 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add language: %s&quot; % e.message)
++            log.warn(&quot;Cannot add language: %s&quot;, e.message)
+         else:
+             initialize.language_combos(self)
+ 
+     def on_lang_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['lang_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; 0:
+             lang_id = self.languages_ids[active]
+             lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
+             if lang and len(lang.movielangs)==0:
+@@ -608,7 +608,7 @@
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove language: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove language: %s&quot;, e.message)
+                 else:
+                     initialize.language_combos(self)
+             else:
+@@ -623,20 +623,21 @@
+             return False
+         session = self.db.Session()
+         lang_id = self.languages_ids[active]
+-        lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
+-        if lang is not None:
+-            lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
+-            try:
+-                session.commit()
+-            except Exception, e:
+-                session.rollback()
+-                log.warn(&quot;Cannot rename language: %s&quot; % e.message)
+-            else:
+-                initialize.language_combos(self)
++        if lang_id &gt; 0:
++            lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
++            if lang:
++                lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
++                try:
++                    session.commit()
++                except Exception, e:
++                    session.rollback()
++                    log.warn(&quot;Cannot rename language: %s&quot;, e.message)
++                else:
++                    initialize.language_combos(self)
+ 
+     def on_lang_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['lang_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.lang_name_active = active
+     #}}}
+ 
+@@ -650,7 +651,7 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add tag: %s&quot; % e.message)
++            log.warn(&quot;Cannot add tag: %s&quot;, e.message)
+         else:
+             initialize.fill_preferences_tags_combo(self)
+             initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+@@ -660,7 +661,7 @@
+     def on_tag_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['tag_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             tag_id = self.tags_ids[active]
+             tag = session.query(db.Tag).filter_by(tag_id=tag_id).first()
+             if tag and len(tag.movietags)==0:
+@@ -669,7 +670,7 @@
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove tag: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove tag: %s&quot;, e.message)
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+                 update.update_bytag_combo_ids(self)
+@@ -693,7 +694,7 @@
+                 session.commit()
+             except Exception, e:
+                 session.rollback()
+-                log.warn(&quot;Cannot rename tag: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename tag: %s&quot;, e.message)
+             else:
+                 initialize.fill_preferences_tags_combo(self)
+                 initialize.create_tag_vbox(self, widget=self.widgets['add']['tag_vbox'], tab=self.am_tags)
+@@ -702,7 +703,7 @@
+ 
+     def on_tag_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['tag_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.tag_name_active = active
+     # }}}
+ 
+@@ -716,23 +717,23 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add tag: %s&quot; % e.message)
++            log.warn(&quot;Cannot add audio codec: %s&quot;, e.message)
+         else:
+             initialize.acodec_combos(self)
+ 
+     def on_acodec_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['acodec_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; 0:
+             acodec_id = self.acodecs_ids[active]
+             acodec = session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+-            if acodec and len(acodec.movielangs)==0:
++            if acodec and len(acodec.movielangs) == 0:
+                 session.delete(acodec)
+                 try:
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove audio codec: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove audio codec: %s&quot;, e.message)
+                 else:
+                     initialize.acodec_combos(self)
+             else:
+@@ -748,19 +749,19 @@
+         session = self.db.Session()
+         acodec_id = self.acodecs_ids[active]
+         acodec = session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+-        if acodec is not None:
++        if acodec:
+             acodec.name = self.widgets['preferences']['acodec_name'].get_active_text().decode('utf-8')
+             try:
+                 session.commit()
+             except Exception, e:
+                 session.rollback()
+-                log.warn(&quot;Cannot rename audio codec: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename audio codec: %s&quot;, e.message)
+             else:
+                 initialize.acodec_combos(self)
+ 
+     def on_acodec_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['acodec_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.acodec_name_active = active
+     # }}}
+ 
+@@ -774,14 +775,14 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add audio channel: %s&quot; % e.message)
++            log.warn(&quot;Cannot add audio channel: %s&quot;, e.message)
+         else:
+             initialize.achannel_combos(self)
+ 
+     def on_achannel_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['achannel_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; 0:
+             achannel_id = self.achannels_ids[active]
+             achannel = session.query(db.AChannel).filter_by(achannel_id=achannel_id).first()
+             if achannel and len(achannel.movielangs)==0:
+@@ -790,7 +791,7 @@
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove audio channel: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove audio channel: %s&quot;, e.message)
+                 else:
+                     initialize.achannel_combos(self)
+             else:
+@@ -812,13 +813,13 @@
+                 session.commit()
+             except Exception, e:
+                 session.rollback()
+-                log.warn(&quot;Cannot rename audio channel entry: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename audio channel entry: %s&quot;, e.message)
+             else:
+                 initialize.achannel_combos(self)
+ 
+     def on_achannel_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['achannel_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.achannel_name_active = active
+     # }}}
+ 
+@@ -832,14 +833,14 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add subtitle format entry: %s&quot; % e.message)
++            log.warn(&quot;Cannot add subtitle format entry: %s&quot;, e.message)
+         else:
+             initialize.subformat_combos(self)
+ 
+     def on_subformat_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['subformat_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; 0:
+             subformat_id = self.subformats_ids[active]
+             subformat = session.query(db.SubFormat).filter_by(subformat_id=subformat_id).first()
+             if subformat and len(subformat.movielangs)==0:
+@@ -848,7 +849,7 @@
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove subtitle format entry: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove subtitle format entry: %s&quot;, e.message)
+                 else:
+                     initialize.subformat_combos(self)
+             else:
+@@ -870,13 +871,13 @@
+                 session.commit()
+             except Exception, e:
+                 session.rollback()
+-                log.warn(&quot;Cannot rename subtitle format entry: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename subtitle format entry: %s&quot;, e.message)
+             else:
+                 initialize.subformat_combos(self)
+ 
+     def on_subformat_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['subformat_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.subformat_name_active = active
+     # }}}
+ 
+@@ -890,14 +891,14 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add medium entry: %s&quot; % e.message)
++            log.warn(&quot;Cannot add medium entry: %s&quot;, e.message)
+         else:
+             initialize.media_combos(self)
+ 
+     def on_medium_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['medium_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; 0:
+             medium_id = self.media_ids[active]
+             medium = session.query(db.Medium).filter_by(medium_id=medium_id).first()
+             if medium and len(medium.movies)==0:
+@@ -906,7 +907,7 @@
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove medium entry: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove medium entry: %s&quot;, e.message)
+                 else:
+                     initialize.media_combos(self)
+             else:
+@@ -922,19 +923,19 @@
+         session = self.db.Session()
+         medium_id = self.media_ids[active]
+         medium = session.query(db.Medium).filter_by(medium_id=medium_id).first()
+-        if medium is not None:
++        if medium:
+             medium.name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
+             try:
+                 session.commit()
+             except Exception, e:
+                 session.rollback()
+-                log.warn(&quot;Cannot rename medium entry: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename medium entry: %s&quot;, e.message)
+             else:
+                 initialize.media_combos(self)
+ 
+     def on_medium_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['medium_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.medium_name_active = active
+     # }}}
+ 
+@@ -948,14 +949,14 @@
+             session.commit()
+         except Exception, e:
+             session.rollback()
+-            log.warn(&quot;Cannot add video codec entry: %s&quot; % e.message)
++            log.warn(&quot;Cannot add video codec entry: %s&quot;, e.message)
+         else:
+             initialize.vcodec_combos(self)
+ 
+     def on_vcodec_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['vcodec_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; 0:
+             vcodec_id = self.vcodecs_ids[active]
+             vcodec = session.query(db.VCodec).filter_by(vcodec_id=vcodec_id).first()
+             if vcodec and len(vcodec.movies)==0:
+@@ -964,7 +965,7 @@
+                     session.commit()
+                 except Exception, e:
+                     session.rollback()
+-                    log.warn(&quot;Cannot remove video codec entry: %s&quot; % e.message)
++                    log.warn(&quot;Cannot remove video codec entry: %s&quot;, e.message)
+                 else:
+                     initialize.vcodec_combos(self)
+             else:
+@@ -980,19 +981,19 @@
+         session = self.db.Session()
+         vcodec_id = self.vcodecs_ids[active]
+         vcodec = session.query(db.VCodec).filter_by(vcodec_id=vcodec_id).first()
+-        if vcodec is not None:
++        if vcodec:
+             vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
+             try:
+                 session.commit()
+             except Exception, e:
+                 session.rollback()
+-                log.warn(&quot;Cannot rename video codec entry: %s&quot; % e.message)
++                log.warn(&quot;Cannot rename video codec entry: %s&quot;, e.message)
+             else:
+                 initialize.vcodec_combos(self)
+ 
+     def on_vcodec_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['vcodec_name'].get_active()
+-        if active&gt;-1:
++        if active &gt; -1:
+             self.vcodec_name_active = active
+     # }}}
+ 
+
+Modified: trunk/lib/gemail.py
+===================================================================
+--- trunk/lib/gemail.py	2008-11-11 20:49:40 UTC (rev 1033)
++++ trunk/lib/gemail.py	2008-11-11 21:22:16 UTC (rev 1034)
+@@ -78,8 +78,8 @@
+                 _(&quot;Movie loan reminder&quot;), _(&quot;Hi, %s!\n\nJust to remind you &quot; + \
+                 &quot;that I'm really needing the following movie I have loaned to you &quot; + \
+                 &quot;recently:\n\n%s (%s)\n\nLoaned on %s&quot;) \
+-                %(self.person_name, self.widgets['movie']['o_title'].get_text(), \
+-                self.widgets['movie']['title'].get_text(), self.loan_date[:10]))
++                %(self.person_name, self.widgets['movie']['o_title'].get_text().decode('utf-8'), \
++                self.widgets['movie']['title'].get_text().decode('utf-8'), self.loan_date[:10]))
+         except:
+             gutils.error(self, _(&quot;Mail could not be sent. Please check e-mail preferences.&quot;), self.widgets['window'])
+     else:
+
+Modified: trunk/lib/people.py
+===================================================================
+--- trunk/lib/people.py	2008-11-11 20:49:40 UTC (rev 1033)
++++ trunk/lib/people.py	2008-11-11 21:22:16 UTC (rev 1034)
+@@ -124,7 +124,7 @@
+     try:
+         treeselection = self.widgets['people']['treeview'].get_selection()
+         (tmp_model, tmp_iter) = treeselection.get_selected()
+-        person = tmp_model.get_value(tmp_iter,0)
++        person = tmp_model.get_value(tmp_iter,0).decode('utf-8')
+     except:
+         return
+     person = self.db.session.query(db.Person).filter_by(name=person).first()
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2008-11-11 20:49:40 UTC (rev 1033)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2008-11-11 21:22:16 UTC (rev 1034)
+@@ -469,10 +469,12 @@
+     def on_combo_style_changed(self, widget):
+         self.config['style'] = widget.get_active()
+         self.widgets['cb_custom_style'].set_active(False)
++        preview_file = None
+ 
+         tpl_id = self.config['template']
+         template_dir = os.path.join(self.locations['share'], 'export_templates', self.templates[tpl_id]['dir'])
+-        preview_file = self.templates[self.config['template']]['styles'][self.config['style']]['preview']
++        if self.config['style'] &gt; -1:
++            preview_file = self.templates[self.config['template']]['styles'][self.config['style']]['preview']
+         if preview_file is not None:
+             preview_file = os.path.join(template_dir, preview_file)
+         if preview_file is not None and not os.path.isfile(preview_file):
+@@ -620,7 +622,7 @@
+         
+         # get data from widgets
+         self.config['exported_dir'] = self.widgets['fcw'].get_filename()
+-        self.config['title']        = self.widgets['entry_header'].get_text()
++        self.config['title']        = self.widgets['entry_header'].get_text().decode('utf-8')
+         self.config['sorting']      = self.names[self.widgets['combo_sortby'].get_active_text().decode('utf-8')]
+         if self.widgets['cb_reverse'].get_active():
+             self.config['sorting2'] = 'DESC'
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2008-11-11 20:49:40 UTC (rev 1033)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2008-11-11 21:22:16 UTC (rev 1034)
+@@ -21,7 +21,8 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-from gettext import gettext as _
++import gettext
++gettext.install('griffith', unicode=1)
+ import gutils
+ import movie
+ import string
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000513.html">[Griffith-svn] r1033 - in branches/0.9.x: . lib lib/plugins/export
+</A></li>
+	<LI>Next message: <A HREF="000515.html">[Griffith-svn] r1037 - branches/0.9.x/glade branches/0.9.x/po	trunk/glade
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#514">[ date ]</a>
+              <a href="thread.html#514">[ thread ]</a>
+              <a href="subject.html#514">[ subject ]</a>
+              <a href="author.html#514">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

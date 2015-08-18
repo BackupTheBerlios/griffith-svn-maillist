@@ -1,0 +1,1985 @@
+From mikej06 at mail.berlios.de  Tue May  5 22:58:24 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Tue, 5 May 2009 22:58:24 +0200
+Subject: [Griffith-svn] r1191 - in trunk: . lib lib/plugins/movie
+Message-ID: <200905052058.n45KwOho002994@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-05 22:57:41 +0200 (Tue, 05 May 2009)
+New Revision: 1191
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+Modified:
+   trunk/ChangeLog
+   trunk/lib/test_movieplugins.py
+   trunk/winpackage.iss
+Log:
+added MovieMeter plugin
+(XML RPC based, background thread and proxy support is missing)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-04-24 13:28:55 UTC (rev 1190)
++++ trunk/ChangeLog	2009-05-05 20:57:41 UTC (rev 1191)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2009-05-05  Michael Jahn
++	* added MovieMeter plugin
++
+ 2009-04-17  Michael Jahn
+ 	* updated FilmAffinity plugin
+ 	* updated Filmtipset plugin
+
+Added: trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2009-04-24 13:28:55 UTC (rev 1190)
++++ trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2009-05-05 20:57:41 UTC (rev 1191)
+@@ -0,0 +1,216 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2009
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++import gutils, movie
++import string, re
++from xmlrpclib import ServerProxy, Error
++
++plugin_name         = 'MovieMeter'
++plugin_description  = 'de filmsite voor liefhebbers'
++plugin_url          = 'www.moviemeter.nl'
++plugin_language     = _('Dutch')
++plugin_author       = 'Michael Jahn'
++plugin_author_email = 'griffith-private at lists.berlios.de'
++plugin_version      = '1.0'
++moviemeter_api_key  = 'qs1bqrpqf89e9uht5b0q01y0xstcp3w0'
++
++class Plugin(movie.Movie):
++    server = ServerProxy('http://www.moviemeter.nl/ws')
++
++    def __init__(self, id):
++        self.encode   = 'iso8859-1'
++        self.movie_id = id
++        # only for user visible url field, fetching is based on the XML RPC API
++        self.url      = "http://www.moviemeter.nl/film/%s" % str(self.movie_id)
++
++    def open_page(self, parent_window=None, url=None):
++        self.result_array = None
++        if parent_window is not None:
++            self.parent_window = parent_window
++        self.progress.set_data(parent_window, _("Fetching data"), _("Wait a moment"), False)
++        self.progress.pulse()
++        sessionkey = None
++        result = self.server.api.startSession(moviemeter_api_key)
++        self.progress.pulse()
++        try:
++            sessionkey = result['session_key']
++            self.result_array = self.server.film.retrieveDetails(sessionkey, int(self.movie_id))
++            #self.imdb_result_array = self.server.film.retrieveImdb(sessionkey, int(self.movie_id))
++            self.progress.pulse()
++        finally:
++            if sessionkey:
++                self.server.api.closeSession(sessionkey)
++            self.progress.pulse()
++        return True
++
++    def get_image(self):
++        self.image_url = self.result_array['thumbnail']
++
++    def get_o_title(self):
++        self.o_title = self.result_array['title']
++
++    def get_title(self):
++        self.title = self.result_array['title']
++
++    def get_director(self):
++        self.director = ''
++        for element in self.result_array['directors']:
++            self.director = self.director + element['name'] + ', '
++        self.director = re.sub(', $', '', self.director)
++
++    def get_plot(self):
++        self.plot = self.result_array['plot']
++
++    def get_year(self):
++        self.year = self.result_array['year']
++
++    def get_runtime(self):
++        self.runtime = self.result_array['duration']
++
++    def get_genre(self):
++        self.genre = string.join(self.result_array['genres'], ', ')
++
++    def get_cast(self):
++        self.cast = ''
++        for element in self.result_array['actors']:
++            self.cast = self.cast + element['name'] + '\n'
++
++    def get_classification(self):
++        self.classification = ''
++
++    def get_studio(self):
++        self.studio = ''
++
++    def get_o_site(self):
++        self.o_site = ''
++
++    def get_site(self):
++        self.site = self.result_array['url']
++
++    def get_trailer(self):
++        self.trailer = ''
++
++    def get_country(self):
++        self.country = self.result_array['countries_text']
++
++    def get_rating(self):
++        try:
++            self.rating = round(float(self.result_array['average']) * 2.0)
++        except:
++            self.rating = 0
++
++    def get_notes(self):
++        self.notes = ''
++        if len(self.result_array['alternative_titles']):
++            self.notes = self.notes + 'Alternatieve titel:\n'
++            for element in self.result_array['alternative_titles']:
++                self.notes = self.notes + element['title'] + '\n'
++
++class SearchPlugin(movie.SearchMovie):
++    server = ServerProxy('http://www.moviemeter.nl/ws')
++
++    def __init__(self):
++        self.original_url_search   = 'http://www.moviemeter.nl/film/search/'
++        self.translated_url_search = 'http://www.moviemeter.nl/film/search/'
++        self.encode                = 'iso8859-1'
++
++    def search(self,parent_window):
++        self.result_array = None
++        if not self.open_search(parent_window):
++            return None
++        if self.result_array:
++            return 'dummy'
++        return None
++
++    def open_search(self, parent_window):
++        self.titles = [""]
++        self.ids = [""]
++        if parent_window is not None:
++            self.parent_window = parent_window
++        self.progress.set_data(parent_window, _("Searching"), _("Wait a moment"), False)
++        self.progress.pulse()
++        sessionkey = None
++        result = self.server.api.startSession(moviemeter_api_key)
++        self.progress.pulse()
++        try:
++            sessionkey = result['session_key']
++            self.result_array = self.server.film.search(sessionkey, self.title)
++            self.progress.pulse()
++        finally:
++            if sessionkey:
++                self.server.api.closeSession(sessionkey)
++            self.progress.pulse()
++        return True
++
++    def get_searches(self):
++        for element in self.result_array:
++            self.ids.append(element['filmId'])
++            if element['alternative_title']:
++                self.titles.append(element['title'] + ' (' + element['year'] + '; ' + element['alternative_title'] + ')')
++            else:
++                self.titles.append(element['title'] + ' (' + element['year'] + ')')
++
++#
++# Plugin Test
++#
++class SearchPluginTest(SearchPlugin):
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
++    #
++    test_configuration = {
++        'Rocky Balboa'         : [ 1, 1 ],
++    }
++
++class PluginTest:
++    #
++    # Configuration for automated tests:
++    # dict { movie_id -> dict { arribute -> value } }
++    #
++    # value: * True/False if attribute only should be tested for any value
++    #        * or the expected value
++    #
++    test_configuration = {
++        '1017' : { 
++            'title'             : 'Rocky II',
++            'o_title'           : 'Rocky II',
++            'director'          : 'Sylvester Stallone',
++            'plot'              : True,
++            'cast'              : 'Sylvester Stallone\n\
++Talia Shire\n\
++Carl Weathers',
++            'country'           : 'Verenigde Staten',
++            'genre'             : 'Actie, Drama',
++            'classification'    : False,
++            'studio'            : False,
++            'o_site'            : False,
++            'site'              : 'http://www.moviemeter.nl/film/1017/',
++            'trailer'           : False,
++            'year'              : 1979,
++            'notes'             : 'Alternatieve titel:\n\
++De Uitdager',
++            'runtime'           : 119,
++            'image'             : True,
++            'rating'            : 6
++        },
++    }
+
+Modified: trunk/lib/test_movieplugins.py
+===================================================================
+--- trunk/lib/test_movieplugins.py	2009-04-24 13:28:55 UTC (rev 1190)
++++ trunk/lib/test_movieplugins.py	2009-05-05 20:57:41 UTC (rev 1191)
+@@ -82,6 +82,7 @@
+         'PluginMovieIMDB',
+         'PluginMovieIMDB-de',
+         'PluginMovieKinoDe',
++        'PluginMovieMovieMeter',
+         'PluginMovieOFDb',
+         'PluginMovieZelluloid',
+     ]
+
+Modified: trunk/winpackage.iss
+===================================================================
+--- trunk/winpackage.iss	2009-04-24 13:28:55 UTC (rev 1190)
++++ trunk/winpackage.iss	2009-05-05 20:57:41 UTC (rev 1191)
+@@ -103,6 +103,7 @@
+ Source: dist\lib\plugins\movie\PluginMovieKinoDe.py;        DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\German\Kinode
+ Source: dist\lib\plugins\movie\PluginMovieMediadis.py;      DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\Mediadis
+ Source: dist\lib\plugins\movie\PluginMovieMoviefone.py;     DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\English\Moviefone
++Source: dist\lib\plugins\movie\PluginMovieMovieMeter.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Dutch\MovieMeter
+ Source: dist\lib\plugins\movie\PluginMovieMyMoviesIt.py;    DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Italian\MyMoviesIt
+ Source: dist\lib\plugins\movie\PluginMovieOFDb.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\German\OFDb
+ Source: dist\lib\plugins\movie\PluginMovieOnet.py;          DestDir: {app}\lib\plugins\movie; Flags: ignoreversion; Components: Movie_Import_Plugins\Polish\Onet
+@@ -154,6 +155,9 @@
+ Name: Movie_Import_Plugins\English\Mediadis;         Description: Mediadis / www.mediadis.com; Types: full
+ Name: Movie_Import_Plugins\English\Moviefone;        Description: Moviefone / www.moviefone.com; Types: full
+ 
++Name: Movie_Import_Plugins\Dutch;                    Description: Dutch Import Plugins; Types: full
++Name: Movie_Import_Plugins\Dutch\MovieMeter;         Description: MovieMeter / www.moviemeter.nl; Types: full
++
+ Name: Movie_Import_Plugins\Czech;                    Description: Czech Import Plugins; Types: full
+ Name: Movie_Import_Plugins\Czech\CSFD;               Description: CSFD / www.csfd.cz; Types: full
+ 
+
+
+
+From mikej06 at mail.berlios.de  Sun May 10 21:37:18 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 10 May 2009 21:37:18 +0200
+Subject: [Griffith-svn] r1192 - in branches/0.9.x: . lib lib/plugins/movie
+Message-ID: <200905101937.n4AJbI3A021624@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-10 21:36:19 +0200 (Sun, 10 May 2009)
+New Revision: 1192
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/NEWS
+   branches/0.9.x/README
+   branches/0.9.x/lib/plugins/movie/PluginMovieFDb.py
+   branches/0.9.x/lib/version.py
+   branches/0.9.x/winpackage.iss
+   branches/0.9.x/winsetup.py
+Log:
+* sync FDb movie plugin with trunk
+* NEWS updated
+* version changed to 0.9.10
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/ChangeLog	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -5,6 +5,13 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O?arowski
+ 
+ 
++---- 0.9.10 ----
++
++2009-05-10  Michael Jahn
++	* sync FDb movie plugin with trunk
++	* NEWS updated
++	* version changed to 0.9.10
++
+ 2009-04-17  Michael Jahn
+ 	* updated FilmAffinity plugin
+ 	* updated Filmtipset plugin
+
+Modified: branches/0.9.x/NEWS
+===================================================================
+--- branches/0.9.x/NEWS	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/NEWS	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -1,3 +1,17 @@
++Griffith 0.9.10
++===============
++* New movie plugins: AllMovie, MyMoviesIt (thanks to Giovanni Sposito)
++* Updated movie plugins: 7arte, Allocine, Amazon, AniDB, Cinematografo, CineMovies, Cineteka, Culturalia,
++  DVD Empire, DVD-Palace, E-Pipoca, FilmAffinity, FilmDb, Filmtipset, IMDB, IMDB-de, MovieFone, PTGate
++* added HD DVD and Blu-ray to the medium table for new databases
++* fixed Greek translation of the word "Danish" (thanks to Johnny)
++  (new installations of griffith with greek environment doesn't work)
++* Updated PDF export plugin
++* enhanced results for amazon poster search
++* bugs fixed: #224546, #269907, #290979, #313012, #317837, #337758, #341826, #348226 (see ChangeLog for more)
++* windows installer: movie import plugins deselectable from installation
++
++
+ Griffith 0.9.9
+ ==============
+ * Updated movie plugins: CSFD, Cinematografo, FDb, Filmweb IMDB-de, IMDb, OFDb, Onet, Stopklatka
+
+Modified: branches/0.9.x/README
+===================================================================
+--- branches/0.9.x/README	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/README	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -1,5 +1,5 @@
+-Griffith 0.9.9 README
+-=====================
++Griffith 0.9.10 README
++======================
+ 
+ This document was last updated on Thu Sep 02 2007.
+ Please see the file COPYING for licensing and warranty information.
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFDb.py	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFDb.py	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -32,7 +32,7 @@
+ plugin_language        = _('Polish')
+ plugin_author        = 'Piotr O?arowski, Bartosz Kurczewski'
+ plugin_author_email    = '<bartosz.kurczewski at gmail.com>'
+-plugin_version        = '1.12'
++plugin_version        = '1.14'
+ 
+ class Plugin(movie.Movie):
+     TRAILER_PATTERN = re.compile('/film/.*/zwiastuny/odtwarzaj/[0-9]*')
+@@ -47,13 +47,13 @@
+             self.url = "http://fdb.pl/%s" % str(movie_id)
+ 
+     def get_image(self):
+-        self.image_url = gutils.trim(self.page, 'class="poster"', '/></a>')
++        self.image_url = gutils.trim(self.page, 'class="gfx-poster"', '/></a>')
+         self.image_url = gutils.trim(self.image_url,'src="','"')
+         if self.image_url.endswith('http://fdb.pl/images/fdb2/add_poster.png?1214306282'):
+             self.image_url = ''
+ 
+     def get_o_title(self):
+-        self.o_title = gutils.trim(self.page, '<h2 class="title">', '</h2>')
++        self.o_title = gutils.trim(self.page, '<h2 class="after-title">', '</h2>')
+         self.o_title = gutils.strip_tags(self.o_title)
+         if self.o_title == '':
+             self.o_title = self.get_title(True)
+
+Modified: branches/0.9.x/lib/version.py
+===================================================================
+--- branches/0.9.x/lib/version.py	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/lib/version.py	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2008 Vasco Nunes, Piotr O?arowski
++# Copyright (c) 2005-2009 Vasco Nunes, Piotr O?arowski
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname        = "Griffith"
+-pversion     = "0.9.9"
++pversion     = "0.9.10"
+ pauthor      = "Vasco Nunes, Piotr O?arowski <griffith-private at lists.berlios.de>"
+ pyear        = "2005-2008"
+ pwebsite     = "http://www.griffith.cc/"
+
+Modified: branches/0.9.x/winpackage.iss
+===================================================================
+--- branches/0.9.x/winpackage.iss	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/winpackage.iss	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -3,7 +3,7 @@
+ 
+ [Setup]
+ AppName=Griffith
+-AppVerName=Griffith 0.9.9
++AppVerName=Griffith 0.9.10
+ AppPublisher=Vasco Nunes, Piotr O?arowski
+ AppPublisherURL=http://griffith.cc/
+ AppSupportURL=http://griffith.cc/
+@@ -14,7 +14,7 @@
+ LicenseFile=COPYING
+ InfoAfterFile=README
+ OutputDir=installer
+-OutputBaseFilename=griffith-0.9.9-win32
++OutputBaseFilename=griffith-0.9.10-win32
+ SetupIconFile=images\griffith.ico
+ Compression=lzma
+ SolidCompression=true
+@@ -22,8 +22,8 @@
+ InternalCompressLevel=ultra
+ AppCopyright=Vasco Nunes/Piotr Ozarowski
+ DisableStartupPrompt=false
+-AppVersion=0.9.9
+-VersionInfoVersion=0.9.9
++AppVersion=0.9.10
++VersionInfoVersion=0.9.10
+ 
+ [Languages]
+ Name: eng; MessagesFile: compiler:Default.isl
+
+Modified: branches/0.9.x/winsetup.py
+===================================================================
+--- branches/0.9.x/winsetup.py	2009-05-05 20:57:41 UTC (rev 1191)
++++ branches/0.9.x/winsetup.py	2009-05-10 19:36:19 UTC (rev 1192)
+@@ -3,7 +3,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2005-2007 Vasco Nunes
++# Copyright (c) 2005-2009 Vasco Nunes
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+@@ -54,7 +54,7 @@
+ 
+ setup(
+     name = "Griffith",
+-    version = "0.9.9",
++    version = "0.9.10",
+ 	description = 'Griffith - A film manager',
+     author = 'Vasco Nunes/Piotr Ozarowski',
+     author_email = 'griffith at griffith.cc',
+
+
+
+From piotrek at mail.berlios.de  Sun May 10 21:41:38 2009
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 10 May 2009 21:41:38 +0200
+Subject: [Griffith-svn] r1193 - in branches/0.9.x: . lib/plugins/movie
+Message-ID: <200905101941.n4AJfc7n022353@sheep.berlios.de>
+
+Author: piotrek
+Date: 2009-05-10 21:41:38 +0200 (Sun, 10 May 2009)
+New Revision: 1193
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+fix encoding declaration
+
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-10 19:36:19 UTC (rev 1192)
++++ branches/0.9.x/ChangeLog	2009-05-10 19:41:38 UTC (rev 1193)
+@@ -26,7 +26,7 @@
+ 	* updated CineMovies plugin
+ 	* updated Cineteka plugin
+ 	* updated FilmDb plugin
+-	
++
+ 2009-04-08  Michael Jahn
+ 	* added AllMovie plugin
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-10 19:36:19 UTC (rev 1192)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-10 19:41:38 UTC (rev 1193)
+@@ -1,4 +1,4 @@
+-# -*- coding: iso8859-1 -*-
++# -*- coding: utf-8 -*-
+ 
+ __revision__ = '$Id: PluginMovieFilmAffinity.py 389 2006-07-29 18:43:35Z piotrek $'
+ 
+
+
+
+From piotrek at mail.berlios.de  Sun May 10 22:21:03 2009
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 10 May 2009 22:21:03 +0200
+Subject: [Griffith-svn] r1195 - branches/0.9.x/lib/plugins/movie
+Message-ID: <200905102021.n4AKL309028688@sheep.berlios.de>
+
+Author: piotrek
+Date: 2009-05-10 22:21:01 +0200 (Sun, 10 May 2009)
+New Revision: 1195
+
+Modified:
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+fix the declaration once again
+
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-10 19:42:05 UTC (rev 1194)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-10 20:21:01 UTC (rev 1195)
+@@ -1,4 +1,4 @@
+-# -*- coding: utf-8 -*-
++# -*- coding: iso-8859-1 -*-
+ 
+ __revision__ = '$Id: PluginMovieFilmAffinity.py 389 2006-07-29 18:43:35Z piotrek $'
+ 
+
+
+
+From piotrek at mail.berlios.de  Sun May 10 22:49:08 2009
+From: piotrek at mail.berlios.de (piotrek at BerliOS)
+Date: Sun, 10 May 2009 22:49:08 +0200
+Subject: [Griffith-svn] r1196 - branches/0.9.x/debian
+Message-ID: <200905102049.n4AKn8TM001082@sheep.berlios.de>
+
+Author: piotrek
+Date: 2009-05-10 22:49:07 +0200 (Sun, 10 May 2009)
+New Revision: 1196
+
+Added:
+   branches/0.9.x/debian/preinst
+Modified:
+   branches/0.9.x/debian/changelog
+   branches/0.9.x/debian/control
+   branches/0.9.x/debian/copyright
+   branches/0.9.x/debian/rules
+Log:
+update Debian files
+ - New upstream release
+ - Convert to python-support
+   + add preinst maintainer script to clean after pycentral
+ - Add docbook2x to Build-Depend-Indep
+ - Bump Standards-Version to 3.8.1 (no changes needed)
+
+
+Modified: branches/0.9.x/debian/changelog
+===================================================================
+--- branches/0.9.x/debian/changelog	2009-05-10 20:21:01 UTC (rev 1195)
++++ branches/0.9.x/debian/changelog	2009-05-10 20:49:07 UTC (rev 1196)
+@@ -1,3 +1,13 @@
++griffith (0.9.10-1) unstable; urgency=low
++
++  * New upstream release
++  * Convert to python-support
++    + add preinst maintainer script to clean after pycentral
++  * Add docbook2x to Build-Depend-Indep
++  * Bump Standards-Version to 3.8.1 (no changes needed)
++
++ -- Piotr O?arowski <piotr at debian.org>  Sun, 10 May 2009 21:43:22 +0200
++
+ griffith (0.9.9-1) unstable; urgency=low
+ 
+   * New upstream release
+
+Modified: branches/0.9.x/debian/control
+===================================================================
+--- branches/0.9.x/debian/control	2009-05-10 20:21:01 UTC (rev 1195)
++++ branches/0.9.x/debian/control	2009-05-10 20:49:07 UTC (rev 1196)
+@@ -3,8 +3,8 @@
+ Priority: optional
+ Maintainer: Piotr O?arowski <piotr at debian.org>
+ Build-Depends: debhelper (>= 5)
+-Build-Depends-Indep: python (>= 2.3.5-11), python-central (>= 0.5.6)
+-Standards-Version: 3.8.0
++Build-Depends-Indep: python (>= 2.3.5-11), python-support (>= 0.6.4), docbook2x
++Standards-Version: 3.8.1
+ XS-Python-Version: >=2.3
+ Vcs-Svn: svn://svn.berlios.de/griffith/trunk/debian
+ Vcs-Browser: http://svn.berlios.de/wsvn/griffith/debian/?sc=1
+@@ -12,11 +12,17 @@
+ 
+ Package: griffith
+ Architecture: all
+-Depends: ${python:Depends}, python-gtk2 (>= 2.8.6-1), python-glade2 (>= 2.8.6-1),
++Depends: ${python:Depends},
++ python-gtk2 (>= 2.8.6-1),
++ python-glade2 (>= 2.8.6-1),
+  python (>= 2.5) | python-pysqlite2 (>= 2.3.0-1),
+- python-reportlab (>= 1.20debian-6), python-imaging (>= 1.1.5-6)
+-Recommends: python-gnome2-extras (>= 2.14.0-1), python-chardet,
+- python-psycopg2 (>= 1.1.21-6), python-mysqldb (>= 1.2.1-p2-2), python-sqlite
++ python-reportlab (>= 1.20debian-6),
++ python-imaging (>= 1.1.5-6)
++Recommends: python-gnome2-extras (>= 2.14.0-1),
++ python-chardet,
++ python-psycopg2 (>= 1.1.21-6),
++ python-mysqldb (>= 1.2.1-p2-2),
++ python-sqlite
+ Suggests: griffith-extra-artwork (>= 0.9)
+ XB-Python-Version: ${python:Versions}
+ Description: film collection manager
+
+Modified: branches/0.9.x/debian/copyright
+===================================================================
+--- branches/0.9.x/debian/copyright	2009-05-10 20:21:01 UTC (rev 1195)
++++ branches/0.9.x/debian/copyright	2009-05-10 20:49:07 UTC (rev 1196)
+@@ -8,7 +8,7 @@
+ 
+ License:
+ 
+- Copyright (c) 2005-2008 Vasco Nunes, Piotr O?arowski
++ Copyright ? 2005-2009 Vasco Nunes, Piotr O?arowski
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+@@ -66,5 +66,5 @@
+ 
+ ----------------------------------------------------------------
+ 
+-The Debian packaging is (C) 2005-2008, Piotr O?arowski <piotr at debian.org> and
++The Debian packaging is ? 2005-2009, Piotr O?arowski <piotr at debian.org> and
+ is licensed under the GPL.
+
+Added: branches/0.9.x/debian/preinst
+===================================================================
+--- branches/0.9.x/debian/preinst	2009-05-10 20:21:01 UTC (rev 1195)
++++ branches/0.9.x/debian/preinst	2009-05-10 20:49:07 UTC (rev 1196)
+@@ -0,0 +1,10 @@
++#!/bin/sh
++# TODO: remove this file after releasing Squeeze
++set -e
++if [ "$1" = upgrade ] && dpkg --compare-versions "$2" lt 0.9.10-1
++then
++	pycentral pkgremove griffith || true
++	rm -rf /usr/share/griffith/lib
++fi
++
++#DEBHELPER#
+
+Modified: branches/0.9.x/debian/rules
+===================================================================
+--- branches/0.9.x/debian/rules	2009-05-10 20:21:01 UTC (rev 1195)
++++ branches/0.9.x/debian/rules	2009-05-10 20:49:07 UTC (rev 1196)
+@@ -25,7 +25,7 @@
+ 	dh_link usr/share/griffith/lib/griffith /usr/bin/griffith
+ 	dh_compress -i
+ 	dh_fixperms -i
+-	dh_pycentral -i
++	dh_pysupport -i
+ 	dh_installdeb -i
+ 	dh_gencontrol -i
+ 	dh_md5sums -i
+
+
+
+From mikej06 at mail.berlios.de  Mon May 11 10:41:49 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 11 May 2009 10:41:49 +0200
+Subject: [Griffith-svn] r1197 - tags
+Message-ID: <200905110841.n4B8fnN9003579@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-11 10:41:34 +0200 (Mon, 11 May 2009)
+New Revision: 1197
+
+Added:
+   tags/0.9.10/
+Log:
+tagging 0.9.10
+
+Copied: tags/0.9.10 (from rev 1196, branches/0.9.x)
+
+
+
+From mikej06 at mail.berlios.de  Mon May 11 14:40:24 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 11 May 2009 14:40:24 +0200
+Subject: [Griffith-svn] r1198 - extra_artwork/images
+Message-ID: <200905111240.n4BCeOmN021982@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-11 14:40:02 +0200 (Mon, 11 May 2009)
+New Revision: 1198
+
+Added:
+   extra_artwork/images/PluginMovieAllMovie.png
+   extra_artwork/images/PluginMovieMyMoviesIt.png
+Log:
+added image for allmovie and mymoviesit plugin
+
+Added: extra_artwork/images/PluginMovieAllMovie.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: extra_artwork/images/PluginMovieAllMovie.png
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+Added: extra_artwork/images/PluginMovieMyMoviesIt.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: extra_artwork/images/PluginMovieMyMoviesIt.png
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+
+
+From mikej06 at mail.berlios.de  Sun May 17 22:52:26 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 17 May 2009 22:52:26 +0200
+Subject: [Griffith-svn] r1199 - trunk/lib/plugins/movie
+Message-ID: <200905172052.n4HKqQdp029035@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-17 22:52:13 +0200 (Sun, 17 May 2009)
+New Revision: 1199
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+[#377417] URL contains non-ASCII characters
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-05-11 12:40:02 UTC (rev 1198)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-05-17 20:52:13 UTC (rev 1199)
+@@ -54,7 +54,7 @@
+     def get_plot(self):
+         storyid = gutils.regextrim(self.page, '<a href="plot/', '(">|[&])')
+         if not storyid is None:
+-            story_page = self.open_page(url="http://www.ofdb.de/plot/%s" % (storyid))
++            story_page = self.open_page(url="http://www.ofdb.de/plot/%s" % (storyid.encode('utf8')))
+         self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+     def get_year(self):
+
+
+
+From mikej06 at mail.berlios.de  Sun May 24 21:34:24 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 24 May 2009 21:34:24 +0200
+Subject: [Griffith-svn] r1200 - branches/0.9.x
+	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+Message-ID: <200905241934.n4OJYOr9000169@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-24 21:33:48 +0200 (Sun, 24 May 2009)
+New Revision: 1200
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+Log:
+updated FilmAffinity plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-17 20:52:13 UTC (rev 1199)
++++ branches/0.9.x/ChangeLog	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -5,6 +5,12 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2009-05-24  Michael Jahn
++	* updated FilmAffinity plugin
++
++2009-05-18  Michael Jahn
++	* [#377417] URL contains non-ASCII characters
++
+ ---- 0.9.10 ----
+ 
+ 2009-05-10  Michael Jahn
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-17 20:52:13 UTC (rev 1199)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Spanish')
+ plugin_author       = 'Pedro D. S?nchez'
+ plugin_author_email = '<pedrodav at gmail.com>'
+-plugin_version      = '0.3'
++plugin_version      = '0.4'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -39,6 +39,10 @@
+ 		self.movie_id = id
+ 		self.url      = "http://www.filmaffinity.com/es/film%s.html" % str(self.movie_id)
+ 
++	def initialize(self):
++		self.page = self.page.replace('\x91', '\'')
++		self.page = self.page.replace('\x92', '\'')
++
+ 	def get_image(self):
+ 		tmp = string.find(self.page, 'www.filmaffinity.com/imgs/movies/')
+ 		if tmp == -1:
+@@ -59,15 +63,11 @@
+ 		self.director = gutils.trim(self.page,'<b>DIRECTOR</b></td>', '</td>')
+ 
+ 	def get_plot(self):
+-		self.plot = gutils.trim(self.page, '<b>G?NERO Y CR?TICA</b>', '<br />')
++		self.plot = gutils.trim(self.page, '<b>G?NERO Y CR?TICA</b>', '</tr>')
+ 		if self.plot == '':
+-			self.plot = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '<br />')
++			self.plot = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '</tr>')
+ 		self.plot = gutils.after(self.plot, '<td valign="top">')
+-		self.plot = gutils.after(self.plot, '/')
+-		self.plot = string.replace(self.plot, ' SINOPSIS: ', '')
+-		self.plot = string.replace(self.plot, ' SINOPSIS:', '')
+-		self.plot = string.replace(self.plot, 'SINOPSIS: ', '')
+-		self.plot = string.replace(self.plot, 'SINOPSIS:', '')
++		self.plot = gutils.after(self.plot, 'SINOPSIS:')
+ 		self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+ 		self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+@@ -82,11 +82,14 @@
+ 		self.runtime = gutils.after(self.runtime[-10:], '<td>')
+ 
+ 	def get_genre(self):
+-		self.genre = gutils.trim(self.page, '<b>G?NERO Y CR?TICA</b>', '<br />')
+-		if self.genre == '':
+-			self.genre = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '<br />')
+-		self.genre = gutils.trim(self.genre, '<td valign="top">', '/')
+-		self.genre = string.replace(self.genre, '.', " /")
++		self.genre = ''
++		tmp = gutils.trim(self.page, '<b>G?NERO Y CR?TICA</b>', ' / SINOPSIS')
++		if tmp == '':
++			tmp = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', ' / SINOPSIS')
++		tmp = gutils.after(tmp, '<td valign="top">')
++		if tmp:
++			tmp = tmp.split(' / ')
++			self.genre = tmp[len(tmp) - 1]
+ 
+ 	def get_cast(self):
+ 		self.cast = ''
+@@ -199,7 +202,7 @@
+ Geraldine Hughes\n\
+ Mike Tyson',
+ 			'country'             : 'Estados Unidos',
+-			'genre'               : u'Acci?n / Drama / Deporte (Boxeo)',
++			'genre'               : u'Acci?n. Drama. Deporte (Boxeo)',
+ 			'classification'      : False,
+ 			'studio'              : 'MGM / UA / Columbia Pictures / Revolution Studios',
+ 			'o_site'              : 'http://www.rockythemovie.com',
+@@ -211,4 +214,75 @@
+ 			'image'               : True,
+ 			'rating'              : 6
+ 		},
++		'373499' : { 
++			'title'               : 'Camino',
++			'o_title'             : 'Camino',
++			'director'            : 'Javier Fesser',
++			'plot'                : True,
++			'cast'                : u'Nerea Camacho\n\
++Carmen El?as\n\
++Mariano Venancio\n\
++Manuela Vell?s\n\
++Ana Gracia\n\
++Lola Casamayor\n\
++Lucas Manzano\n\
++Pepe Ocio\n\
++Claudia Otero\n\
++Jordi Dauder\n\
++Emilio Gavira\n\
++Miriam Raya',
++			'country'             : u'Espa?a',
++			'genre'               : u'Drama. Enfermedad. Religi?n. Basado en hechos reales',
++			'classification'      : False,
++			'studio'              : u'Pel?culas Pendelton / Mediapro',
++			'o_site'              : 'http://www.caminolapelicula.com/',
++			'site'                : 'http://www.filmaffinity.com/es/film373499.html',
++			'trailer'             : False,
++			'year'                : 2008,
++			'notes'               : False,
++			'runtime'             : 143,
++			'image'               : True,
++			'rating'              : 7
++		},
++		'580875' : { 
++			'title'               : 'El gato negro (Masters of Horror Series)',
++			'o_title'             : 'Black Cat (Masters of Horror Series), The',
++			'director'            : 'Stuart Gordon',
++			'plot'                : True,
++			'cast'                : 'Jeffrey Combs\n\
++Patrick Gallagher\n\
++Eric Keenleyside\n\
++Christopher Heyerdahl',
++			'country'             : 'Estados Unidos',
++			'genre'               : 'Terror',
++			'classification'      : False,
++			'studio'              : 'Emitida por la cadena Showtime',
++			'o_site'              : False,
++			'site'                : 'http://www.filmaffinity.com/es/film580875.html',
++			'trailer'             : False,
++			'year'                : 2007,
++			'notes'               : False,
++			'runtime'             : 59,
++			'image'               : True,
++			'rating'              : 6
++		},
++		'826399' : { 
++			'title'               : 'Surcadores del cielo (The Sky Crawlers)',
++			'o_title'             : 'Sukai kurora (The Sky Crawlers)',
++			'director'            : 'Mamoru Oshii',
++			'plot'                : True,
++			'cast'                : 'Animation',
++			'country'             : u'Jap?n',
++			'genre'               : u'Animaci?n. Aventuras',
++			'classification'      : False,
++			'studio'              : 'Production I.G. / Nippon Television Network Corporation (NTV)',
++			'o_site'              : 'http://sky.crawlers.jp/',
++			'site'                : 'http://www.filmaffinity.com/es/film826399.html',
++			'trailer'             : False,
++			'year'                : 2008,
++			'notes'               : False,
++			'runtime'             : 0,
++			'image'               : True,
++			'rating'              : 6
++		},
+ 	}
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-17 20:52:13 UTC (rev 1199)
++++ trunk/ChangeLog	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -5,6 +5,12 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O??arowski
+ 
+ 
++2009-05-24  Michael Jahn
++	* updated FilmAffinity plugin
++
++2009-05-18  Michael Jahn
++	* [#377417] URL contains non-ASCII characters
++
+ 2009-05-05  Michael Jahn
+ 	* added MovieMeter plugin
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-17 20:52:13 UTC (rev 1199)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2009-05-24 19:33:48 UTC (rev 1200)
+@@ -31,7 +31,7 @@
+ plugin_language     = _('Spanish')
+ plugin_author       = 'Pedro D. S?nchez'
+ plugin_author_email = '<pedrodav at gmail.com>'
+-plugin_version      = '0.3'
++plugin_version      = '0.4'
+ 
+ class Plugin(movie.Movie):
+     def __init__(self, id):
+@@ -39,6 +39,10 @@
+         self.movie_id = id
+         self.url      = "http://www.filmaffinity.com/es/film%s.html" % str(self.movie_id)
+ 
++    def initialize(self):
++        self.page = self.page.replace(u'\x91', '\'')
++        self.page = self.page.replace(u'\x92', '\'')
++
+     def get_image(self):
+         tmp = string.find(self.page, 'www.filmaffinity.com/imgs/movies/')
+         if tmp == -1:
+@@ -59,15 +63,11 @@
+         self.director = gutils.trim(self.page,'<b>DIRECTOR</b></td>', '</td>')
+ 
+     def get_plot(self):
+-        self.plot = gutils.trim(self.page, u'<b>G?NERO Y CR?TICA</b>', '<br />')
++        self.plot = gutils.trim(self.page, u'<b>G?NERO Y CR?TICA</b>', '</tr>')
+         if self.plot == '':
+-            self.plot = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '<br />')
++            self.plot = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '</tr>')
+         self.plot = gutils.after(self.plot, '<td valign="top">')
+-        self.plot = gutils.after(self.plot, '/')
+-        self.plot = string.replace(self.plot, ' SINOPSIS: ', '')
+-        self.plot = string.replace(self.plot, ' SINOPSIS:', '')
+-        self.plot = string.replace(self.plot, 'SINOPSIS: ', '')
+-        self.plot = string.replace(self.plot, 'SINOPSIS:', '')
++        self.plot = gutils.after(self.plot, 'SINOPSIS:')
+         self.plot = string.replace(self.plot, ' (FILMAFFINITY)', '')
+         self.plot = string.replace(self.plot, '(FILMAFFINITY)', '')
+ 
+@@ -82,11 +82,14 @@
+         self.runtime = gutils.after(self.runtime[-10:], '<td>')
+ 
+     def get_genre(self):
+-        self.genre = gutils.trim(self.page, u'<b>G?NERO Y CR?TICA</b>', '<br />')
+-        if self.genre == '':
+-            self.genre = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', '<br />')
+-        self.genre = gutils.trim(self.genre, '<td valign="top">', '/')
+-        self.genre = string.replace(self.genre, '.', " /")
++        self.genre = ''
++        tmp = gutils.trim(self.page, u'<b>G?NERO Y CR?TICA</b>', ' / SINOPSIS')
++        if tmp == '':
++            tmp = gutils.trim(self.page, '<b>G&Eacute;NERO Y CR&Iacute;TICA</b>', ' / SINOPSIS')
++        tmp = gutils.after(tmp, '<td valign="top">')
++        if tmp:
++            tmp = tmp.split(' / ')
++            self.genre = tmp[len(tmp) - 1]
+ 
+     def get_cast(self):
+         self.cast = ''
+@@ -194,7 +197,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        '706925' : { 
++        '706925' : {
+             'title'               : 'Rocky Balboa (Rocky VI)',
+             'o_title'             : 'Rocky Balboa (Rocky VI)',
+             'director'            : 'Sylvester Stallone',
+@@ -210,7 +213,7 @@
+ Geraldine Hughes\n\
+ Mike Tyson',
+             'country'             : 'Estados Unidos',
+-            'genre'               : u'Acci?n / Drama / Deporte (Boxeo)',
++            'genre'               : u'Acci?n. Drama. Deporte (Boxeo)',
+             'classification'      : False,
+             'studio'              : 'MGM / UA / Columbia Pictures / Revolution Studios',
+             'o_site'              : 'http://www.rockythemovie.com',
+@@ -225,4 +228,84 @@
+             'screenplay'          : 'Sylvester Stallone (Personajes: Sylvester Stallone)',
+             'barcode'             : False
+         },
++        '373499' : { 
++            'title'               : 'Camino',
++            'o_title'             : 'Camino',
++            'director'            : 'Javier Fesser',
++            'plot'                : True,
++            'cast'                : u'Nerea Camacho\n\
++Carmen El?as\n\
++Mariano Venancio\n\
++Manuela Vell?s\n\
++Ana Gracia\n\
++Lola Casamayor\n\
++Lucas Manzano\n\
++Pepe Ocio\n\
++Claudia Otero\n\
++Jordi Dauder\n\
++Emilio Gavira\n\
++Miriam Raya',
++            'country'             : u'Espa?a',
++            'genre'               : u'Drama. Enfermedad. Religi?n. Basado en hechos reales',
++            'classification'      : False,
++            'studio'              : u'Pel?culas Pendelton / Mediapro',
++            'o_site'              : 'http://www.caminolapelicula.com/',
++            'site'                : 'http://www.filmaffinity.com/es/film373499.html',
++            'trailer'             : False,
++            'year'                : 2008,
++            'notes'               : False,
++            'runtime'             : 143,
++            'image'               : True,
++            'rating'              : 7,
++            'cameraman'           : u'Alex Catal?n',
++            'screenplay'          : 'Javier Fesser',
++            'barcode'             : False
++        },
++        '580875' : { 
++            'title'               : 'El gato negro (Masters of Horror Series)',
++            'o_title'             : 'Black Cat (Masters of Horror Series), The',
++            'director'            : 'Stuart Gordon',
++            'plot'                : True,
++            'cast'                : 'Jeffrey Combs\n\
++Patrick Gallagher\n\
++Eric Keenleyside\n\
++Christopher Heyerdahl',
++            'country'             : 'Estados Unidos',
++            'genre'               : 'Terror',
++            'classification'      : False,
++            'studio'              : 'Emitida por la cadena Showtime',
++            'o_site'              : False,
++            'site'                : 'http://www.filmaffinity.com/es/film580875.html',
++            'trailer'             : False,
++            'year'                : 2007,
++            'notes'               : False,
++            'runtime'             : 59,
++            'image'               : True,
++            'rating'              : 6,
++            'cameraman'           : 'David Pelletier',
++            'screenplay'          : 'Dennis Paoli, Stuart Gordon (Historia corta: Edgar Allan Poe)',
++            'barcode'             : False
++        },
++        '826399' : { 
++            'title'               : 'Surcadores del cielo (The Sky Crawlers)',
++            'o_title'             : 'Sukai kurora (The Sky Crawlers)',
++            'director'            : 'Mamoru Oshii',
++            'plot'                : True,
++            'cast'                : 'Animation',
++            'country'             : u'Jap?n',
++            'genre'               : u'Animaci?n. Aventuras',
++            'classification'      : False,
++            'studio'              : 'Production I.G. / Nippon Television Network Corporation (NTV)',
++            'o_site'              : 'http://sky.crawlers.jp/',
++            'site'                : 'http://www.filmaffinity.com/es/film826399.html',
++            'trailer'             : False,
++            'year'                : 2008,
++            'notes'               : False,
++            'runtime'             : 0,
++            'image'               : True,
++            'rating'              : 6,
++            'cameraman'           : 'Animation',
++            'screenplay'          : 'Chihiro Itou (Novela: Hiroshi Mori)',
++            'barcode'             : False
++        },
+     }
+
+
+
+From mikej06 at mail.berlios.de  Sun May 24 21:56:13 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 24 May 2009 21:56:13 +0200
+Subject: [Griffith-svn] r1201 - branches/0.9.x
+	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+Message-ID: <200905241956.n4OJuD0B002601@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-24 21:55:52 +0200 (Sun, 24 May 2009)
+New Revision: 1201
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmDb.py
+Log:
+updated FilmDb plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-24 19:33:48 UTC (rev 1200)
++++ branches/0.9.x/ChangeLog	2009-05-24 19:55:52 UTC (rev 1201)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-05-24  Michael Jahn
+-	* updated FilmAffinity plugin
++	* updated FilmAffinity, FilmDb plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-05-24 19:33:48 UTC (rev 1200)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmDb.py	2009-05-24 19:55:52 UTC (rev 1201)
+@@ -122,7 +122,7 @@
+ 
+ 	def get_country(self):
+ 		elements = string.split(self.page, 'landjahrsuche.php')
+-		if len (elements) > 0:
++		if len (elements) > 1:
+ 			self.country = gutils.trim(elements[1], '>', '</a>') + '\n'
+ 
+ 	def get_rating(self):
+@@ -149,6 +149,9 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
++		tmp = self.page.decode(self.encode)
++		tmp = gutils.convert_entities(tmp)
++		self.page = tmp.encode(self.encode)
+ 		return self.page
+ 
+ 	def get_searches(self):
+@@ -159,9 +162,15 @@
+ 				idmatch = re.search('([>]|["])', element)
+ 				if idmatch:
+ 					self.ids.append(element[:idmatch.end() - 1])
+-					self.titles.append(gutils.trim(element, '>', '<') + ' - ' +
+-						gutils.trim(gutils.after(element, '</a>'), '<td>', '</td>') + ' - ' +
+-						gutils.trim(gutils.after(element, '<td>'), '<td>', '</td>'))
++					# I don't know what <wbr> means but it breaks the result list
++					element = string.replace(element, '<wbr>', '')
++					element = string.replace(element, '<wbr />', '')
++					# line breaks sometimes within the title
++					element = string.replace(element, '<wbr>', '')
++					element = string.replace(element, '<wbr />', '')
++					self.titles.append(string.replace(gutils.trim(element, '>', '<') + ' (' +
++						gutils.trim(gutils.after(element, '<td>'), '<td>', '</td>') + ', ' +
++						gutils.trim(gutils.after(element, '</a>'), '<td>', '</td>') + ')', '\n', ' - '))
+ 
+ #
+ # Plugin Test
+@@ -186,7 +195,7 @@
+ 	#        * or the expected value
+ 	#
+ 	test_configuration = {
+-		'Rocky Balboa' : { 
++		'Rocky%20Balboa' : { 
+ 			'title'               : 'Rocky Balboa',
+ 			'o_title'             : 'Rocky Balboa',
+ 			'director'            : 'Sylvester Stallone',
+@@ -199,65 +208,65 @@
+ Talia Shire\n\
+ Burgess Meredith\n\
+ Tony Burton\n\
++Milo Ventimiglia\n\
+ Mr. T\n\
+-Milo Ventimiglia\n\
+ Frank Stallone\n\
++Geraldine Hughes\n\
+ Michael Buffer\n\
+-Geraldine Hughes\n\
+ Lahmard J. Tate\n\
+ Don Sherman\n\
++LeRoy Neiman\n\
+ Robert Michael Kelly\n\
+-LeRoy Neiman\n\
++Gunnar Peterson\n\
+ Stu Nahan\n\
+ Tobias Segal\n\
+ Skip Bayless\n\
+-Gunnar Peterson\n\
++Ricky Cavazos\n\
+ Marc Ratner\n\
++Rick Buchborn\n\
++Jim Lampley\n\
+ Henry G. Sanders\n\
+-Rick Buchborn\n\
+-Ricky Cavazos\n\
+ Charles Johnson\n\
++Fran Pultro\n\
+ Angela Boyd\n\
+-Ana Gerena\n\
+-Fran Pultro\n\
++Yahya\n\
+ Tim Carr\n\
+ Joe Cortez\n\
+-Jody Giambelluca\n\
+ Carter Mitchell\n\
+-A.J. Benza\n\
+-Yahya\n\
+ Maureen Schilling\n\
+-James Binns\n\
+-Jack Lazzarado\n\
++Jody Giambelluca\n\
+ Barney Fitzpatrick\n\
+ Antonio Tarver\n\
++Ana Gerena\n\
++A.J. Benza\n\
++James Binns\n\
+ Nick Baker\n\
+-Jim Lampley\n\
++Jack Lazzarado\n\
+ Matt Frack\n\
+ Louis Giansante\n\
+ Kevin King Templeton\n\
+-Paul Dion Monte\n\
+ Dana Jacobson\n\
++Larry Merchant\n\
++Woody Paige\n\
+ Brian Kenny\n\
+-Woody Paige\n\
++Paul Dion Monte\n\
++Anthony Lato Jr.\n\
+ Pedro Lovell\n\
+-Larry Merchant\n\
++Max Kellerman\n\
+ Bert Randolph Sugar\n\
+-Bernard Fern?ndez\n\
+ Vinod Kumar\n\
+-Anthony Lato Jr.\n\
+-Max Kellerman\n\
+ Lou DiBella\n\
++Bernard Fern?ndez\n\
+ Johnnie Hobbs Jr.\n\
++Gary Compton\n\
+ Jay Crawford\n\
+-Gary Compton\n\
+ James Francis Kelly III',
+ 			'country'             : 'USA',
+ 			'genre'               : 'Drama',
+ 			'classification'      : False,
+ 			'studio'              : False,
+ 			'o_site'              : False,
+-			'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Rocky Balboa',
++			'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Rocky%20Balboa',
+ 			'trailer'             : False,
+ 			'year'                : 2006,
+ 			'notes'               : False,
+@@ -265,7 +274,7 @@
+ 			'image'               : True,
+ 			'rating'              : False
+ 		},
+-		'Tatort -%3Cwbr %2F%3E M%26auml%3Brchenwald' : { 
++		'Tatort%20-<wbr%20%2F>%20M%26auml%3Brchenwald' : { 
+ 			'title'               : 'Tatort - M?rchenwald',
+ 			'o_title'             : 'Tatort - M?rchenwald',
+ 			'director'            : 'Christiane Balthasar',
+@@ -280,7 +289,7 @@
+ 			'classification'      : False,
+ 			'studio'              : False,
+ 			'o_site'              : False,
+-			'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Tatort -%3Cwbr %2F%3E M%26auml%3Brchenwald',
++			'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Tatort%20-%20M%26auml%3Brchenwald',
+ 			'trailer'             : False,
+ 			'year'                : 2004,
+ 			'notes'               : False,
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-24 19:33:48 UTC (rev 1200)
++++ trunk/ChangeLog	2009-05-24 19:55:52 UTC (rev 1201)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-05-24  Michael Jahn
+-	* updated FilmAffinity plugin
++	* updated FilmAffinity, FilmDb plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-05-24 19:33:48 UTC (rev 1200)
++++ trunk/lib/plugins/movie/PluginMovieFilmDb.py	2009-05-24 19:55:52 UTC (rev 1201)
+@@ -122,7 +122,7 @@
+ 
+     def get_country(self):
+         elements = string.split(self.page, 'landjahrsuche.php')
+-        if len (elements) > 0:
++        if len (elements) > 1:
+             self.country = gutils.trim(elements[1], '>', '</a>') + '\n'
+ 
+     def get_rating(self):
+@@ -150,6 +150,7 @@
+     def search(self,parent_window):
+         if not self.open_search(parent_window):
+             return None
++        self.page = gutils.convert_entities(self.page)
+         return self.page
+ 
+     def get_searches(self):
+@@ -160,9 +161,15 @@
+                 idmatch = re.search('([>]|["])', element)
+                 if idmatch:
+                     self.ids.append(element[:idmatch.end() - 1])
+-                    self.titles.append(gutils.trim(element, '>', '<') + ' - ' +
+-                            gutils.trim(gutils.after(element, '</a>'), '<td>', '</td>') + ' - ' +
+-                            gutils.trim(gutils.after(element, '<td>'), '<td>', '</td>'))
++                    # I don't know what <wbr> means but it breaks the result list
++                    element = string.replace(element, '<wbr>', '')
++                    element = string.replace(element, '<wbr />', '')
++                    # line breaks sometimes within the title
++                    element = string.replace(element, '<wbr>', '')
++                    element = string.replace(element, '<wbr />', '')
++                    self.titles.append(string.replace(gutils.trim(element, '>', '<') + ' (' +
++                            gutils.trim(gutils.after(element, '<td>'), '<td>', '</td>') + ', ' +
++                            gutils.trim(gutils.after(element, '</a>'), '<td>', '</td>') + ')', '\n', ' - '))
+ 
+ #
+ # Plugin Test
+@@ -187,7 +194,7 @@
+     #        * or the expected value
+     #
+     test_configuration = {
+-        'Rocky Balboa' : { 
++        'Rocky%20Balboa' : { 
+             'title'               : 'Rocky Balboa',
+             'o_title'             : 'Rocky Balboa',
+             'director'            : 'Sylvester Stallone',
+@@ -200,65 +207,65 @@
+ Talia Shire\n\
+ Burgess Meredith\n\
+ Tony Burton\n\
++Milo Ventimiglia\n\
+ Mr. T\n\
+-Milo Ventimiglia\n\
+ Frank Stallone\n\
++Geraldine Hughes\n\
+ Michael Buffer\n\
+-Geraldine Hughes\n\
+ Lahmard J. Tate\n\
+ Don Sherman\n\
++LeRoy Neiman\n\
+ Robert Michael Kelly\n\
+-LeRoy Neiman\n\
++Gunnar Peterson\n\
+ Stu Nahan\n\
+ Tobias Segal\n\
+ Skip Bayless\n\
+-Gunnar Peterson\n\
++Ricky Cavazos\n\
+ Marc Ratner\n\
++Rick Buchborn\n\
++Jim Lampley\n\
+ Henry G. Sanders\n\
+-Rick Buchborn\n\
+-Ricky Cavazos\n\
+ Charles Johnson\n\
++Fran Pultro\n\
+ Angela Boyd\n\
+-Ana Gerena\n\
+-Fran Pultro\n\
++Yahya\n\
+ Tim Carr\n\
+ Joe Cortez\n\
+-Jody Giambelluca\n\
+ Carter Mitchell\n\
+-A.J. Benza\n\
+-Yahya\n\
+ Maureen Schilling\n\
+-James Binns\n\
+-Jack Lazzarado\n\
++Jody Giambelluca\n\
+ Barney Fitzpatrick\n\
+ Antonio Tarver\n\
++Ana Gerena\n\
++A.J. Benza\n\
++James Binns\n\
+ Nick Baker\n\
+-Jim Lampley\n\
++Jack Lazzarado\n\
+ Matt Frack\n\
+ Louis Giansante\n\
+ Kevin King Templeton\n\
+-Paul Dion Monte\n\
+ Dana Jacobson\n\
++Larry Merchant\n\
++Woody Paige\n\
+ Brian Kenny\n\
+-Woody Paige\n\
++Paul Dion Monte\n\
++Anthony Lato Jr.\n\
+ Pedro Lovell\n\
+-Larry Merchant\n\
++Max Kellerman\n\
+ Bert Randolph Sugar\n\
+-Bernard Fern?ndez\n\
+ Vinod Kumar\n\
+-Anthony Lato Jr.\n\
+-Max Kellerman\n\
+ Lou DiBella\n\
++Bernard Fern?ndez\n\
+ Johnnie Hobbs Jr.\n\
++Gary Compton\n\
+ Jay Crawford\n\
+-Gary Compton\n\
+ James Francis Kelly III',
+             'country'             : 'USA',
+             'genre'               : 'Drama',
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : False,
+-            'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Rocky Balboa',
++            'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Rocky%20Balboa',
+             'trailer'             : False,
+             'year'                : 2006,
+             'notes'               : False,
+@@ -266,7 +273,7 @@
+             'image'               : True,
+             'rating'              : False
+         },
+-        'Tatort -%3Cwbr %2F%3E M%26auml%3Brchenwald' : { 
++        'Tatort%20-<wbr%20%2F>%20M%26auml%3Brchenwald' : { 
+             'title'               : 'Tatort - M?rchenwald',
+             'o_title'             : 'Tatort - M?rchenwald',
+             'director'            : 'Christiane Balthasar',
+@@ -281,7 +288,7 @@
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : False,
+-            'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Tatort -%3Cwbr %2F%3E M%26auml%3Brchenwald',
++            'site'                : 'http://www.filmdb.de/filmanzeige.php?filmid=Tatort%20-%20M%26auml%3Brchenwald',
+             'trailer'             : False,
+             'year'                : 2004,
+             'notes'               : False,
+
+
+
+From mikej06 at mail.berlios.de  Sun May 24 22:00:28 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 24 May 2009 22:00:28 +0200
+Subject: [Griffith-svn] r1202 - branches/0.9.x
+	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+Message-ID: <200905242000.n4OK0S39003093@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-24 22:00:09 +0200 (Sun, 24 May 2009)
+New Revision: 1202
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+Log:
+updated CineMovies plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-24 19:55:52 UTC (rev 1201)
++++ branches/0.9.x/ChangeLog	2009-05-24 20:00:09 UTC (rev 1202)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-05-24  Michael Jahn
+-	* updated FilmAffinity, FilmDb plugin
++	* updated CineMovies, FilmAffinity, FilmDb plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-05-24 19:55:52 UTC (rev 1201)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieCineMovies.py	2009-05-24 20:00:09 UTC (rev 1202)
+@@ -95,7 +95,7 @@
+ 		self.studio = self.studio.encode(self.encode)
+ 
+ 	def get_o_site(self):
+-		self.o_site = gutils.after(gutils.after(gutils.trim(self.page, '>Site(s) Officiel(s):<', '</a'), '<a '), '>')
++		self.o_site = gutils.after(gutils.after(gutils.trim(self.page, '>Site(s) Officiel(s)<', '</a'), '<a '), '>')
+ 		self.o_site = self.o_site.encode(self.encode)
+ 
+ 	def get_site(self):
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-24 19:55:52 UTC (rev 1201)
++++ trunk/ChangeLog	2009-05-24 20:00:09 UTC (rev 1202)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-05-24  Michael Jahn
+-	* updated FilmAffinity, FilmDb plugin
++	* updated CineMovies, FilmAffinity, FilmDb plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-05-24 19:55:52 UTC (rev 1201)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2009-05-24 20:00:09 UTC (rev 1202)
+@@ -86,7 +86,7 @@
+         self.studio = string.strip(gutils.trim(self.page, 'Distributeur :', '</tr>'))
+ 
+     def get_o_site(self):
+-        self.o_site = gutils.after(gutils.after(gutils.trim(self.page, '>Site(s) Officiel(s):<', '</a'), '<a '), '>')
++        self.o_site = gutils.after(gutils.after(gutils.trim(self.page, '>Site(s) Officiel(s)<', '</a'), '<a '), '>')
+ 
+     def get_site(self):
+         self.site = self.url
+
+
+
+From mikej06 at mail.berlios.de  Sun May 24 22:02:07 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 24 May 2009 22:02:07 +0200
+Subject: [Griffith-svn] r1203 - branches/0.9.x/lib
+	branches/0.9.x/lib/plugins/movie trunk/lib/plugins/movie
+Message-ID: <200905242002.n4OK274A003265@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-24 22:01:47 +0200 (Sun, 24 May 2009)
+New Revision: 1203
+
+Modified:
+   branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+   branches/0.9.x/lib/plugins/movie/PluginMovieFilmtipset.py
+   branches/0.9.x/lib/test_movieplugins.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+Log:
+updated test data for Amazon and Filmtipset plugin
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-05-24 20:00:09 UTC (rev 1202)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieAmazon.py	2009-05-24 20:01:47 UTC (rev 1203)
+@@ -393,7 +393,7 @@
+ 			'cast'				: 'Sylvester Stallone\n\
+ Antonio Traver\n\
+ Burt Young',
+-			'country'			: 'USA',
++			'country'			: False,
+ 			'genre'				: 'Drama, Drama',
+ 			'classification'	: 'Freigegeben ab 12 Jahren',
+ 			'studio'			: 'MGM Home Entertainment GmbH (dt.)',
+@@ -414,7 +414,7 @@
+ 			'cast'				: 'Lino Ventura\n\
+ Fran?oise Fabian\n\
+ Charles G?rard',
+-			'country'			: 'Frankreich, Italien',
++			'country'			: 'Frankreich',
+ 			'genre'				: 'Krimikom?die, Drama, General AAS, Drama, Kom?die, Krimi',
+ 			'classification'	: 'Freigegeben ab 12 Jahren',
+ 			'studio'			: 'Warner Home Video - DVD',
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieFilmtipset.py	2009-05-24 20:00:09 UTC (rev 1202)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieFilmtipset.py	2009-05-24 20:01:47 UTC (rev 1203)
+@@ -163,7 +163,7 @@
+ 	# dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+ 	#
+ 	test_configuration = {
+-		'Rocky' : [ 16, 16 ],
++		'Rocky' : [ 15, 15 ],
+ 	}
+ 
+ class PluginTest:
+
+Modified: branches/0.9.x/lib/test_movieplugins.py
+===================================================================
+--- branches/0.9.x/lib/test_movieplugins.py	2009-05-24 20:00:09 UTC (rev 1202)
++++ branches/0.9.x/lib/test_movieplugins.py	2009-05-24 20:01:47 UTC (rev 1203)
+@@ -66,6 +66,7 @@
+ 		'PluginMovieAllMovie',
+ 		'PluginMovieAmazon',
+ 		'PluginMovieCinematografo',
++		'PluginMovieCineMovies',
+ 		'PluginMovieCineteka',
+ 		'PluginMovieCulturalia',
+ 		'PluginMovieDVDEmpire',
+@@ -106,22 +107,23 @@
+ 				logFile.write('\n')
+ 			logFile.write('\n\n')
+ 			result = False
+-		# plugin.original_url_search
+-		plugin.url = plugin.original_url_search
+-		if plugin.remove_accents:
+-			plugin.title = gutils.remove_accents(title, 'utf-8')
+-		else:
+-			plugin.title = title
+-		plugin.search_movies(None)
+-		plugin.get_searches()
+-		if not len(plugin.ids) - 1 == cntTranslated:	# first entry is always '' (???)
+-			print "Title (Original): %s - expected: %d - found: %d" % (title, cntTranslated, len(plugin.ids) - 1)
+-			logFile.write("Title (Original): %s - expected: %d - found: %d\n\n" % (title, cntTranslated, len(plugin.ids) - 1))
+-			for titleFound in plugin.titles:
+-				logFile.write(titleFound)
+-				logFile.write('\n')
+-			logFile.write('\n\n')
+-			result = False
++		# plugin.original_url_search if it is different to plugin.translated_url_search
++		if plugin.original_url_search <> plugin.translated_url_search:
++			plugin.url = plugin.original_url_search
++			if plugin.remove_accents:
++				plugin.title = gutils.remove_accents(title, 'utf-8')
++			else:
++				plugin.title = title
++			plugin.search_movies(None)
++			plugin.get_searches()
++			if not len(plugin.ids) - 1 == cntTranslated:	# first entry is always '' (???)
++				print "Title (Original): %s - expected: %d - found: %d" % (title, cntTranslated, len(plugin.ids) - 1)
++				logFile.write("Title (Original): %s - expected: %d - found: %d\n\n" % (title, cntTranslated, len(plugin.ids) - 1))
++				for titleFound in plugin.titles:
++					logFile.write(titleFound)
++					logFile.write('\n')
++				logFile.write('\n\n')
++				result = False
+ 		return result
+ 
+ 	#
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-05-24 20:00:09 UTC (rev 1202)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2009-05-24 20:01:47 UTC (rev 1203)
+@@ -396,7 +396,7 @@
+             'cast'                : 'Sylvester Stallone\n\
+ Antonio Traver\n\
+ Burt Young',
+-            'country'             : 'USA',
++            'country'             : False,
+             'genre'               : 'Drama, Drama',
+             'classification'      : 'Freigegeben ab 12 Jahren',
+             'studio'              : 'MGM Home Entertainment GmbH (dt.)',
+@@ -418,7 +418,7 @@
+             'cast'                : 'Lino Ventura\n\
+ Fran?oise Fabian\n\
+ Charles G?rard',
+-            'country'             : 'Frankreich, Italien',
++            'country'             : 'Frankreich',
+             'genre'               : 'Krimikom?die, Drama, General AAS, Drama, Kom?die, Krimi',
+             'classification'      : 'Freigegeben ab 12 Jahren',
+             'studio'              : 'Warner Home Video - DVD',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmtipset.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2009-05-24 20:00:09 UTC (rev 1202)
++++ trunk/lib/plugins/movie/PluginMovieFilmtipset.py	2009-05-24 20:01:47 UTC (rev 1203)
+@@ -154,7 +154,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky' : [ 16, 16 ],
++        'Rocky' : [ 15, 15 ],
+     }
+ 
+ class PluginTest:
+
+
+
+From mikej06 at mail.berlios.de  Sun May 24 22:04:06 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 24 May 2009 22:04:06 +0200
+Subject: [Griffith-svn] r1204 - branches/0.9.x
+	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+Message-ID: <200905242004.n4OK46fL003502@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-24 22:03:45 +0200 (Sun, 24 May 2009)
+New Revision: 1204
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+updated OFDb plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2009-05-24 20:01:47 UTC (rev 1203)
++++ branches/0.9.x/ChangeLog	2009-05-24 20:03:45 UTC (rev 1204)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-05-24  Michael Jahn
+-	* updated CineMovies, FilmAffinity, FilmDb plugin
++	* updated CineMovies, FilmAffinity, FilmDb, OFDb plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2009-05-24 20:01:47 UTC (rev 1203)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py	2009-05-24 20:03:45 UTC (rev 1204)
+@@ -10,13 +10,13 @@
+ import gutils
+ import movie,string,re
+ 
+-plugin_name = "OFDb"
+-plugin_description = "Online-Filmdatenbank"
+-plugin_url = "www.ofdb.de"
+-plugin_language = _("German")
+-plugin_author = "Christian Sagmueller, Jessica Katharina Parth"
++plugin_name         = "OFDb"
++plugin_description  = "Online-Filmdatenbank"
++plugin_url          = "www.ofdb.de"
++plugin_language     = _("German")
++plugin_author       = "Christian Sagmueller, Jessica Katharina Parth"
+ plugin_author_email = "Jessica.K.P at women-at-work.org"
+-plugin_version = "0.10"
++plugin_version      = "0.10"
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -52,10 +52,12 @@
+ 		self.director = gutils.trim(self.page,"Regie:","</a><br>")
+ 
+ 	def get_plot(self):
++		self.plot = ''
+ 		storyid = self.regextrim(self.page, '<a href="plot/', '(">|[&])')
+ 		if not storyid is None:
+ 			story_page = self.open_page(url="http://www.ofdb.de/plot/%s" % (storyid))
+-		self.plot = gutils.trim(story_page, "</b><br><br>","</")
++			if story_page:
++				self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,"Erscheinungsjahr:","</a>")
+@@ -301,7 +303,7 @@
+ Yoon Soy' + _(' as ') + 'Wi-jin\n\
+ Ahn Seong-gi' + _(' as ') + 'Ja-woon\n\
+ Jeong Doo-hong' + _(' as ') + 'Heuk-Woon\n\
+-Yoon Joo-sang' + _(' as ') + 'Mu-woon \n\
++Yoon Joo-sang' + _(' as ') + 'Moo-woon \n\
+ Kim Ji-yeong\n\
+ Baek Chan-gi\n\
+ Kim Jae-man\n\
+
+
+Property changes on: branches/0.9.x/lib/plugins/movie/PluginMovieOFDb.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-24 20:01:47 UTC (rev 1203)
++++ trunk/ChangeLog	2009-05-24 20:03:45 UTC (rev 1204)
+@@ -6,7 +6,7 @@
+ 
+ 
+ 2009-05-24  Michael Jahn
+-	* updated CineMovies, FilmAffinity, FilmDb plugin
++	* updated CineMovies, FilmAffinity, FilmDb, OFDb plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-05-24 20:01:47 UTC (rev 1203)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2009-05-24 20:03:45 UTC (rev 1204)
+@@ -52,10 +52,12 @@
+         self.director = gutils.trim(self.page,"Regie:","</a><br>")
+ 
+     def get_plot(self):
++        self.plot = ''
+         storyid = gutils.regextrim(self.page, '<a href="plot/', '(">|[&])')
+         if not storyid is None:
+             story_page = self.open_page(url="http://www.ofdb.de/plot/%s" % (storyid.encode('utf8')))
+-        self.plot = gutils.trim(story_page, "</b><br><br>","</")
++            if story_page:
++                self.plot = gutils.trim(story_page, "</b><br><br>","</")
+ 
+     def get_year(self):
+         self.year = gutils.trim(self.page,"Erscheinungsjahr:","</a>")
+@@ -289,7 +291,7 @@
+ Yoon Soy' + _(' as ') + 'Wi-jin\n\
+ Ahn Seong-gi' + _(' as ') + 'Ja-woon\n\
+ Jeong Doo-hong' + _(' as ') + 'Heuk-Woon\n\
+-Yoon Joo-sang' + _(' as ') + 'Mu-woon \n\
++Yoon Joo-sang' + _(' as ') + 'Moo-woon \n\
+ Kim Ji-yeong\n\
+ Baek Chan-gi\n\
+ Kim Jae-man\n\
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieOFDb.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+
+From mikej06 at mail.berlios.de  Sun May 24 22:07:38 2009
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 24 May 2009 22:07:38 +0200
+Subject: [Griffith-svn] r1205 - in trunk: . lib/plugins/movie
+Message-ID: <200905242007.n4OK7clk003860@sheep.berlios.de>
+
+Author: mikej06
+Date: 2009-05-24 22:07:22 +0200 (Sun, 24 May 2009)
+New Revision: 1205
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+Log:
+added proxy support for MovieMeter plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-05-24 20:03:45 UTC (rev 1204)
++++ trunk/ChangeLog	2009-05-24 20:07:22 UTC (rev 1205)
+@@ -7,6 +7,7 @@
+ 
+ 2009-05-24  Michael Jahn
+ 	* updated CineMovies, FilmAffinity, FilmDb, OFDb plugin
++	* added proxy support for MovieMeter plugin
+ 
+ 2009-05-18  Michael Jahn
+ 	* [#377417] URL contains non-ASCII characters
+
+Modified: trunk/lib/plugins/movie/PluginMovieMovieMeter.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2009-05-24 20:03:45 UTC (rev 1204)
++++ trunk/lib/plugins/movie/PluginMovieMovieMeter.py	2009-05-24 20:07:22 UTC (rev 1205)
+@@ -23,7 +23,8 @@
+ 
+ import gutils, movie
+ import string, re
+-from xmlrpclib import ServerProxy, Error
++import urllib, httplib
++from xmlrpclib import ServerProxy, Transport
+ 
+ plugin_name         = 'MovieMeter'
+ plugin_description  = 'de filmsite voor liefhebbers'
+@@ -32,10 +33,47 @@
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = 'griffith-private at lists.berlios.de'
+ plugin_version      = '1.0'
++# API key created for Griffith
+ moviemeter_api_key  = 'qs1bqrpqf89e9uht5b0q01y0xstcp3w0'
+ 
++#
++# XMLRPC through proxy if necessary
++#
++class ProxiedTransport(Transport):
++    proxy_is_used = False
++
++    def make_connection(self, host):
++        self.realhost = host
++        proxies = urllib.getproxies()
++        proxyurl = None
++        if 'http' in proxies:
++            proxyurl = proxies['http']
++        elif 'all' in proxies:
++            proxyurl = proxies['all']
++        if proxyurl:
++            urltype, proxyhost = urllib.splittype(proxyurl)
++            host, selector = urllib.splithost(proxyhost)
++            h = httplib.HTTP(host)
++            self.proxy_is_used = True
++            return h
++        else:
++            self.proxy_is_used = False
++            return Transport.make_connection(self, host)
++
++    def send_request(self, connection, handler, request_body):
++        if self.proxy_is_used:
++            connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
++        else:
++            Transport.send_request(self, connection, handler, request_body)
++
++    def send_host(self, connection, host):
++        if self.proxy_is_used:
++            connection.putheader('Host', self.realhost)
++        else:
++            Transport.send_host(self, connection, host)
++
+ class Plugin(movie.Movie):
+-    server = ServerProxy('http://www.moviemeter.nl/ws')
++    server = ServerProxy('http://www.moviemeter.nl/ws', transport=ProxiedTransport())
+ 
+     def __init__(self, id):
+         self.encode   = 'iso8859-1'
+@@ -127,7 +165,7 @@
+                 self.notes = self.notes + element['title'] + '\n'
+ 
+ class SearchPlugin(movie.SearchMovie):
+-    server = ServerProxy('http://www.moviemeter.nl/ws')
++    server = ServerProxy('http://www.moviemeter.nl/ws', transport=ProxiedTransport())
+ 
+     def __init__(self):
+         self.original_url_search   = 'http://www.moviemeter.nl/film/search/'
+
+
+

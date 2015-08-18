@@ -1,0 +1,273 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r735 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r735%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702141633.l1EGXQoP008273%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000254.html">
+   <LINK REL="Next"  HREF="000256.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r735 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r735%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702141633.l1EGXQoP008273%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r735 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 14 17:33:26 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000254.html">[Griffith-svn] r734 - in trunk: . debian lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000256.html">[Griffith-svn] r736 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#255">[ date ]</a>
+              <a href="thread.html#255">[ thread ]</a>
+              <a href="subject.html#255">[ subject ]</a>
+              <a href="author.html#255">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-02-14 17:33:25 +0100 (Wed, 14 Feb 2007)
+New Revision: 735
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+FilmeVonAZ movie plugin updated (thanks to Michael Jahn)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-14 14:00:45 UTC (rev 734)
++++ trunk/ChangeLog	2007-02-14 16:33:25 UTC (rev 735)
+@@ -5,7 +5,7 @@
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 2007-02-14  Piotr O&#380;arowski
+-	* KinoDe movie plugin updated (thanks to Michael Jahn)
++	* KinoDe and FilmeVonAZ movie plugins updated (thanks to Michael Jahn)
+ 
+ ---- 0.9.1 ---
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2007-02-14 14:00:45 UTC (rev 734)
++++ trunk/lib/plugins/movie/PluginMovieFilmeVonAZ.py	2007-02-14 16:33:25 UTC (rev 735)
+@@ -32,11 +32,11 @@
+ plugin_language = _(&quot;German&quot;)
+ plugin_author = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.1&quot;
++plugin_version = &quot;1.2&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+-		self.encode='iso-8859-1'
++		self.encode='utf-8'
+ 		self.movie_id = id
+ 		self.url = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot; + str(self.movie_id)
+ 
+@@ -73,11 +73,11 @@
+ 					self.delimiter = &quot;, &quot;
+ 
+ 	def get_cast(self):
+-		self.cast = gutils.trim(self.page, &quot;(Darsteller)&quot;, &quot;\n\n\n&quot;)
++		self.cast = gutils.trim(self.page, &quot;(Darsteller)&quot;, &quot;&lt;/span&gt; \r\n\t\t\r\n&quot;)
+ 		self.cast = gutils.clean(self.cast)
+ 		self.cast = self.cast.replace(&quot; als &quot;, _(&quot; as &quot;))
+ 		self.cast = self.cast.replace(&quot;			&quot;, &quot;&quot;)
+-		self.cast = self.cast.replace(&quot;\n&quot;, &quot;&quot;)
++		self.cast = self.cast.replace(&quot;\r\n&quot;, &quot;&quot;)
+ 		self.cast = self.cast.replace(&quot;, &quot;, &quot;\n&quot;)
+ 		self.cast = self.cast.replace(&quot;,&quot;, &quot;&quot;)
+ 
+@@ -106,11 +106,29 @@
+ 	def __init__(self):
+ 		self.original_url_search	= &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot;
+ 		self.translated_url_search	= &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;wert=</A>&quot;
+-		self.encode='iso-8859-1'
++		self.encode='utf-8'
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.page = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;&lt;!-- ENDE ErgebnissAusgabe --&gt;&quot;);
++		# used for looking for subpages
++		tmp_page = gutils.trim(self.page, &quot;&lt;!-- Blaettern --&gt;&quot;, &quot;&lt;!-- ErgebnissAusgabe --&gt;&quot;);
++		elements = string.split(tmp_page, '&quot; class=&quot;text_navi&quot;&gt;')
++		# first results
++		self.tmp_page = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;&lt;!-- ENDE ErgebnissAusgabe --&gt;&quot;);
++		# look for subpages
++		for element in elements:
++			element = gutils.before(element, &quot;&lt;/a&gt;&quot;)
++			try:
++				tmp_element = int(element)
++			except:
++				tmp_element = 1
++			if (tmp_element &lt;&gt; 1):
++				self.url = &quot;<A HREF="http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=">http://www.filmevona-z.de/filmsuche.cfm?sucheNach=Titel&amp;currentPage=</A>&quot; + str(tmp_element) + &quot;&amp;wert=&quot;
++				self.open_search(parent_window)
++				tmp_page2 = gutils.trim(self.page,&quot;Alle Treffer aus der Kategorie&quot;, &quot;&lt;!-- ENDE ErgebnissAusgabe --&gt;&quot;);
++				tmp_page = tmp_page + tmp_page2
++		self.page = tmp_page
++
+ 		return self.page
+ 
+ 	def get_searches(self):
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-14 14:00:45 UTC (rev 734)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-02-14 16:33:25 UTC (rev 735)
+@@ -167,18 +167,18 @@
+ 		self.url = self.url_to_use + &quot;typ=features&amp;nr=&quot; + str(self.movie_id)
+ 		self.open_page(self.parent_window)
+ 		self.tmp_page = gutils.trim(self.page, &quot;&lt;!-- PRINT-CONTENT-START--&gt;&quot;, &quot;&lt;!-- PRINT-CONTENT-ENDE--&gt;&quot;)
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;Sprache&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
+-		if (self.tmp_notes != &quot;&quot;):
+-			self.notes = self.notes + &quot;Sprachen:\n&quot; + self.tmp_notes + &quot;\n\n&quot;
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;Untertitel&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
+-		if (self.tmp_notes != &quot;&quot;):
+-			self.notes = self.notes + &quot;Untertitel:\n&quot; + self.tmp_notes + &quot;\n\n&quot;
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;Mehrkanalton&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
+-		if (self.tmp_notes != &quot;&quot;):
+-			self.notes = self.notes + &quot;Mehrkanalton:\n&quot; + self.tmp_notes + &quot;\n\n&quot;
+-		self.tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;EAN&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
+-		if (self.tmp_notes != &quot;&quot;):
+-			self.notes = self.notes + &quot;EAN:\n&quot; + self.tmp_notes + &quot;\n\n&quot;
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;Sprache&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
++		if (tmp_notes != &quot;&quot;):
++			self.notes = self.notes + &quot;Sprachen:\n&quot; + tmp_notes + &quot;\n\n&quot;
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;Untertitel&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
++		if (tmp_notes != &quot;&quot;):
++			self.notes = self.notes + &quot;Untertitel:\n&quot; + tmp_notes + &quot;\n\n&quot;
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;Mehrkanalton&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
++		if (tmp_notes != &quot;&quot;):
++			self.notes = self.notes + &quot;Mehrkanalton:\n&quot; + tmp_notes + &quot;\n\n&quot;
++		tmp_notes = string.replace(gutils.strip_tags(gutils.trim(self.tmp_page, &quot;&lt;b&gt;EAN&lt;/b&gt;&quot;, &quot;&lt;/TD&gt;&lt;/TR&gt;&quot;)), &quot;&nbsp;&quot;, &quot;&quot;)
++		if (tmp_notes != &quot;&quot;):
++			self.notes = self.notes + &quot;EAN:\n&quot; + tmp_notes + &quot;\n\n&quot;
+ 
+ #
+ # kino.de use iso-8859-1
+@@ -197,54 +197,54 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.tmp_pagemovie = string.replace( self.page, &quot;&lt;/B&gt;&quot;, &quot;&lt;/b&gt;&quot; )
+-		self.tmp_pagemovie = string.replace( self.tmp_pagemovie, &quot;A HREF&quot;, &quot;a href&quot; )
+-		self.tmp_pagemovie = gutils.trim(self.tmp_pagemovie,'&lt;/b&gt;&lt;/div&gt;&lt;br&gt;', '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
++		tmp_pagemovie = string.replace( self.page, &quot;&lt;/B&gt;&quot;, &quot;&lt;/b&gt;&quot; )
++		tmp_pagemovie = string.replace( tmp_pagemovie, &quot;A HREF&quot;, &quot;a href&quot; )
++		tmp_pagemovie = gutils.trim(tmp_pagemovie,'&lt;/b&gt;&lt;/div&gt;&lt;br&gt;', '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
+ 		#
+ 		# try to get all result pages (not so nice, but it works)
+ 		#
+-		self.tmp_pagecount = gutils.trim(self.tmp_pagemovie, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
++		tmp_pagecount = gutils.trim(tmp_pagemovie, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
+ 		try:
+-			self.tmp_pagecountint = int(self.tmp_pagecount)
++			tmp_pagecountint = int(tmp_pagecount)
+ 		except:
+-			self.tmp_pagecountint = 1
+-		self.tmp_pagecountintcurrent = 1
+-		while (self.tmp_pagecountint &gt; self.tmp_pagecountintcurrent):
+-			self.tmp_pagecountintcurrent = self.tmp_pagecountintcurrent + 1
+-			self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;page=">http://www.kino.de/megasuche.php4?typ=filme&amp;page=</A>&quot; + str(self.tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
++			tmp_pagecountint = 1
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountint &gt; tmp_pagecountintcurrent):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=filme&amp;page=">http://www.kino.de/megasuche.php4?typ=filme&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
+ 			self.open_search(parent_window)
+-			self.tmp_page = string.replace( self.page, &quot;&lt;/B&gt;&quot;, &quot;&lt;/b&gt;&quot; )
+-			self.tmp_page = string.replace( self.tmp_page, &quot;A HREF&quot;, &quot;a href&quot; )
+-			self.tmp_page = gutils.trim(self.tmp_page,'&lt;/b&gt;&lt;/div&gt;&lt;br&gt;', '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
+-			self.tmp_pagemovie = self.tmp_pagemovie + self.tmp_page
++			tmp_page = string.replace( self.page, &quot;&lt;/B&gt;&quot;, &quot;&lt;/b&gt;&quot; )
++			tmp_page = string.replace( tmp_page, &quot;A HREF&quot;, &quot;a href&quot; )
++			tmp_page = gutils.trim(tmp_page,'&lt;/b&gt;&lt;/div&gt;&lt;br&gt;', '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
++			tmp_pagemovie = tmp_pagemovie + tmp_page
+ 		#
+ 		# Look for DVD and VHS
+ 		#
+ 		self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;wort=">http://www.kino.de/megasuche.php4?typ=video&amp;wort=</A>&quot;
+ 		self.open_search(parent_window)
+-		self.tmp_pagevideo = string.replace( self.page, &quot;&lt;B&gt;&quot;, &quot;&lt;b&gt;&quot; )
+-		self.tmp_pagevideo = string.replace( self.tmp_pagevideo, &quot;A HREF&quot;, &quot;a href&quot; )
+-		self.tmp_pagevideo = gutils.trim(self.tmp_pagevideo,&quot;align=center&gt;&lt;b&gt;Video/DVD 1&quot;, '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
+-		self.tmp_pagevideo = self.tmp_pagemovie + self.tmp_pagevideo
++		tmp_pagevideo = string.replace( self.page, &quot;&lt;B&gt;&quot;, &quot;&lt;b&gt;&quot; )
++		tmp_pagevideo = string.replace( tmp_pagevideo, &quot;A HREF&quot;, &quot;a href&quot; )
++		tmp_pagevideo = gutils.trim(tmp_pagevideo,&quot;align=center&gt;&lt;b&gt;Video/DVD 1&quot;, '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
++		tmp_pagevideo = tmp_pagemovie + tmp_pagevideo
+ 		#
+ 		# try to get all result pages (not so nice, but it works)
+ 		#
+-		self.tmp_pagecount = gutils.trim(self.page, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
++		tmp_pagecount = gutils.trim(self.page, &quot;&nbsp;von &quot;, &quot;&lt;/SPAN&gt;&quot;)
+ 		try:
+-			self.tmp_pagecountint = int(self.tmp_pagecount)
++			tmp_pagecountint = int(tmp_pagecount)
+ 		except:
+-			self.tmp_pagecountint = 1
+-		self.tmp_pagecountintcurrent = 1
+-		while (self.tmp_pagecountint &gt; self.tmp_pagecountintcurrent):
+-			self.tmp_pagecountintcurrent = self.tmp_pagecountintcurrent + 1
+-			self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;page=">http://www.kino.de/megasuche.php4?typ=video&amp;page=</A>&quot; + str(self.tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
++			tmp_pagecountint = 1
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountint &gt; tmp_pagecountintcurrent):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = &quot;<A HREF="http://www.kino.de/megasuche.php4?typ=video&amp;page=">http://www.kino.de/megasuche.php4?typ=video&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;wort=&quot;
+ 			self.open_search(parent_window)
+-			self.tmp_page = string.replace( self.page, &quot;&lt;B&gt;&quot;, &quot;&lt;b&gt;&quot; )
+-			self.tmp_page = string.replace( self.tmp_page, &quot;A HREF&quot;, &quot;a href&quot; )
+-			self.tmp_page = gutils.trim(self.tmp_page,&quot;align=center&gt;&lt;b&gt;Video/DVD &quot;, '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
+-			self.tmp_pagevideo = self.tmp_pagevideo + self.tmp_page
++			tmp_page = string.replace( self.page, &quot;&lt;B&gt;&quot;, &quot;&lt;b&gt;&quot; )
++			tmp_page = string.replace( tmp_page, &quot;A HREF&quot;, &quot;a href&quot; )
++			tmp_page = gutils.trim(tmp_page,&quot;align=center&gt;&lt;b&gt;Video/DVD &quot;, '&lt;!-- PRINT-CONTENT-ENDE--&gt;');
++			tmp_pagevideo = tmp_pagevideo + tmp_page
+ 
+-		self.page = self.tmp_pagevideo
++		self.page = tmp_pagevideo
+ 		return self.page
+ 
+ 	def get_searches(self):
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000254.html">[Griffith-svn] r734 - in trunk: . debian lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000256.html">[Griffith-svn] r736 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#255">[ date ]</a>
+              <a href="thread.html#255">[ thread ]</a>
+              <a href="subject.html#255">[ subject ]</a>
+              <a href="author.html#255">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

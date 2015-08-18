@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1167 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1167%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200902242105.n1OL5EwY011086%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000638.html">
+   <LINK REL="Next"  HREF="000640.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1167 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1167%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200902242105.n1OL5EwY011086%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1167 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 24 22:05:14 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000638.html">[Griffith-svn] r1166 - in trunk: . debian lib
+</A></li>
+        <LI>Next message: <A HREF="000640.html">[Griffith-svn] r1168 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#639">[ date ]</a>
+              <a href="thread.html#639">[ thread ]</a>
+              <a href="subject.html#639">[ subject ]</a>
+              <a href="author.html#639">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-02-24 22:04:48 +0100 (Tue, 24 Feb 2009)
+New Revision: 1167
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/edit.py
+Log:
+Amazon posters: removing of temporary files fixed
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-02-12 22:38:44 UTC (rev 1166)
++++ trunk/ChangeLog	2009-02-24 21:04:48 UTC (rev 1167)
+@@ -5,6 +5,9 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-02-24  Michael Jahn
++	* Amazon posters: removing of temporary files fixed
++
+ 2009-02-12  Piotr O&#380;arowski
+ 	* Add new default tag: &quot;Buy me&quot;
+ 
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-02-12 22:38:44 UTC (rev 1166)
++++ trunk/lib/edit.py	2009-02-24 21:04:48 UTC (rev 1167)
+@@ -199,7 +199,7 @@
+     if len(result.Item) == 1:
+         o_title = self.widgets['movie']['o_title'].get_text().decode('utf-8')
+         if o_title == result.Item[0].ItemAttributes.Title or keyword == result.Item[0].ItemAttributes.Title:
+-            get_poster(self, 0, result, current_poster)
++            get_poster(self, 0, result)
+             return
+ 
+     self.treemodel_results.clear()
+@@ -269,12 +269,13 @@
+ 
+     if not canceled:
+         if os.path.isfile(file_to_copy):
++            im = None
+             try:
+                 im = Image.open(file_to_copy)
+             except IOError:
+                 log.warn(&quot;failed to identify %s&quot;%file_to_copy)
+ 
+-            if im.size == (1,1):
++            if im and im.size == (1,1):
+                 url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % result.Item[f].ASIN).read()
+                 if url.find('no-img-sm._V47056216_.gif') &gt; 0:
+                     log.warn('No image available')
+@@ -288,10 +289,18 @@
+                 except IOError:
+                     log.warn(&quot;failed to identify %s&quot;%file_to_copy)
+ 
++            if not im:
++                # something wrong with the image, give some feedback to the user
++                log.warn('No image available')
++                gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++                return False
++
+             if im.mode != 'RGB': # convert GIFs
+                 im = im.convert('RGB')
+                 im.save(file_to_copy, 'JPEG')
+-        
++            # set to None because the file is locked otherwise (os.remove throws an exception)
++            im = None
++
+             handler = self.widgets['big_poster'].set_from_file(file_to_copy)
+ 
+             self.widgets['poster_window'].show()
+@@ -310,5 +319,13 @@
+             self.widgets['poster_window'].hide()
+         else:
+             gutils.warning(self, _(&quot;Sorry. This movie is listed but has no poster available at Amazon.com.&quot;))
++    else:
++        # cleanup temporary files after canceling the download
++        if os.path.isfile(file_to_copy):
++            try:
++                os.remove(file_to_copy)
++            except:
++                log.error(&quot;no permission for %s&quot;%file_to_copy)
++    # reconnect the signals to the shared result list
+     reconnect_add_signals(self)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000638.html">[Griffith-svn] r1166 - in trunk: . debian lib
+</A></li>
+	<LI>Next message: <A HREF="000640.html">[Griffith-svn] r1168 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#639">[ date ]</a>
+              <a href="thread.html#639">[ thread ]</a>
+              <a href="subject.html#639">[ subject ]</a>
+              <a href="author.html#639">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

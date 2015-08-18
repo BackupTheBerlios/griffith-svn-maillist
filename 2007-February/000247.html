@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r727 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r727%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702032045.l13KjjZm015059%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000248.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r727 - in trunk: . lib/plugins/movie</H1>
+    <B>jessicak at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r727%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702032045.l13KjjZm015059%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r727 - in trunk: . lib/plugins/movie">jessicak at mail.berlios.de
+       </A><BR>
+    <I>Sat Feb  3 21:45:45 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000248.html">[Griffith-svn] r728 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#247">[ date ]</a>
+              <a href="thread.html#247">[ thread ]</a>
+              <a href="subject.html#247">[ subject ]</a>
+              <a href="author.html#247">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jessicak
+Date: 2007-02-03 21:45:44 +0100 (Sat, 03 Feb 2007)
+New Revision: 727
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieOFDb.py
+Log:
+OFDb plugin updated due to site changes
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-27 20:12:37 UTC (rev 726)
++++ trunk/ChangeLog	2007-02-03 20:45:44 UTC (rev 727)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-02-03 Jessica K. Parth
++	* OFDb movie plugin updated (website changed)
++
+ ---- 0.9 ---
+ 
+ 2007-01-26  Piotr O&#380;arowski
+
+Modified: trunk/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-01-27 20:12:37 UTC (rev 726)
++++ trunk/lib/plugins/movie/PluginMovieOFDb.py	2007-02-03 20:45:44 UTC (rev 727)
+@@ -13,13 +13,13 @@
+ plugin_language = _(&quot;German&quot;)
+ plugin_author = &quot;Christian Sagmueller, Jessica Katharina Parth&quot;
+ plugin_author_email = &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&quot;
+-plugin_version = &quot;0.6&quot;
++plugin_version = &quot;0.7&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+ 		self.encode='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;full=1&amp;fid=%s">http://www.ofdb.de/view.php?page=film&amp;full=1&amp;fid=%s</A>&quot; % str(self.movie_id)
++		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=%s">http://www.ofdb.de/view.php?page=film&amp;fid=%s</A>&quot; % str(self.movie_id)
+ 
+ 	def get_image(self):
+ 		self.image_url = &quot;<A HREF="http://www.ofdb.de/images/film/">http://www.ofdb.de/images/film/</A>&quot; + gutils.trim( self.page, &quot;&lt;img src=\&quot;images/film/&quot;, &quot;\&quot;&quot; )
+@@ -40,15 +40,9 @@
+ 		self.director = string.capwords(gutils.after(self.director,&quot;&gt;&quot;))
+ 
+ 	def get_plot(self):
+-		oldpage = self.page
+-		oldurl = self.url
+ 		storyid = gutils.trim(self.page, 'sid=', '&quot;&gt;')
+-		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s">http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s</A>&quot; % (str(self.movie_id),storyid)
+-		self.open_page(self.parent_window)
+-		self.plot = gutils.trim(self.page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+-		self.page = oldpage
+-		self.url = oldurl
+-		#self.plot = gutils.trim(self.page,&quot;&lt;b&gt;Inhalt:&lt;/b&gt;&quot;, &quot;&lt;&quot;)
++		story_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s">http://www.ofdb.de/view.php?page=inhalt&amp;fid=%s&amp;sid=%s</A>&quot; % (str(self.movie_id),storyid))
++		self.plot = gutils.trim(story_page, &quot;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&quot;,&quot;&lt;/&quot;)
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,&quot;&quot;&quot;Erscheinungsjahr: 
+@@ -69,16 +63,17 @@
+ 		self.genre = self.genre[0:-2]
+ 
+ 	def get_cast(self):
++		cast_page = self.open_page(url=&quot;<A HREF="http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s">http://www.ofdb.de/view.php?page=film_detail&amp;fid=%s</A>&quot; % str(self.movie_id) )
+ 		self.cast = &quot;&quot;
+-		self.cast = gutils.trim(self.page,&quot;&quot;&quot;Darsteller: 
+-              &lt;/font&gt;&lt;/td&gt;
+-            &lt;td&gt;&nbsp;&nbsp;&lt;/td&gt;
+-            &lt;td&gt;&lt;font face=&quot;Arial,Helvetica,sans-serif&quot; size=&quot;2&quot; class=&quot;Daten&quot;&gt;&lt;b&gt;&quot;&quot;&quot;,&quot;&lt;/b&gt;&lt;/font&gt;&lt;/td&gt;&quot;)
+-		self.cast = string.replace(self.cast,&quot;&lt;/a&gt;&lt;br&gt;&quot;, &quot;\n&quot;)
++		self.cast = gutils.trim(cast_page,&quot;Darsteller&lt;/i&gt;&quot;,&quot;&lt;td&gt;&lt;/td&gt;\n&lt;/tr&gt;\n&lt;/table&gt;\n&lt;br&gt;&quot;)
+ 		self.cast = string.strip(gutils.strip_tags(self.cast))
++		self.cast = string.replace(self.cast,&quot;&nbsp;&quot;, &quot;&quot;)
++		self.cast = string.replace(self.cast, &quot;  &quot;, &quot;&quot;)
++		self.cast = string.replace(self.cast, &quot;\t&quot;, &quot;&quot;)
++		self.cast = string.replace(self.cast, &quot;\n\n&quot;, &quot;\n&quot;)
++		self.cast = string.replace(self.cast, &quot;\n\n&quot;, &quot;&quot;)
+ 
+ 	def get_classification(self):
+-		#self.classification = gutils.trim(self.page,&quot;MPAA&lt;/a&gt;:&lt;/b&gt; &quot;,&quot;.&lt;br&gt;&quot;)
+ 		# ofdb.de got no classification
+ 		self.classification = &quot;&quot;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000248.html">[Griffith-svn] r728 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#247">[ date ]</a>
+              <a href="thread.html#247">[ thread ]</a>
+              <a href="subject.html#247">[ subject ]</a>
+              <a href="author.html#247">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

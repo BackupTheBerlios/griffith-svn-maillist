@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1389 - trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1389%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C201001062114.o06LEMW6022074%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000854.html">
+   <LINK REL="Next"  HREF="000856.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1389 - trunk/lib/plugins/movie</H1>
+    <B>kura666 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1389%20-%20trunk/lib/plugins/movie&In-Reply-To=%3C201001062114.o06LEMW6022074%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1389 - trunk/lib/plugins/movie">kura666 at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  6 22:14:22 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000854.html">[Griffith-svn] r1388 - in trunk: . lib lib/plugins/export	lib/plugins/extensions lib/plugins/imp lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000856.html">[Griffith-svn] r1390 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#855">[ date ]</a>
+              <a href="thread.html#855">[ thread ]</a>
+              <a href="subject.html#855">[ subject ]</a>
+              <a href="author.html#855">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: kura666
+Date: 2010-01-06 22:14:21 +0100 (Wed, 06 Jan 2010)
+New Revision: 1389
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+Log:
+updated movie plugin Filmweb.pl
+(Screenplay added, plot update)
+
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2010-01-06 21:02:22 UTC (rev 1388)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2010-01-06 21:14:21 UTC (rev 1389)
+@@ -30,11 +30,12 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O&#380;arowski, Bartosz Kurczewski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">bartosz.kurczewski at gmail.com</A>&gt;'
+-plugin_version      = '1.13'
++plugin_version      = '1.14'
+ 
+ class Plugin(movie.Movie):
+     TRAILER_PATTERN     = re.compile(&quot;&quot;&quot;&lt;a class=[&quot;']notSelected[&quot;'].*?href=[&quot;'](.*?)[&quot;']&gt;zwiastuny&lt;/a&gt;\s*\[\d+\]\s*&raquo;&quot;&quot;&quot;)
+     DIRECTOR_PATTERN    = re.compile('yseria\s+(.*)\s+scenariusz', re.MULTILINE)
++    SCREENPLAY_PATTERN  = re.compile('scenariusz\s+(.*)\s+zdj.cia', re.MULTILINE)
+     O_TITLE_AKA_PATTERN = re.compile('\(AKA\s+(.*?)\)')
+ 
+     def __init__(self, id):
+@@ -71,8 +72,19 @@
+             self.director = string.replace(self.director, &quot;,&quot;,&quot;, &quot;)
+             self.director = string.replace(self.director, &quot;  &quot;,&quot; &quot;)
+             self.director = string.replace(self.director, &quot; ,  &quot;,&quot;, &quot;)
+-            self.director = string.replace(self.director, u&quot;,  (wi\xeacej&#160;...)&quot;,'')
++            self.director = string.replace(self.director, &quot;(wi&#281;cej...)&quot;, '')
+ 
++    def get_screenplay(self):
++	screenplay = self.SCREENPLAY_PATTERN.findall(self.page)
++	if len(screenplay)&gt;0:
++            self.screenplay = screenplay[0]
++	    self.screenplay = string.replace(self.screenplay, &quot;\t&quot;, '')
++	    self.screenplay = re.sub('\s+', ' ', self.screenplay)
++	    self.screenplay = string.replace(self.screenplay, &quot;,&quot;,&quot;, &quot;)
++	    self.screenplay = string.replace(self.screenplay, &quot;  &quot;,&quot; &quot;)
++	    self.screenplay = string.replace(self.screenplay, &quot; ,  &quot;,&quot;, &quot;)
++	    self.screenplay = string.replace(self.screenplay, &quot;(wi&#281;cej...)&quot;, '')
++
+     def get_plot(self):
+         self.plot = gutils.trim(self.page,'&lt;h2 id=&quot;o-filmie-header&quot; class=&quot;replace&quot;&gt;','&lt;/div&gt;')
+         self.plot = gutils.after(self.plot, '&lt;p&gt;')
+@@ -81,7 +93,7 @@
+         self.plot = gutils.strip_tags(self.plot)
+         if url != '':
+             plot_page = self.open_page(url=url)
+-            self.plot = gutils.trim(plot_page, '&lt;div class=&quot;filmContent&quot;&gt;', '&lt;/ul&gt;')
++	    self.plot = gutils.trim(plot_page, '&lt;div class=&quot;filmContent&quot; style=&quot;position: relative;&quot;&gt;', '&lt;/p&gt;&lt;/li&gt;')
+             self.plot = gutils.after(self.plot, u'zg&#322;o&#347; poprawk&#281;')
+ 
+     def get_year(self):
+@@ -99,7 +111,6 @@
+         self.cast = gutils.trim(self.page, '&lt;td class=&quot;film-actor&quot;&gt;',u&quot;zobacz wi&#281;cej&quot;)
+         self.cast = string.replace(self.cast, chr(13),&quot;&quot;)
+         self.cast = string.replace(self.cast, chr(10),&quot;&quot;)
+-#        self.cast = string.replace(self.cast, &quot;\n&quot;,&quot;&quot;)
+         self.cast = string.replace(self.cast, &quot;\t&quot;,'')
+         self.cast = string.replace(self.cast, &quot;  &quot;,'')
+         self.cast = string.replace(self.cast, '&lt;td class=&quot;film-protagonist&quot;&gt;', _(&quot; as &quot;))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000854.html">[Griffith-svn] r1388 - in trunk: . lib lib/plugins/export	lib/plugins/extensions lib/plugins/imp lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000856.html">[Griffith-svn] r1390 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#855">[ date ]</a>
+              <a href="thread.html#855">[ thread ]</a>
+              <a href="subject.html#855">[ subject ]</a>
+              <a href="author.html#855">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

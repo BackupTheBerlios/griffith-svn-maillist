@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1089 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1089%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200812162036.mBGKaqe5018275%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000563.html">
+   <LINK REL="Next"  HREF="000565.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1089 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1089%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200812162036.mBGKaqe5018275%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1089 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Tue Dec 16 21:36:52 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000563.html">[Griffith-svn] r1088 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000565.html">[Griffith-svn] r1090 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#564">[ date ]</a>
+              <a href="thread.html#564">[ thread ]</a>
+              <a href="subject.html#564">[ subject ]</a>
+              <a href="author.html#564">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-12-16 21:36:29 +0100 (Tue, 16 Dec 2008)
+New Revision: 1089
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+IMDB movie plugin updated
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-12-16 20:15:54 UTC (rev 1088)
++++ branches/0.9.x/ChangeLog	2008-12-16 20:36:29 UTC (rev 1089)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-12-16  Michael Jahn
++	* IMDB movie plugin updated
++
+ 2008-12-07  Piotr O&#380;arowski
+ 	* CSFD movie plugin updated (thanks to Ale&#353; Nejdr)
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2008-12-16 20:15:54 UTC (rev 1088)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieIMDB.py	2008-12-16 20:36:29 UTC (rev 1089)
+@@ -185,7 +185,7 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	PATTERN = re.compile(r&quot;&quot;&quot;&lt;A HREF=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/LI&gt;&quot;&quot;&quot;)
+-	PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
++	PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;'](.*?)&lt;/tr&gt;&quot;&quot;&quot;)
+ 
+ 	def __init__(self):
+ 		self.original_url_search	= '<A HREF="http://www.imdb.com/List?words=">http://www.imdb.com/List?words=</A>'
+@@ -200,6 +200,8 @@
+ 		else:
+ 			self.page = tmp_page
+ 		self.page = self.page.decode('iso-8859-1')
++		# correction of all &amp;#xxx entities
++		self.page = gutils.convert_entities(self.page)
+ 		return self.page
+ 
+ 	def get_searches(self):
+@@ -210,7 +212,7 @@
+ 				for element in elements[1:]:
+ 					match = self.PATTERN2.findall(element)
+ 					if len(match):
+-						tmp  = gutils.clean(match[0][1])
++						tmp = re.sub('^[0-9]+[.]', '', gutils.clean(gutils.after(match[0][1], '&gt;')))
+ 						self.ids.append(match[0][0])
+ 						self.titles.append(tmp)
+ 		else:
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-12-16 20:15:54 UTC (rev 1088)
++++ trunk/ChangeLog	2008-12-16 20:36:29 UTC (rev 1089)
+@@ -5,6 +5,9 @@
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2008-12-16  Michael Jahn
++	* IMDB movie plugin updated
++
+ 2008-12-16  Piotr O&#380;arowski
+ 	* Reload movie plugin each time search is performed (in --debug mode only, this should ease writing plugins)
+ 	* Canceling search doesn't throw exception anymore (closes 100038)
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-12-16 20:15:54 UTC (rev 1088)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2008-12-16 20:36:29 UTC (rev 1089)
+@@ -172,11 +172,11 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+     PATTERN = re.compile(r&quot;&quot;&quot;&lt;A HREF=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/LI&gt;&quot;&quot;&quot;)
+-    PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;']&gt;(.*?)&lt;/td&gt;&quot;&quot;&quot;)
++    PATTERN2 = re.compile(r&quot;&quot;&quot;&lt;a href=['&quot;]/title/tt([0-9]+)/[&quot;'](.*?)&lt;/tr&gt;&quot;&quot;&quot;)
+ 
+     def __init__(self):
+-        self.original_url_search    = '<A HREF="http://www.imdb.com/List?words=">http://www.imdb.com/List?words=</A>'
+-        self.translated_url_search	= '<A HREF="http://www.imdb.com/find?more=tt;q=">http://www.imdb.com/find?more=tt;q=</A>'
++        self.original_url_search   = '<A HREF="http://www.imdb.com/List?words=">http://www.imdb.com/List?words=</A>'
++        self.translated_url_search = '<A HREF="http://www.imdb.com/find?more=tt;q=">http://www.imdb.com/find?more=tt;q=</A>'
+         self.encode = 'utf-8'
+ 
+     def search(self,parent_window):
+@@ -187,6 +187,8 @@
+         else:
+             self.page = tmp_page
+         self.page = self.page.decode('iso-8859-1')
++        # correction of all &amp;#xxx entities
++        self.page = gutils.convert_entities(self.page)
+         return self.page
+ 
+     def get_searches(self):
+@@ -195,9 +197,9 @@
+             elements = string.split(self.page, '&lt;tr&gt;')
+             if len(elements):
+                 for element in elements[1:]:
+-                    match = self.PATTERN.findall(element)
++                    match = self.PATTERN2.findall(element)
+                     if len(match):
+-                        tmp = gutils.clean(match[0][1])
++                        tmp = re.sub('^[0-9]+[.]', '', gutils.clean(gutils.after(match[0][1], '&gt;')))
+                         self.ids.append(match[0][0])
+                         self.titles.append(tmp)
+         else:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000563.html">[Griffith-svn] r1088 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000565.html">[Griffith-svn] r1090 - trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#564">[ date ]</a>
+              <a href="thread.html#564">[ thread ]</a>
+              <a href="subject.html#564">[ subject ]</a>
+              <a href="author.html#564">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

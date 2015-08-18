@@ -1,0 +1,243 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r489 - in griffith: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r489%20-%20in%20griffith%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200612080106.kB8169E7012040%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000020.html">
+   <LINK REL="Next"  HREF="000022.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r489 - in griffith: . lib/plugins/movie</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r489%20-%20in%20griffith%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200612080106.kB8169E7012040%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r489 - in griffith: . lib/plugins/movie">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  8 02:06:09 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000020.html">[Griffith-svn] r488 - griffith/lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000022.html">[Griffith-svn] r490 - in griffith: . glade lib lib/plugins	lib/plugins/export lib/plugins/imp lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#21">[ date ]</a>
+              <a href="thread.html#21">[ thread ]</a>
+              <a href="subject.html#21">[ subject ]</a>
+              <a href="author.html#21">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2006-12-08 02:06:09 +0100 (Fri, 08 Dec 2006)
+New Revision: 489
+
+Added:
+   griffith/lib/plugins/movie/PluginMovieCineteka.py
+Modified:
+   griffith/ChangeLog
+Log:
+Added new portuguese movie plugin (Cineteka)
+
+Modified: griffith/ChangeLog
+===================================================================
+--- griffith/ChangeLog	2006-12-08 00:17:15 UTC (rev 488)
++++ griffith/ChangeLog	2006-12-08 01:06:09 UTC (rev 489)
+@@ -2,8 +2,12 @@
+ 
+ Griffith ChangeLog
+ ------------------
+-(c) 2005-2006 Vasco Nunes
++(c) 2005-2006 Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
++2006-12-08 Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
++	* ClubeMyDVD movie plugin removed (site no longer exists)
++	* Added new portuguese movie plugin (Cineteka)
++
+ 2006-12-06 Piotr O&#197;&#188;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Ask before adding movie which title is already in database
+ 	* New import plugin system (thanks for help, Jessica)
+
+Added: griffith/lib/plugins/movie/PluginMovieCineteka.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieCineteka.py	2006-12-08 00:17:15 UTC (rev 488)
++++ griffith/lib/plugins/movie/PluginMovieCineteka.py	2006-12-08 01:06:09 UTC (rev 489)
+@@ -0,0 +1,146 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id: PluginMovie7arte.py 478 2006-12-05 21:14:51Z piotrek $'
++
++# Copyright (c) 2005-2006 Vasco Nunes, Piotr Ozarowski
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import string
++
++plugin_name = &quot;Cineteka&quot;
++plugin_description = &quot;O seu Clube de Video Online&quot;
++plugin_url = &quot;cineteka.com&quot;
++plugin_language = _(&quot;Portuguese&quot;)
++plugin_author = &quot;Vasco Nunes&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
++plugin_version = &quot;0.1&quot;
++
++class Plugin(movie.Movie):
++	&quot;&quot;&quot;A movie plugin object&quot;&quot;&quot;
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = &quot;<A HREF="http://www.cineteka.com/index.php?op=Movie&amp;id=">http://www.cineteka.com/index.php?op=Movie&amp;id=</A>&quot; + str(self.movie_id)
++
++	def picture(self):
++		&quot;&quot;&quot;Finds the film's poster image&quot;&quot;&quot;
++		self.picture_url = &quot;<A HREF="http://www.cineteka.com/img/filmes/">http://www.cineteka.com/img/filmes/</A>&quot; + str(self.movie_id) + &quot;_big.jpg&quot;
++
++	def original_title(self):
++		&quot;&quot;&quot;Finds the film's original title&quot;&quot;&quot;
++		self.original_title = string.capwords(gutils.trim(self.page, &quot;&quot;&quot;&lt;nobr&gt;&lt;span class=&quot;txt11&quot;&gt;(&quot;&quot;&quot;, &quot;)&quot;))
++
++	def title(self):
++		&quot;&quot;&quot;Finds the film's local title.
++		Probably the original title translation&quot;&quot;&quot;
++		self.title = string.capwords(gutils.trim(self.page, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/b&gt;&quot;))
++
++	def director(self):
++		&quot;&quot;&quot;Finds the film's director&quot;&quot;&quot;
++		self.director = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Realizador:&lt;/b&gt;&quot;, &quot;&lt;/a&gt;&lt;/td&gt;&quot;))
++
++	def plot(self):
++		&quot;&quot;&quot;Finds the film's plot&quot;&quot;&quot;
++		self.plot = gutils.trim(self.page, &quot;&lt;b&gt;Sinopse:&lt;/b&gt; &quot;, &quot;&lt;/div&gt;&quot;)
++
++	def year(self):
++		&quot;&quot;&quot;Finds the film's year&quot;&quot;&quot;
++		self.year = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Ano:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
++
++	def running_time(self):
++		&quot;&quot;&quot;Finds the film's running time&quot;&quot;&quot;
++		self.running_time = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Dura&#231;&#227;o:&lt;/b&gt; &quot;, &quot; min.&lt;/td&gt;&quot;)
++
++	def genre(self):
++		&quot;&quot;&quot;Finds the film's genre&quot;&quot;&quot;
++		self.genre = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;b&gt;G&#233;nero:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;))
++
++	def with(self):
++		self.with = gutils.strip_tags(gutils.trim(self.page, &quot;&lt;b&gt;Elenco:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;))
++		self.with = string.replace(self.with, &quot;, &quot;, &quot;&quot;)
++		self.with = string.replace(self.with, &quot;\t&quot;, &quot;&quot;)
++		self.with = string.replace(self.with, &quot;\n &quot;, &quot;\n&quot;)
++
++	def classification(self):
++		&quot;&quot;&quot;Find the film's classification&quot;&quot;&quot;
++		self.classification = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Idade:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
++
++	def studio(self):
++		&quot;&quot;&quot;Find the studio&quot;&quot;&quot;
++		self.studio = &quot;&quot;
++
++	def site(self):
++		&quot;&quot;&quot;Find the film's oficial site&quot;&quot;&quot;
++		self.site = gutils.trim(self.page, \
++			&quot;&lt;a class=\&quot;button\&quot; href=\&quot;&quot;, \
++			&quot;&quot;&quot;&quot; title=&quot;Site Oficial&quot;&quot;&quot;)
++
++	def imdb(self):
++		&quot;&quot;&quot;Find the film's imdb details page&quot;&quot;&quot;
++		self.imdb = gutils.trim(self.page, \
++			&quot;&lt;/td&gt;&lt;td&gt;&lt;a class=\&quot;button\&quot; href=\&quot;&quot;, \
++			&quot;&quot;&quot;&quot; title=&quot;Consultar t&#237;tulo&quot;&quot;&quot;)
++
++	def trailer(self):
++		&quot;&quot;&quot;Find the film's trailer page or location&quot;&quot;&quot;
++		self.trailer = &quot;&quot;
++
++	def country(self):
++		&quot;&quot;&quot;Find the film's country&quot;&quot;&quot;
++		self.country = gutils.trim(self.page, &quot;&lt;td&gt;&lt;b&gt;Pa&#237;s:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
++
++	def rating(self):
++		&quot;&quot;&quot;Find the film's rating. From 0 to 10.
++		Convert if needed when assigning.&quot;&quot;&quot;
++		self.rating = 0
++
++class SearchPlugin(movie.SearchMovie):
++	&quot;&quot;&quot;A movie search object&quot;&quot;&quot;
++	def __init__(self):
++		self.original_url_search = &quot;<A HREF="http://www.cineteka.com/index.php?op=MovieSearch&amp;s=">http://www.cineteka.com/index.php?op=MovieSearch&amp;s=</A>&quot;
++		self.translated_url_search = self.original_url_search
++		self.encode='iso-8859-1'
++
++	def search(self, parent_window):
++		&quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
++		self.open_search(parent_window)
++		self.sub_search()
++		return self.page
++
++	def sub_search(self):
++		&quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
++		self.page = gutils.trim(self.page, \
++			&quot;&quot;&quot;ordenados por data de aquisi&#231;&#227;o:&lt;/div&gt;&quot;&quot;&quot;, &quot;&quot;&quot;&lt;div style=&quot;margin-top: 10px; text-align: center;&quot;&gt;&lt;/div&gt;&quot;&quot;&quot;)
++
++	def get_searches(self):
++		&quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
++		elements = string.split(self.page, &quot;&lt;/a&gt;]&lt;/td&gt;&quot;)
++		self.number_results = elements[-1]
++
++		if (len(elements[0])):
++			for element in elements:
++				self.ids.append(gutils.trim(element, &quot;?op=Movie&amp;id=&quot;, &quot;\&quot;&quot;))
++				self.titles.append(gutils.strip_tags(gutils.convert_entities \
++					(gutils.trim(element, &quot;&quot;&quot;&lt;td class=&quot;txt12&quot;&gt;&lt;b&gt;&quot;&quot;&quot;, &quot;&lt;/span&gt;&lt;/nobr&gt;&lt;/td&gt;&quot;))))
++		else:
++			self.number_results = 0
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000020.html">[Griffith-svn] r488 - griffith/lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000022.html">[Griffith-svn] r490 - in griffith: . glade lib lib/plugins	lib/plugins/export lib/plugins/imp lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#21">[ date ]</a>
+              <a href="thread.html#21">[ thread ]</a>
+              <a href="subject.html#21">[ subject ]</a>
+              <a href="author.html#21">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

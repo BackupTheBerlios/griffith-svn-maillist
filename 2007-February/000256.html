@@ -1,0 +1,341 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r736 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r736%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702191453.l1JErdB0014409%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000255.html">
+   <LINK REL="Next"  HREF="000257.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r736 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r736%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200702191453.l1JErdB0014409%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r736 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Feb 19 15:53:39 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000255.html">[Griffith-svn] r735 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="000257.html">[Griffith-svn] r737 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#256">[ date ]</a>
+              <a href="thread.html#256">[ thread ]</a>
+              <a href="subject.html#256">[ subject ]</a>
+              <a href="author.html#256">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-02-19 15:53:38 +0100 (Mon, 19 Feb 2007)
+New Revision: 736
+
+Added:
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+Modified:
+   trunk/AUTHORS
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCSFD.py
+Log:
+* CSFD movie plugin updated (still needs work)
+* DVDEmpire movie plugin added (thanks to Michael Jahn)
+
+
+Modified: trunk/AUTHORS
+===================================================================
+--- trunk/AUTHORS	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/AUTHORS	2007-02-19 14:53:38 UTC (rev 736)
+@@ -20,8 +20,9 @@
+ * CSFD movie plugin
+ 
+ Michael Jahn &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;
++* DVDEmpire movie plugin
++* FilmeVonAZ movie plugin
+ * Kino.de movie plugin
+-* FilmeVonAZ movie plugin
+ 
+ Jessica Katharina Parth &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&gt;
+ * OFDb movie plugin
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/ChangeLog	2007-02-19 14:53:38 UTC (rev 736)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#197;&#188;arowski
+ 
++2007-02-19  Piotr O&#197;&#188;arowski
++	* CSFD movie plugin updated (still needs work)
++	* DVDEmpire movie plugin added (thanks to Michael Jahn)
++
+ 2007-02-14  Piotr O&#197;&#188;arowski
+ 	* KinoDe and FilmeVonAZ movie plugins updated (thanks to Michael Jahn)
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieCSFD.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCSFD.py	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/lib/plugins/movie/PluginMovieCSFD.py	2007-02-19 14:53:38 UTC (rev 736)
+@@ -30,7 +30,7 @@
+ plugin_language = _(&quot;Czech&quot;)
+ plugin_author = &quot;Blondak&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">blondak at neser.cz</A>&gt;&quot;
+-plugin_version = &quot;0.7&quot;
++plugin_version = &quot;0.8&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -51,15 +51,19 @@
+ 			self.o_title = self.o_title[len(self.o_title)-1]
+ 		else:
+ 			self.o_title = &quot;&quot;
++		if self.o_title == &quot;&quot;:
++			self.o_title = self.get_title(True)
+ 
+-	def get_title(self):
+-		self.title = re.search(r&quot;&lt;title&gt;([^,]*), &quot;,self.page)
+-		if self.title:
+-			self.title = self.title.group(1)
++	def get_title(self, ret=False):
++		data = re.search(r&quot;&lt;title&gt;([^,]*), &quot;,self.page)
++		if data:
++			data = data.group(1)
+ 		else:
+-			self.title = &quot;&quot;
+-		if self.o_title == &quot;&quot;:
+-			self.o_title = self.title
++			data = &quot;&quot;
++		if ret is True:
++			return data
++		else:
++			self.title = data
+ 
+ 	def get_director(self):
+ 		self.director = re.search(r&quot;Re&#158;ie:(.*)&lt;br&gt;&lt;b&gt;Hraj&#237;:&quot;,self.page)
+@@ -155,9 +159,9 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		self.id = self.re_items=re.search(r&quot;window.location.href='<A HREF="http://www.csfd.cz/(/film/[^">http://www.csfd.cz/(/film/[^</A>']*)'&quot;,self.page)
+-		if self.id:
+-			self.ids.append(self.id.group(1))
++		tmp_id = self.re_items=re.search(r&quot;window.location.href='<A HREF="http://www.csfd.cz/(/film/[^">http://www.csfd.cz/(/film/[^</A>']*)'&quot;,self.page)
++		if tmp_id:
++			self.ids.append(tmp_id.group(1))
+ 		else:
+ 			self.re_items=re.findall(r&quot;href=\&quot;(/film/[^\&quot;]+)[^&gt;]*&gt;([^&lt;]+)&lt;/a&gt;([^&lt;]*)&quot;,self.page)
+ 			self.number_results = len(self.re_items)
+
+Added: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2007-02-14 16:33:25 UTC (rev 735)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2007-02-19 14:53:38 UTC (rev 736)
+@@ -0,0 +1,167 @@
++# -*- coding: UTF-8 -*-
++
++__revision__ = '$Id$'
++
++# Copyright (c) 2007
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Library General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
++
++# You may use and distribute this software under the terms of the
++# GNU General Public License, version 2 or later
++
++from gettext import gettext as _
++import gutils
++import movie
++import re
++
++plugin_name = &quot;DVD Empire&quot;
++plugin_description = &quot;International Retailer of DVD Movies&quot;
++plugin_url = &quot;www.dvdempire.com&quot;
++plugin_language = _(&quot;English&quot;)
++plugin_author = &quot;Michael Jahn&quot;
++plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
++plugin_version = &quot;1.0&quot;
++
++class Plugin(movie.Movie):
++	def __init__(self, id):
++		self.encode='iso-8859-1'
++		self.movie_id = id
++		self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v4_item.asp?item_id=">http://www.dvdempire.com/Exec/v4_item.asp?item_id=</A>&quot; + str(self.movie_id)
++	
++	def get_image(self):
++		tmp_page = gutils.trim(self.page, '&lt;td align=&quot;center&quot; valign=&quot;top&quot; class=&quot;fontsmall&quot;&gt;', '&lt;/td&gt;')
++		self.image_url = gutils.trim(tmp_page, '&lt;img src=\'', '\' ')
++
++	def get_o_title(self):
++		self.o_title = gutils.strip_tags(gutils.trim(self.page,'&lt;td class=&quot;fontxlarge&quot; valign=&quot;top&quot; align=&quot;left&quot;&gt;', '&lt;nobr&gt;'))
++
++	def get_title(self):
++		self.title = gutils.strip_tags(gutils.trim(self.page,'&lt;td class=&quot;fontxlarge&quot; valign=&quot;top&quot; align=&quot;left&quot;&gt;', '&lt;nobr&gt;'))
++
++	def get_director(self):
++		self.director = gutils.strip_tags(gutils.trim(self.page,&quot;&gt;Directors:&quot;,&quot;&lt;/a&gt;&quot;))
++		self.director = self.director.replace('&nbsp;', '')
++		self.director = self.director.replace('&#149;', '')
++
++	def get_plot(self):
++		self.plot = gutils.strip_tags(gutils.trim(self.page, '&lt;td width=&quot;100%&quot; valign=&quot;top&quot; class=&quot;fontsmall3&quot;&gt;', '&lt;/td&gt;'))
++		self.plot = self.plot.replace('\x93', '&quot;')
++
++	def get_year(self):
++		self.year = gutils.strip_tags(gutils.trim(self.page, '&gt;Production Year:', '&lt;br /&gt;'))
++
++	def get_runtime(self):
++		self.runtime = gutils.strip_tags(gutils.trim(self.page, '&gt;Length:', '&lt;br /&gt;'))
++
++	def get_genre(self):
++		self.genre = &quot;&quot;
++
++	def get_cast(self):
++		self.cast = gutils.trim(self.page, '&gt;Actors:', '&lt;/td&gt;&lt;td')
++		self.cast = self.cast.replace('&lt;br&gt;', '\n')
++		self.cast = self.cast.replace('&lt;br /&gt;', '\n')
++		self.cast = self.cast.replace('&nbsp;', '')
++		self.cast = self.cast.replace('&#8226;', '')
++		self.cast = self.cast.replace('&#149;', '')
++		self.cast = gutils.strip_tags(self.cast)
++
++	def get_classification(self):
++		self.classification = gutils.strip_tags(gutils.trim(self.page, '&gt;Rating:', '&lt;br /&gt;'))
++
++	def get_studio(self):
++		self.studio = gutils.strip_tags(gutils.trim(self.page, '&gt;Studio:', '&lt;br /&gt;'))
++
++	def get_o_site(self):
++		self.o_site = &quot;&quot;
++
++	def get_site(self):
++		self.site = self.url
++
++	def get_trailer(self):
++		self.trailer = &quot;&quot;
++
++	def get_country(self):
++		self.country = &quot;&quot;
++
++	def get_rating(self):
++		self.rating = &quot;0&quot;
++
++	def get_notes(self):
++		self.notes = ''
++		tmp_page = gutils.trim(self.page, 'Features:', '&lt;b&gt;')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page &lt;&gt; '':
++			self.notes = self.notes + '\nFeatures:\n' + tmp_page + '\n'
++		tmp_page = gutils.trim(self.page, 'Video:', '&lt;b&gt;')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page &lt;&gt; '':
++			self.notes = self.notes + '\nVideo:\n' + tmp_page + '\n'
++		tmp_page = gutils.trim(self.page, 'Audio:', '&lt;b&gt;')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page &lt;&gt; '':
++			self.notes = self.notes + '\nAudio:\n' + tmp_page + '\n'
++		tmp_page = gutils.trim(self.page, 'Subtitles:', '&lt;b&gt;')
++		tmp_page = gutils.strip_tags(tmp_page)
++		if tmp_page &lt;&gt; '':
++			self.notes = self.notes + '\nSubtitles:\n' + tmp_page + '\n'
++
++class SearchPlugin(movie.SearchMovie):
++	def __init__(self):
++		self.original_url_search   = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=</A>&quot;
++		self.encode = 'iso-8859-1'
++
++	def search(self,parent_window):
++		self.open_search(parent_window)
++		# short the content
++		tmp_page = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
++		#
++		# try to get all result pages (not so nice, but it works)
++		#
++		tmp_pagecount = gutils.trim(self.page, '&lt;div id=&quot;Search_Container&quot; name=&quot;Search_Container&quot;&gt;', '&lt;/table&gt;')
++		tmp_pagecountintuse = 1
++		elements = tmp_pagecount.split(&quot;&amp;page=&quot;)
++		for element in elements:
++			try:
++				tmp_pagecountint = int(gutils.before(element, '\''))
++			except:
++				tmp_pagecountint = 0
++			if tmp_pagecountint &gt; tmp_pagecountintuse:
++				tmp_pagecountintuse = tmp_pagecountint
++		tmp_pagecountintcurrent = 1
++		while (tmp_pagecountintuse &gt; tmp_pagecountintcurrent):
++			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
++			self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;page=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;string=&quot;
++			self.open_search(parent_window)
++			tmp_page2 = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
++			tmp_page = tmp_page + tmp_page2
++
++		self.page = tmp_page
++		return self.page
++
++	def get_searches(self):
++		split_pattern = re.compile('&lt;a href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[0-9]+[&amp;]amp;item_id=')
++		check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[\']&gt;')
++		elements = split_pattern.split(self.page)
++		elements[0] = ''
++		for element in elements:
++			if element &lt;&gt; '':
++				is_an_item = check_pattern.search(element)
++				if is_an_item:
++					tmp_title = gutils.strip_tags(gutils.trim(element, &quot;&gt;&quot;, &quot;&lt;/a&gt;&quot;))
++					if tmp_title &lt;&gt; '':
++						tmp_id = gutils.before(element,'&amp;')
++						self.ids.append(tmp_id)
++						self.titles.append(tmp_title)
+
+
+Property changes on: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000255.html">[Griffith-svn] r735 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="000257.html">[Griffith-svn] r737 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#256">[ date ]</a>
+              <a href="thread.html#256">[ thread ]</a>
+              <a href="subject.html#256">[ subject ]</a>
+              <a href="author.html#256">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

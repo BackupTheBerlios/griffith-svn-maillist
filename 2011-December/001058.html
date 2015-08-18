@@ -1,0 +1,275 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1600 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1600%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20111202203028.00C434815BF%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001057.html">
+   <LINK REL="Next"  HREF="001059.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1600 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1600%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C20111202203028.00C434815BF%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1600 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  2 21:30:27 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001057.html">[Griffith-svn] r1599 - in trunk: . lib lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001059.html">[Griffith-svn] r1601 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1058">[ date ]</a>
+              <a href="thread.html#1058">[ thread ]</a>
+              <a href="subject.html#1058">[ subject ]</a>
+              <a href="author.html#1058">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-12-02 21:30:27 +0100 (Fri, 02 Dec 2011)
+New Revision: 1600
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/initialize.py
+Log:
+[#897774] removal of the first added subtitle format is not possible
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-12-02 19:52:02 UTC (rev 1599)
++++ trunk/ChangeLog	2011-12-02 20:30:27 UTC (rev 1600)
+@@ -7,6 +7,7 @@
+ 
+ 2011-12-02  Michael Jahn
+ 	* [#888347] FilmAffinity plugin doesn't work
++	* [#897774] removal of the first added subtitle format is not possible
+ 
+ 2011-12-01  Michael Jahn
+ 	* [#885914] Amazon Plugin in Griffith doesn't work
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2011-12-02 19:52:02 UTC (rev 1599)
++++ trunk/griffith	2011-12-02 20:30:27 UTC (rev 1600)
+@@ -625,7 +625,7 @@
+     def on_lang_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['lang_name'].get_active()
+-        if active &gt; 0:
++        if active &gt;= 0:
+             lang_id = self.languages_ids[active]
+             lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
+             if lang and len(lang.movielangs)==0:
+@@ -644,22 +644,20 @@
+ 
+     def on_lang_rename_clicked(self, widget):
+         try:
+-            active = self.lang_name_active
++            lang_id = self.languages_ids[self.lang_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        lang_id = self.languages_ids[active]
+-        if lang_id &gt; 0:
+-            lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
+-            if lang:
+-                lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
+-                try:
+-                    session.commit()
+-                except Exception, e:
+-                    session.rollback()
+-                    log.warn(&quot;Cannot rename language: %s&quot;, e.message)
+-                else:
+-                    initialize.language_combos(self)
++        lang = session.query(db.Lang).filter_by(lang_id=lang_id).first()
++        if lang:
++            lang.name = self.widgets['preferences']['lang_name'].get_active_text().decode('utf-8')
++            try:
++                session.commit()
++            except Exception, e:
++                session.rollback()
++                log.warn(&quot;Cannot rename language: %s&quot;, e.message)
++            else:
++                initialize.language_combos(self)
+ 
+     def on_lang_name_combo_changed(self, widget):
+         active = self.widgets['preferences']['lang_name'].get_active()
+@@ -744,7 +742,7 @@
+     def on_acodec_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['acodec_name'].get_active()
+-        if active &gt; 0:
++        if active &gt;= 0:
+             acodec_id = self.acodecs_ids[active]
+             acodec = session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+             if acodec and len(acodec.movielangs) == 0:
+@@ -763,11 +761,10 @@
+ 
+     def on_acodec_rename_clicked(self, widget):
+         try:
+-            active = self.acodec_name_active
++            acodec_id = self.acodecs_ids[self.acodec_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        acodec_id = self.acodecs_ids[active]
+         acodec = session.query(db.ACodec).filter_by(acodec_id=acodec_id).first()
+         if acodec:
+             acodec.name = self.widgets['preferences']['acodec_name'].get_active_text().decode('utf-8')
+@@ -802,7 +799,7 @@
+     def on_achannel_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['achannel_name'].get_active()
+-        if active &gt; 0:
++        if active &gt;= 0:
+             achannel_id = self.achannels_ids[active]
+             achannel = session.query(db.AChannel).filter_by(achannel_id=achannel_id).first()
+             if achannel and len(achannel.movielangs)==0:
+@@ -821,11 +818,10 @@
+ 
+     def on_achannel_rename_clicked(self, widget):
+         try:
+-            active = self.achannel_name_active
++            achannel_id = self.achannels_ids[self.achannel_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        achannel_id = self.achannels_ids[active]
+         achannel = session.query(db.AChannel).filter_by(achannel_id=achannel_id).first()
+         if achannel is not None:
+             achannel.name = self.widgets['preferences']['achannel_name'].get_active_text().decode('utf-8')
+@@ -860,7 +856,7 @@
+     def on_subformat_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['subformat_name'].get_active()
+-        if active &gt; 0:
++        if active &gt;= 0:
+             subformat_id = self.subformats_ids[active]
+             subformat = session.query(db.SubFormat).filter_by(subformat_id=subformat_id).first()
+             if subformat and len(subformat.movielangs)==0:
+@@ -879,11 +875,10 @@
+ 
+     def on_subformat_rename_clicked(self, widget):
+         try:
+-            active = self.subformat_name_active
++            subformat_id = self.subformats_ids[self.subformat_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        subformat_id = self.subformats_ids[active]
+         subformat = session.query(db.SubFormat).filter_by(subformat_id=subformat_id).first()
+         if subformat is not None:
+             subformat.name = self.widgets['preferences']['subformat_name'].get_active_text().decode('utf-8')
+@@ -909,7 +904,7 @@
+     def on_medium_remove_clicked(self, widget):
+         session = self.db.Session()
+         active = self.widgets['preferences']['medium_name'].get_active()
+-        if active &gt; 0:
++        if active &gt;= 0:
+             medium_id = self.media_ids[active]
+             medium = session.query(db.Medium).filter_by(medium_id=medium_id).first()
+             if medium and len(medium.movies)==0:
+@@ -928,11 +923,10 @@
+ 
+     def on_medium_rename_clicked(self, widget):
+         try:
+-            active = self.medium_name_active
++            medium_id = self.media_ids[self.medium_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        medium_id = self.media_ids[active]
+         medium = session.query(db.Medium).filter_by(medium_id=medium_id).first()
+         if medium:
+             medium.name = self.widgets['preferences']['medium_name'].get_active_text().decode('utf-8')
+@@ -977,11 +971,10 @@
+ 
+     def on_vcodec_rename_clicked(self, widget):
+         try:
+-            active = self.vcodec_name_active
++            vcodec_id = self.vcodecs_ids[self.vcodec_name_active]
+         except:
+             return False
+         session = self.db.Session()
+-        vcodec_id = self.vcodecs_ids[active]
+         vcodec = session.query(db.VCodec).filter_by(vcodec_id=vcodec_id).first()
+         if vcodec:
+             vcodec.name = self.widgets['preferences']['vcodec_name'].get_active_text().decode('utf-8')
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2011-12-02 19:52:02 UTC (rev 1599)
++++ trunk/lib/initialize.py	2011-12-02 20:30:27 UTC (rev 1600)
+@@ -1010,7 +1010,7 @@
+     self.lang['lang'].clear()
+     self.widgets['preferences']['lang_name'].insert_text(0, '')
+     for i, lang in enumerate(self.db.session.query(db.Lang.lang_id, db.Lang.name).all()):
+-        self.languages_ids[i] = lang.lang_id
++        self.languages_ids[i + 1] = lang.lang_id
+         self.widgets['preferences']['lang_name'].insert_text(i + 1, lang.name)
+         # add movie languages treeview
+         self.lang['lang'].append([lang.lang_id, lang.name])
+@@ -1025,7 +1025,7 @@
+     self.lang['acodec'].clear()
+     self.widgets['preferences']['acodec_name'].insert_text(0, '')
+     for i, acodec in enumerate(self.db.session.query(db.ACodec.acodec_id, db.ACodec.name).all()):
+-        self.acodecs_ids[i] = acodec.acodec_id
++        self.acodecs_ids[i + 1] = acodec.acodec_id
+         self.widgets['preferences']['acodec_name'].insert_text(i + 1, acodec.name)
+         # add movie languages treeview
+         self.lang['acodec'].append([acodec.acodec_id, acodec.name])
+@@ -1040,7 +1040,7 @@
+     self.lang['achannel'].clear()
+     self.widgets['preferences']['achannel_name'].insert_text(0, '')
+     for i, achannel in enumerate(self.db.session.query(db.AChannel.achannel_id, db.AChannel.name).all()):
+-        self.achannels_ids[i] = achannel.achannel_id
++        self.achannels_ids[i + 1] = achannel.achannel_id
+         self.widgets['preferences']['achannel_name'].insert_text(i + 1, achannel.name)
+         # add movie languages treeview
+         self.lang['achannel'].append([achannel.achannel_id, achannel.name])
+@@ -1055,7 +1055,7 @@
+     self.lang['subformat'].clear()
+     self.widgets['preferences']['subformat_name'].insert_text(0, '')
+     for i, subformat in enumerate(self.db.session.query(db.SubFormat.subformat_id, db.SubFormat.name).all()):
+-        self.subformats_ids[i] = subformat.subformat_id
++        self.subformats_ids[i + 1] = subformat.subformat_id
+         self.widgets['preferences']['subformat_name'].insert_text(i + 1, subformat.name)
+         # add movie languages treeview
+         self.lang['subformat'].append([subformat.subformat_id, subformat.name])
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001057.html">[Griffith-svn] r1599 - in trunk: . lib lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001059.html">[Griffith-svn] r1601 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1058">[ date ]</a>
+              <a href="thread.html#1058">[ thread ]</a>
+              <a href="subject.html#1058">[ subject ]</a>
+              <a href="author.html#1058">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

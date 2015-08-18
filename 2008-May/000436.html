@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r948 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r948%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200805081254.m48CsT4F010319%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000435.html">
+   <LINK REL="Next"  HREF="000437.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r948 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r948%20-%20branches/0.9.x%0A%09branches/0.9.x/lib/plugins/movie%20trunk%20trunk/lib/plugins/movie&In-Reply-To=%3C200805081254.m48CsT4F010319%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r948 - branches/0.9.x	branches/0.9.x/lib/plugins/movie trunk trunk/lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu May  8 14:54:29 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000435.html">[Griffith-svn] test
+</A></li>
+        <LI>Next message: <A HREF="000437.html">[Griffith-svn] r949 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#436">[ date ]</a>
+              <a href="thread.html#436">[ thread ]</a>
+              <a href="subject.html#436">[ subject ]</a>
+              <a href="author.html#436">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-05-08 14:54:12 +0200 (Thu, 08 May 2008)
+New Revision: 948
+
+Modified:
+   branches/0.9.x/ChangeLog
+   branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+Log:
+updated DVD Empire plugin
+
+Modified: branches/0.9.x/ChangeLog
+===================================================================
+--- branches/0.9.x/ChangeLog	2008-04-24 22:27:42 UTC (rev 947)
++++ branches/0.9.x/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-05-08  Michael Jahn
++	* updated DVD Empire plugin
++
+ 2008-04-25  Michael Jahn
+ 	* fixed fetching posters from Amazon 
+ 
+
+Modified: branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-04-24 22:27:42 UTC (rev 947)
++++ branches/0.9.x/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-05-08 12:54:12 UTC (rev 948)
+@@ -32,7 +32,7 @@
+ plugin_language = _(&quot;English&quot;)
+ plugin_author = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.0&quot;
++plugin_version = &quot;1.1&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -66,7 +66,7 @@
+ 		self.runtime = gutils.strip_tags(gutils.trim(self.page, '&gt;Length:', '&lt;br /&gt;'))
+ 
+ 	def get_genre(self):
+-		self.genre = &quot;&quot;
++		self.genre = gutils.strip_tags(gutils.trim(self.page, '&gt;Genre&lt;/b&gt;:', '\n'))
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.page, '&gt;Actors:', '&lt;/td&gt;&lt;td')
+@@ -96,7 +96,13 @@
+ 		self.country = &quot;&quot;
+ 
+ 	def get_rating(self):
+-		self.rating = &quot;0&quot;
++		self.rating = gutils.clean(gutils.trim(self.page, '&gt;Overall Rating:', ' out of'))
++		try:
++			tmp_float = float(self.rating)
++			tmp_float = round(2 * tmp_float, 0)
++			self.rating = str(tmp_float)
++		except:
++			self.rating = '0'
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+@@ -119,8 +125,8 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search   = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=</A>&quot;
+-		self.translated_url_search = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=</A>&quot;
++		self.original_url_search   = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=</A>&quot;
+ 		self.encode = 'iso-8859-1'
+ 
+ 	def search(self,parent_window):
+@@ -141,9 +147,9 @@
+ 			if tmp_pagecountint &gt; tmp_pagecountintuse:
+ 				tmp_pagecountintuse = tmp_pagecountint
+ 		tmp_pagecountintcurrent = 1
+-		while (tmp_pagecountintuse &gt; tmp_pagecountintcurrent):
++		while tmp_pagecountintuse &gt; tmp_pagecountintcurrent and tmp_pagecountintuse &lt; 4:
+ 			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;page=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;string=&quot;
++			self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;page=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;string=&quot;
+ 			self.open_search(parent_window)
+ 			tmp_page2 = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
+ 			tmp_page = tmp_page + tmp_page2
+@@ -152,8 +158,8 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		split_pattern = re.compile('&lt;a href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[0-9]+[&amp;]amp;item_id=')
+-		check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[\']&gt;')
++		split_pattern = re.compile('&lt;a[\t ]+href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[-0-9]+[&amp;]amp;item_id=')
++		check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[&quot;\']&gt;')
+ 		elements = split_pattern.split(self.page)
+ 		elements[0] = ''
+ 		for element in elements:
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-04-24 22:27:42 UTC (rev 947)
++++ trunk/ChangeLog	2008-05-08 12:54:12 UTC (rev 948)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-05-08  Michael Jahn
++	* updated DVD Empire plugin
++
+ 2008-04-25  Michael Jahn
+ 	* fixed fetching posters from Amazon 
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieDVDEmpire.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-04-24 22:27:42 UTC (rev 947)
++++ trunk/lib/plugins/movie/PluginMovieDVDEmpire.py	2008-05-08 12:54:12 UTC (rev 948)
+@@ -32,7 +32,7 @@
+ plugin_language = _(&quot;English&quot;)
+ plugin_author = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.0&quot;
++plugin_version = &quot;1.1&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -66,7 +66,7 @@
+ 		self.runtime = gutils.strip_tags(gutils.trim(self.page, '&gt;Length:', '&lt;br /&gt;'))
+ 
+ 	def get_genre(self):
+-		self.genre = &quot;&quot;
++		self.genre = gutils.strip_tags(gutils.trim(self.page, '&gt;Genre&lt;/b&gt;:', '\n'))
+ 
+ 	def get_cast(self):
+ 		self.cast = gutils.trim(self.page, '&gt;Actors:', '&lt;/td&gt;&lt;td')
+@@ -96,7 +96,13 @@
+ 		self.country = &quot;&quot;
+ 
+ 	def get_rating(self):
+-		self.rating = &quot;0&quot;
++		self.rating = gutils.clean(gutils.trim(self.page, '&gt;Overall Rating:', ' out of'))
++		try:
++			tmp_float = float(self.rating)
++			tmp_float = round(2 * tmp_float, 0)
++			self.rating = str(tmp_float)
++		except:
++			self.rating = '0'
+ 
+ 	def get_notes(self):
+ 		self.notes = ''
+@@ -119,8 +125,8 @@
+ 
+ class SearchPlugin(movie.SearchMovie):
+ 	def __init__(self):
+-		self.original_url_search   = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=</A>&quot;
+-		self.translated_url_search = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;string=</A>&quot;
++		self.original_url_search   = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=</A>&quot;
++		self.translated_url_search = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;string=</A>&quot;
+ 		self.encode = 'iso-8859-1'
+ 
+ 	def search(self,parent_window):
+@@ -141,9 +147,9 @@
+ 			if tmp_pagecountint &gt; tmp_pagecountintuse:
+ 				tmp_pagecountintuse = tmp_pagecountint
+ 		tmp_pagecountintcurrent = 1
+-		while (tmp_pagecountintuse &gt; tmp_pagecountintcurrent):
++		while tmp_pagecountintuse &gt; tmp_pagecountintcurrent and tmp_pagecountintuse &lt; 4:
+ 			tmp_pagecountintcurrent = tmp_pagecountintcurrent + 1
+-			self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;page=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=3&amp;used=0&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;string=&quot;
++			self.url = &quot;<A HREF="http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;page=">http://www.dvdempire.com/Exec/v1_search_all.asp?&amp;site_media_id=0&amp;pp=&amp;search_refined=32&amp;used=0&amp;page=</A>&quot; + str(tmp_pagecountintcurrent) + &quot;&amp;string=&quot;
+ 			self.open_search(parent_window)
+ 			tmp_page2 = gutils.trim(self.page,'&lt;select name=&quot;sort&quot;', 'Click Here to make a Suggestion&lt;/a&gt;')
+ 			tmp_page = tmp_page + tmp_page2
+@@ -152,8 +158,8 @@
+ 		return self.page
+ 
+ 	def get_searches(self):
+-		split_pattern = re.compile('&lt;a href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[0-9]+[&amp;]amp;item_id=')
+-		check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[\']&gt;')
++		split_pattern = re.compile('&lt;a[\t ]+href=[&quot;\']/Exec/v4_item[.]asp[?]userid=[-0-9]+[&amp;]amp;item_id=')
++		check_pattern = re.compile('[0-9]+[&amp;]amp;searchID=[0-9]+[&quot;\']&gt;')
+ 		elements = split_pattern.split(self.page)
+ 		elements[0] = ''
+ 		for element in elements:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000435.html">[Griffith-svn] test
+</A></li>
+	<LI>Next message: <A HREF="000437.html">[Griffith-svn] r949 - branches/0.9.x	branches/0.9.x/lib/plugins/export trunk trunk/lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#436">[ date ]</a>
+              <a href="thread.html#436">[ thread ]</a>
+              <a href="subject.html#436">[ subject ]</a>
+              <a href="author.html#436">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

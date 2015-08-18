@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1163 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-February/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1163%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200902112157.n1BLv3jV000974%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000634.html">
+   <LINK REL="Next"  HREF="000636.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1163 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1163%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200902112157.n1BLv3jV000974%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1163 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 11 22:57:03 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000634.html">[Griffith-svn] r1162 - branches/0.9.x trunk trunk/glade
+</A></li>
+        <LI>Next message: <A HREF="000636.html">[Griffith-svn] r1164 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#635">[ date ]</a>
+              <a href="thread.html#635">[ thread ]</a>
+              <a href="subject.html#635">[ subject ]</a>
+              <a href="author.html#635">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2009-02-11 22:57:02 +0100 (Wed, 11 Feb 2009)
+New Revision: 1163
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/backup.py
+   trunk/lib/version.py
+Log:
+* Version changed to 0.10-beta3~svn
+* Backup function fixed
+* PostgreSQL/MySQL backup support added
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-02-11 20:56:20 UTC (rev 1162)
++++ trunk/ChangeLog	2009-02-11 21:57:02 UTC (rev 1163)
+@@ -5,6 +5,11 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-02-11  Piotr O&#380;arowski
++	* Version changed to 0.10-beta3~svn
++	* Backup function fixed
++	* PostgreSQL/MySQL backup support added
++
+ ---- 0.10-beta2 ----
+ 
+ 2009-02-10  Piotr O&#380;arowski
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2009-02-11 20:56:20 UTC (rev 1162)
++++ trunk/NEWS	2009-02-11 21:57:02 UTC (rev 1163)
+@@ -1,3 +1,9 @@
++Griffith 0.10-beta3
++===================
++* Backup function fixed
++* PostgreSQL/MySQL backup support added
++
++
+ Griffith 0.10-beta2
+ ===================
+ * Most movie plugins updated
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2009-02-11 20:56:20 UTC (rev 1162)
++++ trunk/lib/backup.py	2009-02-11 21:57:02 UTC (rev 1163)
+@@ -25,6 +25,7 @@
+ import os.path
+ import zipfile
+ import logging
++import datetime
+ log = logging.getLogger(&quot;Griffith&quot;)
+ import config
+ import edit
+@@ -33,23 +34,26 @@
+ 
+ def backup(self):
+     &quot;&quot;&quot;perform a compressed griffith database/posters/preferences backup&quot;&quot;&quot;
++    #if self.db.session.bind.engine.name != 'sqlite':
++    #    gutils.error(self, _(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
++    #    return False
++
++    default_name = &quot;%s_backup_%s.zip&quot; % (self.config.get('name','griffith', section='database'),\
++                    datetime.date.isoformat(datetime.datetime.now()))
+     filename = gutils.file_chooser(_(&quot;Save Griffith backup&quot;), \
+-        action=gtk.FILE_CHOOSER_ACTION_SAVE, buttons= \
+-        (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK), \
+-        name=self.config.get('name','griffith', section='database') + '_backup.zip')
++        action=gtk.FILE_CHOOSER_ACTION_SAVE, name=default_name, buttons= \
++        (gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
++
+     if filename and filename[0]:
+-        overwrite = None
++        proceed = True
++
+         zipfilename = filename[0].decode('utf-8')
+         if os.path.isfile(zipfilename):
+-            response = gutils.question(self, \
+-                _(&quot;File exists. Do you want to overwrite it?&quot;), \
+-                1, self.widgets['window'])
+-            if response == -8:
+-                overwrite = True
+-            else:
+-                overwrite = False
++            response = gutils.question(_(&quot;File exists. Do you want to overwrite it?&quot;), window=self.widgets['window'])
++            if response != gtk.RESPONSE_YES:
++                proceed = False
+ 
+-        if overwrite == True or overwrite is None:
++        if proceed:
+             try:
+                 if zipfile.zlib is not None:
+                     mzip = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)
+@@ -58,62 +62,53 @@
+             except:
+                 gutils.error(self, _(&quot;Error creating backup&quot;), self.widgets['window'])
+                 return False
+-            mzip.write(os.path.join(self.locations['home'],'griffith.cfg').encode('utf-8'))
+             if self.db.session.bind.engine.name == 'sqlite':
++                mzip.write(os.path.join(self.locations['home'],'griffith.cfg').encode('utf-8'))
+                 fileName = os.path.join(self.locations['home'], self.config.get('name','griffith', section='database') + '.db').encode('utf-8')
+                 mzip.write(fileName)
+             else:
+-                gutils.error(self, _(&quot;Backup function is available only for SQLite engine for now&quot;), self.widgets['window'])
+-                return False
+                 from tempfile import mkdtemp
+-                from shutil import rmtree, move
+-                from sqlalchemy import BoundMetaData
++                from shutil import rmtree
++                from StringIO import StringIO
++                from sqlalchemy import MetaData
+                 import copy
+-                # if backup_to_sqlite:
++                import db
++
+                 tmp_dir = mkdtemp()
+                 tmp_config = copy.deepcopy(self.config)
+-                tmp_config._file = os.path.join(tmp_dir,'griffith.cfg')
+-                tmp_config.get('type', 'sqlite', section='database') == 'sqlite'
+-                tmp_config.set('file', section='database') == &quot;griffith.db&quot;
++                tmp_config._file = os.path.join(tmp_dir, 'griffith.cfg')
++                tmp_config.set('type', 'sqlite', section='database')
++                tmp_config.set('file', 'griffith.db', section='database')
+                 tmp_config.save()
++                mzip.write(tmp_config._file)
+ 
+-#                tmp_db = sql.GriffithSQL(tmp_config, tmp_dir)
+-#                for i in self.db.metadata.tables
+-#                tmp_db.
+-
+-                tmp_file = os.path.join(tmp_dir, tmp_config.get('file', 'griffith.db', section='database')).encode('utf-8')
+-                tmp_metadata = BoundMetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
+-                tmp_metadata.tables = self.db.metadata.tables
++                tmp_file = os.path.join(tmp_dir, 'griffith.db')
++                tmp_metadata = MetaData(&quot;<A HREF="sqlite:///%s">sqlite:///%s</A>&quot; % tmp_file)
++                tmp_metadata.tables = db.metadata.tables
+                 tmp_metadata.create_all()
+-#                for table in self.db.metadata.tables.keys():
+-                for table in [t.name for t in self.db.metadata.table_iterator()]: # table_iterator() will return tables in *correct* order
+-                    data = self.db.metadata.tables[table].select().execute().fetchall()
+-                    tmp_metadata.tables[table].insert().execute(data)
+-#                    for item in data:
+-#                        tmp_metadata.tables[table].insert().execute(item)
+-                tmp_metadata.engine.commit()
++
++                # SQLite doesn't care about foreign keys much so we can just copy the data
++                for table in db.metadata.sorted_tables:
++                    if table.name == 'posters':
++                        continue # see below
++                    data = table.select(bind=self.db.session.bind).execute().fetchall()
++                    if data:
++                        tmp_metadata.tables[table.name].insert(bind=tmp_metadata.bind).execute(data)
+                 
++                # posters
++                data = db.tables['posters'].select(bind=self.db.session.bind).execute().fetchall()
++                for i in data:
++                    db.tables['posters'].insert(bind=tmp_metadata.bind).execute(md5sum=i[0], data=StringIO(i[1]).read())
++
+                 mzip.write(tmp_file)
+                 rmtree(tmp_dir)
+-            posters_dir = os.path.join(self.locations['posters'])
+-            for movie in self.db.Movie.query.all():
+-                if movie.image is not None:
+-                    filename = str(movie.image)+&quot;.jpg&quot;
+-                    filename = os.path.join(posters_dir, filename).encode('utf-8')
+-                    if os.path.isfile(filename):
+-                        try:
+-                            mzip.write(filename)
+-                        except:
+-                            log.info(&quot;Can't compress %s&quot; % filename)
+-            mzip.close()
+             gutils.info(_(&quot;Backup has been created&quot;), self.widgets['window'])
+ 
+ def restore(self):
+     &quot;&quot;&quot;restores a griffith compressed backup&quot;&quot;&quot;
+     filename = gutils.file_chooser(_(&quot;Restore Griffith backup&quot;), \
+-        action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons= \
+-        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, \
+-        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
++                    action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons= \
++                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+     if filename[0]:
+         try:
+             zip = zipfile.ZipFile(filename[0], 'r')
+
+Modified: trunk/lib/version.py
+===================================================================
+--- trunk/lib/version.py	2009-02-11 20:56:20 UTC (rev 1162)
++++ trunk/lib/version.py	2009-02-11 21:57:02 UTC (rev 1163)
+@@ -22,7 +22,7 @@
+ # GNU General Public License, version 2 or later
+ 
+ pname        = &quot;Griffith&quot;
+-pversion     = &quot;0.10-beta2&quot;
++pversion     = &quot;0.10-beta3~svn&quot;
+ pauthor      = &quot;Vasco Nunes, Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">griffith-private at lists.berlios.de</A>&gt;&quot;
+ pyear        = &quot;2005-2009&quot;
+ pwebsite     = &quot;<A HREF="http://www.griffith.cc/">http://www.griffith.cc/</A>&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000634.html">[Griffith-svn] r1162 - branches/0.9.x trunk trunk/glade
+</A></li>
+	<LI>Next message: <A HREF="000636.html">[Griffith-svn] r1164 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#635">[ date ]</a>
+              <a href="thread.html#635">[ thread ]</a>
+              <a href="subject.html#635">[ subject ]</a>
+              <a href="author.html#635">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

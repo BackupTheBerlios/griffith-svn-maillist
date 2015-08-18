@@ -1,0 +1,344 @@
+From mikej06 at mail.berlios.de  Mon May 10 21:25:00 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 10 May 2010 21:25:00 +0200
+Subject: [Griffith-svn] r1421 - trunk/lib/plugins/movie
+Message-ID: <201005101925.o4AJP0cG000842@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-05-10 21:24:50 +0200 (Mon, 10 May 2010)
+New Revision: 1421
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Log:
+corrected trailer url for IMDB-de plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2010-05-06 20:42:45 UTC (rev 1420)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2010-05-10 19:24:50 UTC (rev 1421)
+@@ -157,7 +157,7 @@
+         self.site = "http://www.imdb.de/title/tt%s" % self.movie_id
+ 
+     def get_trailer(self):
+-        self.trailer = "http://www.imdb.de/title/tt%s/trailers" % self.movie_id
++        self.trailer = "http://www.imdb.com/title/tt%s/trailers" % self.movie_id
+ 
+     def get_country(self):
+         self.country = gutils.trim(self.page, '<h5>Land:</h5>', '</div>')
+
+
+
+From mikej06 at mail.berlios.de  Mon May 10 22:31:31 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 10 May 2010 22:31:31 +0200
+Subject: [Griffith-svn] r1422 - in trunk: . lib
+Message-ID: <201005102031.o4AKVVeB007359@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-05-10 22:31:15 +0200 (Mon, 10 May 2010)
+New Revision: 1422
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+Log:
+poster md5 wasn't saved if poster is already in database
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-05-10 19:24:50 UTC (rev 1421)
++++ trunk/ChangeLog	2010-05-10 20:31:15 UTC (rev 1422)
+@@ -5,6 +5,10 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-05-10  Michael Jahn
++	* updated movie plugin IMDB-de
++	* poster md5 wasn't saved if poster is already in database
++
+ 2010-05-06  Michael Jahn
+ 	* [#324171] PDF Font Size
+ 	* support for covers, year, runtime, notes and plot for PDF export
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2010-05-10 19:24:50 UTC (rev 1421)
++++ trunk/lib/add.py	2010-05-10 20:31:15 UTC (rev 1422)
+@@ -88,7 +88,6 @@
+             log.warn("cannot read temporary file: %s", new_image_path)
+         else:
+             new_poster_md5 = gutils.md5sum(file(new_image_path, 'rb'))
+-            details['poster_md5'] = new_poster_md5
+             if session.query(db.Poster).filter_by(md5sum=new_poster_md5).count() == 0:
+                 try:
+                     data = file(new_image_path, 'rb').read()
+@@ -106,6 +105,8 @@
+                     if old_poster and len(old_poster.movies) == 1: # other movies are not using the same poster
+                         session.delete(old_poster)
+                         delete.delete_poster_from_cache(old_poster_md5, self.locations['posters'])
++            else:
++                details['poster_md5'] = new_poster_md5
+ 
+     update_movie_instance(movie, details, session)
+ 
+@@ -687,6 +688,8 @@
+                     del details["image"]
+                     details["poster_md5"] = new_poster_md5
+                     session.add(poster)
++            else:
++                details["poster_md5"] = new_poster_md5
+             try:
+                 os.remove(tmp_image_path)
+             except Exception, e:
+
+
+
+From mikej06 at mail.berlios.de  Mon May 24 21:41:57 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 24 May 2010 21:41:57 +0200
+Subject: [Griffith-svn] r1423 - trunk/lib
+Message-ID: <201005241941.o4OJfvBD026116@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-05-24 21:41:49 +0200 (Mon, 24 May 2010)
+New Revision: 1423
+
+Modified:
+   trunk/lib/gutils.py
+Log:
+[#582321] Error: missing modules: sqlalchemy required version: 0.5rc3 detected: 0.5.5
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2010-05-10 20:31:15 UTC (rev 1422)
++++ trunk/lib/gutils.py	2010-05-24 19:41:49 UTC (rev 1423)
+@@ -480,7 +480,7 @@
+         'debian_req': '2.8.6-1'})
+     try:
+         import sqlalchemy
+-        if map(int, sqlalchemy.__version__[:3].split('.')) < (0, 5):
++        if map(int, sqlalchemy.__version__[:3].split('.')) < [0, 5]:
+             version = "-%s" % sqlalchemy.__version__
+         else:
+             version = sqlalchemy.__version__
+
+
+
+From mikej06 at mail.berlios.de  Sat May 29 14:43:32 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sat, 29 May 2010 14:43:32 +0200
+Subject: [Griffith-svn] r1424 - trunk/lib/plugins/movie
+Message-ID: <201005291243.o4TChWfM011065@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-05-29 14:43:21 +0200 (Sat, 29 May 2010)
+New Revision: 1424
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieAllMovie.py
+   trunk/lib/plugins/movie/PluginMovieAllocine.py
+   trunk/lib/plugins/movie/PluginMovieAmazon.py
+   trunk/lib/plugins/movie/PluginMovieAniDB.py
+   trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+   trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+   trunk/lib/plugins/movie/PluginMovieIMDB.py
+Log:
+movie plugin test data updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllMovie.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllMovie.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieAllMovie.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -240,7 +240,7 @@
+     # dict { movie_id -> [ expected result count for original url, expected result count for translated url ] }
+     #
+     test_configuration = {
+-        'Rocky Balboa' : [ 11, 11 ],
++        'Rocky Balboa' : [ 25, 25 ],
+     }
+ 
+ class PluginTest:
+
+Modified: trunk/lib/plugins/movie/PluginMovieAllocine.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieAllocine.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -257,7 +257,22 @@
+ Bill Paxton' + _(' as ') + 'le chef des punks\n\
+ Brian Thompson' + _(' as ') + 'un punk\n\
+ Marianne Muellerleile' + _(' as ') + 'la \'mauvaise\' Sarah Connor\n\
+-Franco Columbu' + _(' as ') + 'le Terminator infiltrant le bunker dans le futur',
++Franco Columbu' + _(' as ') + 'le Terminator infiltrant le bunker dans le futur\n\
++Ken Fritz' + _(' as ') + 'Policeman\n\
++Stan Yale' + _(' as ') + 'Derelict in Alley\n\
++Brad Rearden' + _(' as ') + 'Punk\n\
++Joe Farago' + _(' as ') + 'TV Anchorman\n\
++Anthony Trujillo' + _(' as ') + 'Mexican Boy (close-ups)\n\
++Harriet Medin' + _(' as ') + 'Customer\n\
++Hugh Farrington' + _(' as ') + 'Customer\n\
++Philip Gordon' + _(' as ') + 'Mexican Boy (long shots)\n\
++Patrick Pinney' + _(' as ') + 'Bar Customer\n\
++Wayne Stone' + _(' as ') + 'Tanker Driver\n\
++Norman Friedman' + _(' as ') + 'Cleaning Man at Flophouse\n\
++Hettie Lynne Hurtes' + _(' as ') + 'TV Anchorwoman\n\
++Al Kahn' + _(' as ') + 'Customer\n\
++Bill W. Richmond' + _(' as ') + 'Bartender\n\
++Bruce M. Kerner' + _(' as ') + 'Desk Sergeant',
+             'country'             : u'am??ricain',
+             'genre'               : u'Science fiction',
+             'classification'      : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieAmazon.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAmazon.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieAmazon.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -284,19 +284,20 @@
+         return self.page
+ 
+     def get_searches(self):
+-        for result in self.page:
+-            if hasattr(result, 'Item'):
+-                if hasattr(result.Item, 'ASIN'):
+-                    self.add_item(result.Item)
+-                else:
+-                    for item in result.Item:
+-                        self.add_item(item)
+-            elif hasattr(result, 'Items'):
+-                if hasattr(result.Item, 'ASIN'):
+-                    self.add_item(result.Items)
+-                else:
+-                    for item in result.Items:
+-                        self.add_item(item)
++        if self.page:
++            for result in self.page:
++                if hasattr(result, 'Item'):
++                    if hasattr(result.Item, 'ASIN'):
++                        self.add_item(result.Item)
++                    else:
++                        for item in result.Item:
++                            self.add_item(item)
++                elif hasattr(result, 'Items'):
++                    if hasattr(result.Item, 'ASIN'):
++                        self.add_item(result.Items)
++                    else:
++                        for item in result.Items:
++                            self.add_item(item)
+ 
+     def add_item(self, item):
+         self.ids.append(item.ASIN)
+
+Modified: trunk/lib/plugins/movie/PluginMovieAniDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieAniDB.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieAniDB.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -282,7 +282,7 @@
+ [Police Officer inside Heli (?????????????????????)] voiced by Andy Holyfield\n\
+ -; appears in; appears in episodes: 8',
+             'country'             : False,
+-            'genre'               : 'Action, Contemporary Fantasy, Cops, Fantasy, Gunfights, Horror, Law and Order, Seinen, Special Squads, Vampires, Violence',
++            'genre'               : 'Action, Contemporary Fantasy, Cops, Fantasy, Gunfights, Horror, Law and Order, Manga, Seinen, Special Squads, Vampires, Violence',
+             'classification'      : False,
+             'studio'              : False,
+             'o_site'              : 'http://www.gonzo.co.jp/works/0102.html',
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmAffinity.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieFilmAffinity.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -54,10 +54,12 @@
+         self.o_title = gutils.trim(self.page, u'<b>T?TULO ORIGINAL</b></td>', '</b></td>')
+         self.o_title = gutils.after(self.o_title, '<b>')
+         self.o_title = re.sub('[ ]+', ' ', self.o_title)
++        self.o_title = re.sub('([(]Serie de TV[)]|[(]TV[)]|[(]TV Series[)])', '', self.o_title)
+ 
+     def get_title(self):
+         self.title = gutils.trim(self.page, 'www.filmaffinity.com/images/movie.gif" border="0"> ', '</span>')
+         self.title = re.sub('[ ]+', ' ', self.title)
++        self.title = re.sub('([(]Serie de TV[)]|[(]TV[)]|[(]TV Series[)])', '', self.title)
+ 
+     def get_director(self):
+         self.director = gutils.trim(self.page,'<b>DIRECTOR</b></td>', '</td>')
+@@ -267,7 +269,7 @@
+ Eric Keenleyside\n\
+ Christopher Heyerdahl',
+             'country'             : 'Estados Unidos',
+-            'genre'               : 'Terror',
++            'genre'               : u'Terror. Biogr?fico. Siglo XIX. Serie [Masters of Horror]',
+             'classification'      : False,
+             'studio'              : 'Emitida por la cadena Showtime',
+             'o_site'              : False,
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -364,10 +364,12 @@
+ Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (Sprechrolle)\n\
+-Gary Compton' + _(' as ') + 'Sicherheitsbediensteter ??brige Besetzung in alphabetischer Reihenfolge:\n\
++Gary Compton' + _(' as ') + 'Sicherheitsbediensteter\n\
++Tony Devon' + _(' as ') + 'Neighbor ??brige Besetzung in alphabetischer Reihenfolge:\n\
+ Vale Anoai' + _(' as ') + 'Shopper in Italian Market\n\
+ Michael Ahl' + _(' as ') + 'Restaurant Patron (nicht im Abspann)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (nicht im Abspann)\n\
++Ben Bachelder' + _(' as ') + 'The Arm (nicht im Abspann)\n\
+ Lacy Bevis' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ Tim Brooks' + _(' as ') + 'Boxing Spectator (nicht im Abspann)\n\
+ D.T. Carney' + _(' as ') + 'High Roller (nicht im Abspann)\n\
+@@ -400,7 +402,7 @@
+             'studio'            : 'Metro-Goldwyn-Mayer (MGM) (presents) (copyright owner), Columbia Pictures (presents) (copyright owner), Revolution Studios (presents) (copyright owner), Chartoff-Winkler Productions, Rogue Marble',
+             'o_site'            : False,
+             'site'              : 'http://www.imdb.de/title/tt0479143',
+-            'trailer'           : 'http://www.imdb.de/title/tt0479143/trailers',
++            'trailer'           : 'http://www.imdb.com/title/tt0479143/trailers',
+             'year'              : 2006,
+             'notes'             : _('Language') + ': Englisch | Spanisch\n'\
+ + _('Audio') + ': DTS | Dolby Digital | SDDS\n'\
+@@ -447,7 +449,7 @@
+             'studio'             : 'Les Films 13, Rizzoli Film',
+             'o_site'             : False,
+             'site'               : 'http://www.imdb.de/title/tt0069815',
+-            'trailer'            : 'http://www.imdb.de/title/tt0069815/trailers',
++            'trailer'            : 'http://www.imdb.com/title/tt0069815/trailers',
+             'year'               : 1973,
+             'notes'              : _('Language') + ': Franz??sisch\n'\
+ + _('Audio') + ': Mono\n'\
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-es.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-es.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -320,10 +320,12 @@
+ Nick Baker' + _(' as ') + 'Irish Pub Bartender\n\
+ Don Sherman' + _(' as ') + 'Andy\n\
+ Stu Nahan' + _(' as ') + 'Computer Fight Commentator (voz)\n\
+-Gary Compton' + _(' as ') + u'Oficial de Seguridad listado alfab?tico del resto del reparto:\n\
++Gary Compton' + _(' as ') + 'Oficial de Seguridad\n\
++Tony Devon' + _(' as ') + u'Neighbor listado alfab?tico del resto del reparto:\n\
+ Vale Anoai' + _(' as ') + 'Shopper in Italian Market\n\
+ Michael Ahl' + _(' as ') + 'Restaurant Patron (sin acreditar)\n\
+ Andrew Aninsman' + _(' as ') + 'Promoter (sin acreditar)\n\
++Ben Bachelder' + _(' as ') + 'The Arm (sin acreditar)\n\
+ Lacy Bevis' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
+ Tim Brooks' + _(' as ') + 'Boxing Spectator (sin acreditar)\n\
+ D.T. Carney' + _(' as ') + 'High Roller (sin acreditar)\n\
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-05-24 19:41:49 UTC (rev 1423)
++++ trunk/lib/plugins/movie/PluginMovieIMDB.py	2010-05-29 12:43:21 UTC (rev 1424)
+@@ -256,7 +256,7 @@
+     #
+     test_configuration = {
+         'Rocky Balboa'         : [ 20, 20 ],
+-        'Ein gl??ckliches Jahr' : [ 41, 41 ]
++        'Ein gl??ckliches Jahr' : [ 42, 42 ]
+     }
+ 
+ class PluginTest:
+
+
+

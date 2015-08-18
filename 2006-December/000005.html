@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r473 - in griffith: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r473%20-%20in%20griffith%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200612041918.kB4JI9nt031554%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000004.html">
+   <LINK REL="Next"  HREF="000006.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r473 - in griffith: . lib lib/plugins/movie</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r473%20-%20in%20griffith%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200612041918.kB4JI9nt031554%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r473 - in griffith: . lib lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  4 20:18:09 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000004.html">[Griffith-svn] r472 - in griffith: . lib
+</A></li>
+        <LI>Next message: <A HREF="000006.html">[Griffith-svn] r474 - griffith/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-04 20:18:07 +0100 (Mon, 04 Dec 2006)
+New Revision: 473
+
+Modified:
+   griffith/ChangeLog
+   griffith/lib/plugins/movie/PluginMovieOFDb.py
+   griffith/lib/preferences.py
+Log:
+more OFDb movie plugin updates (thanks Jessica!)
+
+
+Modified: griffith/ChangeLog
+===================================================================
+--- griffith/ChangeLog	2006-12-04 14:38:19 UTC (rev 472)
++++ griffith/ChangeLog	2006-12-04 19:18:07 UTC (rev 473)
+@@ -6,6 +6,7 @@
+ 
+ 2006-12-04 Piotr Ozarowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Added --check-dep and --show-dep command line options
++	* OFDb movie plugin updated (thanks to Jessica)
+ 
+ 2006-11-20 Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
+ 	* Added Brasilian Portuguese translation (thanks to F&#225;bio Nogueira)
+
+Modified: griffith/lib/plugins/movie/PluginMovieOFDb.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieOFDb.py	2006-12-04 14:38:19 UTC (rev 472)
++++ griffith/lib/plugins/movie/PluginMovieOFDb.py	2006-12-04 19:18:07 UTC (rev 473)
+@@ -11,15 +11,15 @@
+ plugin_description = &quot;Online-Filmdatenbank&quot;
+ plugin_url = &quot;www.ofdb.de&quot;
+ plugin_language = _(&quot;German&quot;)
+-plugin_author = &quot;Christian Sagmueller&quot;
++plugin_author = &quot;Christian Sagmueller, Jessica&quot;
+ plugin_author_email = &quot;&quot;
+-plugin_version = &quot;0.3&quot;
++plugin_version = &quot;0.4&quot;
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+ 		self.encode='iso-8859-1'
+ 		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;fid=">http://www.ofdb.de/view.php?page=film&amp;fid=</A>&quot; + str(self.movie_id)
++		self.url = &quot;<A HREF="http://www.ofdb.de/view.php?page=film&amp;full=1&amp;fid=%s">http://www.ofdb.de/view.php?page=film&amp;full=1&amp;fid=%s</A>&quot; % str(self.movie_id)
+ 
+ 	def picture(self):
+ 		self.picture_url = &quot;<A HREF="http://www.ofdb.de/images/film/">http://www.ofdb.de/images/film/</A>&quot; + gutils.trim( self.page, &quot;&lt;img src=\&quot;images/film/&quot;, &quot;\&quot;&quot; )
+@@ -34,7 +34,7 @@
+             &lt;td width=&quot;99%&quot;&gt;&lt;font face=&quot;Arial,Helvetica,sans-serif&quot; size=&quot;2&quot; class=&quot;Daten&quot;&gt;&lt;b&gt;&quot;&quot;&quot;,&quot;&lt;&quot;) )
+ 
+ 	def title(self):
+-		self.title = self.original_title
++		self.title = gutils.trim(self.page,'size=&quot;3&quot;&gt;&lt;b&gt;','&lt;')
+ 
+ 	def director(self):
+ 		self.director = gutils.trim(self.page,&quot;&quot;&quot;Regie: 
+@@ -62,7 +62,7 @@
+             &lt;td nowrap&gt;&lt;font face=&quot;Arial,Helvetica,sans-serif&quot; size=&quot;2&quot; class=&quot;Daten&quot;&gt;&lt;b&gt;&quot;&quot;&quot;,&quot;&lt;/b&gt;&lt;/font&gt;&lt;/td&gt;&quot;)
+ 		self.genre = string.replace( self.genre, &quot;&lt;br&gt;&quot;, &quot;, &quot; )
+ 		self.genre = string.replace( self.genre, &quot;/&quot;, &quot;, &quot; )
+-		self.genre = string.capwords(self.genre)
++		self.genre = self.genre[0:-2]
+ 
+ 	def with(self):
+ 		self.with = &quot;&quot;
+@@ -70,8 +70,9 @@
+               &lt;/font&gt;&lt;/td&gt;
+             &lt;td&gt;&nbsp;&nbsp;&lt;/td&gt;
+             &lt;td&gt;&lt;font face=&quot;Arial,Helvetica,sans-serif&quot; size=&quot;2&quot; class=&quot;Daten&quot;&gt;&lt;b&gt;&quot;&quot;&quot;,&quot;&lt;/b&gt;&lt;/font&gt;&lt;/td&gt;&quot;)
+-		self.with = string.replace(self.with,&quot;&lt;/a&gt;&lt;br&gt;&quot;, &quot;, &quot;)
++		self.with = string.replace(self.with,&quot;&lt;/a&gt;&lt;br&gt;&quot;, &quot;\n&quot;)
+ 		self.with = string.strip(gutils.strip_tags(self.with))
++		self.with = self.with[0:-1]
+ 
+ 	def classification(self):
+ 		self.classification = gutils.trim(self.page,&quot;MPAA&lt;/a&gt;:&lt;/b&gt; &quot;,&quot;.&lt;br&gt;&quot;)
+
+Modified: griffith/lib/preferences.py
+===================================================================
+--- griffith/lib/preferences.py	2006-12-04 14:38:19 UTC (rev 472)
++++ griffith/lib/preferences.py	2006-12-04 19:18:07 UTC (rev 473)
+@@ -99,7 +99,7 @@
+ 	w['s_studio'].set_active(bool(self.config.get('s_studio')))
+ 	w['s_title'].set_active(bool(self.config.get('s_title')))
+ 	w['s_trailer'].set_active(bool(self.config.get('s_trailer')))
+-	w['s_cast'].set_active(bool(self.config.get('s_with')))
++	w['s_cast'].set_active(bool(self.config.get('s_cast')))
+ 	w['s_year'].set_active(bool(self.config.get('s_year')))
+ 	
+ 	if self.config.get('sortby'):
+@@ -250,7 +250,7 @@
+ 	self.config['s_studio'] = w['s_studio'].get_active()
+ 	self.config['s_title'] = w['s_title'].get_active()
+ 	self.config['s_trailer'] = w['s_trailer'].get_active()
+-	self.config['s_with'] = w['s_cast'].get_active()
++	self.config['s_cast'] = w['s_cast'].get_active()
+ 	self.config['s_year'] = w['s_year'].get_active()
+ 	
+ 	mcounter = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000004.html">[Griffith-svn] r472 - in griffith: . lib
+</A></li>
+	<LI>Next message: <A HREF="000006.html">[Griffith-svn] r474 - griffith/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

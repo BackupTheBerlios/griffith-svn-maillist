@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r566 - in trunk: . lib/plugins/imp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r566%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C200612161745.kBGHjheN006173%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000094.html">
+   <LINK REL="Next"  HREF="000096.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r566 - in trunk: . lib/plugins/imp</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r566%20-%20in%20trunk%3A%20.%20lib/plugins/imp&In-Reply-To=%3C200612161745.kBGHjheN006173%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r566 - in trunk: . lib/plugins/imp">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 16 18:45:43 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000094.html">[Griffith-svn] r565 - in trunk: glade lib lib/plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000096.html">[Griffith-svn] r567 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#95">[ date ]</a>
+              <a href="thread.html#95">[ thread ]</a>
+              <a href="subject.html#95">[ subject ]</a>
+              <a href="author.html#95">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-16 18:45:30 +0100 (Sat, 16 Dec 2006)
+New Revision: 566
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/imp/CSV.py
+   trunk/lib/plugins/imp/__init__.py
+Log:
+import multiple files at once
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2006-12-16 16:37:51 UTC (rev 565)
++++ trunk/ChangeLog	2006-12-16 17:45:30 UTC (rev 566)
+@@ -10,6 +10,7 @@
+ 	  + allow &quot;%s&quot; in self.original_url_search and self.translated_url_search
+ 	  + opening new page inside movie plugin is now as easy as: &quot;self.new_page =  self.open_page(url='<A HREF="http://something">http://something</A>')&quot;
+ 	* chardet added to optional dependencies
++	* Import multiple files at once
+ 
+ 2006-12-16 Jessica K. Parth &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">Jessica.K.P at women-at-work.org</A>&gt;
+ 	* added a warning when there are no movies in the database to ( print cover, fetch poster, change poster, edit movie, delete movie, clone movie )
+
+Modified: trunk/lib/plugins/imp/CSV.py
+===================================================================
+--- trunk/lib/plugins/imp/CSV.py	2006-12-16 16:37:51 UTC (rev 565)
++++ trunk/lib/plugins/imp/CSV.py	2006-12-16 17:45:30 UTC (rev 566)
+@@ -384,4 +384,9 @@
+ 
+ 	def clear(self):
+ 		IP.clear(self)
++		self.nb_pages.get_nth_page(1).hide()
++		self.csv_header = None
++		self.ls_assigned.clear() # TODO: return all fields to ls_griffith
++
++	def destroy(self):
+ 		self.gtk.get_widget('d_import').destroy()
+
+Modified: trunk/lib/plugins/imp/__init__.py
+===================================================================
+--- trunk/lib/plugins/imp/__init__.py	2006-12-16 16:37:51 UTC (rev 565)
++++ trunk/lib/plugins/imp/__init__.py	2006-12-16 17:45:30 UTC (rev 566)
+@@ -57,36 +57,27 @@
+ 		self._abort	= False
+ 
+ 	def initialize(self):
+-		&quot;&quot;&quot;
+-		Initializes plugin (get all parameters from user, etc.)
+-		&quot;&quot;&quot;
++		&quot;&quot;&quot;Initializes plugin (get all parameters from user, etc.)&quot;&quot;&quot;
+ 		self.imported = 0
+ 		return True
+ 
+ 	def abort(self, *args):
++		&quot;&quot;&quot;called after abort button clicked&quot;&quot;&quot;
+ 		self._abort = True
+ 
+ 	def set_source(self, name):
+-		&quot;&quot;&quot;
+-		Prepare source (open file, etc.)
+-		&quot;&quot;&quot;
++		&quot;&quot;&quot;Prepare source (open file, etc.)&quot;&quot;&quot;
+ 
+ 	def count_movies(self):
+-		&quot;&quot;&quot;
+-		Returns number of movies in file which is about to be imported
+-		&quot;&quot;&quot;
++		&quot;&quot;&quot;Returns number of movies in file which is about to be imported&quot;&quot;&quot;
+ 		pass
+ 
+ 	def get_movie_details(self):
+-		&quot;&quot;&quot;
+-		Returns dictionary with movie details
+-		&quot;&quot;&quot;
++		&quot;&quot;&quot;Returns dictionary with movie details&quot;&quot;&quot;
+ 		pass
+ 
+ 	def run(self, name):
+-		&quot;&quot;&quot;
+-		Import movies
+-		&quot;&quot;&quot;
++		&quot;&quot;&quot;Import movies, function called in a loop over source files&quot;&quot;&quot;
+ 		from add import validate_details, edit_movie
+ 		from gutils import find_next_available
+ 		from sqlalchemy import Select, func
+@@ -138,7 +129,7 @@
+ 						self.debug.show(&quot;movie already exists (o_title=%s)&quot; % details['o_title'])
+ 						continue
+ 				if details.has_key('title') and details['title']:
+-					statement.whereclause = self.db.Movie.c.o_title==details['o_title']
++					statement.whereclause = self.db.Movie.c.o_title==details['title']
+ 					tmp = statement.execute().fetchone()
+ 					if tmp is not None:
+ 						self.debug.show(&quot;movie already exists (title=%s)&quot; % details['title'])
+@@ -167,9 +158,14 @@
+ 		return True
+ 
+ 	def clear(self):
++		&quot;&quot;&quot;clear plugin before next source file&quot;&quot;&quot;
+ 		self.data = None
+ 		self.imported = 0
+ 		self.__source_name = None
++	
++	def destroy(self):
++		&quot;&quot;&quot;close all resources&quot;&quot;&quot;
++		pass
+ 
+ 
+ def on_import_plugin_changed(combobox, widgets, *args):
+@@ -208,7 +204,7 @@
+ def on_import_button_clicked(button, self, *args):
+ 	import plugins.imp, gutils
+ 	plugin_name = self.widgets['import']['plugin'].get_active_text()
+-	filename = self.widgets['import']['fcw'].get_filename() # TODO: multiple files
++	filenames = self.widgets['import']['fcw'].get_filenames()
+ 	
+ 	fields = []
+ 	w = self.widgets['import']['fields']
+@@ -222,14 +218,15 @@
+ 		self.widgets['window'].set_sensitive(False)
+ 		self.widgets['import']['window'].hide()
+ 		self.widgets['import']['pabort'].connect('clicked', ip.abort, ip)
+-		self.widgets['import']['progressbar'].set_fraction(0)
+-		self.widgets['import']['progressbar'].set_text('')
+-		# for file in selected_files:
+-		if ip.run(filename):
+-			gutils.info(self, _(&quot;%s file has been imported. %s movies added.&quot;) \
+-				% (plugin_name, ip.imported), self.widgets['window'])
+-			self.populate_treeview()
+-		ip.clear()
++		for filename in filenames:
++			self.widgets['import']['progressbar'].set_fraction(0)
++			self.widgets['import']['progressbar'].set_text('')
++			if ip.run(filename):
++				gutils.info(self, _(&quot;%s file has been imported. %s movies added.&quot;) \
++					% (plugin_name, ip.imported), self.widgets['window'])
++				self.populate_treeview()
++			ip.clear()
++		ip.destroy()
+ 		self.widgets['import']['pwindow'].hide()
+ 		self.widgets['window'].set_sensitive(True)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000094.html">[Griffith-svn] r565 - in trunk: glade lib lib/plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000096.html">[Griffith-svn] r567 - trunk/lib/plugins/imp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#95">[ date ]</a>
+              <a href="thread.html#95">[ thread ]</a>
+              <a href="subject.html#95">[ subject ]</a>
+              <a href="author.html#95">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

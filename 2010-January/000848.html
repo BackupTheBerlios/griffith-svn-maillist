@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1382 - trunk/lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1382%20-%20trunk/lib/plugins/extensions&In-Reply-To=%3C201001052030.o05KUUtr024516%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000847.html">
+   <LINK REL="Next"  HREF="000849.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1382 - trunk/lib/plugins/extensions</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1382%20-%20trunk/lib/plugins/extensions&In-Reply-To=%3C201001052030.o05KUUtr024516%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1382 - trunk/lib/plugins/extensions">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  5 21:30:30 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000847.html">[Griffith-svn] r1381 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000849.html">[Griffith-svn] r1383 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#848">[ date ]</a>
+              <a href="thread.html#848">[ thread ]</a>
+              <a href="subject.html#848">[ subject ]</a>
+              <a href="author.html#848">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2010-01-05 21:30:30 +0100 (Tue, 05 Jan 2010)
+New Revision: 1382
+
+Modified:
+   trunk/lib/plugins/extensions/ge_movieposterdb.py
+Log:
+use urllib's quote to clean the url
+
+
+Modified: trunk/lib/plugins/extensions/ge_movieposterdb.py
+===================================================================
+--- trunk/lib/plugins/extensions/ge_movieposterdb.py	2010-01-05 20:05:23 UTC (rev 1381)
++++ trunk/lib/plugins/extensions/ge_movieposterdb.py	2010-01-05 20:30:30 UTC (rev 1382)
+@@ -22,13 +22,14 @@
+ # GNU General Public License, version 2 or later
+ 
+ import os
+-from urllib import urlcleanup, FancyURLopener, urlretrieve
++import logging
++from urllib import quote, urlcleanup
+ import gtk
+ import gutils
+-from plugins.extensions import GriffithExtensionBase as Base
+ from edit import update_image_from_memory
+ from movie import Progress, Retriever
+-import logging
++from plugins.extensions import GriffithExtensionBase as Base
++
+ log = logging.getLogger('Griffith')
+ 
+ 
+@@ -41,7 +42,6 @@
+     api = 1
+     enabled = True
+ 
+-    preferences = {}
+     toolbar_icon = 'gtk-network'
+ 
+     baseurltitle = '<A HREF="http://www.movieposterdb.com/embed.inc.php?movie_title=%s">http://www.movieposterdb.com/embed.inc.php?movie_title=%s</A>'
+@@ -77,20 +77,20 @@
+             self.encode = 'iso8859-1'
+             if o_title:
+                 if movie.year:
+-                    url = self.baseurltitleyear % (o_title, movie.year)
++                    url = self.baseurltitleyear % (quote(o_title), movie.year)
+                     result = self.search(url, self.widgets['window'])
+                     largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+                 if not result or not largeurl:
+-                    url = self.baseurltitle % o_title
++                    url = self.baseurltitle % quote(o_title)
+                     result = self.search(url, self.widgets['window'])
+                     largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+-            if not result or not largeurl and title and not title == o_title:
++            if not result or not largeurl and title and title != o_title:
+                 if movie.year:
+-                    url = self.baseurltitleyear % (title, movie.year)
++                    url = self.baseurltitleyear % (quote(title), movie.year)
+                     result = self.search(url, self.widgets['window'])
+                     largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+                 if not result or not largeurl:
+-                    url = self.baseurltitle % title
++                    url = self.baseurltitle % quote(title)
+                     result = self.search(url, self.widgets['window'])
+                     largeurl = gutils.trim(self.data, 'src=\\&quot;', '\\&quot;').replace('/t_', '/l_')
+         except:
+@@ -142,7 +142,6 @@
+ 
+     def _search(self, url, parent_window):
+         result = False
+-        url = url.replace(' ', '%20')
+         try:
+             if self.encode:
+                 url = url.encode(self.encode)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000847.html">[Griffith-svn] r1381 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000849.html">[Griffith-svn] r1383 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#848">[ date ]</a>
+              <a href="thread.html#848">[ thread ]</a>
+              <a href="subject.html#848">[ subject ]</a>
+              <a href="author.html#848">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

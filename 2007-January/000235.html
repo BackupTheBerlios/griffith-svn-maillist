@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r715 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r715%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701241931.l0OJVwww024906%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000234.html">
+   <LINK REL="Next"  HREF="000236.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r715 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r715%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701241931.l0OJVwww024906%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r715 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan 24 20:31:58 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000234.html">[Griffith-svn] r714 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000236.html">[Griffith-svn] r716 - in trunk: i18n/bg/LC_MESSAGES	i18n/cs/LC_MESSAGES i18n/de/LC_MESSAGES i18n/es/LC_MESSAGES	i18n/fr/LC_MESSAGES i18n/it/LC_MESSAGES i18n/pl/LC_MESSAGES	i18n/pt/LC_MESSAGES i18n/pt_BR/LC_MESSAGES i18n/sv/LC_MESSAGES po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#235">[ date ]</a>
+              <a href="thread.html#235">[ thread ]</a>
+              <a href="subject.html#235">[ subject ]</a>
+              <a href="author.html#235">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-24 20:31:58 +0100 (Wed, 24 Jan 2007)
+New Revision: 715
+
+Modified:
+   trunk/ChangeLog
+   trunk/NEWS
+   trunk/lib/edit.py
+Log:
+Fetch from Amazon function recognizes more posters now (no more &quot;this format is not supported error!)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-24 17:35:55 UTC (rev 714)
++++ trunk/ChangeLog	2007-01-24 19:31:58 UTC (rev 715)
+@@ -7,7 +7,7 @@
+ ---- 0.9 ---
+ 
+ 2007-01-24  Piotr O&#380;arowski
+-	* Convert GIF posters into JPEG format while fetching from Amazon (amazon module is still broken)
++	* Fetch from Amazon function recognizes more posters now
+ 
+ 2007-01-16  Vasco Nunes
+ 	* Czech translation updated (thanks to Ondra 'Kepi' Kudl&#237;k)
+
+Modified: trunk/NEWS
+===================================================================
+--- trunk/NEWS	2007-01-24 17:35:55 UTC (rev 714)
++++ trunk/NEWS	2007-01-24 19:31:58 UTC (rev 715)
+@@ -4,6 +4,7 @@
+   correctly)
+ * AnimeDB and PTGate movie plugins updated
+ * CSV import plugin updated
++* Fetch from Amazon function recognizes more posters now
+ * First movie is selected by default now
+ * Czech translation updated
+ 
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-01-24 17:35:55 UTC (rev 714)
++++ trunk/lib/edit.py	2007-01-24 19:31:58 UTC (rev 715)
+@@ -211,25 +211,28 @@
+ 		gutils.warning(self, _(&quot;Sorry. A connection error was occurred.&quot;))
+ 
+ 	if  os.path.isfile(file_to_copy):
+-		handler = self.widgets['big_poster'].set_from_file(file_to_copy)
+-		gutils.garbage(handler)
+-
+ 		try:
+ 			im = Image.open(file_to_copy)
+ 		except IOError:
+ 			self.debug.show(&quot;failed to identify %s&quot;%file_to_copy)
+ 
++		if im.size == (1,1):
++			from urllib import FancyURLopener, urlretrieve
++			url = FancyURLopener().open(&quot;<A HREF="http://www.amazon.com/gp/product/images/%s">http://www.amazon.com/gp/product/images/%s</A>&quot; % result[f].Asin).read()
++			url = gutils.after(url, 'id=&quot;imageViewerDiv&quot;&gt;&lt;img src=&quot;')
++			url = gutils.before(url, '&quot; id=&quot;prodImage&quot;')
++			urlretrieve(url, file_to_copy)
++			try:
++				im = Image.open(file_to_copy)
++			except IOError:
++				self.debug.show(&quot;failed to identify %s&quot;%file_to_copy)
++
+ 		if im.mode != 'RGB': # convert GIFs
+ 			im = im.convert('RGB')
+ 			im.save(file_to_copy, 'JPEG')
++		
++		handler = self.widgets['big_poster'].set_from_file(file_to_copy)
+ 
+-		if im.size == (1,1):
+-			self.debug.show(&quot;Amazon module is broken, please download poster from this URL:\n%s&quot; % result[f].URL)
+-			gutils.warning(self, _(&quot;Sorry. This poster image format is not supported.&quot;))
+-			os.remove(file_to_copy)
+-			reconnect_add_signals(self)
+-			return False
+-
+ 		self.widgets['poster_window'].show()
+ 		self.widgets['poster_window'].move(0,0)
+ 		response = gutils.question(self, \
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000234.html">[Griffith-svn] r714 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000236.html">[Griffith-svn] r716 - in trunk: i18n/bg/LC_MESSAGES	i18n/cs/LC_MESSAGES i18n/de/LC_MESSAGES i18n/es/LC_MESSAGES	i18n/fr/LC_MESSAGES i18n/it/LC_MESSAGES i18n/pl/LC_MESSAGES	i18n/pt/LC_MESSAGES i18n/pt_BR/LC_MESSAGES i18n/sv/LC_MESSAGES po
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#235">[ date ]</a>
+              <a href="thread.html#235">[ thread ]</a>
+              <a href="subject.html#235">[ subject ]</a>
+              <a href="author.html#235">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

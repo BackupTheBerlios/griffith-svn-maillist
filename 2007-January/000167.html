@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r643 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r643%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701012009.l01K9ibf009656%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000166.html">
+   <LINK REL="Next"  HREF="000168.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r643 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r643%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701012009.l01K9ibf009656%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r643 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  1 21:09:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000166.html">[Griffith-svn] r642 - in trunk: lib po
+</A></li>
+        <LI>Next message: <A HREF="000168.html">[Griffith-svn] r644 - in trunk: . glade images lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#167">[ date ]</a>
+              <a href="thread.html#167">[ thread ]</a>
+              <a href="subject.html#167">[ subject ]</a>
+              <a href="author.html#167">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-01-01 21:09:43 +0100 (Mon, 01 Jan 2007)
+New Revision: 643
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/dbupgrade.py
+   trunk/lib/loan.py
+Log:
+* Fixed displaying volume/collection loan status
+* Fixed one more possible case with wrong data in old database
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-01 19:26:41 UTC (rev 642)
++++ trunk/ChangeLog	2007-01-01 20:09:43 UTC (rev 643)
+@@ -9,6 +9,7 @@
+ 	* Added &quot;limit search results to x movies&quot; in preferences
+ 	* Scroll movie list when selecting first/prev/next/last movie button
+ 	* Copy video codec data when cloning movie
++	* Fixed displaying volume/collection loan status
+ 
+ 2006-12-30 Piotr O&#380;arowski &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow at gmail.com</A>&gt;
+ 	* Compare lower() values while importing movies
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2007-01-01 19:26:41 UTC (rev 642)
++++ trunk/lib/dbupgrade.py	2007-01-01 20:09:43 UTC (rev 643)
+@@ -146,6 +146,7 @@
+ 			print '$ mv ~/.griffith/griffith.gri{,3}'
+ 			print '$ mv ~/.griffith/griffith.gri{2,}'
+ 			print 'or install pysqlite in version 1.1'
++			print 'if your database is in SQLite2 format - convert it to SQLite3 or install pysqlite in version 1.0 (legacy)'
+ 			gutils.warning(self,_(&quot;Your database is most probably in SQLite3 format, please convert it to SQLite2&quot;))
+ 		else:
+ 			raise
+@@ -176,6 +177,7 @@
+ 	old_cursor.execute(&quot;UPDATE movies SET collection_id=0 WHERE collection_id&lt;1&quot;)
+ 	old_cursor.execute(&quot;UPDATE loans SET return_date=NULL WHERE return_date=''&quot;)
+ 	old_cursor.execute(&quot;DELETE FROM loans WHERE date='' OR date ISNULL&quot;)
++	old_cursor.execute(&quot;DELETE FROM loans WHERE movie_id=0&quot;)
+ 	#old_cursor.commit()
+ 	old_cursor.execute(&quot;UPDATE movies SET region=NULL WHERE region='' OR region='2' OR region&lt;0 OR region&gt;8&quot;)
+ 	old_cursor.execute(&quot;UPDATE movies SET condition=NULL WHERE condition='' OR condition='3'&quot;)
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2007-01-01 19:26:41 UTC (rev 642)
++++ trunk/lib/loan.py	2007-01-01 20:09:43 UTC (rev 643)
+@@ -88,6 +88,16 @@
+ def get_loan_info(db, movie_id, volume_id=None, collection_id=None):
+ 	&quot;&quot;&quot;Returns current collection/volume/movie loan data&quot;&quot;&quot;
+ 	from sqlalchemy import and_, or_
++	movie = db.Movie.get_by(movie_id=movie_id)
++	if movie is None:
++		return False
++	
++	# fix or add volume/collection data:
++	if movie.collection_id is not None:
++		collection_id = movie.collection_id
++	if movie.volume_id is not None:
++		volume_id = movie.volume_id
++	
+ 	if collection_id&gt;0 and volume_id&gt;0:
+ 		return db.Loan.get_by(
+ 				and_(or_(db.Loan.c.collection_id==collection_id,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000166.html">[Griffith-svn] r642 - in trunk: lib po
+</A></li>
+	<LI>Next message: <A HREF="000168.html">[Griffith-svn] r644 - in trunk: . glade images lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#167">[ date ]</a>
+              <a href="thread.html#167">[ thread ]</a>
+              <a href="subject.html#167">[ subject ]</a>
+              <a href="author.html#167">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

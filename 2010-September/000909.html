@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1447 - in trunk: . lib/plugins/export
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1447%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C20100925200805.5E2BE480FCF%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000908.html">
+   <LINK REL="Next"  HREF="000910.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1447 - in trunk: . lib/plugins/export</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1447%20-%20in%20trunk%3A%20.%20lib/plugins/export&In-Reply-To=%3C20100925200805.5E2BE480FCF%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1447 - in trunk: . lib/plugins/export">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep 25 22:08:05 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000908.html">[Griffith-svn] r1446 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000910.html">[Griffith-svn] r1448 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#909">[ date ]</a>
+              <a href="thread.html#909">[ thread ]</a>
+              <a href="subject.html#909">[ subject ]</a>
+              <a href="author.html#909">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2010-09-25 22:08:05 +0200 (Sat, 25 Sep 2010)
+New Revision: 1447
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/export/PluginExportHTML.py
+Log:
+[#502990] Own settings will not be saved in HTML-Export
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-09-15 18:12:40 UTC (rev 1446)
++++ trunk/ChangeLog	2010-09-25 20:08:05 UTC (rev 1447)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-09-25  Michael Jahn
++	* [#502990] Own settings will not be saved in HTML-Export
++
+ 2010-09-15  Michael Jahn
+ 	* workaround for [#574370] freeze when i select existing mysql database
+ 
+
+Modified: trunk/lib/plugins/export/PluginExportHTML.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportHTML.py	2010-09-15 18:12:40 UTC (rev 1446)
++++ trunk/lib/plugins/export/PluginExportHTML.py	2010-09-25 20:08:05 UTC (rev 1447)
+@@ -47,8 +47,8 @@
+     settings = {
+         'sorting'           : 'movies_title',
+         'sorting2'          : 'ASC',
+-        'exported_dir'      : 'griffith_movies',
+-        'template'          : 0,
++        'export_dir'        : '',
++        'template'          : 2,
+         'title'             : _(&quot;Griffith's movies list&quot;),
+         'style'             : 0,
+         'custom_style'      : False,
+@@ -59,7 +59,7 @@
+         'poster_height'     : 200,
+         'poster_width'      : 150,
+         'poster_mode'       : 'RGB', # RGB == color, L == black and white
+-        'poster_format'     : 'jpg'
++        'poster_format'     : 'jpeg'
+     }
+     fields = {
+         'movies_cast'           : False,
+@@ -181,10 +181,36 @@
+         self.templates = self.make_template_list()
+         # glade
+         gf = os.path.join(self.locations['glade'], 'exporthtml.glade')
++        self.load_configuration()
+         self.define_widgets(gtk.glade.XML(gf))
+         self.fill_widgets()
+         return True
+     #}}}
++    
++    def load_configuration(self): #{{{
++        # persist config
++        if self.config is not None:
++            config = self.settings
++            for name, value in config.items():
++                try:
++                    tmp = self.config.get(name, value, section='export-html')
++                    if isinstance(value, bool):
++                        config[name] = bool(int(tmp))
++                    elif isinstance(value, int):
++                        config[name] = int(tmp)
++                    else:
++                        config[name] = tmp
++                except:
++                    pass
++            selected_fields = self.config.get('selected_fields', '', section='export-html')
++            if selected_fields:
++                for name in self.fields:
++                    self.fields[name] = False
++                selected_fields = selected_fields.split(',')
++                for selected_field in selected_fields:
++                    if selected_field in self.fields:
++                        self.fields[selected_field] = True
++    #}}}
+ 
+     def run(self):
+         pass
+@@ -322,7 +348,7 @@
+         pos_o_title = 0
+         for i in keys:
+             self.widgets['combo_sortby'].append_text(i)
+-            if i == _('Original Title'):
++            if self.names[i] == self.settings['sorting']:
+                 pos_o_title = j
+             j = j + 1
+         self.widgets['combo_sortby'].set_wrap_width(3)
+@@ -349,8 +375,18 @@
+ 
+         # set defaults --------------------------------
+         self.widgets['entry_header'].set_text(self.settings['title'])
+-        self.widgets['combo_theme'].set_active(2)    # html_tables
+-        self.widgets['combo_sortby'].set_active(pos_o_title)    # orginal title
++        self.widgets['combo_sortby'].set_active(pos_o_title)
++        if self.settings['sorting2'] == 'DESC':
++            self.widgets['cb_reverse'].set_active(True)
++        else:
++            self.widgets['cb_reverse'].set_active(False)
++        # template and theme
++        style = self.settings['style'] # save it temporary because change of the template set it 0
++        self.widgets['combo_theme'].set_active(self.settings['template'])
++        self.widgets['combo_style'].set_active(style)
++        self.widgets['cb_custom_style'].set_active(self.settings['custom_style'])
++        if self.settings['custom_style_file']:
++            self.widgets['fcb_custom_style_file'].set_filename(self.settings['custom_style_file'])
+         # spliting
+         self.widgets['sb_split_num'].set_value(self.settings['split_num'])
+         if self.settings['split_by'] == 0:
+@@ -359,17 +395,23 @@
+             self.widgets['rb_split_movies'].set_active(True)
+         # posters
+         self.widgets['combo_format'].set_active(0)
++        if self.settings['poster_format'] == 'PNG':
++            self.widgets['combo_format'].set_active(1)
++        elif self.settings['poster_format'] == 'GIF':
++            self.widgets['combo_format'].set_active(2)
+         if self.settings['poster_convert'] and self.settings['poster_convert'] == True:
+             self.widgets['cb_convert'].set_active(True)
+             self.widgets['vb_posters'].set_sensitive(True)
+         else:
+             self.widgets['cb_convert'].set_active(False)
+             self.widgets['vb_posters'].set_sensitive(False)
+-        # persistent config
+-        if self.config is not None:
+-            tmp = self.config.get('export_dir', None, section='export-html')
+-            if not tmp is None:
+-                self.widgets['fcw'].set_current_folder(tmp)
++        self.widgets['sb_height'].set_value(self.settings['poster_height'])
++        self.widgets['sb_width'].set_value(self.settings['poster_width'])
++        if self.settings['poster_mode'] == 'L':
++            self.widgets['cb_black'].set_active(True)
++        # destination dir
++        if self.settings['export_dir']:
++            self.widgets['fcw'].set_current_folder(self.settings['export_dir'])
+     #}}}
+ 
+     #==[ callbacks ]================================{{{
+@@ -526,7 +568,7 @@
+         tid = config['template']
+         
+         # get data from widgets
+-        self.settings['exported_dir'] = self.widgets['fcw'].get_filename()
++        self.settings['export_dir']   = self.widgets['fcw'].get_filename()
+         self.settings['title']        = self.widgets['entry_header'].get_text().decode('utf-8')
+         self.settings['sorting']      = self.names[self.widgets['combo_sortby'].get_active_text().decode('utf-8')]
+         if self.widgets['cb_reverse'].get_active():
+@@ -542,30 +584,36 @@
+             self.settings['poster_mode'] = 'RGB'
+         self.settings['poster_format'] = self.widgets['combo_format'].get_active_text()
+ 
++        # persist config
++        if self.config is not None:
++            for name, value in config.items():
++                self.config.set(name, value, section='export-html')
++            selected_fields = ''
++            for name, value in self.fields.items():
++                if value:
++                    selected_fields = selected_fields + name + ','
++            self.config.set('selected_fields', selected_fields, section='export-html')
++            self.config.save()
++
+         # create directories
+-        if not config['exported_dir']:
++        if not config['export_dir']:
+             log.info(&quot;Error: Folder name not set!&quot;)
+             return 1
+         
+-        if not os.path.isdir(config['exported_dir']):
++        if not os.path.isdir(config['export_dir']):
+             try:
+-                os.mkdir(config['exported_dir'])
++                os.mkdir(config['export_dir'])
+             except:
+-                gutils.error(_(&quot;Can't create %s!&quot;) % config['exported_dir'])
++                gutils.error(_(&quot;Can't create %s!&quot;) % config['export_dir'])
+                 return 2
+             
+         data_path = os.path.join(self.locations['share'], 'export_templates', self.templates[tid]['dir'], 'data')
+         if os.path.isdir(data_path):
+             try:
+-                gutils.copytree(data_path, config['exported_dir'])
++                gutils.copytree(data_path, config['export_dir'])
+             except Exception, err:
+                 gutils.warning(str(err))
+         
+-        # persist config
+-        if self.config is not None:
+-            self.config.set('export_dir', config['exported_dir'], section='export-html')
+-            self.config.save()
+-
+         if fields['movies_image']:
+             # import modules needed later
+             # modules are needed at least to convert griffith.png to nopic.(gif|jpeg|png)
+@@ -579,13 +627,13 @@
+             if not config['poster_convert']:
+                 config['poster_format'] = 'jpeg' # replace 'jpeg'
+             
+-            posters_dir = os.path.join(config['exported_dir'], 'posters')
++            posters_dir = os.path.join(config['export_dir'], 'posters')
+             if os.path.isdir(posters_dir):
+                 if gutils.question(_(&quot;Directory %s already exists.\nDo you want to overwrite it?&quot;) % posters_dir, self.widgets['window']):
+                     try:
+                         shutil.rmtree(posters_dir)
+                     except:
+-                        gutils.error(_(&quot;Can't remove %s!&quot;) % config['exported_dir'])
++                        gutils.error(_(&quot;Can't remove %s!&quot;) % config['export_dir'])
+                         return 3
+                 else:
+                     return 4
+@@ -598,7 +646,7 @@
+         if config['custom_style']:
+             if config['custom_style_file'] is not None and os.path.isfile(config['custom_style_file']):
+                 try:
+-                    shutil.copy(config['custom_style_file'],config['exported_dir'])
++                    shutil.copy(config['custom_style_file'],config['export_dir'])
+                 except:
+                     gutils.warning(_(&quot;Can't copy %s!&quot;)%style_file)
+                     config['custom_style'] = False
+@@ -611,7 +659,7 @@
+             style = self.templates[tid]['styles'][config['style']]['file']
+             style_path = os.path.join(self.locations['share'], 'export_templates', self.templates[tid]['dir'], style)
+             try:
+-                shutil.copy(style_path,config['exported_dir'])
++                shutil.copy(style_path,config['export_dir'])
+             except:
+                 gutils.warning(_(&quot;Can't copy %s!&quot;)%style_path)
+ 
+@@ -685,7 +733,7 @@
+         for row in exported_movies:    # fill items {{{
+             # check if new file has to be created
+             if item==1:
+-                filename = os.path.join(config['exported_dir'],'page_%s.' % page + self.templates[tid]['ext'])
++                filename = os.path.join(config['export_dir'],'page_%s.' % page + self.templates[tid]['ext'])
+                 try:
+                     exported_file = file(filename, 'w')
+                 except:
+@@ -775,18 +823,19 @@
+                 item=item+1
+             i=i+1
+         #}}}
+-        # convert/copy the griffith picture for movies without a poster
+-        image_file_src = os.path.join(self.locations['images'], 'griffith.png')
+-        image_file_dst = os.path.join(posters_dir, 'nopic.' + config['poster_format'].lower())
+-        try:
+-            if config['poster_convert']:
+-                im = Image.open(image_file_src, 'r').convert(config['poster_mode'])
+-                im.thumbnail((config['poster_width'], config['poster_height']), Image.ANTIALIAS)
+-            else:
+-                im = Image.open(image_file_src, 'r')
+-            im.save(image_file_dst, config['poster_format'])
+-        except:
+-            log.info(&quot;Can't convert %s&quot; % image_file_src)
++        if fields['movies_image']:
++            # convert/copy the griffith picture for movies without a poster
++            image_file_src = os.path.join(self.locations['images'], 'griffith.png')
++            image_file_dst = os.path.join(posters_dir, 'nopic.' + config['poster_format'].lower())
++            try:
++                if config['poster_convert']:
++                    im = Image.open(image_file_src, 'r').convert(config['poster_mode'])
++                    im.thumbnail((config['poster_width'], config['poster_height']), Image.ANTIALIAS)
++                else:
++                    im = Image.open(image_file_src, 'r')
++                im.save(image_file_dst, config['poster_format'])
++            except:
++                log.info(&quot;Can't convert %s&quot; % image_file_src)
+         gutils.info(_(&quot;Document has been generated.&quot;), self.widgets['window'])
+         self.on_quit()
+     #}}}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000908.html">[Griffith-svn] r1446 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000910.html">[Griffith-svn] r1448 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#909">[ date ]</a>
+              <a href="thread.html#909">[ thread ]</a>
+              <a href="subject.html#909">[ subject ]</a>
+              <a href="author.html#909">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

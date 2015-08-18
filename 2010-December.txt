@@ -1,0 +1,382 @@
+From mikej06 at mail.berlios.de  Fri Dec  3 21:39:27 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  3 Dec 2010 21:39:27 +0100
+Subject: [Griffith-svn] r1479 - in trunk: . lib/plugins/movie
+Message-ID: <20101203203927.DFD2C480AFD@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-12-03 21:39:27 +0100 (Fri, 03 Dec 2010)
+New Revision: 1479
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieZelluloid.py
+Log:
+Zelluloid plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-11-23 20:25:16 UTC (rev 1478)
++++ trunk/ChangeLog	2010-12-03 20:39:27 UTC (rev 1479)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-12-03  Michael Jahn
++	* Zelluloid plugin updated
++
+ 2010-11-23  Michael Jahn
+ 	* added screenplay, cameraman and barcode to the search criteria combobox
+ 	* sorted entries in the filter comboboxes of the main dialog
+
+Modified: trunk/lib/plugins/movie/PluginMovieZelluloid.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieZelluloid.py	2010-11-23 20:25:16 UTC (rev 1478)
++++ trunk/lib/plugins/movie/PluginMovieZelluloid.py	2010-12-03 20:39:27 UTC (rev 1479)
+@@ -32,7 +32,7 @@
+ plugin_language     = _('German')
+ plugin_author       = 'Michael Jahn'
+ plugin_author_email = '<mikej06 at hotmail.com>'
+-plugin_version      = '1.1'
++plugin_version      = '1.2'
+ 
+ class Plugin(movie.Movie):
+     index_url = 'http://www.zelluloid.de/filme/index.php3?id='
+@@ -176,7 +176,7 @@
+                 id = gutils.trim(element, 'movie-', '-')
+                 if id <> '':
+                     self.ids.append(id)
+-                    self.titles.append(gutils.strip_tags(string.replace(gutils.trim(element, '>', '</A>'), '<BR>', ' - ')))
++                    self.titles.append(gutils.strip_tags(string.replace(gutils.regextrim(element, '>', '</[Aa]>'), '<br />', ' - ')))
+ 
+ #
+ # Plugin Test
+
+
+
+From mikej06 at mail.berlios.de  Fri Dec  3 21:50:22 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Fri,  3 Dec 2010 21:50:22 +0100
+Subject: [Griffith-svn] r1480 - trunk/export_templates/html_table
+Message-ID: <20101203205022.BCC07480AFD@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-12-03 21:50:22 +0100 (Fri, 03 Dec 2010)
+New Revision: 1480
+
+Modified:
+   trunk/export_templates/html_table/page.tpl
+Log:
+template for html export fixed
+
+Modified: trunk/export_templates/html_table/page.tpl
+===================================================================
+--- trunk/export_templates/html_table/page.tpl	2010-12-03 20:39:27 UTC (rev 1479)
++++ trunk/export_templates/html_table/page.tpl	2010-12-03 20:50:22 UTC (rev 1480)
+@@ -71,9 +71,7 @@
+ 		<td class="seen">@DATA@</td></@movies_seen><@movies_loaned>
+ 		<td class="loaned">@DATA@</td></@movies_loaned><@movies_classification>
+ 		<td class="classification">@DATA@</td></@movies_classification><@movies_studio>
+-		<td class="studio">@DATA@</td></@movies_studio><@movies_screenplay>
+-		<td class="screenplay">@DATA@</td></@movies_screenplay><@movies_cameraman>
+-		<td class="cameraman">@DATA@</td></@movies_cameraman><@movies_width>
++		<td class="studio">@DATA@</td></@movies_studio><@movies_width>
+ 		<td class="width">@DATA@</td></@movies_width><@movies_height>
+ 		<td class="height">@DATA@</td></@movies_height><@movies_barcode>
+ 		<td class="barcode">@DATA@</td></@movies_barcode><@movies_cast>
+
+
+
+From piotrek at mail.berlios.de  Tue Dec  7 23:32:30 2010
+From: piotrek at mail.berlios.de (piotrek at mail.berlios.de)
+Date: Tue,  7 Dec 2010 23:32:30 +0100
+Subject: [Griffith-svn] r1481 - in trunk: . glade lib lib/plugins/export
+Message-ID: <20101207223230.BCCAA480D90@sheep.berlios.de>
+
+Author: piotrek
+Date: 2010-12-07 23:32:30 +0100 (Tue, 07 Dec 2010)
+New Revision: 1481
+
+Modified:
+   trunk/ChangeLog
+   trunk/glade/griffith.glade
+   trunk/glade/importcsv.glade
+   trunk/griffith
+   trunk/lib/gemail.py
+   trunk/lib/initialize.py
+   trunk/lib/loan.py
+   trunk/lib/plugins/export/PluginExportiPod.py
+Log:
+Fix few spelling mistakes (thanks to Olivier BOURSIN)
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/ChangeLog	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O?arowski
+ 
+ 
++2010-12-07  Piotr O?arowski
++	* Fix few spelling mistakes (thanks to Olivier BOURSIN)
++
+ 2010-12-03  Michael Jahn
+ 	* Zelluloid plugin updated
+ 
+
+Modified: trunk/glade/griffith.glade
+===================================================================
+--- trunk/glade/griffith.glade	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/glade/griffith.glade	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -594,7 +594,7 @@
+                     <child>
+                       <widget class="GtkToolButton" id="go_o_site">
+                         <property name="visible">True</property>
+-                        <property name="tooltip" translatable="yes">Visit the oficial web site</property>
++                        <property name="tooltip" translatable="yes">Visit the official web site</property>
+                         <property name="use_underline">True</property>
+                         <property name="stock_id">gtk-jump-to</property>
+                         <signal name="clicked" handler="on_go_o_site_clicked"/>
+@@ -6066,7 +6066,7 @@
+                         <child>
+                           <widget class="GtkLabel" id="label172">
+                             <property name="visible">True</property>
+-                            <property name="label" translatable="yes">Type in the original film tile, select source and choose &lt;i&gt;Get from web&lt;/i&gt;. Griffith will try to fetch all the related information from the Web.</property>
++                            <property name="label" translatable="yes">Type in the original film title, select source and choose &lt;i&gt;Get from web&lt;/i&gt;. Griffith will try to fetch all the related information from the Web.</property>
+                             <property name="use_markup">True</property>
+                             <property name="justify">GTK_JUSTIFY_CENTER</property>
+                             <property name="wrap">True</property>
+
+Modified: trunk/glade/importcsv.glade
+===================================================================
+--- trunk/glade/importcsv.glade	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/glade/importcsv.glade	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -205,7 +205,7 @@
+ 		  <child>
+ 		    <widget class="GtkLabel" id="label23">
+ 		      <property name="visible">True</property>
+-		      <property name="label" translatable="yes">Lineterminator</property>
++		      <property name="label" translatable="yes">Line terminator</property>
+ 		      <property name="use_underline">False</property>
+ 		      <property name="use_markup">False</property>
+ 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/griffith	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -1003,8 +1003,8 @@
+             restore(self)
+ 
+     def merge(self, *args):
+-        if gutils.question(_("""Are you sure you want to mix?
+-Your current movie collection will be mixed with a backup.
++        if gutils.question(_("""Are you sure you want to merge?
++Your current movie collection will be merged with a backup.
+ You can't undo this operation."""), self.widgets['window']):
+             from backup import restore
+             restore(self, merge=True)
+
+Modified: trunk/lib/gemail.py
+===================================================================
+--- trunk/lib/gemail.py	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/lib/gemail.py	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -53,7 +53,7 @@
+         % (sender, to, subject)
+     try:
+         smtpresult = session.sendmail(sender, to, headers+msg)
+-        gutils.info(_("E-mail sent sucessfuly"), self.widgets['window'])
++        gutils.info(_("E-mail sent successfully"), self.widgets['window'])
+         return
+     except:
+         gutils.error(_("Error sending e-mail: %s")%"", self.widgets['window'])
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/lib/initialize.py	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -579,7 +579,7 @@
+     # extension details
+     hbox = gtk.HBox()
+     vbox.pack_start(hbox, expand=False)
+-    enabled_cb = gtk.CheckButton(label=_('enable this extension'))
++    enabled_cb = gtk.CheckButton(label=_('Enable this extension'))
+     enabled_cb.set_active(enabled)
+     configwidgets['enabled'] = enabled_cb
+     vbox.pack_start(enabled_cb, expand=False)
+@@ -842,7 +842,7 @@
+                 except:
+                     spell_error = True
+             if spell_error:
+-                log.info('Dictionary not available. Spellcheck will be disabled.')
++                log.info('Dictionary not available. Spell check will be disabled.')
+                 if not self.config.get('notified', False, section='spell'):
+                     gutils.info(_("Dictionary not available. Spellcheck will be disabled. \n" + \
+                         "Please install the aspell-%s package or adjust the spellchekcer preferences.") % self.config.get('lang', section='spell'), \
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/lib/loan.py	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -70,7 +70,7 @@
+     # ask if user wants to loan whole collection
+     loan_whole_collection = False
+     if movie.collection_id > 0:
+-        if gutils.question(_('Do you want to loan whole collection?'), window=self.widgets['window']):
++        if gutils.question(_('Do you want to loan the whole collection?'), window=self.widgets['window']):
+             loan_whole_collection = True
+ 
+     try:
+
+Modified: trunk/lib/plugins/export/PluginExportiPod.py
+===================================================================
+--- trunk/lib/plugins/export/PluginExportiPod.py	2010-12-03 20:50:22 UTC (rev 1480)
++++ trunk/lib/plugins/export/PluginExportiPod.py	2010-12-07 22:32:30 UTC (rev 1481)
+@@ -92,7 +92,7 @@
+         
+             if thisPath:
+                 commands.getoutput('mv '+os.path.join(tmp_dir,"movies")+' "'+thisPath+'/Notes/"') # FIXME: WTF?
+-                gutils.info(_("List was successful exported to iPod."), self.parent_window)
++                gutils.info(_("List successfully exported to iPod."), self.parent_window)
+             else:
+                 gutils.info(_("iPod is not connected."), self.parent_window)
+         # this is not a mac, lets save the file
+@@ -108,4 +108,4 @@
+                         overwrite = False
+                 if overwrite == True or overwrite is None:
+                     shutil.copyfile(os.path.join(tmp_dir,"movies"), filename[0])
+-                    gutils.info(_("List was successful exported. Now you should move it to the 'Notes' folder on your iPod."), self.parent_window)
++                    gutils.info(_("The list was successfully exported. Now you should move it to the 'Notes' folder on your iPod."), self.parent_window)
+
+
+
+From mikej06 at mail.berlios.de  Mon Dec 20 21:55:06 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 20 Dec 2010 21:55:06 +0100
+Subject: [Griffith-svn] r1482 - trunk/lib
+Message-ID: <20101220205506.515E8480BE1@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-12-20 21:55:05 +0100 (Mon, 20 Dec 2010)
+New Revision: 1482
+
+Modified:
+   trunk/lib/initialize.py
+   trunk/lib/quick_filter.py
+Log:
+fixed sorted quick filter
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2010-12-07 22:32:30 UTC (rev 1481)
++++ trunk/lib/initialize.py	2010-12-20 20:55:05 UTC (rev 1482)
+@@ -713,11 +713,10 @@
+     i = 0
+     pos_to_activate = 0
+     selected_criteria = self.config.get('criteria', None, section='mainlist')
+-    sorted_criterias = [self.field_names[criteria] for criteria in self.search_criteria]
+-    sorted_criterias.sort()
+-    for criteria in sorted_criterias:
+-        self.widgets['filter']['criteria'].insert_text(i, criteria)
+-        if selected_criteria == criteria:
++    self.search_criteria_sorted = sorted((self.field_names[criteria], criteria) for criteria in self.search_criteria)
++    for (criterianame, criteria) in self.search_criteria_sorted:
++        self.widgets['filter']['criteria'].insert_text(i, criterianame)
++        if selected_criteria == criterianame:
+             pos_to_activate = i
+         i += 1
+     self.widgets['filter']['criteria'].set_active(pos_to_activate)
+
+Modified: trunk/lib/quick_filter.py
+===================================================================
+--- trunk/lib/quick_filter.py	2010-12-07 22:32:30 UTC (rev 1481)
++++ trunk/lib/quick_filter.py	2010-12-20 20:55:05 UTC (rev 1482)
+@@ -33,7 +33,7 @@
+     statement = select(db.tables.movies.columns, bind=self.db.session.bind)
+     
+     if text:
+-        criteria = self.search_criteria[self.widgets['filter']['criteria'].get_active()]
++        (criterianame, criteria) = self.search_criteria_sorted[self.widgets['filter']['criteria'].get_active()]
+         if criteria in ('year', 'runtime', 'media_num', 'rating'):
+             statement.append_whereclause(db.tables.movies.c[criteria]==text)
+         else:
+
+
+
+From mikej06 at mail.berlios.de  Mon Dec 20 22:08:33 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 20 Dec 2010 22:08:33 +0100
+Subject: [Griffith-svn] r1483 - trunk/lib
+Message-ID: <20101220210833.E5C1D480BE1@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-12-20 22:08:33 +0100 (Mon, 20 Dec 2010)
+New Revision: 1483
+
+Modified:
+   trunk/lib/gconsole.py
+Log:
+setting log file directory after analyzing command line arguments
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2010-12-20 20:55:05 UTC (rev 1482)
++++ trunk/lib/gconsole.py	2010-12-20 21:08:33 UTC (rev 1483)
+@@ -59,9 +59,6 @@
+         home = os.path.expanduser('~/.griffith').decode(default_enc)
+     config = 'griffith.cfg'
+ 
+-    # set log file directory for current mode
+-    GriffithDebug.set_logdir(home)
+-
+     if len(sys.argv) > 1:
+         try:
+             opts, args = getopt.getopt(sys.argv[1:], options[0], options[1])
+@@ -99,6 +96,10 @@
+             elif o == '--show-dep':
+                 show_dependencies()
+                 sys.exit()
++
++    # set log file directory for current mode
++    GriffithDebug.set_logdir(home)
++
+     return home, config
+ 
+ def check_args_with_db(self):
+
+
+
+From mikej06 at mail.berlios.de  Mon Dec 20 22:19:17 2010
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 20 Dec 2010 22:19:17 +0100
+Subject: [Griffith-svn] r1484 - trunk/lib
+Message-ID: <20101220211917.276E4480BD3@sheep.berlios.de>
+
+Author: mikej06
+Date: 2010-12-20 22:19:16 +0100 (Mon, 20 Dec 2010)
+New Revision: 1484
+
+Modified:
+   trunk/lib/backup.py
+Log:
+smaller partitions for backup restore (it doesn't work every time with bigger partitions)
+
+Modified: trunk/lib/backup.py
+===================================================================
+--- trunk/lib/backup.py	2010-12-20 21:08:33 UTC (rev 1483)
++++ trunk/lib/backup.py	2010-12-20 21:19:16 UTC (rev 1484)
+@@ -136,8 +136,8 @@
+             insertcmd = table.insert()
+             # insert in steps of 100 items because otherwise there is an error with mysql
+             # I tried to insert more than 800 movies at ones: OperationalError
+-            for partition in range(0, len(data), 100):
+-                dst_engine.execute(insertcmd, data[partition:partition + 100])
++            for partition in range(0, len(data), 10):
++                dst_engine.execute(insertcmd, data[partition:partition + 10])
+ 
+             if dst_engine.name == 'postgres':
+                 # update current value of sequences
+
+
+

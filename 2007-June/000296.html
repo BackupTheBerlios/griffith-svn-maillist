@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r779 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r779%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200706202211.l5KMBjCq023215%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000295.html">
+   <LINK REL="Next"  HREF="000297.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r779 - in trunk: . lib/plugins/movie</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r779%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C200706202211.l5KMBjCq023215%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r779 - in trunk: . lib/plugins/movie">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 21 00:11:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000295.html">[Griffith-svn] r778 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000297.html">[Griffith-svn] r781 - in trunk/i18n: . da da/LC_MESSAGES
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#296">[ date ]</a>
+              <a href="thread.html#296">[ thread ]</a>
+              <a href="subject.html#296">[ subject ]</a>
+              <a href="author.html#296">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2007-06-21 00:11:45 +0200 (Thu, 21 Jun 2007)
+New Revision: 779
+
+Modified:
+   trunk/ChangeLog
+   trunk/README
+   trunk/lib/plugins/movie/PluginMovieFDb.py
+   trunk/lib/plugins/movie/PluginMovieFilmweb.py
+   trunk/lib/plugins/movie/PluginMovieWP.py
+Log:
+Filmweb, WP and FDb movie plugins updated
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-06-20 18:32:21 UTC (rev 778)
++++ trunk/ChangeLog	2007-06-20 22:11:45 UTC (rev 779)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-06-20  Piotr O&#380;arowski
++	* Filmweb, WP and FDb movie plugins updated
++
+ 2007-06-20  Michael Jahn
+ 	* fixed bug #11103: windows are not &quot;on top&quot;
+ 	* fixed bug #11088: Clone doesn't produce a new entry
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2007-06-20 18:32:21 UTC (rev 778)
++++ trunk/README	2007-06-20 22:11:45 UTC (rev 779)
+@@ -92,6 +92,7 @@
+ 	USE griffith
+ 	EXEC sp_changedbowner @loginame='griffith'
+ 
++
+ Installation
+ ============
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieFDb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFDb.py	2007-06-20 18:32:21 UTC (rev 778)
++++ trunk/lib/plugins/movie/PluginMovieFDb.py	2007-06-20 22:11:45 UTC (rev 779)
+@@ -25,6 +25,7 @@
+ import gutils
+ import movie
+ import string
++import re
+ 
+ plugin_name		= 'FDb'
+ plugin_description	= 'Internetowa baza filmowa'
+@@ -32,9 +33,11 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O&#380;arowski'
+ plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version		= '1.6'
++plugin_version		= '1.7'
+ 
+ class Plugin(movie.Movie):
++	TRAILER_PATTERN = re.compile('\s*&lt;a\shref=[\'&quot;](.*?)[&quot;\'].*?&gt;\(zobacz\szwiastun\)&lt;/a&gt;')
++	
+ 	def __init__(self, movie_id):
+ 		from md5 import md5
+ 		self.movie_id = md5(movie_id).hexdigest()
+@@ -78,6 +81,7 @@
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page,'&gt;Opis filmu:&lt;/div&gt;','&lt;/div&gt;')
++		self.plot = self.TRAILER_PATTERN.sub('', self.plot)
+ 
+ 	def get_year(self):
+ 		self.year = gutils.trim(self.page,' class=&quot;movieYear&quot;&gt;(', ')&lt;/span&gt;')
+@@ -111,7 +115,9 @@
+ 		self.site = self.url
+ 
+ 	def get_trailer(self):
+-		self.trailer = ''
++		trailer_url = self.TRAILER_PATTERN.findall(self.page)
++		if trailer_url:
++			self.trailer = trailer_url[0]
+ 
+ 	def get_country(self):
+ 		self.country = gutils.trim(self.page,&quot;&gt;Kraj:&lt;/span&gt;\n&quot;,'&lt;/div&gt;')
+
+Modified: trunk/lib/plugins/movie/PluginMovieFilmweb.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieFilmweb.py	2007-06-20 18:32:21 UTC (rev 778)
++++ trunk/lib/plugins/movie/PluginMovieFilmweb.py	2007-06-20 22:11:45 UTC (rev 779)
+@@ -31,9 +31,13 @@
+ plugin_language		= _('Polish')
+ plugin_author		= 'Piotr O&#380;arowski'
+ plugin_author_email	= '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version		= '1.10'
++plugin_version		= '1.11'
+ 
+ class Plugin(movie.Movie):
++	TRAILER_PATTERN     = re.compile(&quot;&quot;&quot;&lt;a class=[&quot;']notSelected[&quot;'].*?href=[&quot;'](.*?)[&quot;']&gt;zwiastuny&lt;/a&gt;\s*\[\d+\]\s*&raquo;&quot;&quot;&quot;)
++	DIRECTOR_PATTERN    = re.compile('yseria\s+(.*)\s+scenariusz', re.MULTILINE)
++	O_TITLE_AKA_PATTERN = re.compile('\(AKA\s+(.*?)\)')
++
+ 	def __init__(self, id):
+ 		self.movie_id = 'filmweb'
+ 		self.url      = str(id)
+@@ -48,8 +52,12 @@
+ 
+ 	def get_o_title(self):
+ 		self.o_title = gutils.trim(self.page, '&lt;span class=&quot;otherTitle&quot;&gt;', '&lt;span')
+-		self.o_title = string.replace(self.o_title, &quot;\t&quot;,'')
+-		self.o_title = string.replace(self.o_title, &quot;\n&quot;,'')
++		tmp = self.O_TITLE_AKA_PATTERN.findall(self.o_title)
++		if tmp:
++			self.o_title = tmp[0]
++		else:
++			self.o_title = string.replace(self.o_title, &quot;\t&quot;,'')
++			self.o_title = string.replace(self.o_title, &quot;\n&quot;,'')
+ 
+ 	def get_title(self):
+ 		self.title = gutils.trim(self.page, '&lt;div id=&quot;filmTitle&quot;&gt;', '&lt;span')
+@@ -59,14 +67,14 @@
+ 			self.title = gutils.before(self.title, '(')
+ 
+ 	def get_director(self):
+-		self.director = re.findall(r'yseria\t+(.*)\t+scenariusz', self.page)
+-		if len(self.director)&gt;0:
+-			self.director = self.director[0]
++		director = self.DIRECTOR_PATTERN.findall(self.page)
++		if len(director)&gt;0:
++			self.director = director[0]
+ 			self.director = string.replace(self.director, &quot;\t&quot;,'')
++			self.director = re.sub('\s+', ' ', self.director)
+ 			self.director = string.replace(self.director, &quot;,&quot;,&quot;, &quot;)
++			self.director = string.replace(self.director, &quot; ,  &quot;,&quot;, &quot;)
+ 			self.director = string.replace(self.director, &quot;,  (wi\xeacej&#160;...)&quot;,'')
+-		else:
+-			self.director = None
+ 
+ 	def get_plot(self):
+ 		self.plot = gutils.trim(self.page,&quot; alt=\&quot;o filmie\&quot;/&gt;&lt;/div&gt;&quot;,&quot;&lt;/div&gt;&quot;)
+@@ -115,7 +123,9 @@
+ 		self.site = self.url
+ 
+ 	def get_trailer(self):
+-		self.trailer = ''
++		trailer = self.TRAILER_PATTERN.findall(self.page)
++		if trailer:
++			self.trailer = trailer[0]
+ 
+ 	def get_country(self):
+ 		self.country = gutils.trim(self.page,&quot;\tprodukcja:&quot;, '&lt;/a&gt;')
+
+Modified: trunk/lib/plugins/movie/PluginMovieWP.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieWP.py	2007-06-20 18:32:21 UTC (rev 778)
++++ trunk/lib/plugins/movie/PluginMovieWP.py	2007-06-20 22:11:45 UTC (rev 779)
+@@ -32,7 +32,7 @@
+ plugin_language     = _('Polish')
+ plugin_author       = 'Piotr O&#380;arowski'
+ plugin_author_email = '&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">ozarow+griffith at gmail.com</A>&gt;'
+-plugin_version      = '2.2'
++plugin_version      = '2.3'
+ 
+ class Plugin(movie.Movie):
+ 	def __init__(self, id):
+@@ -114,7 +114,11 @@
+ 		self.trailer = &quot;<A HREF="http://film.wp.pl/id,%s,film_trailer.html">http://film.wp.pl/id,%s,film_trailer.html</A>&quot; % self.movie_id
+ 
+ 	def get_country(self):
+-		self.country = gutils.trim(self.page, '&lt;b&gt;Kraj(e) produkcji:&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
++		pos = self.page.find('&lt;b&gt;Kraj produkcji:&lt;/b&gt;')
++		if pos == -1:
++			pos = self.page.find('&lt;b&gt;Kraje produkcji:&lt;/b&gt;')
++		if pos &gt; -1:
++			self.country = gutils.trim(self.page[pos:], '&lt;/b&gt;', &quot;\t\t&lt;/div&gt;&lt;div&quot;)
+ 
+ 	def get_rating(self):
+ 		self.rating = None
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000295.html">[Griffith-svn] r778 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000297.html">[Griffith-svn] r781 - in trunk/i18n: . da da/LC_MESSAGES
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#296">[ date ]</a>
+              <a href="thread.html#296">[ thread ]</a>
+              <a href="subject.html#296">[ subject ]</a>
+              <a href="author.html#296">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

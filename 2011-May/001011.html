@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1552 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1552%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110523200058.E1E994814E9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001010.html">
+   <LINK REL="Next"  HREF="001012.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1552 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1552%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110523200058.E1E994814E9%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1552 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Mon May 23 22:00:58 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001010.html">[Griffith-svn] r1550 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="001012.html">[Griffith-svn] r1553 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1011">[ date ]</a>
+              <a href="thread.html#1011">[ thread ]</a>
+              <a href="subject.html#1011">[ subject ]</a>
+              <a href="author.html#1011">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-05-23 22:00:58 +0200 (Mon, 23 May 2011)
+New Revision: 1552
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+Log:
+updated MyMoviesIt plugin (full cast, screenplay, cameraman, director)
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-05-20 08:49:12 UTC (rev 1551)
++++ trunk/ChangeLog	2011-05-23 20:00:58 UTC (rev 1552)
+@@ -5,6 +5,9 @@
+ (c) 2005-2011  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2011-05-23  Michael Jahn
++	* updated MyMoviesIt plugin (full cast, screenplay, cameraman, director)
++
+ 2011-05-18  Michael Jahn
+ 	* updated CineMovies plugin (thanks to Olivier BOURSIN)
+ 	* small fixes for Allocine and AllRovi plugin
+
+Modified: trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-05-20 08:49:12 UTC (rev 1551)
++++ trunk/lib/plugins/movie/PluginMovieMyMoviesIt.py	2011-05-23 20:00:58 UTC (rev 1552)
+@@ -2,7 +2,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright (c) 2007
++# Copyright (c) 2007-2011
+ #
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -33,7 +33,7 @@
+ plugin_language = _(&quot;Italian&quot;)
+ plugin_author = &quot;Giovanni Sposito, Filippo Valsorda&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">giovanni.sposito at gmail.com</A>&gt;, &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">filosottile.wiki at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.2&quot;
++plugin_version = &quot;0.3&quot;
+ 
+ class Plugin(movie.Movie):
+ 
+@@ -42,6 +42,9 @@
+         self.movie_id = id
+         self.url = &quot;<A HREF="http://www.mymovies.it/dizionario/recensione.asp?id=%s">http://www.mymovies.it/dizionario/recensione.asp?id=%s</A>&quot; % self.movie_id
+ 
++    def initialize(self):
++        self.castpage = self.open_page(self.parent_window, url='<A HREF="http://www.mymovies.it/cast/?id=">http://www.mymovies.it/cast/?id=</A>' + self.movie_id)
++
+     def get_image(self):
+         tmp_image = string.find(self.page, '&lt;img style=&quot;float:left; border:solid 1px gray; padding:3px; margin:5px;&quot; src=&quot;')
+         if tmp_image == -1:
+@@ -60,13 +63,7 @@
+         self.title = gutils.trim(self.page, '&lt;h1 style=&quot;margin-bottom:3px;&quot;&gt;', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+-        pos_iniziale = string.find(self.page, '&lt;div style=&quot;text-align:left&quot; class=&quot;linkblu&quot;&gt;')
+-        self.director = gutils.trim(self.page[pos_iniziale:],'Un film di &lt;a','&lt;/a&gt;')
+-        self.director = gutils.after(self.director,'&gt;')
+-        if not self.director:
+-            self.director = gutils.trim(self.page[pos_iniziale:], 'Un film di ', 'Con')
+-        if len(self.director) &gt; 25:
+-            self.director = gutils.trim(self.page[pos_iniziale:],'Un film di ','&lt;')
++        self.director = self._find_actor('&gt;Regista', ', ')
+ 
+     def get_plot(self):
+         pos_iniziale = string.find(self.page, '&lt;div id=&quot;recensione&quot;&gt;')
+@@ -83,10 +80,18 @@
+     def get_genre(self):
+         self.genre = gutils.regextrim(self.page,'&lt;a title=&quot;Film [a-zA-Z]+&quot; href=&quot;<A HREF="http://www.mymovies.it/film/[a-zA-Z">http://www.mymovies.it/film/[a-zA-Z</A>]+/&quot;&gt;', '&lt;/a&gt;')
+ 
+-    def get_cast(self): # TODO
+-        tmp = string.find(self.page, 'Con &lt;a')
+-        self.cast = gutils.trim(self.page[tmp:],'Con ','&lt;/a&gt;.')
+-        self.cast = string.replace(self.cast, ',', '\n')
++    def get_cast(self):
++        self.cast = ''
++        elements = string.split(gutils.before(self.castpage, 'Filmmakers&lt;/div&gt;'), '&lt;div class=&quot;linkblu&quot;')
++        i = 3
++        while i &lt; len(elements):
++            actorandrole = gutils.after(gutils.trim(elements[i], '&lt;div', '&lt;/div&gt;'), '&gt;')
++            actorandrole = string.replace(actorandrole, '&lt;/a&gt;', _(' as '))
++            actorandrole = gutils.clean(actorandrole)
++            actorandrole = re.sub('(\n|\r)', '', actorandrole)
++            actorandrole = re.sub('[ \t]+', ' ', actorandrole)
++            self.cast = self.cast + actorandrole + '\n'
++            i += 1
+ 
+     def get_classification(self):
+         self.classification = ''
+@@ -124,6 +129,26 @@
+         #    self.notes = self.notes + 'Alt. titel:' + string.strip(gutils.strip_tags(tmp))
+         self.notes = ''
+ 
++    def get_screenplay(self):
++        self.screenplay = self._find_actor('&gt;Sceneggiatura', ', ')
++
++    def get_cameraman(self):
++        self.cameraman = self._find_actor('&gt;Fotografia', ', ')
++        
++    def _find_actor(self, type, delimiter):
++        elements = string.split(self.castpage, '&lt;div class=&quot;linkblu&quot;')
++        result = ''
++        i = 1
++        while i &lt; len(elements):
++            actorandrole = gutils.after(gutils.trim(elements[i], '&lt;div', '&lt;/div&gt;'), '&gt;')
++            if string.find(actorandrole, type) &gt; 0:
++                result = result + gutils.before(actorandrole, '&lt;/a&gt;') + delimiter
++            i += 1
++        if result:
++            result = result[:-len(delimiter)]
++        return result
++
++
+ class SearchPlugin(movie.SearchMovie):
+ 
+     def __init__(self):
+@@ -158,6 +183,7 @@
+         else:
+             self.number_results = 0
+ 
++
+ #
+ # Plugin Test
+ #
+@@ -167,9 +193,10 @@
+     # dict { movie_id -&gt; expected result count }
+     #
+     test_configuration = {
+-        'Rocky Balboa'            : 1
++        'Rocky' : [ 11, 11 ]
+     }
+ 
++
+ class PluginTest:
+     #
+     # Configuration for automated tests:
+@@ -180,10 +207,38 @@
+     #
+     test_configuration = {
+         '44566' : {
+-            'title'             : 'Rocky Balboa',
+-            'o_title'             : 'Rocky Balboa',
+-            'director'            : 'Sylvester Stallone',
+-            'genre'                : 'Sportivo',
+-            'year'                : 2006
++            'title'          : 'Rocky Balboa',
++            'o_title'        : 'Rocky Balboa',
++            'director'       : 'Sylvester Stallone',
++            'plot'           : True,
++            'cast'           :'Sylvester Stallone' + _(' as ') + 'Rocky Balboa\n\
++Burt Young' + _(' as ') + 'Paulie\n\
++Antonio Tarver' + _(' as ') + 'Mason Dixon\n\
++Milo Ventimiglia' + _(' as ') + 'Rocky Balboa jr\n\
++Geraldine Hughes' + _(' as ') + 'Marie\n\
++Mike Tyson' + _(' as ') + 'Se stesso\n\
++Tony Burton' + _(' as ') + 'Duke\n\
++A.J. Benza' + _(' as ') + 'L.C.\n\
++James Francis Kelly III' + _(' as ') + 'Steps\n\
++Talia Shire' + _(' as ') + 'Adriana Balboa (materiale d\'archivio)\n\
++Lou DiBella' + _(' as ') + 'Se stesso\n\
++Henry G. Sanders' + _(' as ') + 'Martin\n\
++Pedro Lovell' + _(' as ') + 'Spider Rico\n\
++Ana Gerena' + _(' as ') + 'Isabel\n\
++Angela Boyd' + _(' as ') + 'Angie',
++            'country'        : 'USA',
++            'genre'          : 'Sportivo',
++            'classification' : False,
++            'studio'         : False,
++            'o_site'         : False,
++            'site'           : '<A HREF="http://www.mymovies.it/dizionario/recensione.asp?id=44566">http://www.mymovies.it/dizionario/recensione.asp?id=44566</A>',
++            'trailer'        : '<A HREF="http://www.mymovies.it/trailer/?id=44566">http://www.mymovies.it/trailer/?id=44566</A>',
++            'year'           : 2006,
++            'notes'          : False,
++            'runtime'        : 102,
++            'image'          : True,
++            'rating'         : 6,
++            'cameraman'      : 'J. Clark Mathis',
++            'screenplay'     : 'Sylvester Stallone'
+         }
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001010.html">[Griffith-svn] r1550 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="001012.html">[Griffith-svn] r1553 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1011">[ date ]</a>
+              <a href="thread.html#1011">[ thread ]</a>
+              <a href="subject.html#1011">[ subject ]</a>
+              <a href="author.html#1011">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

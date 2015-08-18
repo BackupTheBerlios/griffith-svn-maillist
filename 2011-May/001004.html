@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1544 - in trunk: . lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1544%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110505204654.386FB480F96%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001003.html">
+   <LINK REL="Next"  HREF="001005.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1544 - in trunk: . lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1544%20-%20in%20trunk%3A%20.%20lib/plugins/movie&In-Reply-To=%3C20110505204654.386FB480F96%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1544 - in trunk: . lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Thu May  5 22:46:53 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001003.html">[Griffith-svn] r1543 - in trunk: . lib/plugins/movie
+</A></li>
+        <LI>Next message: <A HREF="001005.html">[Griffith-svn] r1545 - in trunk: . lib/db
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1004">[ date ]</a>
+              <a href="thread.html#1004">[ thread ]</a>
+              <a href="subject.html#1004">[ subject ]</a>
+              <a href="author.html#1004">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-05-05 22:46:53 +0200 (Thu, 05 May 2011)
+New Revision: 1544
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieCineMovies.py
+   trunk/lib/plugins/movie/PluginMovieHKMDB.py
+Log:
+small fixes for CineMovies and HKMDB
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2011-05-05 20:39:49 UTC (rev 1543)
++++ trunk/ChangeLog	2011-05-05 20:46:53 UTC (rev 1544)
+@@ -7,6 +7,7 @@
+ 
+ 2011-05-05  Michael Jahn
+ 	* fixed movie plugin AllMovie, it is now AllRovi
++	* small fixes for CineMovies and HKMDB
+ 
+ 2011-04-27  Filippo Valsorda
+     * New Interfilmes plugin by Elencarlos Soares
+
+Modified: trunk/lib/plugins/movie/PluginMovieCineMovies.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-05-05 20:39:49 UTC (rev 1543)
++++ trunk/lib/plugins/movie/PluginMovieCineMovies.py	2011-05-05 20:46:53 UTC (rev 1544)
+@@ -49,7 +49,7 @@
+         self.o_title = gutils.trim(self.page, 'Titre original :', '&lt;/tr&gt;')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;h1 class=&quot;h1artist&quot;&gt;', '&lt;/h1&gt;')
++        self.title = gutils.regextrim(self.page, '&lt;h1 class=&quot;h1artist&quot;[^&gt;]*&gt;', '&lt;/h1&gt;')
+ 
+     def get_director(self):
+         self.director = string.strip(gutils.trim(self.page, 'par :&lt;/b&gt;&lt;/td&gt;', '&lt;/a&gt;'))
+@@ -98,7 +98,7 @@
+         self.country = gutils.trim(self.page, 'Pays :', '&lt;/tr&gt;')
+ 
+     def get_rating(self):
+-        self.rating = gutils.clean(gutils.trim(self.page, '&lt;div id=scoree&gt;', '&lt;/div&gt;'))
++        self.rating = gutils.clean(gutils.regextrim(gutils.regextrim(self.page, '&lt;div id=scoree[^&gt;]*&gt;', '&lt;/div&gt;'), '&lt;div class=[^&gt;]*&gt;', '$'))
+ 
+     def get_screenplay(self):
+         self.screenplay = gutils.clean(gutils.trim(self.page_cast, 'nario de&lt;/h2&gt; :', '&lt;/h5&gt;'))
+
+Modified: trunk/lib/plugins/movie/PluginMovieHKMDB.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieHKMDB.py	2011-05-05 20:39:49 UTC (rev 1543)
++++ trunk/lib/plugins/movie/PluginMovieHKMDB.py	2011-05-05 20:46:53 UTC (rev 1544)
+@@ -47,7 +47,7 @@
+         self.o_title = gutils.trim(self.page, '&lt;font size=&quot;+2&quot;&gt;', '&lt;/font&gt;')
+ 
+     def get_title(self):
+-        self.title = gutils.trim(self.page, '&lt;font size=&quot;+2&quot;&gt;', '&lt;/font&gt;')
++        self.title = re.sub('[(][0-9]+[)]', '', gutils.trim(self.page, '&lt;font size=&quot;+1&quot;&gt;', '&lt;/font&gt;'))
+ 
+     def get_director(self):
+         self.director = ''
+@@ -64,7 +64,7 @@
+         self.plot = ''
+ 
+     def get_year(self):
+-        self.year = gutils.trim(self.page, '&lt;font size=&quot;+1&quot;&gt;', '&lt;/font&gt;')
++        self.year = gutils.trim(gutils.trim(self.page, '&lt;font size=&quot;+1&quot;&gt;', '&lt;/font&gt;'), '(', ')')
+ 
+     def get_runtime(self):
+         self.runtime = 0
+@@ -179,7 +179,7 @@
+     test_configuration = {
+         '8997' : {
+             'title'             : 'Mar\'s Villa, The',
+-            'o_title'           : 'Mar\'s Villa, The',
++            'o_title'           : u'&#34785;',
+             'director'          : 'Ting Chung (1)',
+             'plot'              : False,
+             'cast'              : 'John Liu Chung-Liang' + _(' as ') + 'Ma Tien Lang\n\
+@@ -200,7 +200,8 @@
+ Hung Ji-Yue\n\
+ Ho Szu-Yuan\n\
+ Mark Lung Goon-Mo\n\
+-Chan Jan (1)' + _(' as ') + 'extra',
++Chan Jan (1)' + _(' as ') + 'extra\n\
++Fan Fung-San' + _(' as ') + 'extra',
+             'country'           : 'Taiwan',
+             'genre'             : 'Martial Arts',
+             'classification'    : False,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001003.html">[Griffith-svn] r1543 - in trunk: . lib/plugins/movie
+</A></li>
+	<LI>Next message: <A HREF="001005.html">[Griffith-svn] r1545 - in trunk: . lib/db
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1004">[ date ]</a>
+              <a href="thread.html#1004">[ thread ]</a>
+              <a href="subject.html#1004">[ subject ]</a>
+              <a href="author.html#1004">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

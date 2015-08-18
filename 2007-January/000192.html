@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r666 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r666%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701042248.l04MmOwg010330%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000191.html">
+   <LINK REL="Next"  HREF="000193.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r666 - in trunk: . lib</H1>
+    <B>iznogoud at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r666%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200701042248.l04MmOwg010330%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r666 - in trunk: . lib">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan  4 23:48:24 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000191.html">[Griffith-svn] r665 - in trunk: . po
+</A></li>
+        <LI>Next message: <A HREF="000193.html">[Griffith-svn] r667 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#192">[ date ]</a>
+              <a href="thread.html#192">[ thread ]</a>
+              <a href="subject.html#192">[ subject ]</a>
+              <a href="author.html#192">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2007-01-04 23:48:21 +0100 (Thu, 04 Jan 2007)
+New Revision: 666
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/winsetup.bat
+Log:
+Fixed win32 gtk locale issue
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-01-04 18:30:10 UTC (rev 665)
++++ trunk/ChangeLog	2007-01-04 22:48:21 UTC (rev 666)
+@@ -8,6 +8,7 @@
+ 	* Updated Swedish translation (thanks to Daniel Nylander)
+ 	* Updated Czech translation and CSFD movie pluging (thanks to Blondak)
+ 	* Updated Portuguese Brazilian translation (thanks to F&#225;bio Nogueira)
++	* Fixed win32 gtk locale issue
+ 
+ 2007-01-03 Vasco Nunes &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;
+ 	* Using cPickle over pickle for serialization. Config files are now fully cross-platform.
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-01-04 18:30:10 UTC (rev 665)
++++ trunk/lib/initialize.py	2007-01-04 22:48:21 UTC (rev 666)
+@@ -30,6 +30,7 @@
+ import gobject
+ import gettext
+ import platform
++import locale
+ 
+ try:
+ 	import gtkspell
+@@ -58,6 +59,16 @@
+ 		locations['desktop']        = ''
+ 		locations['i18n']           = &quot;%s\\i18n&quot; % locations['exec']
+ 		os.environ['PATH'] += &quot;;lib;&quot;
++		
++		# windows hack for locale setting
++		lang = os.getenv('LANG')
++		if lang is None:
++			defaultLang, defaultEnc = locale.getdefaultlocale()
++			if defaultLang:
++				lang = defaultLang
++		if lang:
++			os.environ['LANG'] = lang
++	   
+ 	elif os.name == 'posix':
+ 		locations['home']  = os.path.join(os.path.expanduser('~'), &quot;.griffith&quot;)
+ 		locations['share'] = os.path.abspath(os.path.join(locations['lib'], '..'))
+
+Modified: trunk/winsetup.bat
+===================================================================
+--- trunk/winsetup.bat	2007-01-04 18:30:10 UTC (rev 665)
++++ trunk/winsetup.bat	2007-01-04 22:48:21 UTC (rev 666)
+@@ -7,9 +7,13 @@
+ @rem ***** create the exe 
+ @python.exe -OO winsetup.py py2exe
+ @mkdir dist\etc
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at mkdir</A> dist\share
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at mkdir</A> dist\share\locale
+ 
+ @xcopy c:\gtk\etc c:\griffith\dist\etc /s /e
+ @xcopy c:\gtk\lib c:\griffith\dist\lib /s /e
+<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">+ at xcopy</A> c:\gtk\share\locale c:\griffith\dist\share\locale /s /e
++
+ @copy c:\gtk\share\themes\MS-Windows\gtk-2.0\*.* c:\griffith\dist\
+ @copy c:\gtk\bin\jpeg62.dll c:\griffith\dist\
+ @rem **** pause so we can see the exit codes 
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000191.html">[Griffith-svn] r665 - in trunk: . po
+</A></li>
+	<LI>Next message: <A HREF="000193.html">[Griffith-svn] r667 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#192">[ date ]</a>
+              <a href="thread.html#192">[ thread ]</a>
+              <a href="subject.html#192">[ subject ]</a>
+              <a href="author.html#192">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,189 @@
+From mikej06 at mail.berlios.de  Mon Oct 15 12:28:31 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 15 Oct 2007 12:28:31 +0200
+Subject: [Griffith-svn] r873 - trunk/lib
+Message-ID: <200710151028.l9FASVJ0006085@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-10-15 12:28:17 +0200 (Mon, 15 Oct 2007)
+New Revision: 873
+
+Modified:
+   trunk/lib/edit.py
+Log:
+Fetch from Amazon function fixed
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-09-21 16:23:22 UTC (rev 872)
++++ trunk/lib/edit.py	2007-10-15 10:28:17 UTC (rev 873)
+@@ -195,20 +195,21 @@
+ 	file_to_copy = tempfile.mktemp(suffix=self.widgets['movie']['number'].get_text(), \
+ 		dir=self.locations['temp'])
+ 	file_to_copy += ".jpg"
+-	try:
+-		progress = movie.Progress(self.widgets['window'],_("Fetching poster"),_("Wait a moment"))
+-		retriever = movie.Retriever(result[f].ImageUrlLarge, self.widgets['window'], progress, file_to_copy)
+-		retriever.start()
+-		while retriever.isAlive():
+-			progress.pulse()
+-			if progress.status:
+-				retriever.suspend()
+-			while gtk.events_pending():
+-				gtk.main_iteration()
+-		progress.close()
+-		urlcleanup()
+-	except:
+-		gutils.warning(self, _("Sorry. A connection error has occurred."))
++	if len(result[f].ImageUrlLarge):
++		try:
++			progress = movie.Progress(self.widgets['window'],_("Fetching poster"),_("Wait a moment"))
++			retriever = movie.Retriever(result[f].ImageUrlLarge, self.widgets['window'], progress, file_to_copy)
++			retriever.start()
++			while retriever.isAlive():
++				progress.pulse()
++				if progress.status:
++					retriever.suspend()
++				while gtk.events_pending():
++					gtk.main_iteration()
++			progress.close()
++			urlcleanup()
++		except:
++			gutils.warning(self, _("Sorry. A connection error has occurred."))
+ 
+ 	if  os.path.isfile(file_to_copy):
+ 		try:
+@@ -248,9 +249,9 @@
+ 		else:
+ 			self.debug.show("Reverting to previous poster and deleting new one from disk.")
+ 			try:
+-                            os.remove(file_to_copy)
+-                        except:
+-                            self.debug.show("no permission for %s"%file_to_copy)
++				os.remove(file_to_copy)
++			except:
++				self.debug.show("no permission for %s"%file_to_copy)
+ 
+ 		self.widgets['poster_window'].hide()
+ 	else:
+
+
+
+From mikej06 at mail.berlios.de  Mon Oct 15 12:30:25 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Mon, 15 Oct 2007 12:30:25 +0200
+Subject: [Griffith-svn] r874 - in trunk: . lib/plugins/movie
+Message-ID: <200710151030.l9FAUPLO006748@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-10-15 12:30:06 +0200 (Mon, 15 Oct 2007)
+New Revision: 874
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+Kino.de plugin updated
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-10-15 10:28:17 UTC (rev 873)
++++ trunk/ChangeLog	2007-10-15 10:30:06 UTC (rev 874)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O?arowski
+ 
++2007-10-15  Michael Jahn
++	* Kino.de plugin updated
++	* Fetch from Amazon function fixed
++
+ 2007-09-20 Vasco Nunes
+ 	* Italian language file updated
+ 
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-10-15 10:28:17 UTC (rev 873)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-10-15 10:30:06 UTC (rev 874)
+@@ -95,13 +95,12 @@
+ 	def get_plot(self):
+ 		# little steps to perfect plot (I hope ... it's a terrible structured content ... )
+ 		self.plot = gutils.before(self.tmp_page, '<!-- PRINT-CONTENT-ENDE-->')
+-		self.plot = gutils.trim(self.plot, 'Kurzinfo', '</td></tr>\n')
++		self.plot = gutils.trim(self.plot, 'Kurzinfo', '</span></td></tr>')
+ 		if self.plot != '':
+-			lastpos = self.plot.rfind('>')
++			lastpos = self.plot.rfind('</table>')
+ 			if lastpos == -1:
+-				self.plot = 'a'
++				self.plot = ''
+ 			else:
+-				lastpos = lastpos + 1
+ 				self.plot = self.plot[lastpos:]
+ 		else:
+ 			self.plot = gutils.trim(self.tmp_page, '<span style="line-height:', '</spa')
+
+
+
+From mikej06 at mail.berlios.de  Sun Oct 21 22:27:29 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Sun, 21 Oct 2007 22:27:29 +0200
+Subject: [Griffith-svn] r875 - trunk/lib/plugins/movie
+Message-ID: <200710212027.l9LKRThJ008926@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-10-21 22:27:10 +0200 (Sun, 21 Oct 2007)
+New Revision: 875
+
+Modified:
+   trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+Log:
+IMDB-de updated
+
+Modified: trunk/lib/plugins/movie/PluginMovieIMDB-de.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-10-15 10:30:06 UTC (rev 874)
++++ trunk/lib/plugins/movie/PluginMovieIMDB-de.py	2007-10-21 20:27:10 UTC (rev 875)
+@@ -165,7 +165,7 @@
+ 
+ 	def search(self,parent_window):
+ 		self.open_search(parent_window)
+-		self.page = gutils.trim(self.page, '(Displaying', '<b>Suggestions For Improving Your Results</b>');
++		self.page = gutils.trim(self.page, ' angezeigt)', ' Treffergenauigkeit');
+ 		self.page = self.page.decode('iso-8859-1')
+ 		return self.page
+ 
+
+
+
+From mikej06 at mail.berlios.de  Thu Oct 25 23:20:58 2007
+From: mikej06 at mail.berlios.de (mikej06 at mail.berlios.de)
+Date: Thu, 25 Oct 2007 23:20:58 +0200
+Subject: [Griffith-svn] r876 - trunk/lib
+Message-ID: <200710252120.l9PLKwGi002077@sheep.berlios.de>
+
+Author: mikej06
+Date: 2007-10-25 23:20:23 +0200 (Thu, 25 Oct 2007)
+New Revision: 876
+
+Modified:
+   trunk/lib/edit.py
+Log:
+fix wrong encoding (posters with german umlauts didn't work)
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2007-10-21 20:27:10 UTC (rev 875)
++++ trunk/lib/edit.py	2007-10-25 21:20:23 UTC (rev 876)
+@@ -45,7 +45,7 @@
+ 		return False
+ 	filename = gutils.file_chooser(_("Select image"), action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK), name="", folder=self.locations['desktop'], picture=True)
+ 	if filename and filename[0]:
+-		filename = filename[0]
++		filename = filename[0].decode('UTF-8')
+ 		update_image(self, number, filename)
+ 
+ def update_image(self, number, file_path):
+
+
+

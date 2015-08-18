@@ -1,0 +1,606 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r998 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r998%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200809132301.m8DN1rlV012780%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000477.html">
+   <LINK REL="Next"  HREF="000479.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r998 - in trunk: . lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r998%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200809132301.m8DN1rlV012780%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r998 - in trunk: . lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 14 01:01:53 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000477.html">[Griffith-svn] r997 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000479.html">[Griffith-svn] r999 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#478">[ date ]</a>
+              <a href="thread.html#478">[ thread ]</a>
+              <a href="subject.html#478">[ subject ]</a>
+              <a href="author.html#478">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2008-09-14 01:01:51 +0200 (Sun, 14 Sep 2008)
+New Revision: 998
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/db.py
+   trunk/lib/gutils.py
+   trunk/lib/loan.py
+   trunk/lib/main_treeview.py
+   trunk/lib/sql.py
+Log:
+Loaning movies is working again
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/ChangeLog	2008-09-13 23:01:51 UTC (rev 998)
+@@ -4,6 +4,9 @@
+ ------------------
+ (c) 2005-2008  Vasco Nunes, Piotr O&#380;arowski
+ 
++2008-09-13  Piotr O&#380;arowski
++	* Loaning movies is working again
++
+ 2008-09-12  Piotr O&#380;arowski
+ 	* Validate loan contact's email address
+ 	* Python required version bumped to 2.4 (it was required for a while aready)
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/griffith	2008-09-13 23:01:51 UTC (rev 998)
+@@ -925,8 +925,8 @@
+         cancel_loan(self)
+ 
+     def commit_loan(self, *args):
+-        from loan import commit_loan
+-        commit_loan(self)
++        from loan import commit
++        commit(self)
+ 
+     def return_loan(self, *args):
+         from loan import return_loan
+
+Modified: trunk/lib/db.py
+===================================================================
+--- trunk/lib/db.py	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/lib/db.py	2008-09-13 23:01:51 UTC (rev 998)
+@@ -21,12 +21,15 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-# imports
++
++# XXX: keep stdlib and SQLAlchemy imports only in this file
++
+ import gettext
+ gettext.install('griffith', unicode=1)
+ from sqlalchemy     import *
+ from sqlalchemy.orm import mapper, relation, sessionmaker, validates
+ import re
++import string
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+@@ -44,7 +47,7 @@
+         return &quot;&lt;%s:%s&gt;&quot; % (self.__class__.__name__, self.name.encode('utf-8'))
+ 
+     @validates('name')
+-    def validate_name(self, key, name):
++    def _validate_name(self, key, name):
+         if not name or not name.strip():
+             log.warning(&quot;%s: empty name (%s)&quot; % (self.__class__.__name__, name))
+             raise ValueError(_(&quot;Name cannot be empty&quot;))
+@@ -88,36 +91,56 @@
+             log.info(&quot;%s: update_in_db: %s&quot; % (self.__class__.__name__, e))
+             return False
+         self.refresh()
+-        return True#}}}
++        return True
++     #}}}
+ 
+ ### clases #################################################### {{{
+ class AChannel(DBTable):
+     pass
++
+ class ACodec(DBTable):
+     pass
++
+ class Collection(DBTable):
+     pass
++
+ class Lang(DBTable):
+     pass
++
+ class Medium(DBTable):
+     pass
++
+ class Person(DBTable):
+     @validates('email')
+-    def validate_email(self, key, address):
++    def _validate_email(self, key, address):
++        address = address.strip()
+         if not EMAIL_PATTERN.match(address):
+             log.warning(&quot;%s: email address is not valid (%s)&quot; % (self.__class__.__name__, address))
+             raise ValueError(_(&quot;E-mail address is not valid&quot;))
+         return address
++
++    @validates('phone')
++    def _digits_only(self, key, value):
++        &quot;&quot;&quot;removes non-digits&quot;&quot;&quot;
++        allchars = string.maketrans('', '')
++        delchars = allchars.translate(allchars, string.digits)
++        return unicode(str(value).translate(allchars, delchars))
++
+ class Ratio(DBTable):
+     pass
++
+ class SubFormat(DBTable):
+     pass
++
+ class Tag(DBTable):
+     pass
++
+ class VCodec(DBTable):
+     pass
++
+ class Volume(DBTable):
+     pass
++
+ class Poster(object):
+     def __init__(self, md5sum=None, data=None):
+         if md5sum and data:
+@@ -126,11 +149,14 @@
+                 self.data = data
+             else:
+                 log.error(&quot;md5sum has wrong size&quot;)
++
+     def __repr__(self):
+         return &quot;&lt;Poster(%s)&gt;&quot; % self.md5sum
++
+ class Configuration(object):
+     def __repr__(self):
+         return &quot;&lt;Config:%s=%s&gt;&quot; % (self.param, self.value)
++
+ class Loan(object):
+     def __repr__(self):
+         return &quot;&lt;Loan:%s (movie:%s person:%s)&gt;&quot; % (self.loan_id, self.movie_id, self.person_id)
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/lib/gutils.py	2008-09-13 23:01:51 UTC (rev 998)
+@@ -66,7 +66,7 @@
+     &quot;&quot;&quot;
+     first = 0
+ 
+-    movies = griffithSql.session.query(db.Movie).order_by(db.movies_table.c.number.asc()).all()
++    movies = griffithSql.session.query(db.Movie).order_by(db.Movie.number.asc()).all()
+     for movie in movies:
+         second = int(movie.number)
+         if second is None:
+@@ -134,7 +134,10 @@
+     model = widget.get_model()
+     m_iter = widget.get_active_iter()
+     if m_iter:
+-        return model.get_value(m_iter, 0)
++        value = model.get_value(m_iter, 0)
++        if type(value) is str:
++            value = value.decode('utf-8')
++        return value
+     else:
+         return 0
+ 
+@@ -406,9 +409,9 @@
+     try:
+         import sqlalchemy
+         if map(int, sqlalchemy.__version__.split('.')[:2]) &lt; [0, 5]:
+-            version = False
++            version = &quot;-%s&quot; % sqlalchemy.__version__
+         else:
+-            version = True
++            version = sqlalchemy.__version__
+     except:
+         version = False
+     depend.append({'module': 'sqlalchemy',
+
+Modified: trunk/lib/loan.py
+===================================================================
+--- trunk/lib/loan.py	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/lib/loan.py	2008-09-13 23:01:51 UTC (rev 998)
+@@ -27,11 +27,12 @@
+ import gtk
+ import datetime
+ import db
++import sql
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+ 
+ def loan_movie(self):
+-    people = self.db.session.query(db.Person).order_by(db.people_table.c.name.asc()).all()
++    people = self.db.session.query(db.Person).order_by(db.Person.name.asc()).all()
+     model = gtk.ListStore(str)
+     if len(people)&gt;0:
+         for person in people:
+@@ -46,111 +47,39 @@
+ def cancel_loan(self):
+     self.widgets['w_loan_to'].hide()
+ 
+-def commit_loan(self):
++def commit(self):
+     person_name = gutils.on_combo_box_entry_changed(self.widgets['movie']['loan_to'])
+-    if person_name == '' or person_name is None:
++    if not person_name:
+         return False
+     self.widgets['w_loan_to'].hide()
+ 
+     person = self.db.session.query(db.Person).filter_by(name=person_name).first()
+-    if person is None:
+-        log.info(&quot;commit_loan: person doesn't exist&quot;)
++    if not person:
++        log.info(&quot;loan_commit: person doesn't exist&quot;)
+         return False
+     if self._movie_id:
+         movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+         if not movie:
+-            log.info(&quot;commit_loan: wrong movie_id&quot;)
++            log.info(&quot;loan_commit: wrong movie_id&quot;)
+             return False
+     else:
+-        log.info(&quot;commit_loan: movie not selected&quot;)
++        log.info(&quot;loan_commit: movie not selected&quot;)
+         return False
+ 
+     # ask if user wants to loan whole collection
+     loan_whole_collection = False
+-    if movie.collection_id&gt;0:
++    if movie.collection_id &gt; 0:
+         response = gutils.question(self, msg=_(&quot;Do you want to loan whole collection?&quot;), parent=self.widgets['window'])
+         if response == gtk.RESPONSE_YES:
+             loan_whole_collection = True
+         elif response == gtk.RESPONSE_CANCEL:
+             return False
+     
+-    loan = db.Loan()
+-    loan.person = person
+-    loan.movie = movie
+-    # FIXME:
+-    if loan_whole_collection:
+-        loan.collection = movie.collection
+-    if movie.volume_id&gt;0:
+-        loan.volume = movie.volume
+-    self.db.session.add(loan)
+-    try:
+-        self.db.session.commit()
+-    except Exception, e:
+-        log.info(str(e))
+-    else:
++    if sql.loan_movie(self.db, movie.movie_id, person.person_id, loan_whole_collection):
+         self.update_statusbar(_(&quot;Movie loaned&quot;))
+         self.treeview_clicked()
+ 
+ def return_loan(self):
+-    if self._movie_id:
+-        loan = self.db.session.query(db.Loan).filter_by(movie_id=self._movie_id, return_date=None).first()
+-        if loan is None:
+-            movie = self.db.session.query(db.Movie).filter_by(movie_id=self._movie_id).first()
+-            if movie.collection is not None and movie.collection.loaned:
+-                #print len(movie.loans) # FIXME: why it's == 0? (mappers problem?)
+-                loan = self.db.session.query(db.Loan).filter_by(collection_id=movie.collection.collection_id, return_date=None).first()
+-            if movie.volume is not None and movie.volume.loaned:
+-                loan = self.db.session.query(db.Loan).filter_by(volume_id=movie.volume.volume_id, return_date=None).first()
+-        if loan and loan.set_returned():
+-            self.treeview_clicked()
++    if self._movie_id and sql.loan_return(self.db, self._movie_id):
++        self.treeview_clicked()
+ 
+-def get_loan_info(griffithSql, movie_id, volume_id=None, collection_id=None):
+-    &quot;&quot;&quot;Returns current collection/volume/movie loan data&quot;&quot;&quot;
+-    from sqlalchemy import and_, or_
+-    movie = griffithSql.session.query(db.Movie).filter_by(movie_id=movie_id).first()
+-    if movie is None:
+-        return False
+-    
+-    # fix or add volume/collection data:
+-    if movie.collection_id is not None:
+-        collection_id = movie.collection_id
+-    if movie.volume_id is not None:
+-        volume_id = movie.volume_id
+-    
+-    if collection_id&gt;0 and volume_id&gt;0:
+-        return griffithSql.session.query(db.Loan).filter(
+-                and_(or_(db.loans_table.c.collection_id==collection_id,
+-                        db.loans_table.c.volume_id==volume_id,
+-                        db.loans_table.c.movie_id==movie_id),
+-                    db.loans_table.c.return_date==None)).first()
+-    elif collection_id&gt;0:
+-        return griffithSql.session.query(db.Loan).filter(
+-                and_(or_(db.loans_table.c.collection_id==collection_id,
+-                        db.loans_table.c.movie_id==movie_id)),
+-                    db.loans_table.c.return_date==None).first()
+-    elif volume_id&gt;0:
+-        return griffithSql.session.query(db.Loan).filter(and_(or_(db.loans_table.c.volume_id==volume_id,
+-                            db.loans_table.c.movie_id==movie_id)),
+-                        db.loans_table.c.return_date==None).first()
+-    else:
+-        return griffithSql.session.query(db.Loan).filter(db.loans_table.c.movie_id==movie_id).filter(db.loans_table.c.return_date==None).first()
+-
+-def get_loan_history(griffithSql, movie_id, volume_id=None, collection_id=None):
+-    &quot;&quot;&quot;Returns collection/volume/movie loan history&quot;&quot;&quot;
+-    from sqlalchemy import and_, or_, not_
+-    if collection_id&gt;0 and volume_id&gt;0:
+-        return griffithSql.session.query(db.Loan).filter(and_(or_(db.loans_table.c.collection_id==collection_id,
+-                            db.loans_table.c.volume_id==volume_id,
+-                            db.loans_table.c.movie_id==movie_id),
+-                        not_(db.loans_table.c.return_date==None))).all()
+-    elif collection_id&gt;0:
+-        return griffithSql.session.query(db.Loan).filter(and_(or_(db.loans_table.c.collection_id==collection_id,
+-                            db.loans_table.c.movie_id==movie_id),
+-                        not_(db.loans_table.c.return_date==None))).all()
+-    elif volume_id&gt;0:
+-        return griffithSql.session.query(db.Loan).filter(and_(or_(db.loans_table.c.volume_id==volume_id,
+-                            db.loans_table.c.movie_id==movie_id),
+-                        not_(db.loans_table.c.return_date==None))).all()
+-    else:
+-        return griffithSql.session.query(db.Loan).filter(db.loans_table.c.movie_id==movie_id).filter(~(db.loans_table.c.return_date==None)).all()
+-
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/lib/main_treeview.py	2008-09-13 23:01:51 UTC (rev 998)
+@@ -52,7 +52,7 @@
+         set_details(self, {})
+ 
+ def set_details(self, item=None):#{{{
+-    from loan import get_loan_info, get_loan_history
++    from sql import get_loan_info, get_loan_history
+     if item is None:
+         item = {}
+     if 'movie_id' in item and item['movie_id']:
+@@ -221,7 +221,7 @@
+     gutils.garbage(handler)
+ 
+     # check loan status and adjust buttons and history box
+-    if 'loaned' in item and item['loaned'] == True:
++    if 'loaned' in item and item['loaned'] is True:
+         self.widgets['popups']['loan'].set_sensitive(False)
+         self.widgets['popups']['email'].set_sensitive(True)
+         self.widgets['popups']['return'].set_sensitive(True)
+@@ -242,7 +242,7 @@
+             self.loan_date = str(data_loan.date)
+             w['loan_info'].set_use_markup(False)
+             w['loan_info'].set_label(_(&quot;This movie has been loaned to &quot;) + self.person_name + _(&quot; on &quot;) + self.loan_date[:10])
+-    if 'loaned' in item and item['loaned'] != True: # &quot;loaned&quot; status can be changed above, so don't use &quot;else:&quot; in this line
++    if 'loaned' in item and not item['loaned']: # &quot;loaned&quot; status can be changed above, so don't use &quot;else:&quot; in this line
+         self.widgets['popups']['loan'].set_sensitive(True)
+         self.widgets['popups']['email'].set_sensitive(False)
+         self.widgets['popups']['return'].set_sensitive(False)
+
+Modified: trunk/lib/sql.py
+===================================================================
+--- trunk/lib/sql.py	2008-09-12 22:01:40 UTC (rev 997)
++++ trunk/lib/sql.py	2008-09-13 23:01:51 UTC (rev 998)
+@@ -22,16 +22,18 @@
+ # You may use and distribute this software under the terms of the
+ # GNU General Public License, version 2 or later
+ 
+-# imports
+-from sqlalchemy            import create_engine
++
++# XXX: keep stdlib, griffith.db and SQLAlchemy imports only in this file
++
++from sqlalchemy            import create_engine, func, and_, or_
+ from sqlalchemy.orm        import sessionmaker
+-from sqlalchemy.exceptions import SQLError, OperationalError
++from sqlalchemy.exceptions import OperationalError
+ import os.path
+ import gettext
+ gettext.install('griffith', unicode=1)
+ import logging
+ log = logging.getLogger(&quot;Griffith&quot;)
+-import gutils
++import gutils # TODO: get rid of this import
+ import db # ORM data (SQLAlchemy stuff)
+ 
+ class GriffithSQL:
+@@ -145,3 +147,153 @@
+             if not upgrade_database(self, v):
+                 import sys
+                 sys.exit(1)
++
++
++# MOVIE LOAN related functions --------------------------------{{{
++def loan_movie(gsql, movie_id, person_id, whole_collection=False):
++    &quot;&quot;&quot;loans a movie, movie's volume and optionally movie's collection&quot;&quot;&quot;
++
++    person = gsql.session.query(db.Person).filter_by(person_id=person_id).first()
++    if not person:
++        log.warn(&quot;loan_movie: person doesn't exist&quot;)
++        return False
++    movie = gsql.session.query(db.Movie).filter_by(movie_id=movie_id).first()
++    if not movie:
++        log.warn(&quot;loan_movie: wrong movie_id&quot;)
++        return False
++
++    loan = db.Loan()
++    loan.person = person
++    loan.movie = movie
++
++    if whole_collection:
++        # TODO: check if there are loaned movies inside the collection and return False if yes
++        loan.collection = movie.collection
++        movie.collection.loaned = True
++        for m in movie.collection.movies:
++            m.loaned = True
++            gsql.session.add(m)
++        gsql.session.add(movie.collection)
++
++    if movie.volume_id &gt; 0:
++        loan.volume = movie.volume
++        movie.volume.loaned = True
++        for m in movie.volume.movies:
++            m.loaned = True
++            gsql.session.add(m)
++        gsql.session.add(movie.volume)
++
++    movie.loaned = True
++    gsql.session.add(movie)
++    gsql.session.add(loan)
++
++    try:
++        gsql.session.commit()
++    except Exception, e:
++        gsql.session.rollback()
++        log.error(str(e))
++        return False
++    return True
++
++def loan_return(gsql, movie_id):
++    &quot;&quot;&quot;marks movie, movie's volume and movie's collection as returned&quot;&quot;&quot;
++
++    loan = gsql.session.query(db.Loan).filter_by(movie_id=movie_id, return_date=None).first()
++
++    if loan is None:
++        movie = gsql.session.query(db.Movie).filter_by(movie_id=movie_id).first()
++        if not movie:
++            log.warn(&quot;Cannot find &quot;)
++            return False
++        # lets check if whole colletion was loaned
++        elif movie.collection and movie.collection.loaned:
++            loan = gsql.session.query(db.Loan).filter_by(collection_id=movie.collection_id, return_date=None).first()
++            if not loan:
++                log.error(&quot;Collection is marked as loaned but there's no such loan&quot;)
++                return False
++        elif movie.volume and movie.volume.loaned:
++            loan = gsql.session.query(db.Loan).filter_by(volume_id=movie.volume_id, return_date=None).first()
++        else:
++            log.error(&quot;Cannot find loan data&quot;)
++            return False
++
++    if loan.collection:
++        loan.collection.loaned = False
++        for m in loan.collection.movies:
++            m.loaned = False
++            gsql.session.add(m)
++        gsql.session.add(loan.collection)
++    elif loan.volume:
++        loan.volume.loaned = False
++        for m in loan.volume.movies:
++            m.loaned = False
++            gsql.session.add(m)
++        gsql.session.add(loan.volume)
++    else:
++        loan.movie.loaned = False
++        gsql.session.add(loan.movie)
++    loan.return_date = func.current_date()
++    gsql.session.add(loan)
++
++    try:
++        gsql.session.commit()
++    except Exception, e:
++        gsql.session.rollback()
++        log.error(str(e))
++        return False
++    return True
++
++def get_loan_info(gsql, movie_id, volume_id=None, collection_id=None):
++    &quot;&quot;&quot;Returns current collection/volume/movie loan data&quot;&quot;&quot;
++
++    movie = gsql.session.query(db.Movie).filter_by(movie_id=movie_id).first()
++    if movie is None:
++        return False
++    
++    # fix or add volume/collection data:
++    if movie.collection_id is not None:
++        collection_id = movie.collection_id
++    if movie.volume_id is not None:
++        volume_id = movie.volume_id
++    
++    if collection_id &gt; 0 and volume_id &gt; 0:
++        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
++                                                              or_(db.Loan.collection_id==collection_id,
++                                                                  db.Loan.volume_id==volume_id,
++                                                                  db.Loan.movie_id==movie_id))).first()
++    elif collection_id &gt; 0:
++        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
++                                                              or_(db.Loan.collection_id==collection_id,
++                                                                  db.Loan.movie_id==movie_id))
++                                                        ).first()
++    elif volume_id &gt; 0:
++        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date==None,
++                                                              or_(db.Loan.volume_id==volume_id,
++                                                                  db.Loan.movie_id==movie_id),
++                                                        )).first()
++    else:
++        return gsql.session.query(db.Loan).filter(db.Loan.movie_id==movie_id).filter(db.Loan.return_date==None).first()
++
++def get_loan_history(gsql, movie_id, volume_id=None, collection_id=None):
++    &quot;&quot;&quot;Returns collection/volume/movie loan history&quot;&quot;&quot;
++
++    if collection_id &gt; 0 and volume_id &gt; 0:
++        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date!=None,
++                                                          or_(db.Loan.collection_id==collection_id,
++                                                              db.Loan.volume_id==volume_id,
++                                                              db.Loan.movie_id==movie_id)
++                                                    )).all()
++    elif collection_id &gt; 0:
++        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date!=None,
++                                                              or_(db.Loan.collection_id==collection_id,
++                                                                  db.Loan.movie_id==movie_id))
++                                                        ).all()
++    elif volume_id &gt; 0:
++        return gsql.session.query(db.Loan).filter(and_(db.Loan.return_date!=None,
++                                                              or_(db.Loan.volume_id==volume_id,
++                                                                  db.Loan.movie_id==movie_id),
++                                                        )).all()
++    else:
++        return gsql.session.query(db.Loan).filter(db.Loan.movie_id==movie_id).filter(db.Loan.return_date!=None).all()
++
++#}}}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000477.html">[Griffith-svn] r997 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000479.html">[Griffith-svn] r999 - in trunk: . lib lib/plugins/export
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#478">[ date ]</a>
+              <a href="thread.html#478">[ thread ]</a>
+              <a href="subject.html#478">[ subject ]</a>
+              <a href="author.html#478">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

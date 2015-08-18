@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1499 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1499%20-%20trunk/lib&In-Reply-To=%3C20110116190831.C905F48128C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000959.html">
+   <LINK REL="Next"  HREF="000961.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1499 - trunk/lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1499%20-%20trunk/lib&In-Reply-To=%3C20110116190831.C905F48128C%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1499 - trunk/lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 16 20:08:31 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000959.html">[Griffith-svn] r1498 - in trunk: . lib
+</A></li>
+        <LI>Next message: <A HREF="000961.html">[Griffith-svn] r1500 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#960">[ date ]</a>
+              <a href="thread.html#960">[ thread ]</a>
+              <a href="subject.html#960">[ subject ]</a>
+              <a href="author.html#960">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2011-01-16 20:08:31 +0100 (Sun, 16 Jan 2011)
+New Revision: 1499
+
+Modified:
+   trunk/lib/gutils.py
+Log:
+* fixed download url of some dependencies
+* version output of the pysqlite package if it is used
+* version output of the sqlite library behind pysqlite or sqlite3
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2011-01-16 18:56:39 UTC (rev 1498)
++++ trunk/lib/gutils.py	2011-01-16 19:08:31 UTC (rev 1499)
+@@ -495,22 +495,24 @@
+     try:
+         import sqlite3
+         version = sqlite3.version
++        sqliteversion = sqlite3.sqlite_version
+     except ImportError:
+         version = False
+     if version is False:
+         try:
+-            import pysqlite2
+-            version = True
++            import pysqlite2.dbapi2
++            version = pysqlite2.dbapi2.version
++            sqliteversion = pysqlite2.dbapi2.sqlite_version
+         except:
+             version = False
+         depend.append({'module': 'pysqlite2',
+-            'version': version,
+-            'url': '<A HREF="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</A>',
++            'version': version + ' (sqlite-lib ' + sqliteversion + ')',
++            'url': '<A HREF="http://pypi.python.org/pypi/pysqlite/">http://pypi.python.org/pypi/pysqlite/</A>',
+             'debian': 'python-pysqlite2',
+             'debian_req': '2.3.0-1'})
+     else:
+         depend.append({'module': 'sqlite3',
+-            'version': version,
++            'version': version + ' (sqlite-lib ' + sqliteversion + ')',
+             'url': '<A HREF="http://www.python.org">http://www.python.org</A>',
+             'debian': 'python',
+             'debian_req': '2.5'})
+@@ -543,7 +545,7 @@
+         version = False
+     optional.append({'module': 'psycopg2',
+         'version': version,
+-        'url': '<A HREF="http://initd.org/tracker/psycopg/wiki/PsycopgTwo">http://initd.org/tracker/psycopg/wiki/PsycopgTwo</A>',
++        'url': '<A HREF="http://initd.org/psycopg/">http://initd.org/psycopg/</A>',
+         'debian': 'python-psycopg2',
+         'debian_req': '1.1.21-6'})
+     try:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000959.html">[Griffith-svn] r1498 - in trunk: . lib
+</A></li>
+	<LI>Next message: <A HREF="000961.html">[Griffith-svn] r1500 - in trunk: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#960">[ date ]</a>
+              <a href="thread.html#960">[ thread ]</a>
+              <a href="subject.html#960">[ subject ]</a>
+              <a href="author.html#960">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1444 - in trunk: . lib lib/plugins/extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2010-August/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1444%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/extensions&In-Reply-To=%3C20100829175231.E5FC3480FD8%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000905.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1444 - in trunk: . lib lib/plugins/extensions</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1444%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/extensions&In-Reply-To=%3C20100829175231.E5FC3480FD8%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1444 - in trunk: . lib lib/plugins/extensions">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug 29 19:52:31 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000905.html">[Griffith-svn] r1443 - trunk/lib
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#906">[ date ]</a>
+              <a href="thread.html#906">[ thread ]</a>
+              <a href="subject.html#906">[ subject ]</a>
+              <a href="author.html#906">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2010-08-29 19:52:31 +0200 (Sun, 29 Aug 2010)
+New Revision: 1444
+
+Modified:
+   trunk/ChangeLog
+   trunk/griffith
+   trunk/lib/gconsole.py
+   trunk/lib/plugins/extensions/__init__.py
+Log:
+Show deprecation warnings only in debug mode
+
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2010-08-28 12:58:24 UTC (rev 1443)
++++ trunk/ChangeLog	2010-08-29 17:52:31 UTC (rev 1444)
+@@ -5,6 +5,9 @@
+ (c) 2005-2010  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2010-08-29  Piotr O&#380;arowski
++    * Show deprecation warnings only in debug mode
++
+ 2010-07-21  Michael Jahn
+ 	* compatibility fixes for sqlalchemy 0.6
+ 	* adjusting sqlite page size to the value of the filesystem page size
+
+Modified: trunk/griffith
+===================================================================
+--- trunk/griffith	2010-08-28 12:58:24 UTC (rev 1443)
++++ trunk/griffith	2010-08-29 17:52:31 UTC (rev 1444)
+@@ -3,7 +3,7 @@
+ 
+ __revision__ = '$Id$'
+ 
+-# Copyright &#169; 2005-2009 Vasco Nunes, Piotr O&#380;arowski
++# Copyright &#169; 2005-2010 Vasco Nunes, Piotr O&#380;arowski
+ 
+ # This program is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+@@ -24,20 +24,23 @@
+ 
+ import gettext
+ gettext.install('griffith', unicode=1)
++import sys
++import logging
++logging.basicConfig(format='%(asctime)s: %(levelname)s: %(name)s(%(module)s:%(lineno)d): %(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
++log = logging.getLogger('Griffith')
++# print programming warnings in debug mode only (ugly workaround)
++if '--debug' not in sys.argv and '-D' not in sys.argv:
++    import warnings
++    warnings.simplefilter('ignore')
+ 
+ # set the PATH
+-import sys, os.path
++import os.path
+ lib = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), 'lib'))
+ #lib = os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib'))
+ if os.path.isdir(lib):
+     sys.path.insert(1, lib)
+ del lib
+ 
+-# logging
+-import logging
+-logging.basicConfig(format='%(asctime)s: %(levelname)s: %(name)s(%(module)s:%(lineno)d): %(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
+-log = logging.getLogger(&quot;Griffith&quot;)
+-
+ # check dependencies
+ import gutils
+ (required, extra) = gutils.get_dependencies()
+
+Modified: trunk/lib/gconsole.py
+===================================================================
+--- trunk/lib/gconsole.py	2010-08-28 12:58:24 UTC (rev 1443)
++++ trunk/lib/gconsole.py	2010-08-29 17:52:31 UTC (rev 1444)
+@@ -42,7 +42,7 @@
+     default_lang, default_enc = getdefaultlocale()
+     if not default_enc:
+         default_enc = 'UTF-8'
+-    
++
+     if os.name == 'nt' or os.name.startswith('win'): # win32, win64
+         from win32com.shell import shellcon, shell
+         import shutil
+@@ -54,7 +54,7 @@
+             mydocs = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL | 0x4000, 0, 0), u'griffith')
+             if os.path.exists(mydocs):
+                 shutil.move(mydocs, home)
+-        
++
+     else:
+         home = os.path.expanduser('~/.griffith').decode(default_enc)
+     config = 'griffith.cfg'
+@@ -69,7 +69,7 @@
+             # print help information and exit:
+             con_usage()
+             sys.exit(2)
+-        
++
+         for o, a in opts:
+             if o in ('-h', '--help'):
+                 con_usage()
+@@ -155,7 +155,7 @@
+     import db
+     mt = db.metadata.tables['movies'].columns
+     columns = (mt.number, mt.title, mt.o_title, mt.director, mt.year)
+-    
++
+     sort_columns = []
+     if sort:
+         for i in sort.split(','):
+@@ -291,9 +291,9 @@
+ &gt;&gt;&gt; person = sess.query(db.Person).first()
+ &gt;&gt;&gt; print &quot;%s has %d movies loaned&quot; % (person.name, person.loaned_movies_count)
+ &quot;&quot;&quot;
+-    
++
+     ### prepare local env. ###
+-    
++
+     # create a playground in memory
+     mem_engine = sa.create_engine('<A HREF="sqlite:///:memory:">sqlite:///:memory:</A>')
+     db.metadata.create_all(bind=mem_engine) # create tables
+@@ -310,7 +310,7 @@
+             #'griffith': self,
+            }
+     #exec 'from db import *' in locs
+- 
++
+     ### prepare the shell ###
+     try:
+         ipython_args = [] # TODO: do we want to pass some args here?
+
+Modified: trunk/lib/plugins/extensions/__init__.py
+===================================================================
+--- trunk/lib/plugins/extensions/__init__.py	2010-08-28 12:58:24 UTC (rev 1443)
++++ trunk/lib/plugins/extensions/__init__.py	2010-08-29 17:52:31 UTC (rev 1444)
+@@ -67,7 +67,7 @@
+             raise DeprecationWarning(&quot;Extension is using API that is no longer supported: %s (api=%d)&quot; % (class_.name, class_.api))
+         if class_.api &gt; COMPAT[1]:
+             raise NotImplementedError(&quot;Extension is using API that is not yet supported: %s (api=%d)&quot; % (class_.name, class_.api))
+-        obj = object.__new__(class_, *args, **kwargs)
++        obj = object.__new__(class_)
+         obj.app = app = args[0]
+         obj.widgets = app.widgets
+         obj.config = app.config
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000905.html">[Griffith-svn] r1443 - trunk/lib
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#906">[ date ]</a>
+              <a href="thread.html#906">[ thread ]</a>
+              <a href="subject.html#906">[ subject ]</a>
+              <a href="author.html#906">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

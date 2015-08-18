@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1073 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1073%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811222106.mAML6i7b015600%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000547.html">
+   <LINK REL="Next"  HREF="000549.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1073 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1073%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200811222106.mAML6i7b015600%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1073 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 22 22:06:44 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000547.html">[Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000549.html">[Griffith-svn] r1074 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#548">[ date ]</a>
+              <a href="thread.html#548">[ thread ]</a>
+              <a href="subject.html#548">[ subject ]</a>
+              <a href="author.html#548">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2008-11-22 22:06:27 +0100 (Sat, 22 Nov 2008)
+New Revision: 1073
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/movie.py
+Log:
+use unicode for fetched html pages in general
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2008-11-22 20:46:29 UTC (rev 1072)
++++ trunk/ChangeLog	2008-11-22 21:06:27 UTC (rev 1073)
+@@ -6,6 +6,7 @@
+ 
+ 
+ 2008-11-22  Michael Jahn
++	* use unicode for fetched html pages in general
+ 	* fixed rating, runtime and year are not shown with MySQL backend
+ 
+ 2008-11-10  Michael Jahn
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2008-11-22 20:46:29 UTC (rev 1072)
++++ trunk/lib/add.py	2008-11-22 21:06:27 UTC (rev 1073)
+@@ -253,7 +253,10 @@
+         self.treemodel_results.clear()
+         for row in self.search_movie.ids:
+             if (str(row)!=''):
+-                title = str(self.search_movie.titles[key]).decode(self.search_movie.encode)
++                if isinstance(self.search_movie.titles[key], unicode):
++                    title = self.search_movie.titles[key]
++                else:
++                    title = str(self.search_movie.titles[key]).decode(self.search_movie.encode)
+                 myiter = self.treemodel_results.insert_before(None, None)
+                 self.treemodel_results.set_value(myiter, 0, str(row))
+                 self.treemodel_results.set_value(myiter, 1, title)
+
+Modified: trunk/lib/movie.py
+===================================================================
+--- trunk/lib/movie.py	2008-11-22 20:46:29 UTC (rev 1072)
++++ trunk/lib/movie.py	2008-11-22 21:06:27 UTC (rev 1073)
+@@ -150,12 +150,13 @@
+         try:
+             ifile = file(retriever.html[0], &quot;rb&quot;)
+             data = ifile.read()
++            data = data.decode(self.encode)
+         except IOError:
+             pass
+         if url is None:
+             self.page = data
++        urlcleanup()
+         return data
+-        urlcleanup()
+ 
+     def fetch_picture(self):
+         if self.image_url:
+@@ -204,17 +205,20 @@
+             if 'cast' in fields:
+                 self.get_cast()
+                 self.cast = gutils.clean(self.cast)
+-                self.cast = gutils.gdecode(self.cast, self.encode)
++                if not isinstance(self.cast, unicode):
++                    self.cast = gutils.gdecode(self.cast, self.encode)
+                 fields.pop(fields.index('cast'))
+             if 'plot' in fields:
+                 self.get_plot()
+                 self.plot = gutils.clean(self.plot)
+-                self.plot = gutils.gdecode(self.plot, self.encode)
++                if not isinstance(self.plot, unicode):
++                    self.plot = gutils.gdecode(self.plot, self.encode)
+                 fields.pop(fields.index('plot'))
+             if 'notes' in fields:
+                 self.get_notes()
+                 self.notes = gutils.clean(self.notes)
+-                self.notes = gutils.gdecode(self.notes, self.encode)
++                if not isinstance(self.notes, unicode):
++                    self.notes = gutils.gdecode(self.notes, self.encode)
+                 fields.pop(fields.index('notes'))
+             if 'image' in fields:
+                 self.get_image()
+@@ -224,14 +228,15 @@
+             for i in fields:
+                 getattr(self, &quot;get_%s&quot; % i)()
+                 self[i] = gutils.clean(self[i])
+-                self[i] = gutils.gdecode(self[i], self.encode)
++                if not isinstance(self[i], unicode):
++                    self[i] = gutils.gdecode(self[i], self.encode)
+         
+             if 'o_title' in self.fields_to_fetch and self.o_title is not None:
+-                if self.o_title[:4] == 'The ':
+-                    self.o_title = self.o_title[4:] + ', The'
++                if self.o_title[:4] == u'The ':
++                    self.o_title = self.o_title[4:] + u', The'
+             if 'title' in self.fields_to_fetch and self.title is not None:
+-                if self.title[:4] == 'The ':
+-                    self.title = self.title[4:] + ', The'
++                if self.title[:4] == u'The ':
++                    self.title = self.title[4:] + u', The'
+         finally:
+             # close the progress dialog which was opened in get_movie
+             self.progress.hide()
+@@ -293,6 +298,7 @@
+         try:
+             ifile = file(retriever.html[0], &quot;rb&quot;)
+             self.page = ifile.read()
++            self.page = self.page.decode(self.encode)
+         except IOError:
+             pass
+         urlcleanup()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000547.html">[Griffith-svn] r1072 - branches/0.9.x branches/0.9.x/lib trunk	trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000549.html">[Griffith-svn] r1074 - branches/0.9.x branches/0.9.x/lib	branches/0.9.x/lib/plugins/movie trunk trunk/lib	trunk/lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#548">[ date ]</a>
+              <a href="thread.html#548">[ thread ]</a>
+              <a href="subject.html#548">[ subject ]</a>
+              <a href="author.html#548">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

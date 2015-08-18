@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r488 - griffith/lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r488%20-%20griffith/lib/plugins/movie&In-Reply-To=%3C200612080017.kB80HN8o003342%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000019.html">
+   <LINK REL="Next"  HREF="000021.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r488 - griffith/lib/plugins/movie</H1>
+    <B>iznogoud at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r488%20-%20griffith/lib/plugins/movie&In-Reply-To=%3C200612080017.kB80HN8o003342%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r488 - griffith/lib/plugins/movie">iznogoud at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  8 01:17:23 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000019.html">[Griffith-svn] r487 - griffith
+</A></li>
+        <LI>Next message: <A HREF="000021.html">[Griffith-svn] r489 - in griffith: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#20">[ date ]</a>
+              <a href="thread.html#20">[ thread ]</a>
+              <a href="subject.html#20">[ subject ]</a>
+              <a href="author.html#20">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: iznogoud
+Date: 2006-12-08 01:17:15 +0100 (Fri, 08 Dec 2006)
+New Revision: 488
+
+Removed:
+   griffith/lib/plugins/movie/PluginMovieClubeMyDVD.py
+Log:
+PluginMovieClubeMyDVD.py removed. Site doesn't exists anymore
+
+Deleted: griffith/lib/plugins/movie/PluginMovieClubeMyDVD.py
+===================================================================
+--- griffith/lib/plugins/movie/PluginMovieClubeMyDVD.py	2006-12-08 00:11:53 UTC (rev 487)
++++ griffith/lib/plugins/movie/PluginMovieClubeMyDVD.py	2006-12-08 00:17:15 UTC (rev 488)
+@@ -1,158 +0,0 @@
+-# -*- coding: iso-8859-1 -*-
+-
+-__revision__ = '$Id$'
+-
+-# Copyright (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU Library General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+-
+-# You may use and distribute this software under the terms of the
+-# GNU General Public License, version 2 or later
+-
+-from gettext import gettext as _
+-import gutils
+-import movie
+-import string
+-
+-plugin_name = &quot;Clube MyDVD&quot;
+-plugin_description = &quot;A Melhor Forma de Alugar Filmes&quot;
+-plugin_url = &quot;www.clubemydvd.com&quot;
+-plugin_language = _(&quot;Portuguese&quot;)
+-plugin_author = &quot;Vasco Nunes&quot;
+-plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">vasco.m.nunes at gmail.com</A>&gt;&quot;
+-plugin_version = &quot;0.2&quot;
+-
+-class Plugin(movie.Movie):
+-	&quot;&quot;&quot;A movie plugin object&quot;&quot;&quot;
+-	def __init__(self, id):
+-		self.encode='iso-8859-1'
+-		self.movie_id = id
+-		self.url = &quot;<A HREF="http://www.clubemydvd.com/film.php?id=">http://www.clubemydvd.com/film.php?id=</A>&quot; + str(self.movie_id)
+-
+-	def picture(self):
+-		&quot;&quot;&quot;Finds the film's poster image&quot;&quot;&quot;
+-		self.picture_url = &quot;<A HREF="http://www.clubemydvd.com/img/filmes/">http://www.clubemydvd.com/img/filmes/</A>&quot; + \
+-			str(self.movie_id) + &quot;_big.jpg&quot;
+-
+-	def original_title(self):
+-		&quot;&quot;&quot;Finds the film's original title&quot;&quot;&quot;
+-		self.original_title = string.capwords \
+-			(gutils.trim(self.page, &quot;&lt;span class=\&quot;txt1\&quot;&gt;(&quot;, &quot;)&lt;/span&gt;&lt;/nobr&gt;&lt;/td&gt;&quot;))
+-
+-	def title(self):
+-		&quot;&quot;&quot;Finds the film's local title.
+-		Probably the original title translation&quot;&quot;&quot;
+-		self.title = string.capwords(gutils.trim(self.page, \
+-			&quot;&lt;nobr&gt;&nbsp;&lt;b&gt;&quot;, &quot;&lt;/b&gt;&lt;/nobr&gt;&quot;))
+-
+-	def director(self):
+-		&quot;&quot;&quot;Finds the film's director&quot;&quot;&quot;
+-		self.director = gutils.trim(self.page, &quot;&lt;b&gt;Realizador:&lt;/b&gt; &quot;, &quot;&lt;/a&gt;&lt;/td&gt;&quot;)
+-		self.director = string.replace(self.director, &quot;\t&quot;, &quot;&quot;)
+-		self.director = gutils.after(self.director, &quot;\&quot;&gt;&quot;)
+-
+-	def plot(self):
+-		&quot;&quot;&quot;Finds the film's plot&quot;&quot;&quot;
+-		self.plot = gutils.trim(self.page, &quot;&lt;b&gt;Sinopse:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
+-
+-	def year(self):
+-		&quot;&quot;&quot;Finds the film's year&quot;&quot;&quot;
+-		self.year = gutils.trim(self.page, &quot;&lt;b&gt;Ano:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
+-
+-	def running_time(self):
+-		&quot;&quot;&quot;Finds the film's running time&quot;&quot;&quot;
+-		self.running_time = gutils.trim(self.page, &quot;&lt;b&gt;Dura&quot;, &quot; min.&quot;)
+-		self.running_time = gutils.after(self.running_time, &quot;&lt;/b&gt; &quot;)
+-
+-	def genre(self):
+-		&quot;&quot;&quot;Finds the film's genre&quot;&quot;&quot;
+-		self.genre = gutils.trim(self.page, &quot;nero:&lt;/b&gt; &quot;, &quot;&lt;/a&gt;&quot;)
+-
+-	def with(self):
+-		self.with = &quot;&quot;
+-		self.with = gutils.trim(self.page, &quot;&lt;b&gt;Actores:&lt;/b&gt; &quot;, &quot;&lt;/tr&gt;&quot;)
+-		self.with = gutils.strip_tags(self.with)
+-		self.with = string.replace(self.with, &quot;, &quot;, &quot;&quot;)
+-		self.with = string.replace(self.with, &quot;\t\t\t\t &quot;, &quot;&quot;)
+-
+-	def classification(self):
+-		&quot;&quot;&quot;Find the film's classification&quot;&quot;&quot;
+-		self.classification = gutils.trim(self.page, &quot;&lt;b&gt;Idade:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
+-
+-	def studio(self):
+-		&quot;&quot;&quot;Find the studio&quot;&quot;&quot;
+-		self.studio = &quot;&quot;
+-
+-	def site(self):
+-		&quot;&quot;&quot;Find the film's oficial site&quot;&quot;&quot;
+-		self.site = gutils.trim(self.page, \
+-			&quot;5px;\&quot;&gt;&lt;a class=\&quot;botao\&quot;&quot;, &quot;\&quot; title=&quot;)
+-		self.site = string.replace(self.site,&quot;href=\&quot;&quot;,&quot;&quot;)
+-
+-	def imdb(self):
+-		&quot;&quot;&quot;Find the film's imdb details page&quot;&quot;&quot;
+-		self.imdb = gutils.trim(self.page, \
+-			&quot;Site Oficial&lt;/a&gt; &lt;a class=\&quot;botao\&quot; href=\&quot;&quot;, &quot;\&quot; title=&quot;)
+-
+-	def trailer(self):
+-		&quot;&quot;&quot;Find the film's trailer page or location&quot;&quot;&quot;
+-		self.trailer = &quot;&quot;
+-
+-	def country(self):
+-		&quot;&quot;&quot;Find the film's country&quot;&quot;&quot;
+-		self.country = gutils.trim(self.page, &quot;s origem:&lt;/b&gt; &quot;, &quot;&lt;/a&gt;&lt;/td&gt;&quot;)
+-
+-	def rating(self):
+-		&quot;&quot;&quot;Find the film's rating. From 0 to 10.
+-		Convert if needed when assigning.&quot;&quot;&quot;
+-		self.rating = &quot;&quot;
+-
+-	def notes(self):
+-		&quot;&quot;&quot;Finds the film's notes&quot;&quot;&quot;
+-		self.notes = &quot;Video: &quot; + gutils.trim(self.page, &quot;&lt;b&gt;Video:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
+-		self.notes += &quot;\nAudio: &quot; + gutils.trim(self.page, &quot;&lt;b&gt;Audio:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
+-		self.notes += &quot;\nLegendas: &quot; + gutils.trim(self.page, &quot;&lt;b&gt;Legendas:&lt;/b&gt; &quot;, &quot;&lt;/td&gt;&quot;)
+-
+-class SearchPlugin(movie.SearchMovie):
+-	&quot;&quot;&quot;A movie search object&quot;&quot;&quot;
+-	def __init__(self):
+-		self.original_url_search = \
+-			&quot;<A HREF="http://www.clubemydvd.com/filmes_search.php?search=1&amp;titulo=">http://www.clubemydvd.com/filmes_search.php?search=1&amp;titulo=</A>&quot;
+-		self.translated_url_search = \
+-			&quot;<A HREF="http://www.clubemydvd.com/filmes_search.php?search=1&amp;titulo=">http://www.clubemydvd.com/filmes_search.php?search=1&amp;titulo=</A>&quot;
+-		self.encode='iso-8859-1'
+-
+-	def search(self, parent_window):
+-		&quot;&quot;&quot;Perform the web search&quot;&quot;&quot;
+-		self.open_search(parent_window)
+-		self.sub_search()
+-		return self.page
+-
+-	def sub_search(self):
+-		&quot;&quot;&quot;Isolating just a portion (with the data we want) of the results&quot;&quot;&quot;
+-		self.page = gutils.trim(self.page, &quot;Foram encontrados &quot;, &quot;&lt;b&gt;Dica:&lt;/b&gt;&quot;)
+-
+-	def get_searches(self):
+-		&quot;&quot;&quot;Try to find both id and film title for each search result&quot;&quot;&quot;
+-		elements = string.split(self.page, &quot;&quot;&quot;&lt;td&gt;&nbsp;&quot;&quot;&quot;)
+-		self.number_results = elements[-1]
+-
+-		if (len(elements[0])):
+-			for element in elements:
+-				self.ids.append(gutils.trim(element, &quot;&quot;&quot;&lt;a href=&quot;film.php?id=&quot;&quot;&quot;, &quot;\&quot;&quot;))
+-				self.titles.append( string.capwords(gutils.strip_tags(gutils.convert_entities \
+-					(gutils.trim(element, &quot;&lt;b&gt;&quot;, &quot;&lt;/nobr&gt;&lt;/td&gt;&quot;)))))
+-		else:
+-			self.number_results = 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000019.html">[Griffith-svn] r487 - griffith
+</A></li>
+	<LI>Next message: <A HREF="000021.html">[Griffith-svn] r489 - in griffith: . lib/plugins/movie
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#20">[ date ]</a>
+              <a href="thread.html#20">[ thread ]</a>
+              <a href="subject.html#20">[ subject ]</a>
+              <a href="author.html#20">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

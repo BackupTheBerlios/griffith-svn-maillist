@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r842 - in trunk: . lib lib/plugins/movie
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r842%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200709010812.l818CqCZ018579%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000351.html">
+   <LINK REL="Next"  HREF="000353.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r842 - in trunk: . lib lib/plugins/movie</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r842%20-%20in%20trunk%3A%20.%20lib%20lib/plugins/movie&In-Reply-To=%3C200709010812.l818CqCZ018579%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r842 - in trunk: . lib lib/plugins/movie">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep  1 10:12:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000351.html">[Griffith-svn] r841 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="000353.html">[Griffith-svn] r843 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#352">[ date ]</a>
+              <a href="thread.html#352">[ thread ]</a>
+              <a href="subject.html#352">[ subject ]</a>
+              <a href="author.html#352">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2007-09-01 10:12:33 +0200 (Sat, 01 Sep 2007)
+New Revision: 842
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/initialize.py
+   trunk/lib/plugins/movie/PluginMovieKinoDe.py
+Log:
+* Kino.de plugin updated
+* Fix encoding of --home argument
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2007-09-01 04:08:25 UTC (rev 841)
++++ trunk/ChangeLog	2007-09-01 08:12:33 UTC (rev 842)
+@@ -4,6 +4,10 @@
+ ------------------
+ (c) 2005-2007  Vasco Nunes, Piotr O&#380;arowski
+ 
++2007-09-01  Michael Jahn
++	* Kino.de plugin updated
++	* Fix encoding of --home argument
++
+ 2007-09-01  Vasco Nunes
+ 	Several changes on loan e-mail reminder system:
+ 		+ Loan E-mail reminder timeout implemented
+
+Modified: trunk/lib/initialize.py
+===================================================================
+--- trunk/lib/initialize.py	2007-09-01 04:08:25 UTC (rev 841)
++++ trunk/lib/initialize.py	2007-09-01 08:12:33 UTC (rev 842)
+@@ -88,7 +88,7 @@
+ 	locations['temp'] = gettempdir()
+ 	
+ 	if self._tmp_home is not None: # see gconsole.check_args
+-		locations['home'] = self._tmp_home
++		locations['home'] = self._tmp_home.decode(defaultEnc)
+ 		del self._tmp_home
+ 
+ 	try:
+
+Modified: trunk/lib/plugins/movie/PluginMovieKinoDe.py
+===================================================================
+--- trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-09-01 04:08:25 UTC (rev 841)
++++ trunk/lib/plugins/movie/PluginMovieKinoDe.py	2007-09-01 08:12:33 UTC (rev 842)
+@@ -33,7 +33,7 @@
+ plugin_language = _(&quot;German&quot;)
+ plugin_author = &quot;Michael Jahn&quot;
+ plugin_author_email = &quot;&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/griffith-svn">mikej06 at hotmail.com</A>&gt;&quot;
+-plugin_version = &quot;1.9&quot;
++plugin_version = &quot;1.10&quot;
+ 
+ class Plugin(movie.Movie):
+ 	url_to_use = &quot;<A HREF="http://www.kino.de/kinofilm/">http://www.kino.de/kinofilm/</A>&quot;
+@@ -94,17 +94,27 @@
+ 
+ 	def get_plot(self):
+ 		# little steps to perfect plot (I hope ... it's a terrible structured content ... )
+-		self.plot = gutils.trim(self.tmp_page, '&lt;span style=&quot;line-height:', '&lt;/spa')
+-		if self.plot == '':
+-			self.plot = gutils.trim(self.tmp_page,&quot;Kurzinfo&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&quot;)
+-			if (self.plot == ''):
+-				self.plot = gutils.trim(self.tmp_page,&quot;Kurzinfo&quot;, '&lt;script ')
++		self.plot = gutils.before(self.tmp_page, '&lt;!-- PRINT-CONTENT-ENDE--&gt;')
++		self.plot = gutils.trim(self.plot, 'Kurzinfo', '&lt;/td&gt;&lt;/tr&gt;\n')
++		if self.plot != '':
++			lastpos = self.plot.rfind('&gt;')
++			if lastpos == -1:
++				self.plot = 'a'
++			else:
++				lastpos = lastpos + 1
++				self.plot = self.plot[lastpos:]
++		else:
++			self.plot = gutils.trim(self.tmp_page, '&lt;span style=&quot;line-height:', '&lt;/spa')
++			if self.plot == '':
++				self.plot = gutils.trim(self.tmp_page,&quot;Kurzinfo&quot;, &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&quot;)
++				if (self.plot == ''):
++					self.plot = gutils.trim(self.tmp_page,&quot;Kurzinfo&quot;, '&lt;script ')
++					self.plot = gutils.after(self.plot, '&gt;')
++				while len(self.plot) and string.find(self.plot, '&lt;/A&gt;') &gt; -1:
++					self.plot = gutils.after(self.plot, '&lt;/A&gt;');
++				self.plot = gutils.after(gutils.after(self.plot, '&lt;/table&gt;'), '&gt;')
++			else:
+ 				self.plot = gutils.after(self.plot, '&gt;')
+-			while len(self.plot) and string.find(self.plot, '&lt;/A&gt;') &gt; -1:
+-				self.plot = gutils.after(self.plot, '&lt;/A&gt;');
+-			self.plot = gutils.after(gutils.after(self.plot, '&lt;/table&gt;'), '&gt;')
+-		else:
+-			self.plot = gutils.after(self.plot, '&gt;')
+ 
+ 	def get_year(self):
+ 		self.year = self.regextrim(self.tmp_page,&quot;class=\&quot;standardsmall\&quot;&gt;&lt;br /&gt;&lt;b&gt;(DVD|VHS|Laser Disc|Video CD|Blue-ray Disc)&lt;/b&gt; - &lt;b&gt;&quot;,&quot;&lt;br /&gt;&quot;)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000351.html">[Griffith-svn] r841 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="000353.html">[Griffith-svn] r843 - in trunk: . lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#352">[ date ]</a>
+              <a href="thread.html#352">[ thread ]</a>
+              <a href="subject.html#352">[ subject ]</a>
+              <a href="author.html#352">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

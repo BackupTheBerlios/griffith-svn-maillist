@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1596 - trunk/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2011-October/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1596%20-%20trunk/lib&In-Reply-To=%3C20111004184103.8B2C0481224%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="001053.html">
+   <LINK REL="Next"  HREF="001055.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1596 - trunk/lib</H1>
+    <B>piotrek at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1596%20-%20trunk/lib&In-Reply-To=%3C20111004184103.8B2C0481224%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1596 - trunk/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Tue Oct  4 20:41:03 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="001053.html">[Griffith-svn] r1595 - trunk/lib
+</A></li>
+        <LI>Next message: <A HREF="001055.html">[Griffith-svn] r1597 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1054">[ date ]</a>
+              <a href="thread.html#1054">[ thread ]</a>
+              <a href="subject.html#1054">[ subject ]</a>
+              <a href="author.html#1054">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2011-10-04 20:41:03 +0200 (Tue, 04 Oct 2011)
+New Revision: 1596
+
+Modified:
+   trunk/lib/dbupgrade.py
+Log:
+fix upgrading MySQL databases with posters_md5 column
+
+(i.e. add support for different error message)
+
+
+Modified: trunk/lib/dbupgrade.py
+===================================================================
+--- trunk/lib/dbupgrade.py	2011-10-02 19:25:14 UTC (rev 1595)
++++ trunk/lib/dbupgrade.py	2011-10-04 18:41:03 UTC (rev 1596)
+@@ -162,7 +162,7 @@
+             try:
+                 self.session.bind.execute(query)
+             except OperationalError, e:
+-                if e.message.find(b'(OperationalError) duplicate column name:') &gt; -1:
++                if e.message.lower().find('duplicate column name') &gt; -1:
+                     log.warn(&quot;Cannot add '%s' column because it exists already: %s&quot;, key, e)
+                     continue
+                 else:
+@@ -265,7 +265,7 @@
+     if version == 5:    # fix changes between v5 and v6
+         version += 1
+         log.info(&quot;Upgrading database to version %d...&quot;, version)
+-        
++
+         # common SQL statements
+         if self.session.bind.name in ['postgres', 'postgresql']:
+             queries = {'created': 'ALTER TABLE movies ADD created TIMESTAMP;',
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="001053.html">[Griffith-svn] r1595 - trunk/lib
+</A></li>
+	<LI>Next message: <A HREF="001055.html">[Griffith-svn] r1597 - trunk/lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1054">[ date ]</a>
+              <a href="thread.html#1054">[ thread ]</a>
+              <a href="subject.html#1054">[ subject ]</a>
+              <a href="author.html#1054">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

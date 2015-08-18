@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r1296 - in trunk: . lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1296%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200909022028.n82KSl5C010071%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000765.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r1296 - in trunk: . lib</H1>
+    <B>mikej06 at mail.berlios.de</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r1296%20-%20in%20trunk%3A%20.%20lib&In-Reply-To=%3C200909022028.n82KSl5C010071%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r1296 - in trunk: . lib">mikej06 at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep  2 22:28:47 CEST 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000765.html">[Griffith-svn] r1297 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#764">[ date ]</a>
+              <a href="thread.html#764">[ thread ]</a>
+              <a href="subject.html#764">[ subject ]</a>
+              <a href="author.html#764">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mikej06
+Date: 2009-09-02 22:28:15 +0200 (Wed, 02 Sep 2009)
+New Revision: 1296
+
+Modified:
+   trunk/ChangeLog
+   trunk/lib/add.py
+   trunk/lib/edit.py
+   trunk/lib/gutils.py
+   trunk/lib/main_treeview.py
+Log:
+[#336855] Error being reported saving posters
+cleanup of generating thumbnail versions of the images
+and filenames for default image/thumbnail
+
+Modified: trunk/ChangeLog
+===================================================================
+--- trunk/ChangeLog	2009-08-30 20:02:03 UTC (rev 1295)
++++ trunk/ChangeLog	2009-09-02 20:28:15 UTC (rev 1296)
+@@ -5,6 +5,11 @@
+ (c) 2005-2009  Vasco Nunes, Piotr O&#380;arowski
+ 
+ 
++2009-09-02  Michael Jahn
++	* [#336855] Error being reported saving posters
++      cleanup of generating thumbnail versions of the images
++      and filenames for default image/thumbnail
++
+ 2009-08-28  Piotr O&#380;arowski
+ 	* [Bug 420462] --clean fixed
+ 
+
+Modified: trunk/lib/add.py
+===================================================================
+--- trunk/lib/add.py	2009-08-30 20:02:03 UTC (rev 1295)
++++ trunk/lib/add.py	2009-09-02 20:28:15 UTC (rev 1296)
+@@ -114,10 +114,12 @@
+         
+         if new_poster_md5 and new_poster_md5 != old_poster_md5:
+             # update thumbnail in main list
+-            new_image_path = gutils.get_image_fname(new_poster_md5, self.db)
++            new_image_path = gutils.get_image_fname(new_poster_md5, self.db, 's')
++            if not new_image_path:
++                new_image_path = gutils.get_defaultthumbnail_fname(self)
+             handler = self.Image.set_from_file(new_image_path)
+             pixbuf = self.Image.get_pixbuf()
+-            tmp_model.set_value(tmp_iter,1, pixbuf.scale_simple(30,40,3))
++            tmp_model.set_value(tmp_iter,1, pixbuf)
+         # update main treelist
+         tmp_model.set_value(tmp_iter,0,'%004d' % int(movie.number))
+         tmp_model.set_value(tmp_iter,2, movie.o_title)
+@@ -230,11 +232,11 @@
+                 w['picture'].set_from_pixbuf(pixbuf.scale_simple(100, 140, 3))
+                 w['image'].set_text(self.movie.image)
+             except:
+-                image = os.path.join(self.locations['images'], 'default.png')
++                image = gutils.get_defaultimage_fname(self)
+                 handler = self.Image.set_from_file(image)
+                 w['picture'].set_from_pixbuf(self.Image.get_pixbuf())
+         else:
+-            image = os.path.join(self.locations['images'], 'default.png')
++            image = gutils.get_defaultimage_fname(self)
+             handler = self.Image.set_from_file(image)
+             Pixbuf = self.Image.get_pixbuf()
+             w['picture'].set_from_pixbuf(Pixbuf)
+@@ -616,9 +618,9 @@
+             log.warn(&quot;TODO: image=%s&quot;, item['image'])
+     else:
+         w['image'].set_text('')
+-        image_path = os.path.join(self.locations['images'], 'default.png')
++        image_path = gutils.get_defaultimage_fname(self)
+     if not os.path.isfile(image_path):
+-        image_path = os.path.join(self.locations['images'], 'default.png')
++        image_path = gutils.get_defaultimage_fname(self)
+     w['picture'].set_from_file(image_path)
+     
+     w['notebook'].set_current_page(0)
+@@ -701,13 +703,13 @@
+ 
+     image_path = ''
+     if movie.poster_md5:
+-        image_path = gutils.get_image_fname(movie.poster_md5, self.db)
++        image_path = gutils.get_image_fname(movie.poster_md5, self.db, 's')
+     if not image_path or not os.path.isfile(image_path):
+-        image_path = os.path.join(self.locations['images'], 'default.png')
++        image_path = gutils.get_defaultthumbnail_fname(self)
+     handler = self.Image.set_from_file(image_path)
+     pixbuf = self.Image.get_pixbuf()
+     self.treemodel.set_value(myiter, 0, '%004d' % details['number'])
+-    self.treemodel.set_value(myiter, 1, pixbuf.scale_simple(30,40,3))
++    self.treemodel.set_value(myiter, 1, pixbuf)
+     self.treemodel.set_value(myiter, 2, details['o_title'])
+     self.treemodel.set_value(myiter, 3, details['title'])
+     self.treemodel.set_value(myiter, 4, details['director'])
+@@ -808,7 +810,7 @@
+ 
+     image_path = gutils.get_image_fname(movie.poster_md5, self.db)
+     if not image_path or not os.path.isfile(image_path):
+-        image_path = os.path.join(self.locations['images'], 'default.png')
++        image_path = gutils.get_defaultimage_fname(self)
+     handler = self.Image.set_from_file(image_path)
+ 
+     # change_filter calls populate_treeview which updates the status bar
+
+Modified: trunk/lib/edit.py
+===================================================================
+--- trunk/lib/edit.py	2009-08-30 20:02:03 UTC (rev 1295)
++++ trunk/lib/edit.py	2009-09-02 20:28:15 UTC (rev 1296)
+@@ -96,10 +96,10 @@
+         log.error(&quot;Cannot delete unknown movie's poster!&quot;)
+         return False
+     if gutils.question(_(&quot;Are you sure you want to delete this poster?&quot;), self.widgets['window']):
+-        image_path = os.path.join(self.locations['images'], 'default.png')
++        image_path = gutils.get_defaultimage_fname(self)
+         handler = self.widgets['movie']['picture'].set_from_pixbuf(gtk.gdk.pixbuf_new_from_file(image_path))
+         gutils.garbage(handler)
+-        update_tree_thumbnail(self, os.path.join(self.locations['images'], 'default_thumbnail.png'))
++        update_tree_thumbnail(self, gutils.get_defaultthumbnail_fname(self))
+         
+         # update in database
+         delete.delete_poster(self, movie.poster_md5)
+
+Modified: trunk/lib/gutils.py
+===================================================================
+--- trunk/lib/gutils.py	2009-08-30 20:02:03 UTC (rev 1295)
++++ trunk/lib/gutils.py	2009-09-02 20:28:15 UTC (rev 1296)
+@@ -650,6 +650,12 @@
+     file_name = os.path.join(gsql.data_dir, 'posters', md5sum+size+'.jpg')
+ 
+     if not os.path.isfile(file_name) and not create_image_cache(md5sum, gsql):
++        log.warn(&quot;Can't create image file %s for md5sum %s&quot; % (file_name, md5sum))
+         return False
+     return file_name
+ 
++def get_defaultimage_fname(self):
++    return os.path.join(self.locations['images'], 'default.png')
++
++def get_defaultthumbnail_fname(self):
++    return os.path.join(self.locations['images'], 'default_thumbnail.png')
+
+Modified: trunk/lib/main_treeview.py
+===================================================================
+--- trunk/lib/main_treeview.py	2009-08-30 20:02:03 UTC (rev 1295)
++++ trunk/lib/main_treeview.py	2009-09-02 20:28:15 UTC (rev 1296)
+@@ -47,9 +47,13 @@
+         movie = self.db.session.query(db.Movie).filter_by(number=number).first()
+         if movie is None:
+             log.info(&quot;Treeview: movie doesn't exists (number=%s)&quot;, number)
+-        elif movie.poster_md5 and self.widgets['poster_window'].flags() &amp; gtk.VISIBLE == gtk.VISIBLE:
++        elif self.widgets['poster_window'].flags() &amp; gtk.VISIBLE == gtk.VISIBLE:
+             # poster window is visible
+-            filename = gutils.get_image_fname(movie.poster_md5, self.db)
++            filename = None
++            if movie.poster_md5:
++                filename = gutils.get_image_fname(movie.poster_md5, self.db)
++            if not filename:
++                filename = gutils.get_defaultimage_fname(self)
+             self.widgets['big_poster'].set_from_file(filename)
+         for ext in self.extensions:
+             ext.maintree_clicked(treeselection, movie)
+@@ -229,11 +233,11 @@
+             self.widgets['add']['delete_poster'].set_sensitive(True)
+             w['picture_button'].set_sensitive(True)
+         else:
+-            image_path = os.path.join(self.locations['images'], 'default.png')
++            image_path = gutils.get_defaultimage_fname(self)
+             self.widgets['add']['delete_poster'].set_sensitive(False)
+             w['picture_button'].set_sensitive(False)
+     else:
+-        image_path = os.path.join(self.locations['images'], 'default.png')
++        image_path = gutils.get_defaultimage_fname(self)
+         w['picture_button'].set_sensitive(False)
+     w['picture'].set_from_file(image_path)
+     # ratig
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000765.html">[Griffith-svn] r1297 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#764">[ date ]</a>
+              <a href="thread.html#764">[ thread ]</a>
+              <a href="subject.html#764">[ subject ]</a>
+              <a href="author.html#764">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>

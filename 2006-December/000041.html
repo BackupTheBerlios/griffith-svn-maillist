@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Griffith-svn] r510 - griffith/lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/griffith-svn/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r510%20-%20griffith/lib&In-Reply-To=%3C200612100816.kBA8G51x021510%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000040.html">
+   <LINK REL="Next"  HREF="000042.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Griffith-svn] r510 - griffith/lib</H1>
+    <B>piotrek at BerliOS</B> 
+    <A HREF="mailto:griffith-svn%40lists.berlios.de?Subject=Re%3A%20%5BGriffith-svn%5D%20r510%20-%20griffith/lib&In-Reply-To=%3C200612100816.kBA8G51x021510%40sheep.berlios.de%3E"
+       TITLE="[Griffith-svn] r510 - griffith/lib">piotrek at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 10 09:16:05 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000040.html">[Griffith-svn] r509 - in griffith/lib: . plugins/imp
+</A></li>
+        <LI>Next message: <A HREF="000042.html">[Griffith-svn] r511 - in griffith: glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#41">[ date ]</a>
+              <a href="thread.html#41">[ thread ]</a>
+              <a href="subject.html#41">[ subject ]</a>
+              <a href="author.html#41">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: piotrek
+Date: 2006-12-10 09:16:05 +0100 (Sun, 10 Dec 2006)
+New Revision: 510
+
+Modified:
+   griffith/lib/add.py
+   griffith/lib/backup.py
+   griffith/lib/dbupgrade.py
+   griffith/lib/sql.py
+Log:
+* fix find_next_available() in some files
+* fix digits_only()
+
+
+Modified: griffith/lib/add.py
+===================================================================
+--- griffith/lib/add.py	2006-12-10 00:59:45 UTC (rev 509)
++++ griffith/lib/add.py	2006-12-10 08:16:05 UTC (rev 510)
+@@ -36,7 +36,7 @@
+ def add_movie(self, details={}):
+ 	quick_filter.clear_filter(self)	 # FIXME: remove this line
+ 	if not details.has_key('number'):
+-		details['number'] = gutils.find_next_available(self)
++		details['number'] = gutils.find_next_available(self.db)
+ 	set_details(self, details)
+ 	
+ 	self.active_plugin = ''
+@@ -48,7 +48,7 @@
+ 
+ def edit_movie(self, details={}):
+ 	if not details.has_key('number'):
+-		details['number'] = gutils.find_next_available(self)
++		details['number'] = gutils.find_next_available(self.db)
+ 	set_details(self, details)
+ 	self.widgets['add']['add_button'].hide()
+ 	self.widgets['add']['add_close_button'].hide()
+@@ -80,7 +80,7 @@
+ 	if item.has_key('number') and item['number']:
+ 		w['number'].set_value(int(item['number']))
+ 	else:
+-		w['number'].set_value(int(gutils.find_next_available(self)))
++		w['number'].set_value(int(gutils.find_next_available(self.db)))
+ 	if item.has_key('title') and item['title']:
+ 		w['title'].set_text(item['title'])
+ 	if item.has_key('year') and item['year']:
+@@ -583,7 +583,7 @@
+ 	if movie is None:
+ 		return false
+ 
+-	next_number = gutils.find_next_available(self)
++	next_number = gutils.find_next_available(self.db)
+ 	new_image = str(movie.image) + '_' + str(next_number)
+ 	
+ 	# integer problem workaround
+
+Modified: griffith/lib/backup.py
+===================================================================
+--- griffith/lib/backup.py	2006-12-10 00:59:45 UTC (rev 509)
++++ griffith/lib/backup.py	2006-12-10 08:16:05 UTC (rev 510)
+@@ -206,7 +206,7 @@
+ 				t_movies[column] = eval(&quot;movie.%s&quot;%column)
+ 
+ 			# replace number with new one
+-			t_movies[&quot;number&quot;] = gutils.find_next_available(self)
++			t_movies[&quot;number&quot;] = gutils.find_next_available(self.db)
+ 
+ 			# don't restore volume/collection/tag/language/loan data (it's dangerous)
+ 			t_movies.pop('movie_id')
+
+Modified: griffith/lib/dbupgrade.py
+===================================================================
+--- griffith/lib/dbupgrade.py	2006-12-10 00:59:45 UTC (rev 509)
++++ griffith/lib/dbupgrade.py	2006-12-10 08:16:05 UTC (rev 510)
+@@ -1,6 +1,6 @@
+ # -*- coding: UTF-8 -*-
+ 
+-__revision__ = '$Id:$'
++__revision__ = '$Id$'
+ 
+ # Copyright (c) 2005-2006 Vasco Nunes, Piotr O&#380;arowski
+ #
+@@ -116,7 +116,7 @@
+ 		return False
+ 
+ 	if os.path.isfile(destination_file):
+-		# rename destination_file is it already exist
++		# rename destination_file if it already exist
+ 		i = 1
+ 		while True:
+ 			if os.path.isfile(&quot;%s_%s&quot; % (destination_file, i)):
+@@ -206,7 +206,7 @@
+ 			o.save(); o.flush()
+ 			medium_mapper[i[0]] = o.medium_id
+ 	
+-#	# tags
++	# tags
+ 	tag_mapper = {}
+ 	old_cursor.execute(&quot;SELECT id, name FROM tags;&quot;)
+ 	for i in old_cursor.fetchall():
+@@ -226,12 +226,9 @@
+ 			genre, studio, site, imdb, actors, trailer, rating, loaned,
+ 			media, num_media, obs, seen, region, condition, color, layers
+ 		FROM movies ORDER BY number;&quot;&quot;&quot;)
+-	j = 1
+ 	for i in old_cursor.fetchall():
+ 		o = new_db.Movie()
+-		#o.number = digits_only(i[6])
+-		o.number = j
+-		j += 1
++		o.number = digits_only(i[6])
+ 		o.volume_id = volume_mapper[i[1]]
+ 		o.collection_id = collection_mapper[i[2]]
+ 		o.o_title = i[3][:255]
+@@ -252,7 +249,7 @@
+ 		o.rating = digits_only(i[19])
+ 		o.loaned = bool(i[20])
+ 		o.medium_id = medium_mapper[int(i[21])]
+-		o.num_media = digits_only(i[22])
++		o.media_num = digits_only(i[22])
+ 		o.notes = i[23]
+ 		o.seen = bool(i[24])
+ 		o.region = digits_only(i[25])
+@@ -269,7 +266,7 @@
+ 		o = new_db.MovieTag.get_by(movie_id=movie_mapper[i[0]], tag_id=tag_mapper[i[1]])
+ 		if o is None:
+ 			m = new_db.Movie.get_by(movie_id=movie_mapper[i[0]])
+-			t = new_db.MovieTag(tag_id=tag_mapper[i[1]])
++			t = new_db.Tag.get_by(tag_id=tag_mapper[i[1]])
+ 			t.save()
+ 			m.tags.append(t)
+ 			m.save(); m.flush()
+@@ -306,7 +303,7 @@
+ 	import string, re
+ 	match = re.compile(r&quot;\d+&quot;)
+ 	try:
+-		s = int(reduce( string.join, match.findall(s)))
++		s = int(reduce( string.join, match.findall(str(s))))
+ 	except:
+ 		s = 0
+ 	if maximum is None:
+
+Modified: griffith/lib/sql.py
+===================================================================
+--- griffith/lib/sql.py	2006-12-10 00:59:45 UTC (rev 509)
++++ griffith/lib/sql.py	2006-12-10 08:16:05 UTC (rev 510)
+@@ -95,7 +95,8 @@
+ 		pass
+ 	class MovieLang(object):
+ 		def __repr__(self):
+-			return &quot;MovieLang:%s-%s (Type:%s ACodec:%s AChannel:%s SubFormat:%s)&quot; % (self.movie_id, self.lang_id, self.type, self.acodec_id, self.achannel_id, self.subformat_id)
++			return &quot;MovieLang:%s-%s (Type:%s ACodec:%s AChannel:%s SubFormat:%s)&quot; % \
++				(self.movie_id, self.lang_id, self.type, self.acodec_id, self.achannel_id, self.subformat_id)
+ 	class MovieTag(object):
+ 		def __repr__(self):
+ 			return &quot;MovieTag:%s-%s&quot; % (self.movie_id, self.tag_id)
+@@ -435,30 +436,14 @@
+ 		try:
+ 			v = self.Configuration.get_by(param='version')	# returns None if table exists &amp;&amp; param ISNULL
+ 		except exceptions.SQLError:	# table doesn't exist
+-			v = 1
++			v = 0
+ 
+-		if v==1:
+-			#self.Person.select().execute()
+-			try:
+-				# NOTE: &quot;people&quot; table is common for all versions
+-				self.Person.select().execute()
+-			except exceptions.SQLError:	# table doesn't exist
+-				v=0
+ 		if v is not None and v&gt;1:
+ 			v = v.value
+ 		if v&lt;self.version:
+ 			from dbupgrade import upgrade_database
+ 			upgrade_database(self, v)
+-		
+-		# check if all tables exists
+-#		for table in self.metadata.tables.keys():
+-#		        try:
+-#				self.metadata.tables[table].select().execute()
+-#		        except:
+-#				self.metadata.tables[table].create()
+-#			self.metadata.commit()
+ 
+-
+ # for debugging (run: ipython sql.py)
+ if __name__ == '__main__':
+ 	import sys
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000040.html">[Griffith-svn] r509 - in griffith/lib: . plugins/imp
+</A></li>
+	<LI>Next message: <A HREF="000042.html">[Griffith-svn] r511 - in griffith: glade lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#41">[ date ]</a>
+              <a href="thread.html#41">[ thread ]</a>
+              <a href="subject.html#41">[ subject ]</a>
+              <a href="author.html#41">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/griffith-svn">More information about the Griffith-svn
+mailing list</a><br>
+</body></html>
